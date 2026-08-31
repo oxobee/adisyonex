@@ -10,10 +10,10 @@ export default async function OrdersPage() {
   if (!ctx) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
-        <PageHeader title="Orders" description="Live tickets and today's settlements." />
+        <PageHeader title="Siparişler & Adisyonlar" description="Canlı adisyonlar ve günün hesap kapanışları." />
         <EmptyState
-          title="No restaurant yet"
-          description="Ask an admin to onboard your restaurant to start taking orders."
+          title="Henüz restoran tanımlanmamış"
+          description="Siparişleri takip etmeye başlamak için bir yöneticiden restoranınızı tanımlamasını isteyin."
         />
       </div>
     );

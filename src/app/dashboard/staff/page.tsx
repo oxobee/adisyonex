@@ -10,12 +10,12 @@ export default async function StaffPage() {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
-          title="Staff"
-          description="Manage the people who run your restaurant."
+          title="Personel Yönetimi"
+          description="Restoranınızda çalışan personelleri ve erişim yetkilerini yönetin."
         />
         <EmptyState
-          title="No restaurant yet"
-          description="Ask an admin to onboard your restaurant, then come back to add your team."
+          title="Henüz restoran tanımlanmamış"
+          description="Personel eklemeye başlamak için bir yöneticiden restoranınızı tanımlamasını isteyin."
         />
       </div>
     );

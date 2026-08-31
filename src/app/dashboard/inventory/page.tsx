@@ -10,12 +10,12 @@ export default async function InventoryPage() {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
-          title="Inventory"
-          description="Track the stock you keep in the restaurant."
+          title="Stok & Hammadde"
+          description="Restorandaki hammadde, malzeme ve stok durumunu takip edin."
         />
         <EmptyState
-          title="No restaurant yet"
-          description="Ask an admin to onboard your restaurant, then come back to add inventory."
+          title="Henüz restoran tanımlanmamış"
+          description="Stok takibine başlamak için bir yöneticiden restoranınızı tanımlamasını isteyin."
         />
       </div>
     );

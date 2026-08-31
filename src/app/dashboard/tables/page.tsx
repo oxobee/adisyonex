@@ -11,12 +11,12 @@ export default async function TablesPage() {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
-          title="Tables"
-          description="Set up your floor so servers can seat dine-in orders."
+          title="Masalar"
+          description="Garsonların masada servis siparişleri açabilmesi için salon planını düzenleyin."
         />
         <EmptyState
-          title="No restaurant yet"
-          description="Ask an admin to onboard your restaurant, then come back to add tables."
+          title="Henüz restoran tanımlanmamış"
+          description="Masa eklemeye başlamak için bir yöneticiden restoranınızı tanımlamasını isteyin."
         />
       </div>
     );

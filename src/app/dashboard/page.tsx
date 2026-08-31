@@ -11,12 +11,12 @@ export default async function Page() {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
-          title="Dashboard"
-          description="Your restaurant at a glance."
+          title="Kontrol Paneli"
+          description="Restoranınızın genel durumu ve günlük özet."
         />
         <EmptyState
-          title="No restaurant yet"
-          description="Ask an admin to onboard your restaurant to start seeing your numbers."
+          title="Henüz restoran tanımlanmamış"
+          description="Sayıları ve raporları görmek için yöneticinizden restoranınızı tanımlamasını isteyin."
         />
       </div>
     )
