@@ -10,6 +10,11 @@ import {
   aiMenuUrlInputSchema,
   aiPhotoProfessionalizeSchema,
   aiSettingUpdateSchema,
+  attachItemImageSchema,
+  enhanceAttachItemImageSchema,
+  estimateCaloriesSchema,
+  quickLongDescSchema,
+  quickShortDescSchema,
 } from "@/lib/validators/ai";
 import {
   adminRecharge,
@@ -27,8 +32,13 @@ import {
   commitDigitizedMenu,
   digitizeMenu,
   digitizeMenuFromUrl,
+  enhanceAndAttachItemImage,
+  estimateItemCalories,
+  generateAndAttachItemImage,
   generateFoodImage,
   generateItemCopywriting,
+  generateQuickLongDesc,
+  generateQuickShortDesc,
   listAiTasks,
   professionalizeFoodPhoto,
 } from "@/services/ai/ai-studio.service";
@@ -197,4 +207,34 @@ export const updateAiSettingAction = withAdminValidation(
 export const adminRechargeAiCreditAction = withAdminValidation(
   aiAdminCreditRechargeSchema,
   (data) => adminRecharge(data.restaurantId, data.amount, data.description),
+);
+
+/** Quick Short Description Generator (2 Credits) */
+export const generateQuickShortDescAction = withManagerValidation(
+  quickShortDescSchema,
+  (data, ctx) => generateQuickShortDesc(ctx.restaurantId, data),
+);
+
+/** Quick Long Description Generator (2 Credits) */
+export const generateQuickLongDescAction = withManagerValidation(
+  quickLongDescSchema,
+  (data, ctx) => generateQuickLongDesc(ctx.restaurantId, data),
+);
+
+/** Estimate Item Calories (2 Credits) */
+export const estimateItemCaloriesAction = withManagerValidation(
+  estimateCaloriesSchema,
+  (data, ctx) => estimateItemCalories(ctx.restaurantId, data),
+);
+
+/** Generate and Attach Image to Menu Item (20 Credits) */
+export const generateAndAttachItemImageAction = withManagerValidation(
+  attachItemImageSchema,
+  (data, ctx) => generateAndAttachItemImage(ctx.restaurantId, data),
+);
+
+/** Enhance and Attach Image to Menu Item (40 Credits) */
+export const enhanceAndAttachItemImageAction = withManagerValidation(
+  enhanceAttachItemImageSchema,
+  (data, ctx) => enhanceAndAttachItemImage(ctx.restaurantId, data),
 );

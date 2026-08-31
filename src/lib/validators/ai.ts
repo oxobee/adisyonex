@@ -89,3 +89,39 @@ export const aiSettingUpdateSchema = z.object({
 });
 
 export type AiSettingUpdateInput = z.infer<typeof aiSettingUpdateSchema>;
+
+export const quickShortDescSchema = z.object({
+  name: z.string().min(1, "Ürün adı gereklidir"),
+  categoryName: z.string().optional(),
+});
+export type QuickShortDescInput = z.infer<typeof quickShortDescSchema>;
+
+export const quickLongDescSchema = z.object({
+  name: z.string().min(1, "Ürün adı gereklidir"),
+  categoryName: z.string().optional(),
+  shortDescription: z.string().optional(),
+});
+export type QuickLongDescInput = z.infer<typeof quickLongDescSchema>;
+
+export const estimateCaloriesSchema = z.object({
+  name: z.string().min(1, "Ürün adı gereklidir"),
+  categoryName: z.string().optional(),
+  shortDescription: z.string().optional(),
+  longDescription: z.string().optional(),
+  imageUrl: z.string().optional(),
+});
+export type EstimateCaloriesInput = z.infer<typeof estimateCaloriesSchema>;
+
+export const attachItemImageSchema = z.object({
+  itemId: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional(),
+});
+export type AttachItemImageInput = z.infer<typeof attachItemImageSchema>;
+
+export const enhanceAttachItemImageSchema = z.object({
+  itemId: z.string().min(1),
+  imageUrl: z.string().min(1),
+  dishName: z.string().min(1),
+});
+export type EnhanceAttachItemImageInput = z.infer<typeof enhanceAttachItemImageSchema>;

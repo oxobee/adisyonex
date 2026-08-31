@@ -10,6 +10,7 @@ import {
   findCategoriesByRestaurant,
 } from "@/repositories/menu-category.repository";
 import { createItem } from "@/services/menu-item.service";
+import { addItemImageForRestaurant } from "@/services/menu-image.service";
 import type {
   AiCopywriterResultDTO,
   AiDigitizedMenuDTO,
@@ -597,3 +598,226 @@ export const listAiTasks = async (
     createdAt: t.createdAt.toISOString(),
   }));
 };
+
+/** Quick Short Description Generator (2 Credits) */
+export const generateQuickShortDesc = async (
+  restaurantId: string,
+  input: { name: string; categoryName?: string },
+): Promise<{ text: string }> => {
+  const cost = 2;
+  await assertAndDeductCredits(
+    restaurantId,
+    cost,
+    "QUICK_SHORT_DESC",
+    undefined,
+    `"${input.name}" için kısa açıklama üretimi`,
+  );
+
+  try {
+    const prompt = `Ürün: ${input.name}
+Kategori: ${input.categoryName ?? "Menü"}
+GÖREV: Bu ürün için menü kartında yer alacak 1 cümlelik (maks. 100 karakter), iştah açıcı, vurucu ve net bir Türkçe kısa açıklama yaz.
+SADECE açıklama metnini döndür, tırnak işareti veya ekleme yapma.`;
+
+    const aiRes = await callOpenRouter({
+      messages: [{ role: "user", content: prompt }],
+      restaurantId,
+      operationType: "ITEM_DESCRIPTION",
+      chargedCredits: cost,
+    });
+
+    return { text: aiRes.content.trim().replace(/^["']|["']$/g, "") };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      cost,
+      "QUICK_SHORT_DESC_FAILED",
+      undefined,
+      "Kısa açıklama üretilemedi, kredi iade edildi",
+    );
+    throw err;
+  }
+};
+
+/** Quick Long Description Generator (2 Credits) */
+export const generateQuickLongDesc = async (
+  restaurantId: string,
+  input: { name: string; categoryName?: string; shortDescription?: string },
+): Promise<{ text: string }> => {
+  const cost = 2;
+  await assertAndDeductCredits(
+    restaurantId,
+    cost,
+    "QUICK_LONG_DESC",
+    undefined,
+    `"${input.name}" için detaylı açıklama üretimi`,
+  );
+
+  try {
+    const prompt = `Ürün: ${input.name}
+Kategori: ${input.categoryName ?? "Menü"}
+Kısa Açıklama / Özellik: ${input.shortDescription ?? ""}
+GÖREV: Bu ürün için detaylı içerik, pişirme tekniği, lezzet uyumu ve sunum detaylarını içeren 2-3 cümlelik zengin ve iştah kabartan bir Türkçe açıklama yaz.
+SADECE açıklama metnini döndür, tırnak işareti veya başlık koyma.`;
+
+    const aiRes = await callOpenRouter({
+      messages: [{ role: "user", content: prompt }],
+      restaurantId,
+      operationType: "ITEM_DESCRIPTION",
+      chargedCredits: cost,
+    });
+
+    return { text: aiRes.content.trim().replace(/^["']|["']$/g, "") };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      cost,
+      "QUICK_LONG_DESC_FAILED",
+      undefined,
+      "Detaylı açıklama üretilemedi, kredi iade edildi",
+    );
+    throw err;
+  }
+};
+
+/** Estimate Item Calories with AI (2 Credits) */
+export const estimateItemCalories = async (
+  restaurantId: string,
+  input: {
+    name: string;
+    categoryName?: string;
+    shortDescription?: string;
+    longDescription?: string;
+    imageUrl?: string;
+  },
+): Promise<{ calories: number; explanation: string }> => {
+  const cost = 2;
+  await assertAndDeductCredits(
+    restaurantId,
+    cost,
+    "ESTIMATE_CALORIES",
+    undefined,
+    `"${input.name}" için kalori analizi`,
+  );
+
+  try {
+    const systemPrompt = `Sen bir beslenme uzmanı ve menü analistisin.
+Verilen yemek adı, açıklaması ve malzemelerine göre 1 standart porsiyon için yaklaşık kalori (kcal) değerini hesapla.
+SADECE JSON döndür:
+{
+  "calories": 450,
+  "explanation": "200gr dana eti ve sos içeriğine göre tahmin"
+}`;
+
+    const messages: any[] = [{ role: "system", content: systemPrompt }];
+
+    const userText = `Yemek: ${input.name}\nKategori: ${input.categoryName ?? ""}\nAçıklama: ${
+      input.shortDescription || input.longDescription || ""
+    }`;
+
+    if (input.imageUrl) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: userText },
+          { type: "image_url", image_url: { url: input.imageUrl } },
+        ],
+      });
+    } else {
+      messages.push({ role: "user", content: userText });
+    }
+
+    const aiRes = await callOpenRouter({
+      messages,
+      responseFormat: { type: "json_object" },
+      restaurantId,
+      operationType: "ALLERGEN_CALORIE_EST",
+      chargedCredits: cost,
+    });
+
+    const parsed = JSON.parse(aiRes.content);
+    return {
+      calories: Number(parsed.calories) || 350,
+      explanation: parsed.explanation || "Standart porsiyon baz alınarak hesaplandı",
+    };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      cost,
+      "ESTIMATE_CALORIES_FAILED",
+      undefined,
+      "Kalori tahmini yapılamadı, kredi iade edildi",
+    );
+    throw err;
+  }
+};
+
+/** Generate AI Image and Attach directly to Product (20 Credits) */
+export const generateAndAttachItemImage = async (
+  restaurantId: string,
+  input: {
+    itemId: string;
+    name: string;
+    description?: string;
+  },
+): Promise<{ imageId: string; imageUrl: string }> => {
+  const gen = await generateFoodImage(restaurantId, {
+    itemName: input.name,
+    itemDescription: input.description,
+    style: "STUDIO_FOOD",
+    qualityLevel: "STANDARD",
+  });
+
+  let buffer: Buffer;
+  if (gen.imageUrl.startsWith("data:image/")) {
+    const base64Data = gen.imageUrl.replace(/^data:image\/\w+;base64,/, "");
+    buffer = Buffer.from(base64Data, "base64");
+  } else {
+    const res = await fetch(gen.imageUrl);
+    const ab = await res.arrayBuffer();
+    buffer = Buffer.from(ab);
+  }
+
+  const image = await addItemImageForRestaurant(restaurantId, input.itemId, {
+    buffer,
+    type: "image/png",
+    size: buffer.length,
+  });
+
+  return { imageId: image.id, imageUrl: image.url };
+};
+
+/** Enhance Existing Item Image and Attach directly to Product (40 Credits) */
+export const enhanceAndAttachItemImage = async (
+  restaurantId: string,
+  input: {
+    itemId: string;
+    imageUrl: string;
+    dishName: string;
+  },
+): Promise<{ imageId: string; imageUrl: string }> => {
+  const enhanced = await professionalizeFoodPhoto(restaurantId, {
+    imageUrl: input.imageUrl,
+    dishName: input.dishName,
+    qualityLevel: "PROFESSIONAL",
+  });
+
+  let buffer: Buffer;
+  if (enhanced.enhancedImageUrl.startsWith("data:image/")) {
+    const base64Data = enhanced.enhancedImageUrl.replace(/^data:image\/\w+;base64,/, "");
+    buffer = Buffer.from(base64Data, "base64");
+  } else {
+    const res = await fetch(enhanced.enhancedImageUrl);
+    const ab = await res.arrayBuffer();
+    buffer = Buffer.from(ab);
+  }
+
+  const image = await addItemImageForRestaurant(restaurantId, input.itemId, {
+    buffer,
+    type: "image/png",
+    size: buffer.length,
+  });
+
+  return { imageId: image.id, imageUrl: image.url };
+};
+
