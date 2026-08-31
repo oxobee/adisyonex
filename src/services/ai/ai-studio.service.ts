@@ -323,11 +323,11 @@ export const generateFoodImage = async (
     `"${input.itemName}" için ${quality} kalite görsel üretimi`,
   );
 
-  const prompt = `Award-winning commercial gourmet food photography of: ${input.itemName}.
-${input.itemDescription ? `Dish details, ingredients and presentation: ${input.itemDescription}. ` : ""}
-Format & Composition: 1:1 SQUARE aspect ratio, centered plate composition, square framing.
-Culinary Aesthetics: Freshly prepared, appetizing sizzling textures, softbox warm professional studio lighting, Michelin-star restaurant table background with soft bokeh depth of field, 8k resolution, ultra realistic food magazine advertising quality.
-Strict Negative Constraints: NO text, NO labels, NO humans, NO watermarks, NO CGI cartoon distortion.`;
+  const prompt = `Professional gourmet culinary food photography of: ${input.itemName}.
+${input.itemDescription ? `Plate composition & ingredients: ${input.itemDescription}. ` : ""}
+Format & Composition: 1:1 SQUARE aspect ratio, centered close-up food plating on an elegant ceramic dish, professional 45-degree angle.
+Lighting & Atmosphere: Soft warm studio lighting, appetizing natural steam and sizzle reflections, mouthwatering textures, shallow depth of field with soft bokeh background, 8k resolution, ultra photorealistic.
+CRITICAL NEGATIVE CONSTRAINTS - NO TEXT: Absolutely NO text, NO typography, NO words, NO letters, NO writing, NO numbers, NO subtitles, NO watermarks, NO brand logos, NO price tags, NO menu labels, NO human faces. The image must contain ONLY the delicious food dish cleanly presented.`;
 
   try {
     const aiRes = await callOpenRouter({
@@ -392,11 +392,11 @@ export const professionalizeFoodPhoto = async (
     `"${input.dishName}" fotoğrafını profesyonelleştirme`,
   );
 
-  const prompt = `Professional commercial food photography enhancement of this exact dish: ${input.dishName}.
+  const prompt = `Professional food photography enhancement of this exact dish: ${input.dishName}.
 PRESERVE the original food contents, ingredients, portion size, and plating shape.
 Format & Framing: 1:1 SQUARE aspect ratio, centered plate composition.
-IMPROVE: Replace amateur lighting with warm softbox restaurant studio lighting, enhance appetizing steam and sizzle reflections, natural soft shadows, crystal-clear gourmet food magazine plating aesthetics. Ultra high resolution.
-Strict Negative Constraints: NO text, NO watermarks, NO CGI distortion.`;
+IMPROVE: Replace amateur lighting with warm softbox restaurant studio lighting, enhance appetizing steam and sizzle reflections, natural soft shadows, crystal-clear gourmet food plating aesthetics. Ultra high resolution.
+CRITICAL NEGATIVE CONSTRAINTS - NO TEXT: Absolutely NO text, NO typography, NO words, NO letters, NO writing, NO numbers, NO watermarks, NO brand logos, NO signs. The image must contain ONLY the enhanced food dish cleanly presented.`;
 
   try {
     const aiRes = await callOpenRouter({
