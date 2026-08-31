@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import type {
   EmploymentType,
   Gender,
@@ -26,7 +27,24 @@ export interface StaffWriteData {
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   notes: string | null;
+  jobTitle?: string | null;
+  allowedRoutes?: string[] | null;
 }
+
+const toPrismaData = (data: StaffWriteData) => {
+  const { allowedRoutes, ...rest } = data;
+  return {
+    ...rest,
+    ...(allowedRoutes !== undefined
+      ? {
+          allowedRoutes:
+            allowedRoutes === null
+              ? Prisma.DbNull
+              : (allowedRoutes as Prisma.InputJsonValue),
+        }
+      : {}),
+  };
+};
 
 export const createStaff = (
   restaurantId: string,
@@ -34,11 +52,15 @@ export const createStaff = (
   pinHash: string,
 ): Promise<Staff> =>
   prisma.staff.create({
-    data: { restaurant: { connect: { id: restaurantId } }, pinHash, ...data },
+    data: {
+      restaurant: { connect: { id: restaurantId } },
+      pinHash,
+      ...toPrismaData(data),
+    },
   });
 
 export const updateStaff = (id: string, data: StaffWriteData): Promise<Staff> =>
-  prisma.staff.update({ where: { id }, data });
+  prisma.staff.update({ where: { id }, data: toPrismaData(data) });
 
 export const reviveStaff = (
   id: string,
@@ -47,7 +69,7 @@ export const reviveStaff = (
 ): Promise<Staff> =>
   prisma.staff.update({
     where: { id },
-    data: { ...data, pinHash, deletedAt: null },
+    data: { ...toPrismaData(data), pinHash, deletedAt: null },
   });
 
 export const softDeleteStaff = (id: string): Promise<Staff> =>

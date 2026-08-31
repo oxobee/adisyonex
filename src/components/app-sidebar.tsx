@@ -48,18 +48,28 @@ export function AppSidebar({
   user,
   license,
   systemSettings,
+  allowedRoutes,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: { name: string; contact: string; role?: string }
   license?: LicenseInfoDTO | null
   systemSettings?: Partial<SystemSettingsDTO> | null
+  allowedRoutes?: readonly string[] | null
 }) {
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN"
+  
+  const filteredNavMain = React.useMemo(() => {
+    if (!allowedRoutes || allowedRoutes.length === 0) return navMain;
+    return navMain.filter((item) => allowedRoutes.includes(item.url));
+  }, [allowedRoutes]);
+
   const navSecondary = [
     ...(isAdmin
       ? [{ title: "Süper Yönetici Paneli", url: "/admin", icon: <ShieldCheckIcon /> }]
       : []),
-    { title: "Ayarlar", url: "/dashboard/settings", icon: <Settings2Icon /> },
+    ...(!allowedRoutes || allowedRoutes.includes("/dashboard/settings")
+      ? [{ title: "Ayarlar", url: "/dashboard/settings", icon: <Settings2Icon /> }]
+      : []),
     { title: "Yardım Al", url: "#", icon: <CircleHelpIcon /> },
   ]
   return (
@@ -92,7 +102,7 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavMain items={filteredNavMain} />
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

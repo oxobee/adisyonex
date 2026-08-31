@@ -8,6 +8,8 @@ export interface StaffContext {
   readonly role: StaffRole;
   readonly name: string;
   readonly employeeCode: string;
+  readonly jobTitle: string | null;
+  readonly allowedRoutes: readonly string[] | null;
 }
 
 /**
@@ -36,5 +38,7 @@ export const getStaffContextOrNull = async (): Promise<StaffContext | null> => {
     role: staff.role,
     name: staff.name,
     employeeCode: staff.employeeCode,
+    jobTitle: staff.jobTitle ?? null,
+    allowedRoutes: (staff.allowedRoutes as string[] | null) ?? null,
   };
 };

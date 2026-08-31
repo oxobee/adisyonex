@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   ArrowRightLeftIcon,
   CheckCircle2Icon,
@@ -27,6 +28,7 @@ export interface TableActionMenuProps {
   onMergeTable: () => void;
   onViewDetails: () => void;
   onVoidTable: () => void;
+  onDeliverTable?: () => void;
 }
 
 export function TableActionMenu({
@@ -40,8 +42,15 @@ export function TableActionMenu({
   onMergeTable,
   onViewDetails,
   onVoidTable,
+  onDeliverTable,
 }: TableActionMenuProps) {
   const isOccupied = orders.length > 0;
+
+  const hasReady = useMemo(() => {
+    return orders.some((o) =>
+      o.lines.some((l) => l.state === "PREPARED" || l.state === "FIRED"),
+    );
+  }, [orders]);
 
   return (
     <div className="flex w-full sm:w-80 flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl animate-in zoom-in-95 fade-in duration-200">
@@ -66,6 +75,20 @@ export function TableActionMenu({
 
       {/* Action Buttons List */}
       <div className="flex flex-col p-2 gap-1 text-sm font-semibold">
+        {/* Quick Deliver */}
+        {hasReady && onDeliverTable && (
+          <button
+            type="button"
+            onClick={onDeliverTable}
+            className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left transition-colors bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold active:scale-[0.98] cursor-pointer"
+          >
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-xs">
+              <CheckCircle2Icon className="size-4.5" />
+            </div>
+            <span>Siparişleri Teslim Et</span>
+          </button>
+        )}
+
         {/* 1. Print Bill */}
         <button
           type="button"

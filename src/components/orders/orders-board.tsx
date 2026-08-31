@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { voidOrderAction } from "@/actions/order.actions";
+import { deliverTableOrdersAction, voidOrderAction } from "@/actions/order.actions";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
 import { TableBillModal } from "@/components/orders/table-bill-modal";
 import { TableCard, type TableStatus } from "@/components/orders/table-card";
@@ -403,6 +403,21 @@ export function OrdersBoard({
     setVoidConfirmTable(t);
   };
 
+  const handleDeliverTable = async (tableId: string) => {
+    try {
+      const res = await deliverTableOrdersAction({ tableId });
+      if (res.success) {
+        toast.success("Siparişler teslim edildi olarak işaretlendi!");
+        setSelectedTableId(null);
+        router.refresh();
+      } else {
+        toast.error(res.error || "İşlem başarısız oldu");
+      }
+    } catch (e) {
+      toast.error("Bir hata oluştu");
+    }
+  };
+
   return (
     <div className="relative flex flex-col gap-6 p-4 lg:p-6">
       {/* SPOTLIGHT GLASSMORPHISM BACKDROP & CRISP ACTION MODAL */}
@@ -427,6 +442,7 @@ export function OrdersBoard({
                 hasBillRequest={selectedTableHasBill}
                 isSelected={true}
                 onClick={() => setSelectedTableId(null)}
+                onDeliver={() => handleDeliverTable(selectedTable.id)}
               />
             </div>
 
@@ -443,6 +459,7 @@ export function OrdersBoard({
                 onMergeTable={() => handleMerge(selectedTable)}
                 onViewDetails={() => handleViewDetails(selectedTable, selectedTableOrders)}
                 onVoidTable={() => handleVoid(selectedTable)}
+                onDeliverTable={() => handleDeliverTable(selectedTable.id)}
               />
             </div>
           </div>
@@ -662,6 +679,7 @@ export function OrdersBoard({
                       onClick={() => {
                         setSelectedTableId(table.id);
                       }}
+                      onDeliver={() => handleDeliverTable(table.id)}
                     />
                   </div>
                 );

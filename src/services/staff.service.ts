@@ -56,6 +56,8 @@ export const mapStaff = (s: Staff): StaffDTO => ({
   emergencyContactName: s.emergencyContactName,
   emergencyContactPhone: s.emergencyContactPhone,
   notes: s.notes,
+  jobTitle: s.jobTitle,
+  allowedRoutes: (s.allowedRoutes as string[] | null) ?? null,
   hasPin: Boolean(s.pinHash),
 });
 
@@ -80,6 +82,8 @@ const toWriteData = (
   emergencyContactName: input.emergencyContactName ?? null,
   emergencyContactPhone: input.emergencyContactPhone ?? null,
   notes: input.notes ?? null,
+  jobTitle: input.jobTitle ?? null,
+  allowedRoutes: input.allowedRoutes ?? null,
 });
 
 export const listStaff = async (restaurantId: string): Promise<StaffDTO[]> =>

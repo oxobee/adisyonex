@@ -6,6 +6,7 @@ import { getManagerContextOrNull } from "@/lib/manager-auth"
 import { serializeForClient } from "@/lib/utils"
 import { getRestaurantLicenseInfo, type LicenseInfoDTO } from "@/services/license.service"
 import { getRestaurantProfile, getSelfOrderShareInfo } from "@/services/restaurant-settings.service"
+import { getStaffContextOrNull } from "@/lib/staff-auth"
 import { getSystemSettings, type SystemSettingsDTO } from "@/services/system-setting.service"
 import { getManagerById } from "@/services/user.service"
 
@@ -17,10 +18,11 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const userId = await requireUserId()
-  const [user, ctx, systemSettings] = await Promise.all([
+  const [user, ctx, systemSettings, staffCtx] = await Promise.all([
     getManagerById(userId),
     getManagerContextOrNull(),
     getSystemSettings().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
   ])
 
   let share = null
@@ -75,12 +77,13 @@ export default async function DashboardLayout({
         <AppSidebar
           variant="inset"
           user={{
-            name: user?.name ?? "Manager",
-            contact: user?.phone ?? user?.email ?? "",
-            role: user?.role,
+            name: staffCtx?.name || user?.name || "Manager",
+            contact: staffCtx?.jobTitle || user?.phone || user?.email || "",
+            role: staffCtx ? "STAFF" : user?.role,
           }}
           license={licenseInfo ? serializeForClient(licenseInfo) : null}
           systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
+          allowedRoutes={staffCtx?.allowedRoutes ?? null}
         />
         <SidebarInset>
           <SiteHeader staffLoginUsername={share?.username ?? null} />

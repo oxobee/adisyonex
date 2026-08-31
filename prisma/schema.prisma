@@ -670,6 +670,8 @@ model Staff {
   employeeCode          String
   name                  String
   role                  StaffRole
+  jobTitle              String?
+  allowedRoutes         Json?
   status                StaffStatus     @default(ACTIVE)
   photoUrl              String?
   phone                 String

@@ -47,6 +47,8 @@ describe("getStaffContextOrNull", () => {
       role: "WAITER",
       name: "Ramesh",
       employeeCode: "E1",
+      jobTitle: null,
+      allowedRoutes: null,
     });
   });
 

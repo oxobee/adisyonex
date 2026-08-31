@@ -66,15 +66,23 @@ function StaffRow({
           )}
         </span>
         <div className="min-w-0">
-          <p className="flex items-center gap-2 font-medium">
+          <p className="flex items-center gap-2 font-bold text-foreground">
             {member.name}
+            {member.jobTitle && (
+              <span className="rounded-md bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 text-[10px] font-black uppercase">
+                {member.jobTitle}
+              </span>
+            )}
             <Badge className={`text-[10px] ${STATUS_STYLES[member.status]}`}>
               {staffStatusLabel(member.status)}
             </Badge>
           </p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-xs mt-0.5">
             {member.employeeCode} · {member.phone}
             {member.hasPin ? " · PIN Tanımlı" : " · PIN Yok"}
+            {member.allowedRoutes && member.allowedRoutes.length > 0
+              ? ` · ${member.allowedRoutes.length} Ekran Yetkili`
+              : " · Yetki Yok"}
           </p>
         </div>
       </div>

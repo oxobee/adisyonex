@@ -24,5 +24,7 @@ export interface StaffDTO {
   readonly emergencyContactName: string | null;
   readonly emergencyContactPhone: string | null;
   readonly notes: string | null;
+  readonly jobTitle: string | null;
+  readonly allowedRoutes: readonly string[] | null;
   readonly hasPin: boolean;
 }

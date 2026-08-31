@@ -38,6 +38,8 @@ const profileFields = {
   emergencyContactName: optionalText(120),
   emergencyContactPhone: optionalText(20),
   notes: optionalText(300),
+  jobTitle: optionalText(80),
+  allowedRoutes: z.array(z.string()).optional(),
 };
 
 export const createStaffSchema = z.object({ ...profileFields, pin: pinSchema });
