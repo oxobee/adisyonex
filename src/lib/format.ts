@@ -20,6 +20,14 @@ export const formatDateTime = (iso: string): string =>
     timeZone: TIME_ZONE,
   });
 
+export const formatDate = (iso: string): string =>
+  new Date(iso).toLocaleDateString("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: TIME_ZONE,
+  });
+
 export const formatTime = (iso: string): string =>
   new Date(iso).toLocaleTimeString("tr-TR", {
     hour: "2-digit",

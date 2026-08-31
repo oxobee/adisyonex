@@ -36,3 +36,44 @@ export const onboardRestaurantSchema = z.object({
   timezone: z.string().trim().max(64).optional(),
 });
 export type OnboardRestaurantInput = z.infer<typeof onboardRestaurantSchema>;
+
+export const adminUpdateUserSchema = z.object({
+  id: z.string().min(1),
+  name: nameSchema,
+  email: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  role: z.enum(["MANAGER", "ADMIN", "SUPER_ADMIN"]),
+});
+export type AdminUpdateUserInput = z.infer<typeof adminUpdateUserSchema>;
+
+export const adminToggleSuspendUserSchema = z.object({
+  id: z.string().min(1),
+});
+export type AdminToggleSuspendUserInput = z.infer<typeof adminToggleSuspendUserSchema>;
+
+export const adminDeleteUserSchema = z.object({
+  id: z.string().min(1),
+});
+export type AdminDeleteUserInput = z.infer<typeof adminDeleteUserSchema>;
+
+export const adminUpdateRestaurantSchema = z.object({
+  id: z.string().min(1),
+  name: nameSchema,
+  slug: z.string().trim().min(1).max(120),
+  username: z.string().trim().max(120).optional().or(z.literal("")).nullable(),
+  phone: z.string().trim().max(32).optional().or(z.literal("")).nullable(),
+  email: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  city: z.string().trim().max(120).optional().or(z.literal("")).nullable(),
+  addressLine1: z.string().trim().max(255).optional().or(z.literal("")).nullable(),
+});
+export type AdminUpdateRestaurantInput = z.infer<typeof adminUpdateRestaurantSchema>;
+
+export const adminToggleRestaurantActiveSchema = z.object({
+  id: z.string().min(1),
+});
+export type AdminToggleRestaurantActiveInput = z.infer<typeof adminToggleRestaurantActiveSchema>;
+
+export const adminDeleteRestaurantSchema = z.object({
+  id: z.string().min(1),
+});
+export type AdminDeleteRestaurantInput = z.infer<typeof adminDeleteRestaurantSchema>;
+

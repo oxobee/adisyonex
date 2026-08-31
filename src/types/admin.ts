@@ -17,8 +17,12 @@ export interface RestaurantListItemDTO {
   readonly id: string;
   readonly name: string;
   readonly slug: string;
+  readonly username?: string | null;
+  readonly phone?: string | null;
+  readonly email?: string | null;
   readonly city: string | null;
   readonly country: string;
+  readonly addressLine1?: string | null;
   readonly isActive: boolean;
   readonly ownerName: string | null;
   readonly ownerPhone: string;

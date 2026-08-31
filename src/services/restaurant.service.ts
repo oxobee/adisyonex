@@ -4,9 +4,11 @@ import type {
 } from "@/lib/validators/admin";
 import {
   createRestaurant,
+  findRestaurantById,
   findRestaurantBySlug,
   findRestaurantByUsername,
   findRestaurantsPaginated,
+  updateRestaurant,
   type AdminRestaurantRow,
 } from "@/repositories/restaurant.repository";
 import { createUser, findUserByPhone } from "@/repositories/user.repository";
@@ -48,8 +50,12 @@ const mapRestaurant = (row: AdminRestaurantRow): RestaurantListItemDTO => ({
   id: row.id,
   name: row.name,
   slug: row.slug,
+  username: row.username ?? null,
+  phone: row.phone ?? null,
+  email: row.email ?? null,
   city: row.city,
   country: row.country,
+  addressLine1: row.addressLine1 ?? null,
   isActive: row.isActive,
   ownerName: row.owner.name,
   ownerPhone: row.owner.phone,
@@ -88,8 +94,12 @@ export const onboardRestaurant = async (
     id: restaurant.id,
     name: restaurant.name,
     slug: restaurant.slug,
+    username: restaurant.username,
+    phone: restaurant.phone,
+    email: restaurant.email,
     city: restaurant.city,
     country: restaurant.country,
+    addressLine1: restaurant.addressLine1,
     isActive: restaurant.isActive,
     ownerName: owner.name,
     ownerPhone: owner.phone,
@@ -107,4 +117,44 @@ export const listRestaurants = async (
     page: query.page,
     pageSize: query.pageSize,
   };
+};
+
+export const updateAdminRestaurant = async (
+  input: {
+    id: string;
+    name: string;
+    slug: string;
+    username?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    city?: string | null;
+    addressLine1?: string | null;
+  },
+) => {
+  return updateRestaurant(input.id, {
+    name: input.name,
+    slug: input.slug,
+    username: input.username?.trim() || null,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+    city: input.city?.trim() || null,
+    addressLine1: input.addressLine1?.trim() || null,
+  });
+};
+
+export const toggleAdminRestaurantActive = async (id: string) => {
+  const restaurant = await findRestaurantById(id);
+  if (!restaurant) {
+    throw new Error("Restoran bulunamadı");
+  }
+  return updateRestaurant(id, {
+    isActive: !restaurant.isActive,
+  });
+};
+
+export const deleteAdminRestaurant = async (id: string) => {
+  return updateRestaurant(id, {
+    deletedAt: new Date(),
+    isActive: false,
+  });
 };

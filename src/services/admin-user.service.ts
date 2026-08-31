@@ -1,4 +1,9 @@
-import { findUsersPaginated, type AdminUserRow } from "@/repositories/user.repository";
+import {
+  findUsersPaginated,
+  findUserById,
+  updateUser,
+  type AdminUserRow,
+} from "@/repositories/user.repository";
 import type { UserListQuery } from "@/lib/validators/admin";
 import type { Paginated } from "@/types";
 import type { AdminUserListItemDTO, AdminUserStatus } from "@/types/admin";
@@ -38,3 +43,33 @@ export const listUsers = async (
     pageSize: query.pageSize,
   };
 };
+
+export const updateAdminUser = async (
+  input: { id: string; name: string; email?: string | null; role: "MANAGER" | "ADMIN" | "SUPER_ADMIN" },
+) => {
+  return updateUser(input.id, {
+    name: input.name,
+    email: input.email?.trim() || null,
+    role: input.role,
+  });
+};
+
+export const toggleSuspendAdminUser = async (id: string) => {
+  const user = await findUserById(id);
+  if (!user) {
+    throw new Error("Kullanıcı bulunamadı");
+  }
+  const isSuspended = Boolean(user.suspendedAt);
+  return updateUser(id, {
+    suspendedAt: isSuspended ? null : new Date(),
+    isActive: isSuspended,
+  });
+};
+
+export const deleteAdminUser = async (id: string) => {
+  return updateUser(id, {
+    deletedAt: new Date(),
+    isActive: false,
+  });
+};
+
