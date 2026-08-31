@@ -18,15 +18,15 @@ export const updateTaxProfileSchema = z
       .string()
       .trim()
       .toUpperCase()
-      .regex(/^[0-9A-Z]{15}$/, "GSTIN must be 15 characters")
+      .regex(/^[0-9A-Z]{10,15}$/, "Vergi / GSTIN numarası 10-15 karakter olmalıdır")
       .optional(),
-    sacCode: z.string().trim().max(10).optional(),
+    sacCode: z.string().trim().max(20).optional(),
   })
   .refine(
     (v) =>
       v.gstRegistrationType === "UNREGISTERED" ||
-      (v.serviceGstRate != null && v.serviceGstRate > 0),
-    { message: "Enter the GST rate (e.g. 5)", path: ["serviceGstRate"] },
+      (v.serviceGstRate != null && v.serviceGstRate >= 0),
+    { message: "Geçerli bir KDV oranı girin (örn. 10)", path: ["serviceGstRate"] },
   );
 
 export type UpdateTaxProfileInput = z.infer<typeof updateTaxProfileSchema>;
@@ -77,7 +77,7 @@ export const updateProfileSchema = z
     state: optionalText(80),
     postalCode: optionalText(12),
     phone: optionalText(20),
-    email: z.string().trim().email("Invalid email").max(160).optional(),
+    email: z.string().trim().email("Geçersiz e-posta").max(160).optional(),
     website: optionalText(200),
     instagramUrl: optionalText(200),
     facebookUrl: optionalText(200),
@@ -85,18 +85,9 @@ export const updateProfileSchema = z
     restaurantFormat: restaurantFormatSchema.optional(),
     cuisines: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
     seatingCapacity: z.coerce.number().int().min(1).max(100000).optional(),
-    fssaiLicense: z
-      .string()
-      .trim()
-      .regex(/^\d{14}$/, "FSSAI licence is 14 digits")
-      .optional(),
+    fssaiLicense: z.string().trim().min(10, "İşletme / Ruhsat no en az 10 karakter olmalıdır").max(40).optional(),
     fssaiExpiry: z.coerce.date().optional(),
-    panNumber: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z]{5}\d{4}[A-Z]$/, "Invalid PAN")
-      .optional(),
+    panNumber: optionalText(40),
     serviceDineIn: z.boolean(),
     serviceTakeaway: z.boolean(),
     serviceDelivery: z.boolean(),
