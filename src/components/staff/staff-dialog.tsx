@@ -7,11 +7,14 @@ import {
   BoxesIcon,
   CalculatorIcon,
   CheckIcon,
+  ChefHatIcon,
   GiftIcon,
+  KeyRoundIcon,
   LayoutDashboardIcon,
   ReceiptTextIcon,
   Settings2Icon,
   ShieldCheckIcon,
+  SparklesIcon,
   UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -55,6 +59,7 @@ import type {
 const trimmed = (value: string) => value.trim() || undefined;
 
 export const AVAILABLE_SCREENS = [
+  { id: "/dashboard/kitchen", title: "Mutfak Ekranı & KOT", icon: ChefHatIcon, desc: "Aşçı ve mutfak sipariş ekranı" },
   { id: "/dashboard/orders", title: "Anlık Durum & Masalar", icon: ReceiptTextIcon, desc: "Canlı masa ve sipariş yönetimi" },
   { id: "/dashboard/pos", title: "POS / Kasa", icon: CalculatorIcon, desc: "Hızlı sipariş ve ödeme alma" },
   { id: "/dashboard/menu", title: "Menü Yönetimi", icon: BookOpenIcon, desc: "Kategoriler ve ürünler" },
@@ -67,9 +72,11 @@ export const AVAILABLE_SCREENS = [
 ] as const;
 
 const JOB_PRESETS = [
+  { label: "Mutfak", defaultRoutes: ["/dashboard/kitchen"] },
+  { label: "Aşçı", defaultRoutes: ["/dashboard/kitchen"] },
   { label: "Garson", defaultRoutes: ["/dashboard/orders"] },
   { label: "Kasiyer", defaultRoutes: ["/dashboard/pos", "/dashboard/orders"] },
-  { label: "Mutfak Şefi", defaultRoutes: ["/dashboard/orders"] },
+  { label: "Mutfak Şefi", defaultRoutes: ["/dashboard/kitchen", "/dashboard/orders"] },
   { label: "Barista", defaultRoutes: ["/dashboard/orders", "/dashboard/pos"] },
   { label: "Komi", defaultRoutes: ["/dashboard/orders"] },
   { label: "Müdür", defaultRoutes: AVAILABLE_SCREENS.map((s) => s.id) },

@@ -19,6 +19,7 @@ import {
   UtensilsCrossedIcon,
   LayoutDashboardIcon,
   ReceiptTextIcon,
+  ChefHatIcon,
   CalculatorIcon,
   BookOpenIcon,
   ArmchairIcon,
@@ -32,6 +33,7 @@ import {
 
 const navMain = [
   { title: "Anlık Durum", url: "/dashboard/orders", icon: <ReceiptTextIcon />, isHighlighted: true },
+  { title: "Mutfak Ekranı", url: "/dashboard/kitchen", icon: <ChefHatIcon /> },
   { title: "Yönetim Paneli", url: "/dashboard", icon: <LayoutDashboardIcon /> },
   { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
   { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },

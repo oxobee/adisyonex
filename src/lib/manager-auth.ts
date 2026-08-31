@@ -1,6 +1,6 @@
 import { findFirstRestaurantByOwner } from "@/repositories/restaurant.repository";
-
 import { getCurrentUserId } from "./auth-helpers";
+import { getStaffContextOrNull } from "./staff-auth";
 
 export interface ManagerContext {
   readonly userId: string;
@@ -8,18 +8,22 @@ export interface ManagerContext {
 }
 
 /**
- * Resolve the signed-in manager and their (single, v1) restaurant. Returns null
- * if there's no session or the user owns no restaurant yet.
+ * Resolve the active restaurant context.
+ * Checks the signed-in manager session first, then falls back to staff session.
+ * This allows all staff devices to run dashboard screens & actions concurrently!
  */
 export const getManagerContextOrNull =
   async (): Promise<ManagerContext | null> => {
     const userId = await getCurrentUserId();
-    if (!userId) {
-      return null;
+    if (userId) {
+      const restaurant = await findFirstRestaurantByOwner(userId);
+      if (restaurant) {
+        return { userId, restaurantId: restaurant.id };
+      }
     }
-    const restaurant = await findFirstRestaurantByOwner(userId);
-    if (!restaurant) {
-      return null;
+    const staff = await getStaffContextOrNull();
+    if (staff) {
+      return { userId: staff.staffId, restaurantId: staff.restaurantId };
     }
-    return { userId, restaurantId: restaurant.id };
+    return null;
   };

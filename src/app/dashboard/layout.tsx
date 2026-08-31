@@ -1,7 +1,8 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { requireUserId } from "@/lib/auth-helpers"
+import { redirect } from "next/navigation"
+import { getCurrentUserId } from "@/lib/auth-helpers"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
 import { serializeForClient } from "@/lib/utils"
 import { getRestaurantLicenseInfo, type LicenseInfoDTO } from "@/services/license.service"
@@ -17,24 +18,31 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const userId = await requireUserId()
-  const [user, ctx, systemSettings, staffCtx] = await Promise.all([
-    getManagerById(userId),
+  const staffCtx = await getStaffContextOrNull().catch(() => null);
+  const userId = await getCurrentUserId();
+
+  if (!staffCtx && !userId) {
+    redirect("/login");
+  }
+
+  const [user, ctx, systemSettings] = await Promise.all([
+    userId ? getManagerById(userId).catch(() => null) : null,
     getManagerContextOrNull(),
     getSystemSettings().catch(() => null),
-    getStaffContextOrNull().catch(() => null),
   ])
 
   let share = null
   let licenseInfo: LicenseInfoDTO | null = null
   let brandColor: string | null = null
 
-  if (ctx) {
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+
+  if (restaurantId) {
     try {
       const [s, l, p] = await Promise.all([
-        getSelfOrderShareInfo(ctx.restaurantId).catch(() => null),
-        getRestaurantLicenseInfo(ctx.restaurantId).catch(() => null),
-        getRestaurantProfile(ctx.restaurantId).catch(() => null),
+        getSelfOrderShareInfo(restaurantId).catch(() => null),
+        getRestaurantLicenseInfo(restaurantId).catch(() => null),
+        getRestaurantProfile(restaurantId).catch(() => null),
       ])
       share = s
       licenseInfo = l
