@@ -199,6 +199,8 @@ describe("listRestaurants", () => {
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       aiWallet: { balance: 100 },
       owner: { name: "Asha", phone: "+919876543210" },
+      salesRepId: null,
+      salesRep: null,
     };
     vi.mocked(findRestaurantsPaginated).mockResolvedValue({
       items: [row],
@@ -226,6 +228,8 @@ describe("listRestaurants", () => {
       licenseDaysRemaining: expect.any(Number),
       licenseStatus: expect.any(String),
       aiBalance: 100,
+      salesRepId: null,
+      salesRepName: null,
     });
   });
 });

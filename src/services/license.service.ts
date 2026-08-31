@@ -2,6 +2,17 @@ import { prisma } from "@/lib/prisma";
 import type { LicensePlan, LicenseStatus } from "@/generated/prisma/client";
 import { getOrCreateWallet, adminRecharge } from "@/services/ai/ai-credit.service";
 
+export interface LicenseSalesRepDTO {
+  id: string;
+  name: string;
+  title: string;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  photoUrl: string | null;
+  notes?: string | null;
+}
+
 export interface LicenseInfoDTO {
   restaurantId: string;
   restaurantName: string;
@@ -17,6 +28,7 @@ export interface LicenseInfoDTO {
   aiBalance: number;
   aiTotalCredits: number;
   note?: string | null;
+  salesRep?: LicenseSalesRepDTO | null;
 }
 
 export const getPlanLabel = (plan: LicensePlan): string => {
@@ -65,6 +77,18 @@ export const getRestaurantLicenseInfo = async (
         licenseNote: true,
         onboardedAt: true,
         createdAt: true,
+        salesRep: {
+          select: {
+            id: true,
+            name: true,
+            title: true,
+            email: true,
+            phone: true,
+            whatsapp: true,
+            photoUrl: true,
+            notes: true,
+          },
+        },
       },
     }),
     getOrCreateWallet(restaurantId),
@@ -114,6 +138,18 @@ export const getRestaurantLicenseInfo = async (
     aiBalance: wallet.balance,
     aiTotalCredits: wallet.balance + wallet.totalUsed,
     note: restaurant.licenseNote,
+    salesRep: restaurant.salesRep
+      ? {
+          id: restaurant.salesRep.id,
+          name: restaurant.salesRep.name,
+          title: restaurant.salesRep.title,
+          email: restaurant.salesRep.email,
+          phone: restaurant.salesRep.phone,
+          whatsapp: restaurant.salesRep.whatsapp,
+          photoUrl: restaurant.salesRep.photoUrl,
+          notes: restaurant.salesRep.notes,
+        }
+      : null,
   };
 };
 

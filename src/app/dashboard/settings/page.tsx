@@ -1,12 +1,16 @@
 import {
+  HeadphonesIcon,
   ImagesIcon,
   KeyRoundIcon,
   MapPinIcon,
   QrCodeIcon,
   ReceiptIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
   StoreIcon,
 } from "lucide-react"
 
+import { SalesRepCard } from "@/components/license/sales-rep-card"
 import { GalleryManager } from "@/components/settings/gallery-manager"
 import { InvoiceFooterCard } from "@/components/settings/invoice-footer-card"
 import { LocationMapCard } from "@/components/settings/location-map-card"
@@ -40,9 +44,11 @@ import {
   getTaxProfile,
 } from "@/services/restaurant-settings.service"
 import { getPinStatus } from "@/services/pin-auth.service"
+import { getRestaurantLicenseInfo } from "@/services/license.service"
 
 const TABS = [
   { value: "profile", label: "İşletme Profili", icon: StoreIcon },
+  { value: "license", label: "Lisans & Satış Temsilcisi", icon: HeadphonesIcon },
   { value: "location", label: "Konum & Harita", icon: MapPinIcon },
   { value: "ordering", label: "QR Menü & Sipariş", icon: QrCodeIcon },
   { value: "billing", label: "Fatura & Vergi", icon: ReceiptIcon },
@@ -70,9 +76,10 @@ export default async function SettingsPage() {
     )
   }
 
-  const [profile, taxProfile] = await Promise.all([
+  const [profile, taxProfile, licenseInfo] = await Promise.all([
     getRestaurantProfile(ctx.restaurantId),
     getTaxProfile(ctx.restaurantId),
+    getRestaurantLicenseInfo(ctx.restaurantId).catch(() => null),
   ])
   const pinStatus = await getPinStatus(ctx.userId)
   const selfOrderEnabled = await getSelfOrderEnabled(ctx.restaurantId)
@@ -138,6 +145,48 @@ export default async function SettingsPage() {
         <div className="min-w-0 flex-1">
           <TabsContent value="profile" keepMounted>
             <RestaurantProfileForm profile={profile} />
+          </TabsContent>
+
+          <TabsContent value="license" keepMounted className="flex flex-col gap-6">
+            {/* License Details Header Card */}
+            {licenseInfo && (
+              <Card className="rounded-3xl border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl font-black">Lisans & Abonelik Durumu</CardTitle>
+                      <CardDescription>İşletmenizin mevcut lisans paketi ve kullanım süreleri.</CardDescription>
+                    </div>
+                    <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+                      {licenseInfo.planLabel}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="rounded-2xl border bg-background/60 p-4">
+                    <span className="block text-xs font-semibold text-muted-foreground">Kalan Lisans Süresi</span>
+                    <span className="mt-1 block text-2xl font-black text-foreground">
+                      {licenseInfo.plan === "LIFETIME" ? "Süresiz ♾️" : `${licenseInfo.daysRemaining} Gün`}
+                    </span>
+                  </div>
+                  <div className="rounded-2xl border bg-background/60 p-4">
+                    <span className="block text-xs font-semibold text-muted-foreground">AI Stüdyo Kredisi</span>
+                    <span className="mt-1 block text-2xl font-black text-amber-600 dark:text-amber-400">
+                      {licenseInfo.aiBalance} Kredi ✨
+                    </span>
+                  </div>
+                  <div className="rounded-2xl border bg-background/60 p-4">
+                    <span className="block text-xs font-semibold text-muted-foreground">Lisans Durumu</span>
+                    <span className="mt-1 block text-lg font-black text-emerald-600 dark:text-emerald-400">
+                      {licenseInfo.statusLabel}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sales Representative Card */}
+            <SalesRepCard salesRep={licenseInfo?.salesRep} />
           </TabsContent>
 
           <TabsContent value="location" keepMounted>

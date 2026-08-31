@@ -32,4 +32,6 @@ export interface RestaurantListItemDTO {
   readonly licenseDaysRemaining?: number;
   readonly licenseStatus?: "ACTIVE" | "EXPIRED" | "GRACE_PERIOD" | "SUSPENDED";
   readonly aiBalance?: number;
+  readonly salesRepId?: string | null;
+  readonly salesRepName?: string | null;
 }

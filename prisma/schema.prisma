@@ -221,8 +221,12 @@ model Restaurant {
   aiWallet       AiCreditWallet?
   aiTasks        AiTask[]
 
+  salesRepId     String?
+  salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
+
   @@index([ownerId])
   @@index([isActive])
+  @@index([salesRepId])
 }
 
 /// A restaurant gallery image (Supabase Storage). Logo/cover are columns on
@@ -915,6 +919,25 @@ model SystemSetting {
   metaDescription String?  @default("Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.")
   metaKeywords    String?  @default("restoran otomasyonu, adisyon sistemi, qr menü, pos kasa")
   updatedAt       DateTime @updatedAt
+}
+
+/// Sales & Customer Representative assigned to restaurants by Super Admin
+model SalesRep {
+  id          String   @id @default(cuid())
+  name        String
+  title       String   @default("Satış & Müşteri Temsilcisi")
+  email       String?
+  phone       String?
+  whatsapp    String?
+  photoUrl    String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignedRestaurants Restaurant[]
+
+  @@index([isActive])
 }
 
 

@@ -8,6 +8,8 @@ import { cn, serializeForClient } from "@/lib/utils";
 import { restaurantListQuerySchema } from "@/lib/validators/admin";
 import { listRestaurants } from "@/services/restaurant.service";
 
+import { listSalesReps } from "@/services/sales-rep.service";
+
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -16,13 +18,19 @@ interface PageProps {
 
 export default async function AdminRestaurantsPage({ searchParams }: PageProps) {
   let result;
+  let salesReps: any[] = [];
   try {
     const sp = await searchParams;
     const query = restaurantListQuerySchema.parse({
       search: typeof sp.search === "string" ? sp.search : undefined,
       page: typeof sp.page === "string" ? sp.page : undefined,
     });
-    result = await listRestaurants(query);
+    const [res, reps] = await Promise.all([
+      listRestaurants(query),
+      listSalesReps().catch(() => []),
+    ]);
+    result = res;
+    salesReps = reps;
   } catch (e) {
     console.error("Failed to list restaurants:", e);
     result = { items: [], total: 0, page: 1, pageSize: 20 };
@@ -40,7 +48,10 @@ export default async function AdminRestaurantsPage({ searchParams }: PageProps) 
           Restoran Ekle
         </Link>
       </div>
-      <RestaurantsTable data={serializeForClient(result)} />
+      <RestaurantsTable
+        data={serializeForClient(result)}
+        salesReps={serializeForClient(salesReps)}
+      />
     </div>
   );
 }

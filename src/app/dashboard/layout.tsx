@@ -11,6 +11,8 @@ import { getStaffContextOrNull } from "@/lib/staff-auth"
 import { getSystemSettings, type SystemSettingsDTO } from "@/services/system-setting.service"
 import { getManagerById } from "@/services/user.service"
 
+import { LicenseExpiredModal } from "@/components/license/license-expired-modal"
+
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
@@ -97,6 +99,14 @@ export default async function DashboardLayout({
           <SiteHeader staffLoginUsername={share?.username ?? null} />
           {children}
         </SidebarInset>
+
+        {/* License Expired Blur Overlay Modal */}
+        {licenseInfo && licenseInfo.isExpired && (
+          <LicenseExpiredModal
+            licenseInfo={serializeForClient(licenseInfo)}
+            isStaff={!!staffCtx}
+          />
+        )}
       </SidebarProvider>
     </>
   )

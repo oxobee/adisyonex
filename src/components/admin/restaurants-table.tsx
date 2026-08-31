@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ExternalLinkIcon,
   EyeIcon,
+  HeadphonesIcon,
   PencilIcon,
   PowerIcon,
   SearchIcon,
@@ -24,6 +25,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { AssignLicenseDialog } from "@/components/admin/assign-license-dialog";
+import { AssignSalesRepDialog } from "@/components/admin/assign-sales-rep-dialog";
 import {
   Dialog,
   DialogContent,
@@ -39,11 +41,14 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Paginated } from "@/types";
 import type { RestaurantListItemDTO } from "@/types/admin";
+import type { SalesRepDTO } from "@/services/sales-rep.service";
 
 export function RestaurantsTable({
   data,
+  salesReps = [],
 }: {
   readonly data: Paginated<RestaurantListItemDTO>;
+  readonly salesReps?: readonly SalesRepDTO[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -51,6 +56,7 @@ export function RestaurantsTable({
   const [editRestaurant, setEditRestaurant] = useState<RestaurantListItemDTO | null>(null);
   const [deleteRestaurant, setDeleteRestaurant] = useState<RestaurantListItemDTO | null>(null);
   const [licenseRestaurant, setLicenseRestaurant] = useState<RestaurantListItemDTO | null>(null);
+  const [assignRepRestaurant, setAssignRepRestaurant] = useState<RestaurantListItemDTO | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -185,6 +191,22 @@ export function RestaurantsTable({
                       <div className="text-muted-foreground font-mono text-xs">
                         {restaurant.ownerPhone}
                       </div>
+                      <div className="mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setAssignRepRestaurant(restaurant)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer",
+                            restaurant.salesRepName
+                              ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                              : "bg-muted text-muted-foreground border-border hover:bg-accent",
+                          )}
+                          title="Satış Temsilcisi Ata / Değiştir"
+                        >
+                          <HeadphonesIcon className="size-2.5" />
+                          <span className="truncate max-w-[120px]">{restaurant.salesRepName || "Temsilci Ata"}</span>
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
@@ -241,6 +263,15 @@ export function RestaurantsTable({
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title="Yetkili Temsilci Ata"
+                          className="text-primary hover:bg-primary/10"
+                          onClick={() => setAssignRepRestaurant(restaurant)}
+                        >
+                          <HeadphonesIcon className="size-4" />
+                        </Button>
                         <Button
                           size="icon-xs"
                           variant="ghost"
@@ -491,6 +522,13 @@ export function RestaurantsTable({
         restaurant={licenseRestaurant}
         open={Boolean(licenseRestaurant)}
         onOpenChange={(open) => !open && setLicenseRestaurant(null)}
+      />
+
+      {/* ASSIGN SALES REPRESENTATIVE DIALOG */}
+      <AssignSalesRepDialog
+        restaurant={assignRepRestaurant}
+        salesReps={salesReps}
+        onOpenChange={(open) => !open && setAssignRepRestaurant(null)}
       />
     </div>
   );

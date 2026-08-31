@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   GlobeIcon,
+  HeadphonesIcon,
   LayoutDashboardIcon,
   Settings2Icon,
   SparklesIcon,
@@ -18,9 +19,10 @@ import type { SystemSettingsDTO } from "@/services/system-setting.service";
 
 const NAV = [
   { title: "Genel Bakış", href: "/admin", icon: LayoutDashboardIcon },
-  { title: "AI Stüdyo & Krediler", href: "/admin/ai-studio", icon: SparklesIcon },
-  { title: "Kullanıcılar", href: "/admin/users", icon: UsersIcon },
+  { title: "Satış Temsilcileri", href: "/admin/sales-reps", icon: HeadphonesIcon },
   { title: "Restoranlar", href: "/admin/restaurants", icon: StoreIcon },
+  { title: "Kullanıcılar", href: "/admin/users", icon: UsersIcon },
+  { title: "AI Stüdyo & Krediler", href: "/admin/ai-studio", icon: SparklesIcon },
   { title: "Sistem & SEO Ayarları", href: "/admin/system", icon: Settings2Icon },
 ] as const;
 

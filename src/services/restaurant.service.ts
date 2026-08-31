@@ -86,6 +86,8 @@ const mapRestaurant = (row: AdminRestaurantRow): RestaurantListItemDTO => {
     licenseDaysRemaining: daysRemaining,
     licenseStatus: isExpired ? "EXPIRED" : (row.licenseStatus || "ACTIVE"),
     aiBalance: row.aiWallet?.balance ?? 0,
+    salesRepId: row.salesRepId ?? null,
+    salesRepName: row.salesRep?.name ?? null,
   };
 };
 
