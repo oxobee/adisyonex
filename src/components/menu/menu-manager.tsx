@@ -285,15 +285,17 @@ function ItemCard({
     <div className="flex flex-col gap-2 rounded-lg border p-3">
       <div className="flex gap-3">
         {item.images[0] ? (
-          <Image
-            src={item.images[0].url}
-            alt=""
-            width={64}
-            height={64}
-            className="size-16 shrink-0 rounded-md object-cover"
-          />
+          <div className="bg-muted relative size-16 shrink-0 aspect-square overflow-hidden rounded-md border">
+            <Image
+              src={item.images[0].url}
+              alt={item.name}
+              fill
+              className="object-cover object-center"
+              sizes="64px"
+            />
+          </div>
         ) : (
-          <div className="bg-muted text-muted-foreground flex size-16 shrink-0 items-center justify-center rounded-md">
+          <div className="bg-muted text-muted-foreground flex size-16 shrink-0 aspect-square items-center justify-center rounded-md border">
             <ImageIcon className="size-5" />
           </div>
         )}

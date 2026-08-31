@@ -49,13 +49,13 @@ export function ImageCarousel({
   if (images.length === 1) {
     return (
       <div
-        className={`bg-muted relative aspect-video overflow-hidden rounded-lg ${className ?? ""}`}
+        className={`bg-muted relative aspect-square w-full overflow-hidden rounded-xl border ${className ?? ""}`}
       >
         <Image
           src={images[0].url}
           alt={alt}
           fill
-          className="object-cover"
+          className="object-cover object-center"
           sizes="(max-width: 480px) 100vw, 480px"
         />
       </div>
@@ -64,18 +64,18 @@ export function ImageCarousel({
 
   return (
     <div className={`flex flex-col gap-2 ${className ?? ""}`}>
-      <div className="overflow-hidden rounded-lg" ref={emblaRef}>
+      <div className="overflow-hidden rounded-xl border" ref={emblaRef}>
         <div className="flex">
           {images.map((img) => (
             <div
               key={img.id}
-              className="bg-muted relative aspect-video min-w-0 flex-[0_0_100%]"
+              className="bg-muted relative aspect-square min-w-0 flex-[0_0_100%]"
             >
               <Image
                 src={img.url}
                 alt={alt}
                 fill
-                className="object-cover"
+                className="object-cover object-center"
                 sizes="(max-width: 480px) 100vw, 480px"
               />
             </div>
@@ -87,9 +87,9 @@ export function ImageCarousel({
           <button
             key={img.id}
             type="button"
-            aria-label={`Show photo ${i + 1}`}
+            aria-label={`Fotoğraf ${i + 1}`}
             onClick={() => emblaApi?.scrollTo(i)}
-            className={`size-1.5 rounded-full transition-colors ${
+            className={`size-2 rounded-full transition-colors ${
               i === selected ? "bg-primary" : "bg-muted-foreground/30"
             }`}
           />

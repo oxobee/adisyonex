@@ -102,13 +102,13 @@ export function MenuBrowser({
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
                   {photo ? (
-                    <span className="bg-muted relative size-14 shrink-0 overflow-hidden rounded-lg">
+                    <span className="bg-muted relative size-16 shrink-0 aspect-square overflow-hidden rounded-lg border">
                       <Image
                         src={photo.url}
                         alt={item.name}
                         fill
-                        className="object-cover"
-                        sizes="56px"
+                        className="object-cover object-center"
+                        sizes="64px"
                       />
                     </span>
                   ) : null}

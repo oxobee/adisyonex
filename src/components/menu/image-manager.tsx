@@ -53,18 +53,20 @@ export function ImageManager({
       <span className="text-sm font-medium">Ürün Fotoğrafları</span>
       <div className="flex flex-wrap gap-2">
         {images.map((img) => (
-          <div key={img.id} className="relative">
-            <Image
-              src={img.url}
-              alt=""
-              width={64}
-              height={64}
-              className="size-16 rounded-md object-cover"
-            />
+          <div key={img.id} className="relative size-16 shrink-0 aspect-square">
+            <div className="bg-muted relative size-16 overflow-hidden rounded-md border">
+              <Image
+                src={img.url}
+                alt=""
+                fill
+                className="object-cover object-center"
+                sizes="64px"
+              />
+            </div>
             <button
               type="button"
               onClick={() => remove.execute({ imageId: img.id })}
-              className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive p-1 text-white"
+              className="absolute -top-1.5 -right-1.5 z-10 rounded-full bg-destructive p-1 text-white shadow"
               aria-label="Fotoğrafı sil"
             >
               <Trash2Icon className="size-3" />
