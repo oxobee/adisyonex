@@ -119,6 +119,14 @@ export const estimateCaloriesSchema = z.object({
 });
 export type EstimateCaloriesInput = z.infer<typeof estimateCaloriesSchema>;
 
+export const detectAllergensSchema = z.object({
+  name: z.string().min(1, "Ürün adı gereklidir"),
+  categoryName: z.string().optional(),
+  shortDescription: z.string().optional(),
+  longDescription: z.string().optional(),
+});
+export type DetectAllergensInput = z.infer<typeof detectAllergensSchema>;
+
 export const attachItemImageSchema = z.object({
   itemId: z.string().min(1),
   name: z.string().min(1),

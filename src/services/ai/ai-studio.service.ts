@@ -789,6 +789,91 @@ SADECE JSON döndür:
   }
 };
 
+/** Auto-Detect Allergens using AI (2 Credits) */
+export const detectItemAllergens = async (
+  restaurantId: string,
+  input: {
+    name: string;
+    categoryName?: string;
+    shortDescription?: string;
+    longDescription?: string;
+  },
+): Promise<{ allergens: Array<{ name: string; icon: string }> }> => {
+  const cost = 2;
+  await assertAndDeductCredits(
+    restaurantId,
+    cost,
+    "ALLERGEN_CALORIE_EST",
+    undefined,
+    `"${input.name}" için AI alerjen tespiti`,
+  );
+
+  try {
+    const systemPrompt = `Sen profesyonel bir gıda güvenliği ve gastronomi alerjen uzmanısın.
+Verilen yemek adı, kategori ve açıklama bilgilerine göre bu yemekte bulunması muhtemel alerjenleri analiz et ve tespit et.
+Tespit ettiğin her alerjen için uygun bir emoji ikonu belirle.
+Örnek ikonlar:
+- Gluten, Buğday: 🌾
+- Süt, Peynir, Yoğurt, Tereyağı, Laktoz: 🥛
+- Yumurta: 🥚
+- Fıstık, Fındık, Badem, Kuruyemiş: 🥜
+- Balık: 🐟
+- Kabuklu Deniz Ürünleri, Karides: 🦐
+- Soya: 🌱
+- Susam: 🥯
+- Acı Biber / Baharat: 🌶️
+- Sarımsak: 🧄
+- Soğan: 🧅
+- Mantar: 🍄
+- Kereviz: 🥬
+- Hardal: 🌭
+- Çikolata / Kakao: 🍫
+
+Yanıtın SADECE aşağıdaki JSON formatında olmalı:
+{
+  "allergens": [
+    { "name": "Gluten", "icon": "🌾" },
+    { "name": "Süt Ürünleri", "icon": "🥛" }
+  ]
+}`;
+
+    const userText = `Yemek Adı: ${input.name}\nKategori: ${input.categoryName ?? ""}\nKısa Açıklama: ${
+      input.shortDescription ?? ""
+    }\nDetaylı Açıklama: ${input.longDescription ?? ""}`;
+
+    const aiRes = await callOpenRouter({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userText },
+      ],
+      responseFormat: { type: "json_object" },
+      restaurantId,
+      operationType: "ALLERGEN_CALORIE_EST",
+      chargedCredits: cost,
+    });
+
+    const parsed = JSON.parse(aiRes.content);
+    const rawAllergens = Array.isArray(parsed.allergens) ? parsed.allergens : [];
+    return {
+      allergens: rawAllergens
+        .map((a: any) => ({
+          name: String(a.name || "").trim(),
+          icon: String(a.icon || "🌾").trim(),
+        }))
+        .filter((a: any) => a.name.length > 0),
+    };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      cost,
+      "ESTIMATE_ALLERGENS_FAILED",
+      undefined,
+      "Alerjen tespiti yapılamadı, kredi iade edildi",
+    );
+    throw err;
+  }
+};
+
 /** Generate AI Image and Attach directly to Product (20 Credits) */
 export const generateAndAttachItemImage = async (
   restaurantId: string,

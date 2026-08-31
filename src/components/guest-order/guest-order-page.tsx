@@ -497,24 +497,24 @@ export function GuestOrderPage({
 
       {/* Floating Bottom Cart Pill */}
       {itemCount > 0 ? (
-        <div className="fixed inset-x-0 bottom-4 z-30 px-4 pointer-events-none">
+        <div className="fixed inset-x-0 bottom-4 z-30 px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
           <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-foreground text-background p-3.5 shadow-2xl backdrop-blur-xl pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300">
             <button
               type="button"
-              className="flex items-center gap-3 text-left transition-transform active:scale-95 cursor-pointer select-none"
+              className="flex min-w-0 flex-1 items-center gap-3 text-left transition-transform active:scale-95 cursor-pointer select-none"
               onClick={() => setReviewOpen(true)}
             >
-              <div className="relative flex size-10 items-center justify-center rounded-xl bg-background/15 text-background font-bold">
+              <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/15 text-background font-bold">
                 <ShoppingBagIcon className="size-5" />
                 <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-black shadow-md">
                   {itemCount}
                 </span>
               </div>
-              <div>
-                <span className="block text-[11px] font-medium text-background/70">
+              <div className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium text-background/70 truncate">
                   Toplam ({itemCount} Ürün)
                 </span>
-                <span className="text-base font-black tracking-tight text-background tabular-nums">
+                <span className="text-base font-black tracking-tight text-background tabular-nums whitespace-nowrap">
                   {bill.grandTotal.toFixed(0)} ₺
                 </span>
               </div>
@@ -522,7 +522,7 @@ export function GuestOrderPage({
 
             <Button
               size="lg"
-              className="h-11 rounded-xl px-5 font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="h-11 shrink-0 rounded-xl px-4 sm:px-5 font-bold shadow-sm whitespace-nowrap transition-all active:scale-95 cursor-pointer bg-primary text-primary-foreground"
               disabled={busy}
               onClick={() => setReviewOpen(true)}
             >
@@ -543,9 +543,9 @@ export function GuestOrderPage({
       {/* Review sheet (Sipariş Özeti) */}
       {reviewOpen ? (
         <Dialog open onOpenChange={setReviewOpen}>
-          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md rounded-3xl p-5">
+          <DialogContent className="max-h-[90vh] w-[94vw] sm:max-w-md overflow-y-auto rounded-3xl p-4 sm:p-5">
             <DialogHeader className="flex flex-row items-center justify-between border-b pb-3">
-              <DialogTitle className="text-lg font-black">Sipariş Özeti</DialogTitle>
+              <DialogTitle className="text-lg font-black text-foreground">Sipariş Özeti</DialogTitle>
             </DialogHeader>
 
             {cart.cart.length === 0 ? (
@@ -553,15 +553,15 @@ export function GuestOrderPage({
                 Sepetiniz henüz boş.
               </p>
             ) : (
-              <ul className="divide-y">
+              <ul className="divide-y divide-border/60">
                 {cart.cart.map((l) => (
                   <li key={l.key} className="flex items-start justify-between gap-3 py-3.5">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between">
-                        <p className="text-sm font-bold text-foreground">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="text-sm font-bold text-foreground break-words">
                           {l.name}
                         </p>
-                        <span className="text-sm font-bold text-foreground tabular-nums">
+                        <span className="text-sm font-bold text-foreground tabular-nums shrink-0 whitespace-nowrap">
                           {linePrice(l).toFixed(0)} ₺
                         </span>
                       </div>
@@ -573,7 +573,7 @@ export function GuestOrderPage({
                       ) : null}
 
                       {l.modifiers.length > 0 || l.lineNote ? (
-                        <p className="text-muted-foreground truncate text-xs mt-0.5">
+                        <p className="text-muted-foreground text-xs mt-0.5 break-words">
                           {[
                             l.modifiers.map((m) => m.name).join(", "),
                             l.lineNote,
@@ -583,8 +583,8 @@ export function GuestOrderPage({
                         </p>
                       ) : null}
 
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5">
+                      <div className="mt-2.5 flex items-center justify-between gap-2">
+                        <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shrink-0">
                           <button
                             type="button"
                             className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
@@ -606,8 +606,9 @@ export function GuestOrderPage({
 
                         <button
                           type="button"
-                          className="text-muted-foreground hover:text-destructive ml-auto flex size-7 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors"
+                          className="text-muted-foreground hover:text-destructive flex size-7 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
                           onClick={() => cart.removeLine(l.key)}
+                          title="Ürünü Çıkar"
                         >
                           <Trash2Icon className="size-4" />
                         </button>
@@ -618,16 +619,16 @@ export function GuestOrderPage({
               </ul>
             )}
 
-            <div className="flex items-center justify-between border-t border-dashed pt-4">
+            <div className="flex items-center justify-between border-t border-dashed pt-4 mt-2">
               <span className="text-base font-bold text-foreground">Toplam Tutar</span>
-              <span className="text-xl font-black text-foreground tabular-nums">
+              <span className="text-xl font-black text-foreground tabular-nums whitespace-nowrap">
                 {bill.grandTotal.toFixed(2)} ₺
               </span>
             </div>
 
             <DialogFooter className="pt-2">
               <Button
-                className="h-12 w-full rounded-2xl font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20 text-base transition-transform active:scale-98 cursor-pointer"
+                className="h-13 w-full rounded-2xl font-black bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-base tracking-wide whitespace-nowrap transition-transform active:scale-[0.98] cursor-pointer"
                 disabled={itemCount === 0 || busy}
                 onClick={submitOrder}
               >

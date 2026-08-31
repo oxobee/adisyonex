@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 
 import {
+  detectItemAllergensAction,
   estimateItemCaloriesAction,
   generateQuickLongDescAction,
   generateQuickShortDescAction,
@@ -168,7 +169,7 @@ export function ItemDialog({
 
   // AI Dialog Confirmation State
   const [aiConfirm, setAiConfirm] = useState<{
-    type: "SHORT_DESC" | "LONG_DESC" | "CALORIES";
+    type: "SHORT_DESC" | "LONG_DESC" | "CALORIES" | "ALLERGENS";
     cost: number;
     title: string;
     description: string;
@@ -292,6 +293,29 @@ export function ItemDialog({
           setAiConfirm(null);
         } else {
           toast.error(res.error || "Kalori tahmini yapılamadı.");
+        }
+      } else if (aiConfirm.type === "ALLERGENS") {
+        const res = await detectItemAllergensAction({
+          name: name.trim(),
+          categoryName: catName,
+          shortDescription: shortDescription || undefined,
+          longDescription: longDescription || undefined,
+        });
+        if (res.success && res.data) {
+          const detected = res.data.allergens;
+          setAllergens((prev) => {
+            const merged = [...prev];
+            for (const item of detected) {
+              if (!merged.some((m) => m.name.toLowerCase() === item.name.toLowerCase())) {
+                merged.push(item);
+              }
+            }
+            return merged;
+          });
+          toast.success(`${detected.length} adet alerjen analiz edilip eklendi!`);
+          setAiConfirm(null);
+        } else {
+          toast.error(res.error || "Alerjen tespiti yapılamadı.");
         }
       }
     } catch (err: any) {
@@ -422,9 +446,25 @@ export function ItemDialog({
                 <span className="text-sm font-bold text-foreground">
                   Alerjen Bilgisi (İçerebilir)
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {allergens.length} adet eklendi
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!name.trim()) {
+                      toast.error("Alerjen tespiti için lütfen önce ürün adını girin.");
+                      return;
+                    }
+                    setAiConfirm({
+                      type: "ALLERGENS",
+                      cost: 2,
+                      title: "✨ AI ile Alerjen Tespiti",
+                      description: `"${name}" ve açıklama detayları analiz edilerek içerdiği muhtemel alerjenler (Gluten, Laktoz vb.) otomatik tespit edilsin mi?`,
+                    });
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline cursor-pointer active:scale-95 transition-all"
+                >
+                  <Wand2Icon className="size-3 text-primary" />
+                  Yapay Zeka ile Tespit Et (2 Kredi)
+                </button>
               </div>
 
               {/* Quick Add Presets */}

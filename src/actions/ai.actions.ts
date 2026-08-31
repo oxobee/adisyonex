@@ -11,6 +11,7 @@ import {
   aiPhotoProfessionalizeSchema,
   aiSettingUpdateSchema,
   attachItemImageSchema,
+  detectAllergensSchema,
   enhanceAttachItemImageSchema,
   estimateCaloriesSchema,
   quickLongDescSchema,
@@ -32,6 +33,7 @@ import {
 } from "@/services/ai/ai-setting.service";
 import {
   commitDigitizedMenu,
+  detectItemAllergens,
   digitizeMenu,
   digitizeMenuFromUrl,
   enhanceAndAttachItemImage,
@@ -227,6 +229,12 @@ export const generateQuickLongDescAction = withManagerValidation(
 export const estimateItemCaloriesAction = withManagerValidation(
   estimateCaloriesSchema,
   (data, ctx) => estimateItemCalories(ctx.restaurantId, data),
+);
+
+/** Auto-Detect Item Allergens (2 Credits) */
+export const detectItemAllergensAction = withManagerValidation(
+  detectAllergensSchema,
+  (data, ctx) => detectItemAllergens(ctx.restaurantId, data),
 );
 
 /** Generate and Attach Image to Menu Item (20 Credits) */
