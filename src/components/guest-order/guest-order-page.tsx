@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { MinusIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  MinusIcon,
+  PlusIcon,
+  ShoppingBagIcon,
+  SparklesIcon,
+  Trash2Icon,
+  UtensilsCrossedIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -317,36 +324,48 @@ export function GuestOrderPage({
   }
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-28">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h1 className="text-lg font-semibold">{restaurantName}</h1>
-          <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
-            <span>
-              Masa: <span className="font-medium">{tableLabel}</span>
-            </span>
-            {verified ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-900">
-                ✓ Doğrulandı
-                {(verifiedPhoneMasked ?? (phone ? maskPhone(phone) : null))
-                  ? ` · ${verifiedPhoneMasked ?? maskPhone(phone)}`
-                  : ""}
+    <div className="mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32">
+      {/* Sleek Top Banner */}
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/90 p-3.5 shadow-xs backdrop-blur-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl font-bold">
+            <UtensilsCrossedIcon className="size-5" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-base font-bold tracking-tight text-foreground truncate">
+              {restaurantName}
+            </h1>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+              <span className="font-semibold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                Masa {tableLabel}
               </span>
-            ) : null}
-          </p>
+              {verified ? (
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                  ✓ Doğrulandı
+                </span>
+              ) : null}
+            </div>
+          </div>
         </div>
+
         {verified ? (
           <div className="flex shrink-0 items-center gap-1.5">
             {myOrders.length > 0 ? (
               <Button
                 variant="outline"
                 size="sm"
+                className="h-8 rounded-xl text-xs font-semibold"
                 onClick={() => setOrdersOpen(true)}
               >
-                Siparişleriniz ({myOrders.length})
+                Siparişler ({myOrders.length})
               </Button>
             ) : null}
-            <Button variant="ghost" size="sm" onClick={() => logout(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-muted-foreground"
+              onClick={() => logout(false)}
+            >
               Çıkış
             </Button>
           </div>
@@ -355,32 +374,42 @@ export function GuestOrderPage({
 
       <MenuBrowser menu={menu} onQuickAdd={onQuickAdd} onOpenDetail={setConfigItem} />
 
-      {/* Pinned bottom bar */}
-      <div className="bg-background fixed inset-x-0 bottom-0 border-t p-3">
-        <div className="mx-auto flex w-full max-w-md items-center gap-3">
-          <button
-            type="button"
-            className="flex-1 text-left disabled:opacity-50"
-            disabled={itemCount === 0}
-            onClick={() => setReviewOpen(true)}
-          >
-            <span className="block text-sm font-medium">
-              {itemCount} adet ürün
-            </span>
-            <span className="text-muted-foreground text-xs">
-              {bill.grandTotal.toFixed(0)} ₺ · Sepeti İncele
-            </span>
-          </button>
-          <Button
-            size="lg"
-            className="h-12"
-            disabled={itemCount === 0 || busy}
-            onClick={onPlaceTap}
-          >
-            {busy ? "İletiliyor…" : "Siparişi Ver"}
-          </Button>
+      {/* Floating Bottom Cart Pill */}
+      {itemCount > 0 ? (
+        <div className="fixed inset-x-0 bottom-4 z-30 px-4 pointer-events-none">
+          <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-foreground text-background p-3.5 shadow-2xl backdrop-blur-xl pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300">
+            <button
+              type="button"
+              className="flex items-center gap-3 text-left transition-transform active:scale-95 cursor-pointer select-none"
+              onClick={() => setReviewOpen(true)}
+            >
+              <div className="relative flex size-10 items-center justify-center rounded-xl bg-background/15 text-background font-bold">
+                <ShoppingBagIcon className="size-5" />
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-black shadow-md">
+                  {itemCount}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-medium text-background/70">
+                  Toplam ({itemCount} Ürün)
+                </span>
+                <span className="text-base font-black tracking-tight text-background tabular-nums">
+                  {bill.grandTotal.toFixed(0)} ₺
+                </span>
+              </div>
+            </button>
+
+            <Button
+              size="lg"
+              className="h-11 rounded-xl px-5 font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+              disabled={busy}
+              onClick={onPlaceTap}
+            >
+              {busy ? "İletiliyor…" : "Siparişi Ver →"}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {configItem ? (
         <ItemConfigDialog
