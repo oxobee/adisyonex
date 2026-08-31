@@ -10,8 +10,8 @@ export interface LicenseInfoDTO {
   status: LicenseStatus;
   statusLabel: string;
   daysRemaining: number;
-  startsAt: Date;
-  expiresAt: Date | null;
+  startsAt: string | null;
+  expiresAt: string | null;
   isExpired: boolean;
   isExpiringSoon: boolean;
   aiBalance: number;
@@ -107,8 +107,8 @@ export const getRestaurantLicenseInfo = async (
     status: isExpired ? "EXPIRED" : restaurant.licenseStatus,
     statusLabel: getStatusLabel(restaurant.licenseStatus, isExpired),
     daysRemaining,
-    startsAt,
-    expiresAt,
+    startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
     isExpired,
     isExpiringSoon,
     aiBalance: wallet.balance,
