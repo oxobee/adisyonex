@@ -45,24 +45,17 @@ export const guestVerifyOtpAction = withValidation(
   },
 );
 
-/** Place the order — requires a verified guest session bound to this table. */
+/** Place the order — directly creates table order (optionally attaches phone if verified). */
 export const guestPlaceOrderAction = withValidation(
   guestPlaceOrderSchema,
   async (data): Promise<OrderDTO> => {
     const target = await resolveGuestOrderTarget(data.username, data.tableId);
     const session = await getGuestSession();
-    if (
-      !session ||
-      session.restaurantId !== target.restaurantId ||
-      session.tableId !== target.tableId
-    ) {
-      throw new Error(GUEST_NOT_VERIFIED);
-    }
     return placeGuestOrder(
       {
         restaurantId: target.restaurantId,
         tableId: target.tableId,
-        phone: session.phone,
+        phone: session?.phone ?? "",
       },
       data,
     );

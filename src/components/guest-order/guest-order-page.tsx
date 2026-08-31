@@ -1,29 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
 import {
+  CakeIcon,
+  CalendarIcon,
+  CheckCircle2Icon,
   MinusIcon,
+  PhoneIcon,
   PlusIcon,
   ShoppingBagIcon,
-  SparklesIcon,
   Trash2Icon,
+  UserIcon,
   UtensilsCrossedIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { registerCustomerAction } from "@/actions/customer.actions";
 import {
   guestLogoutAction,
   guestMyOrdersAction,
   guestPlaceOrderAction,
-  guestRequestOtpAction,
-  guestVerifyOtpAction,
 } from "@/actions/guest-order.actions";
-import { PhoneInput } from "@/components/phone-input";
 import { ItemConfigDialog } from "@/components/pos/item-config-dialog";
 import { linePrice, toBillLine } from "@/components/pos/types";
 import { useOrderCart } from "@/components/pos/use-order-cart";
-import { MenuBrowser } from "@/components/waiter/menu-browser";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -40,8 +41,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useServerAction } from "@/hooks/use-server-action";
-import { computeBill } from "@/services/billing";
-import { formatTime, maskPhone } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 import {
   clearGuestSession,
   guestSessionKey,
@@ -49,25 +49,12 @@ import {
   writeGuestSession,
 } from "@/lib/guest-cart-storage";
 import { uuid } from "@/lib/uuid";
-import { phoneSchema } from "@/lib/validators/shared";
+import { computeBill } from "@/services/billing";
 import type { MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 
-const ERRORS: Record<string, string> = {
-  GUEST_OTP_RATE_LIMITED: "Lütfen yeni bir kod istemeden önce biraz bekleyin.",
-  GUEST_OTP_EXPIRED: "Doğrulama kodunun süresi doldu — yeni bir kod isteyin.",
-  GUEST_OTP_INVALID: "Hatalı kod girdiniz. Tekrar deneyin.",
-  GUEST_OTP_TOO_MANY_ATTEMPTS: "Çok fazla hatalı deneme. Yeni bir kod isteyin.",
-  GUEST_NOT_VERIFIED: "Lütfen önce telefon numaranızı doğrulayın.",
-  GUEST_ORDER_DISABLED: "Sipariş alımı şu anda kapalıdır.",
-  GUEST_ORDER_TABLE_INVALID: "Bu masa bağlantısı geçersiz. Lütfen garsonunuza danışın.",
-  ITEM_UNAVAILABLE: "Sepetinizdeki bir ürünün stoğu tükendi. Lütfen sepetinizi kontrol edin.",
-};
-const toMessage = (m: string) => ERRORS[m] ?? m;
+import { MenuBrowser } from "../waiter/menu-browser";
 
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-
-/** Guest-facing status label + colour for one of their orders. */
 const orderStatus = (
   o: GuestOrderSummaryDTO,
 ): { label: string; className: string } => {
@@ -113,94 +100,51 @@ export function GuestOrderPage({
   const cart = useOrderCart();
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verified, setVerified] = useState(initiallyVerified);
-  const [expiresAt, setExpiresAt] = useState<number | null>(verifiedExpiresAt);
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [placed, setPlaced] = useState(false);
-  const [myOrders, setMyOrders] =
-    useState<readonly GuestOrderSummaryDTO[]>(initialOrders);
   const [ordersOpen, setOrdersOpen] = useState(false);
+  const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
+  const [registeredSuccess, setRegisteredSuccess] = useState(false);
+  const [myOrders, setMyOrders] = useState<readonly GuestOrderSummaryDTO[]>(initialOrders);
+  const [placed, setPlaced] = useState(false);
 
-  const idempotencyKey = useRef(uuid());
+  // Customer Loyalty Registration State
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerBirthDate, setCustomerBirthDate] = useState("");
 
-  const storageKey = guestSessionKey(username, tableId);
-  const { replaceAll } = cart;
-  const restoredRef = useRef(false);
+  const storageKey = useMemo(
+    () => guestSessionKey(username, tableId),
+    [username, tableId],
+  );
+  const idempotencyKey = useRef<string>(uuid());
 
+  // Restore cart on mount
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      const saved = readGuestSession(storageKey);
-      if (saved) {
-        if (saved.lines.length > 0) {
-          replaceAll(saved.lines);
-        }
-        if (saved.verified) {
-          setVerified(true);
-          if (saved.expiresAt) {
-            setExpiresAt(saved.expiresAt);
-          }
-        }
-      }
-      restoredRef.current = true;
+    const saved = readGuestSession(storageKey);
+    if (!saved) return;
+    if (saved.lines.length > 0) {
+      cart.replaceAll(saved.lines);
+    }
+  }, [storageKey]);
+
+  // Persist cart
+  const persistSession = useCallback(() => {
+    writeGuestSession(storageKey, {
+      lines: cart.cart,
+      verified: false,
+      expiresAt: null,
     });
-    return () => cancelAnimationFrame(raf);
-  }, [storageKey, replaceAll]);
+  }, [storageKey, cart.cart]);
 
   useEffect(() => {
-    if (!restoredRef.current) {
-      return;
-    }
-    writeGuestSession(storageKey, { lines: cart.cart, verified, expiresAt });
-  }, [storageKey, cart.cart, verified, expiresAt]);
+    persistSession();
+  }, [persistSession]);
 
-  const refreshOrders = useCallback(async () => {
+  const refreshOrders = async () => {
     const res = await guestMyOrdersAction();
-    if (res.success) {
-      setMyOrders(res.data ?? []);
+    if (res.success && res.data) {
+      setMyOrders(res.data);
     }
-  }, []);
-
-  useEffect(() => {
-    if (!verified) {
-      return;
-    }
-    const id = setInterval(() => {
-      void refreshOrders();
-    }, 10000);
-    return () => clearInterval(id);
-  }, [verified, refreshOrders]);
-
-  const logout = (expired = false) => {
-    void guestLogoutAction();
-    clearGuestSession(storageKey);
-    cart.clear();
-    setVerified(false);
-    setExpiresAt(null);
-    setMyOrders([]);
-    setOrdersOpen(false);
-    setOtpSent(false);
-    setCode("");
-    toast(expired ? "Oturum süresi doldu — sipariş için tekrar doğrulayın" : "Çıkış yapıldı");
   };
-
-  const logoutRef = useRef(logout);
-  useEffect(() => {
-    logoutRef.current = logout;
-  });
-
-  useEffect(() => {
-    if (!verified || expiresAt === null) {
-      return;
-    }
-    const id = setTimeout(
-      () => logoutRef.current(true),
-      Math.max(0, expiresAt - Date.now()),
-    );
-    return () => clearTimeout(id);
-  }, [verified, expiresAt]);
 
   const bill = useMemo(
     () => computeBill(cart.cart.map(toBillLine)),
@@ -221,26 +165,28 @@ export function GuestOrderPage({
   const place = useServerAction(guestPlaceOrderAction, {
     onSuccess: () => {
       setReviewOpen(false);
-      setVerifyOpen(false);
       cart.clear();
+      clearGuestSession(storageKey);
       idempotencyKey.current = uuid();
       setPlaced(true);
       void refreshOrders();
+      toast.success("Siparişiniz başarıyla mutfağa iletildi!");
     },
     onError: (m) => {
-      if (m === "GUEST_NOT_VERIFIED") {
-        setVerified(false);
-        setOtpSent(false);
-        setVerifyOpen(true);
-      }
-      toast.error(toMessage(m));
+      toast.error(m || "Sipariş oluşturulurken bir hata oluştu");
     },
   });
 
+  const registerCustomer = useServerAction(registerCustomerAction, {
+    onSuccess: () => {
+      setCustomerDrawerOpen(false);
+      setRegisteredSuccess(true);
+    },
+    onError: (m) => toast.error(m || "Kayıt işlemi başarısız oldu"),
+  });
+
   const submitOrder = () => {
-    if (itemCount === 0) {
-      return;
-    }
+    if (itemCount === 0) return;
     place.execute({
       username,
       tableId,
@@ -248,37 +194,6 @@ export function GuestOrderPage({
       items: items(),
     });
   };
-
-  const sendCode = useServerAction(guestRequestOtpAction, {
-    onSuccess: () => {
-      setOtpSent(true);
-      toast.success("Doğrulama kodu gönderildi");
-    },
-    onError: (m) => toast.error(toMessage(m)),
-  });
-
-  const verify = useServerAction(guestVerifyOtpAction, {
-    onSuccess: () => {
-      setVerified(true);
-      setExpiresAt(Date.now() + TWO_HOURS_MS);
-      void refreshOrders();
-      submitOrder();
-    },
-    onError: (m) => toast.error(toMessage(m)),
-  });
-
-  const onPlaceTap = () => {
-    if (verified) {
-      submitOrder();
-      return;
-    }
-    setReviewOpen(false);
-    setVerifyOpen(true);
-  };
-
-  const phoneValid = phoneSchema.safeParse(phone).success;
-  const codeValid = /^\d{6}$/.test(code);
-  const busy = place.isPending || verify.isPending;
 
   const onQuickAdd = (item: MenuItemDTO) => {
     if (item.variants.length > 0 || item.modifierGroups.length > 0) {
@@ -288,37 +203,199 @@ export function GuestOrderPage({
     cart.quickAdd(item);
   };
 
+  const busy = place.isPending;
+
+  // Order Placed Success Screen
   if (placed) {
     return (
-      <div className="mx-auto flex min-h-svh w-full max-w-md flex-col items-center justify-center gap-4 p-6 text-center">
-        <div className="bg-primary/10 text-primary flex size-16 items-center justify-center rounded-full text-3xl">
-          ✓
+      <div className="mx-auto flex min-h-svh w-full max-w-md flex-col items-center justify-center p-5 text-center">
+        <div className="flex flex-col items-center gap-4 w-full animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex size-20 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10">
+            <CheckCircle2Icon className="size-10 stroke-[2.5]" />
+          </div>
+
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
+            Siparişiniz Alındı!
+          </h1>
+
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <span className="font-bold text-foreground">Masa No : {tableLabel}</span> için verdiğiniz sipariş mutfağa iletildi. Hazırlandığında servis personeli masanıza getirecektir.
+          </p>
+
+          <div className="mt-2 flex w-full max-w-xs flex-col gap-2.5">
+            <Button
+              className="h-12 w-full rounded-2xl font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20 text-sm"
+              onClick={() => {
+                setPlaced(false);
+                setOrdersOpen(true);
+              }}
+            >
+              Siparişlerimi Takip Et
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 w-full rounded-2xl font-bold border-border/80 text-sm hover:bg-muted"
+              onClick={() => {
+                cart.clear();
+                clearGuestSession(storageKey);
+                idempotencyKey.current = uuid();
+                setPlaced(false);
+              }}
+            >
+              Daha Fazla Sipariş Ver
+            </Button>
+          </div>
+
+          {/* CUTE BIRTHDAY / SPECIAL CAMPAIGNS CARD */}
+          {!registeredSuccess ? (
+            <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-primary/5 to-card p-5 text-center shadow-md backdrop-blur-md">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-2xl shadow-inner mb-2">
+                🎂
+              </div>
+              <h2 className="text-base font-black text-foreground">
+                Doğum Gününüze Özel Kampanyalar!
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                Doğum günlerinize özel sürpriz indirim ve kampanyalardan anında faydalanmak için numaranızı kaydedin!
+              </p>
+              <Button
+                type="button"
+                className="mt-4 h-11 w-full rounded-2xl font-bold bg-gradient-to-r from-amber-500 to-primary text-white shadow-md shadow-primary/25 transition-transform active:scale-95 text-sm"
+                onClick={() => setCustomerDrawerOpen(true)}
+              >
+                🎁 Numaramı Kaydet
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
+              <span className="text-2xl mb-1">🎉</span>
+              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                Kaydınız Başarıyla Alındı!
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Doğum gününüzde ve özel fırsatlarda sürprizler sizi bekliyor!
+              </p>
+            </div>
+          )}
         </div>
-        <h1 className="text-xl font-semibold">Siparişiniz Alındı!</h1>
-        <p className="text-muted-foreground text-sm">
-          <span className="font-medium">{tableLabel}</span> için verdiğiniz sipariş mutfağa iletildi.
-          Hazırlandığında servis personeli masanıza getirecektir.
-        </p>
-        <div className="flex w-full max-w-xs flex-col gap-2">
-          <Button
-            onClick={() => {
-              setPlaced(false);
-              setOrdersOpen(true);
-            }}
-          >
-            Siparişlerimi Takip Et
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              cart.clear();
-              idempotencyKey.current = uuid();
-              setPlaced(false);
-            }}
-          >
-            Daha Fazla Sipariş Ver
-          </Button>
-        </div>
+
+        {/* CUSTOMER REGISTRATION BOTTOM SHEET DRAWER */}
+        <Sheet open={customerDrawerOpen} onOpenChange={setCustomerDrawerOpen}>
+          <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto px-6 py-5">
+            <div className="mx-auto max-w-sm flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 text-2xl mb-2">
+                  🎂
+                </div>
+                <SheetTitle className="text-lg font-black text-foreground">
+                  Fırsatlardan Yararlanın
+                </SheetTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Doğum gününüzde özel hediyeler ve avantajlı menüler için bilgilerinizi giriniz.
+                </p>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!customerName.trim() || !customerPhone.trim()) {
+                    toast.error("Lütfen adınızı ve telefon numaranızı girin");
+                    return;
+                  }
+                  registerCustomer.execute({
+                    username,
+                    name: customerName.trim(),
+                    phone: customerPhone.trim(),
+                    birthDate: customerBirthDate || null,
+                  });
+                }}
+                className="flex flex-col gap-3.5"
+              >
+                <Field>
+                  <FieldLabel htmlFor="cust-name">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold">
+                      <UserIcon className="size-3.5 text-muted-foreground" />
+                      Adınız Soyadınız
+                    </span>
+                  </FieldLabel>
+                  <Input
+                    id="cust-name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Örn: Ahmet Yılmaz"
+                    required
+                    className="h-11 rounded-xl text-sm"
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="cust-phone">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold">
+                      <PhoneIcon className="size-3.5 text-muted-foreground" />
+                      Telefon Numaranız
+                    </span>
+                  </FieldLabel>
+                  <Input
+                    id="cust-phone"
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="Örn: 0555 123 45 67"
+                    required
+                    className="h-11 rounded-xl text-sm"
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="cust-birth">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold">
+                      <CalendarIcon className="size-3.5 text-muted-foreground" />
+                      Doğum Tarihiniz
+                    </span>
+                  </FieldLabel>
+                  <Input
+                    id="cust-birth"
+                    type="date"
+                    value={customerBirthDate}
+                    onChange={(e) => setCustomerBirthDate(e.target.value)}
+                    className="h-11 rounded-xl text-sm"
+                  />
+                </Field>
+
+                <Button
+                  type="submit"
+                  disabled={registerCustomer.isPending}
+                  className="mt-2 h-12 w-full rounded-2xl font-bold bg-gradient-to-r from-amber-500 to-primary text-white shadow-md shadow-primary/20 text-sm cursor-pointer"
+                >
+                  {registerCustomer.isPending ? "Kaydediliyor…" : "🎁 Kaydet ve Fırsatları Yakala"}
+                </Button>
+              </form>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* CELEBRATION MODAL */}
+        <Dialog open={registeredSuccess && !customerDrawerOpen} onOpenChange={setRegisteredSuccess}>
+          <DialogContent className="max-w-xs rounded-3xl p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex size-16 items-center justify-center rounded-full bg-amber-500/20 text-3xl animate-bounce">
+                🎉
+              </div>
+              <DialogTitle className="text-lg font-black text-foreground">
+                Teşekkürler!
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Bilgileriniz kaydedildi. Doğum gününüzde ve özel kampanyalarda sürpriz indirimler sizi bekliyor!
+              </p>
+              <Button
+                className="mt-2 w-full rounded-xl font-bold cursor-pointer"
+                onClick={() => setRegisteredSuccess(false)}
+              >
+                Tamam
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -327,7 +404,6 @@ export function GuestOrderPage({
     <div className="mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32">
       {/* Lively & Themed Top Banner */}
       <div className="relative mb-4 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card p-4 shadow-sm backdrop-blur-md">
-        {/* Subtle decorative glow element */}
         <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-primary/10 blur-xl" />
 
         <div className="relative flex items-center justify-between gap-3">
@@ -346,38 +422,19 @@ export function GuestOrderPage({
                   <span>🍽️</span>
                   <span>Masa No : {tableLabel}</span>
                 </span>
-
-                {verified ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Doğrulandı
-                  </span>
-                ) : null}
               </div>
             </div>
           </div>
 
-          {verified ? (
-            <div className="flex shrink-0 items-center gap-1.5">
-              {myOrders.length > 0 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 rounded-xl border-primary/30 bg-card/80 text-xs font-bold text-primary shadow-xs hover:bg-primary/10"
-                  onClick={() => setOrdersOpen(true)}
-                >
-                  Siparişlerim ({myOrders.length})
-                </Button>
-              ) : null}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => logout(false)}
-              >
-                Çıkış
-              </Button>
-            </div>
+          {myOrders.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-xl border-primary/30 bg-card/80 text-xs font-bold text-primary shadow-xs hover:bg-primary/10 shrink-0"
+              onClick={() => setOrdersOpen(true)}
+            >
+              Siparişlerim ({myOrders.length})
+            </Button>
           ) : null}
         </div>
       </div>
@@ -413,9 +470,9 @@ export function GuestOrderPage({
               size="lg"
               className="h-11 rounded-xl px-5 font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
               disabled={busy}
-              onClick={onPlaceTap}
+              onClick={() => setReviewOpen(true)}
             >
-              {busy ? "İletiliyor…" : "Siparişi Ver →"}
+              {busy ? "İletiliyor…" : "Sipariş Özeti →"}
             </Button>
           </div>
         </div>
@@ -429,13 +486,14 @@ export function GuestOrderPage({
         />
       ) : null}
 
-      {/* Review sheet */}
+      {/* Review sheet (Sipariş Özeti) */}
       {reviewOpen ? (
         <Dialog open onOpenChange={setReviewOpen}>
-          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Sipariş Özeti</DialogTitle>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md rounded-3xl p-5">
+            <DialogHeader className="flex flex-row items-center justify-between border-b pb-3">
+              <DialogTitle className="text-lg font-black">Sipariş Özeti</DialogTitle>
             </DialogHeader>
+
             {cart.cart.length === 0 ? (
               <p className="text-muted-foreground py-6 text-center text-sm">
                 Sepetiniz henüz boş.
@@ -443,14 +501,25 @@ export function GuestOrderPage({
             ) : (
               <ul className="divide-y">
                 {cart.cart.map((l) => (
-                  <li key={l.key} className="flex items-start gap-2 py-3">
+                  <li key={l.key} className="flex items-start justify-between gap-3 py-3.5">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">
-                        {l.name}
-                        {l.variantName ? ` · ${l.variantName}` : ""}
-                      </p>
+                      <div className="flex items-baseline justify-between">
+                        <p className="text-sm font-bold text-foreground">
+                          {l.name}
+                        </p>
+                        <span className="text-sm font-bold text-foreground tabular-nums">
+                          {linePrice(l).toFixed(0)} ₺
+                        </span>
+                      </div>
+
+                      {l.variantName ? (
+                        <p className="text-xs font-semibold text-muted-foreground mt-0.5">
+                          {l.variantName}
+                        </p>
+                      ) : null}
+
                       {l.modifiers.length > 0 || l.lineNote ? (
-                        <p className="text-muted-foreground truncate text-xs">
+                        <p className="text-muted-foreground truncate text-xs mt-0.5">
                           {[
                             l.modifiers.map((m) => m.name).join(", "),
                             l.lineNote,
@@ -459,140 +528,87 @@ export function GuestOrderPage({
                             .join(" · ")}
                         </p>
                       ) : null}
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <Button
+
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5">
+                          <button
+                            type="button"
+                            className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
+                            onClick={() => cart.changeQty(l.key, -1)}
+                          >
+                            <MinusIcon className="size-3.5 stroke-[2.5]" />
+                          </button>
+                          <span className="w-7 text-center text-xs font-bold tabular-nums">
+                            {l.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
+                            onClick={() => cart.changeQty(l.key, 1)}
+                          >
+                            <PlusIcon className="size-3.5 stroke-[2.5]" />
+                          </button>
+                        </div>
+
+                        <button
                           type="button"
-                          size="icon"
-                          variant="outline"
-                          className="size-7"
-                          onClick={() => cart.changeQty(l.key, -1)}
-                        >
-                          <MinusIcon className="size-3.5" />
-                        </Button>
-                        <span className="w-6 text-center text-sm tabular-nums">
-                          {l.quantity}
-                        </span>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          className="size-7"
-                          onClick={() => cart.changeQty(l.key, 1)}
-                        >
-                          <PlusIcon className="size-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="text-muted-foreground ml-auto size-7"
+                          className="text-muted-foreground hover:text-destructive ml-auto flex size-7 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors"
                           onClick={() => cart.removeLine(l.key)}
                         >
-                          <Trash2Icon className="size-3.5" />
-                        </Button>
+                          <Trash2Icon className="size-4" />
+                        </button>
                       </div>
                     </div>
-                    <span className="shrink-0 text-sm tabular-nums font-medium">
-                      {linePrice(l).toFixed(0)} ₺
-                    </span>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="flex items-center justify-between border-t pt-3">
-              <span className="text-sm font-medium">Toplam Tutar</span>
-              <span className="text-base font-semibold tabular-nums">
+
+            <div className="flex items-center justify-between border-t border-dashed pt-4">
+              <span className="text-base font-bold text-foreground">Toplam Tutar</span>
+              <span className="text-xl font-black text-foreground tabular-nums">
                 {bill.grandTotal.toFixed(2)} ₺
               </span>
             </div>
-            <DialogFooter>
+
+            <DialogFooter className="pt-2">
               <Button
-                className="h-12 w-full text-base"
+                className="h-12 w-full rounded-2xl font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20 text-base transition-transform active:scale-98 cursor-pointer"
                 disabled={itemCount === 0 || busy}
-                onClick={onPlaceTap}
+                onClick={submitOrder}
               >
-                {busy ? "İletiliyor…" : verified ? "Siparişi Onayla ve Gönder" : "Numaranı Doğrula & Gönder"}
+                {busy ? "İletiliyor…" : "Sipariş Oluştur"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       ) : null}
 
-      {/* Phone verification */}
-      {verifyOpen ? (
-        <Dialog open onOpenChange={(o) => !busy && setVerifyOpen(o)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Telefon Numaranızı Doğrulayın</DialogTitle>
-            </DialogHeader>
-            <p className="text-muted-foreground text-sm">
-              Siparişinizi teyit etmek için telefonunuza tek seferlik SMS kodu göndereceğiz.
-            </p>
-            <div className="flex flex-col gap-3">
-              <PhoneInput onChange={setPhone} disabled={otpSent || busy} />
-              {otpSent ? (
-                <Input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="6 haneli kod"
-                  inputMode="numeric"
-                  maxLength={6}
-                  className="h-11 text-center text-lg tracking-widest"
-                />
-              ) : null}
-            </div>
-            <DialogFooter>
-              {otpSent ? (
-                <Button
-                  className="h-12 w-full text-base"
-                  disabled={!codeValid || busy}
-                  onClick={() =>
-                    verify.execute({ username, tableId, phone, code })
-                  }
-                >
-                  {busy ? "İletiliyor…" : "Doğrula ve Siparişi Ver"}
-                </Button>
-              ) : (
-                <Button
-                  className="h-12 w-full text-base"
-                  disabled={!phoneValid || sendCode.isPending}
-                  onClick={() =>
-                    sendCode.execute({ username, tableId, phone })
-                  }
-                >
-                  {sendCode.isPending ? "Gönderiliyor…" : "Doğrulama Kodu Gönder"}
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
-      {/* Your orders */}
+      {/* Your orders sheet */}
       <Sheet open={ordersOpen} onOpenChange={setOrdersOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Verdiğiniz Siparişler</SheetTitle>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl">
+          <SheetHeader className="pb-3 border-b">
+            <SheetTitle className="font-black text-lg">Verdiğiniz Siparişler</SheetTitle>
           </SheetHeader>
           {myOrders.length === 0 ? (
-            <p className="text-muted-foreground px-4 pb-6 text-sm">
+            <p className="text-muted-foreground px-4 py-8 text-center text-sm">
               Henüz verilmiş bir siparişiniz bulunmuyor.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3 px-4 pb-6">
+            <ul className="flex flex-col gap-3 px-2 py-4">
               {myOrders.map((o) => {
                 const st = orderStatus(o);
                 return (
-                  <li key={o.id} className="rounded-xl border p-3">
+                  <li key={o.id} className="rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-bold">
                         {o.tableLabel ?? `#${o.orderNumber}`}
-                        <span className="text-muted-foreground font-normal">
+                        <span className="text-muted-foreground font-normal text-xs">
                           {" "}· {formatTime(o.createdAt)}
                         </span>
                       </span>
                       <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${st.className}`}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${st.className}`}
                       >
                         {st.label}
                       </span>
@@ -604,7 +620,7 @@ export function GuestOrderPage({
                           className="text-muted-foreground flex justify-between gap-2 text-xs"
                         >
                           <span className="min-w-0 truncate">
-                            <span className="tabular-nums">{l.quantity}×</span>{" "}
+                            <span className="tabular-nums font-bold">{l.quantity}×</span>{" "}
                             {l.name}
                             {l.variantName ? ` · ${l.variantName}` : ""}
                           </span>
@@ -612,11 +628,9 @@ export function GuestOrderPage({
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-2 flex justify-between border-t pt-2 text-sm">
-                      <span>
-                        {o.itemCount} adet ürün
-                      </span>
-                      <span className="font-semibold tabular-nums">
+                    <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 text-xs">
+                      <span className="font-medium text-muted-foreground">Tutar</span>
+                      <span className="font-bold text-foreground tabular-nums">
                         {o.total.toFixed(2)} ₺
                       </span>
                     </div>

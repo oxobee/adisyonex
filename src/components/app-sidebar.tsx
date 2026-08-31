@@ -26,6 +26,7 @@ import {
   Settings2Icon,
   CircleHelpIcon,
   ShieldCheckIcon,
+  GiftIcon,
 } from "lucide-react"
 
 const navMain = [
@@ -34,6 +35,7 @@ const navMain = [
   { title: "Siparişler", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
   { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
   { title: "Masalar", url: "/dashboard/tables", icon: <ArmchairIcon /> },
+  { title: "Kayıtlı Müşteriler", url: "/dashboard/customers", icon: <GiftIcon /> },
   { title: "Stok & Envanter", url: "/dashboard/inventory", icon: <BoxesIcon /> },
   { title: "Personel", url: "/dashboard/staff", icon: <UsersIcon /> },
 ]

@@ -196,6 +196,7 @@ model Restaurant {
   videos         RestaurantVideo[]
   stockItems     StockItem[]
   staff          Staff[]
+  customers      Customer[]
 
   @@index([ownerId])
   @@index([isActive])
@@ -692,3 +693,29 @@ model PushToken {
   @@index([subjectKind, subjectId])
   @@index([restaurantId])
 }
+
+/// A customer registered for birthdays, campaigns and loyalty discounts.
+model Customer {
+  id           String    @id @default(cuid())
+  restaurantId String
+  name         String
+  phone        String
+  birthDate    DateTime?
+  birthDay     Int?
+  birthMonth   Int?
+  birthYear    Int?
+  notes        String?
+  source       String?   @default("QR_MENU")
+  orderCount   Int       @default(0)
+  totalSpent   Decimal   @default(0) @db.Decimal(10, 2)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, phone])
+  @@index([restaurantId])
+  @@index([restaurantId, birthMonth])
+}
+

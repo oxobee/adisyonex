@@ -108,27 +108,17 @@ describe("guestPlaceOrderAction", () => {
     );
   });
 
-  it("fails when there is no verified guest session", async () => {
+  it("places the order directly when no guest session exists", async () => {
     vi.mocked(getGuestSession).mockResolvedValue(null);
+    vi.mocked(placeGuestOrder).mockResolvedValue({ id: "o1" } as OrderDTO);
 
     const result = await guestPlaceOrderAction(input);
 
-    expect(result.success).toBe(false);
-    expect(placeGuestOrder).not.toHaveBeenCalled();
-  });
-
-  it("fails when the session is for a different table", async () => {
-    vi.mocked(getGuestSession).mockResolvedValue({
-      restaurantId: "res_1",
-      tableId: "OTHER",
-      phone: PHONE,
-      expiresAt: Date.now() + 3_600_000,
-    });
-
-    const result = await guestPlaceOrderAction(input);
-
-    expect(result.success).toBe(false);
-    expect(placeGuestOrder).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(placeGuestOrder).toHaveBeenCalledWith(
+      { restaurantId: "res_1", tableId: "t1", phone: "" },
+      expect.objectContaining({ idempotencyKey: "abcd1234" }),
+    );
   });
 });
 
