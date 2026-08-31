@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  serverExternalPackages: ["sharp"],
   allowedDevOrigins: ['192.168.1.*'],
   experimental: {
     // Allow logo/cover/gallery image (≤5 MB) and short promo video uploads

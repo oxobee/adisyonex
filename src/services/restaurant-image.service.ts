@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import sharp from "sharp";
-
 import { deleteObject, publicUrl, putObject } from "@/lib/storage";
 import {
   countRestaurantImages,
@@ -36,17 +34,33 @@ const validate = (file: UploadFile): void => {
   }
 };
 
-const optimise = (
+const optimise = async (
   buffer: Buffer,
   width: number,
   height: number,
   fit: "inside" | "cover",
-): Promise<Buffer> =>
-  sharp(buffer)
-    .rotate()
-    .resize({ width, height, fit, withoutEnlargement: fit === "inside" })
-    .webp({ quality: 82 })
-    .toBuffer();
+): Promise<Buffer> => {
+  try {
+    const sharpModule = await import("sharp");
+    const sharpFn = (sharpModule as { default?: unknown }).default ?? sharpModule;
+    return await (sharpFn as (input: Buffer) => {
+      rotate: () => {
+        resize: (opts: { width: number; height: number; fit: string; withoutEnlargement: boolean }) => {
+          webp: (opts: { quality: number }) => {
+            toBuffer: () => Promise<Buffer>;
+          };
+        };
+      };
+    })(buffer)
+      .rotate()
+      .resize({ width, height, fit, withoutEnlargement: fit === "inside" })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch (err) {
+    console.warn("sharp optimization not available, using raw buffer:", err);
+    return buffer;
+  }
+};
 
 /** Upload/replace the logo (fixed key, cache-busted url). */
 export const uploadLogo = async (

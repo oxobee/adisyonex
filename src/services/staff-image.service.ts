@@ -1,5 +1,3 @@
-import sharp from "sharp";
-
 import { deleteObject, publicUrl, putObject } from "@/lib/storage";
 import {
   findStaffById,
@@ -44,11 +42,28 @@ export const uploadStaffPhoto = async (
     throw new Error(IMAGE_TOO_LARGE);
   }
   await assertOwned(restaurantId, staffId);
-  const optimised = await sharp(file.buffer)
-    .rotate()
-    .resize({ width: 512, height: 512, fit: "cover" })
-    .webp({ quality: 82 })
-    .toBuffer();
+
+  let optimised = file.buffer;
+  try {
+    const sharpModule = await import("sharp");
+    const sharpFn = (sharpModule as { default?: unknown }).default ?? sharpModule;
+    optimised = await (sharpFn as (input: Buffer) => {
+      rotate: () => {
+        resize: (opts: { width: number; height: number; fit: string }) => {
+          webp: (opts: { quality: number }) => {
+            toBuffer: () => Promise<Buffer>;
+          };
+        };
+      };
+    })(file.buffer)
+      .rotate()
+      .resize({ width: 512, height: 512, fit: "cover" })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch (err) {
+    console.warn("sharp optimization not available, using raw buffer:", err);
+  }
+
   const key = `staff/${staffId}/photo.webp`;
   await putObject(key, optimised, "image/webp");
   const url = `${publicUrl(key)}?v=${Date.now()}`;

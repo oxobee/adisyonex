@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import sharp from "sharp";
-
 import { deleteObject, publicUrl, putObject } from "@/lib/storage";
 import type { MenuItemImage } from "@/generated/prisma/client";
 import { findMenuItemOwnership } from "@/repositories/menu-item.repository";
@@ -47,16 +45,31 @@ export const addItemImage = async (
     throw new Error(IMAGE_LIMIT_REACHED);
   }
 
-  const optimised = await sharp(file.buffer)
-    .rotate()
-    .resize({
-      width: MAX_EDGE,
-      height: MAX_EDGE,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .webp({ quality: 80 })
-    .toBuffer();
+  let optimised = file.buffer;
+  try {
+    const sharpModule = await import("sharp");
+    const sharpFn = (sharpModule as { default?: unknown }).default ?? sharpModule;
+    optimised = await (sharpFn as (input: Buffer) => {
+      rotate: () => {
+        resize: (opts: { width: number; height: number; fit: string; withoutEnlargement: boolean }) => {
+          webp: (opts: { quality: number }) => {
+            toBuffer: () => Promise<Buffer>;
+          };
+        };
+      };
+    })(file.buffer)
+      .rotate()
+      .resize({
+        width: MAX_EDGE,
+        height: MAX_EDGE,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch (err) {
+    console.warn("sharp optimization not available, using raw buffer:", err);
+  }
 
   const key = `menu-items/${menuItemId}/${randomUUID()}.webp`;
   await putObject(key, optimised, "image/webp");
