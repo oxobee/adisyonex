@@ -29,12 +29,18 @@ export const registerCustomer = async (
     throw new Error("RESTAURANT_NOT_FOUND");
   }
 
-  const birthDateObj = input.birthDate ? new Date(input.birthDate) : null;
+  let birthDateObj: Date | null = null;
+  if (input.birthDate && input.birthDate.trim()) {
+    const d = new Date(input.birthDate);
+    if (!isNaN(d.getTime())) {
+      birthDateObj = d;
+    }
+  }
 
   await upsertCustomer({
     restaurantId: restaurant.id,
-    name: input.name,
-    phone: input.phone,
+    name: input.name.trim(),
+    phone: input.phone.trim(),
     birthDate: birthDateObj,
     source: "QR_MENU",
   });

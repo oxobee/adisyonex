@@ -246,34 +246,50 @@ export function GuestOrderPage({
             </Button>
           </div>
 
-          {/* CUTE BIRTHDAY / SPECIAL CAMPAIGNS CARD */}
+          {/* CUTE & ANIMATED BIRTHDAY / SPECIAL CAMPAIGNS CARD */}
           {!registeredSuccess ? (
-            <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-primary/5 to-card p-5 text-center shadow-md backdrop-blur-md">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-2xl shadow-inner mb-2">
-                🎂
+            <div className="relative mt-6 flex w-full flex-col items-center overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-orange-500/5 to-card p-6 text-center shadow-lg backdrop-blur-md">
+              {/* Subtle background glow */}
+              <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-amber-500/20 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-10 size-32 rounded-full bg-orange-500/20 blur-2xl" />
+
+              {/* Floating Cake Badge with Pulse */}
+              <div className="relative mb-3 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400/25 to-orange-500/25 text-3xl shadow-md ring-4 ring-amber-500/10">
+                <span className="animate-bounce">🎂</span>
+                <span className="absolute -top-1 -right-1 text-sm animate-pulse">✨</span>
               </div>
-              <h2 className="text-base font-black text-foreground">
+
+              <h2 className="text-lg font-black tracking-tight text-foreground">
                 Doğum Gününüze Özel Kampanyalar!
               </h2>
-              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed max-w-xs">
                 Doğum günlerinize özel sürpriz indirim ve kampanyalardan anında faydalanmak için numaranızı kaydedin!
               </p>
-              <Button
+
+              {/* Shimmer Animated Button */}
+              <button
                 type="button"
-                className="mt-4 h-11 w-full rounded-2xl font-bold bg-gradient-to-r from-amber-500 to-primary text-white shadow-md shadow-primary/25 transition-transform active:scale-95 text-sm"
                 onClick={() => setCustomerDrawerOpen(true)}
+                className="group relative mt-5 flex h-13 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-[length:200%_auto] text-base font-black text-white shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
-                🎁 Numaramı Kaydet
-              </Button>
+                {/* Continuous Shimmer Streak */}
+                <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_2.2s_infinite] bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+
+                <span className="relative flex items-center gap-2 drop-shadow-xs">
+                  <span className="text-lg group-hover:rotate-12 transition-transform">🎁</span>
+                  <span>Numaramı Kaydet</span>
+                </span>
+              </button>
             </div>
           ) : (
-            <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-              <span className="text-2xl mb-1">🎉</span>
-              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+            <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center shadow-xs">
+              <span className="text-3xl mb-1.5 animate-bounce">🎉</span>
+              <p className="text-base font-black text-emerald-700 dark:text-emerald-300">
                 Kaydınız Başarıyla Alındı!
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Doğum gününüzde ve özel fırsatlarda sürprizler sizi bekliyor!
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Doğum gününüzde ve özel fırsatlarda sürpriz hediyeleriniz sizi bekliyor!
               </p>
             </div>
           )}
@@ -281,17 +297,17 @@ export function GuestOrderPage({
 
         {/* CUSTOMER REGISTRATION BOTTOM SHEET DRAWER */}
         <Sheet open={customerDrawerOpen} onOpenChange={setCustomerDrawerOpen}>
-          <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto px-6 py-5">
-            <div className="mx-auto max-w-sm flex flex-col gap-4">
+          <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto px-6 py-6 border-t border-border/80">
+            <div className="mx-auto max-w-sm flex flex-col gap-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 text-2xl mb-2">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-3xl mb-2 shadow-inner">
                   🎂
                 </div>
-                <SheetTitle className="text-lg font-black text-foreground">
+                <SheetTitle className="text-xl font-black text-foreground">
                   Fırsatlardan Yararlanın
                 </SheetTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Doğum gününüzde özel hediyeler ve avantajlı menüler için bilgilerinizi giriniz.
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                  Doğum gününüze özel sürpriz ikramlar ve avantajlı menüler için bilgilerinizi kaydedin.
                 </p>
               </div>
 
@@ -309,12 +325,12 @@ export function GuestOrderPage({
                     birthDate: customerBirthDate || null,
                   });
                 }}
-                className="flex flex-col gap-3.5"
+                className="flex flex-col gap-4"
               >
                 <Field>
                   <FieldLabel htmlFor="cust-name">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold">
-                      <UserIcon className="size-3.5 text-muted-foreground" />
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                      <UserIcon className="size-3.5 text-primary" />
                       Adınız Soyadınız
                     </span>
                   </FieldLabel>
@@ -324,14 +340,14 @@ export function GuestOrderPage({
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Örn: Ahmet Yılmaz"
                     required
-                    className="h-11 rounded-xl text-sm"
+                    className="h-12 rounded-xl text-sm border-border/80 bg-muted/20"
                   />
                 </Field>
 
                 <Field>
                   <FieldLabel htmlFor="cust-phone">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold">
-                      <PhoneIcon className="size-3.5 text-muted-foreground" />
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                      <PhoneIcon className="size-3.5 text-primary" />
                       Telefon Numaranız
                     </span>
                   </FieldLabel>
@@ -340,17 +356,17 @@ export function GuestOrderPage({
                     type="tel"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="Örn: 0555 123 45 67"
+                    placeholder="0555 123 45 67"
                     required
-                    className="h-11 rounded-xl text-sm"
+                    className="h-12 rounded-xl text-sm border-border/80 bg-muted/20"
                   />
                 </Field>
 
                 <Field>
                   <FieldLabel htmlFor="cust-birth">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold">
-                      <CalendarIcon className="size-3.5 text-muted-foreground" />
-                      Doğum Tarihiniz
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                      <CalendarIcon className="size-3.5 text-primary" />
+                      Doğum Tarihiniz (İsteğe Bağlı)
                     </span>
                   </FieldLabel>
                   <Input
@@ -358,17 +374,20 @@ export function GuestOrderPage({
                     type="date"
                     value={customerBirthDate}
                     onChange={(e) => setCustomerBirthDate(e.target.value)}
-                    className="h-11 rounded-xl text-sm"
+                    className="h-12 rounded-xl text-sm border-border/80 bg-muted/20"
                   />
                 </Field>
 
-                <Button
+                <button
                   type="submit"
                   disabled={registerCustomer.isPending}
-                  className="mt-2 h-12 w-full rounded-2xl font-bold bg-gradient-to-r from-amber-500 to-primary text-white shadow-md shadow-primary/20 text-sm cursor-pointer"
+                  className="group relative mt-2 flex h-13 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-[length:200%_auto] text-base font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-50"
                 >
-                  {registerCustomer.isPending ? "Kaydediliyor…" : "🎁 Kaydet ve Fırsatları Yakala"}
-                </Button>
+                  <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_2.2s_infinite] bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+                  <span className="relative flex items-center gap-2">
+                    <span>{registerCustomer.isPending ? "Kaydediliyor…" : "🎁 Fırsatları Yakala ve Kaydet"}</span>
+                  </span>
+                </button>
               </form>
             </div>
           </SheetContent>
