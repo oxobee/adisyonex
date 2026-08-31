@@ -29,6 +29,7 @@ const runHandler = async <T>(
     }
     return success(result as T);
   } catch (error) {
+    console.error("Action error:", error);
     return failure<T>(
       error instanceof Error ? error.message : "Something went wrong",
     );

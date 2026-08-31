@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     // through Server Actions (default is 1 MB).
     serverActions: {
       bodySizeLimit: "30mb",
+      allowedOrigins: ["adisyonex.vercel.app", "*.vercel.app", "localhost:3000", "localhost:3001"],
     },
   },
   images: {

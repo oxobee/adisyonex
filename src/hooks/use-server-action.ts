@@ -31,19 +31,26 @@ export function useServerAction<TInput, TOutput>(
 
   const execute = (input: TInput): void => {
     startTransition(async () => {
-      const result = await action(input);
-      if (result.success) {
-        options.onSuccess?.(result.data);
-        if (options.refresh) {
-          router.refresh();
+      try {
+        const result = await action(input);
+        if (result.success) {
+          options.onSuccess?.(result.data);
+          if (options.refresh) {
+            router.refresh();
+          }
+          if (options.redirectTo) {
+            router.push(options.redirectTo);
+          }
+        } else {
+          options.onError?.(
+            result.error ?? "Bir hata oluştu",
+            result.fieldErrors,
+          );
         }
-        if (options.redirectTo) {
-          router.push(options.redirectTo);
-        }
-      } else {
+      } catch (err) {
+        console.error("Server action error:", err);
         options.onError?.(
-          result.error ?? "Something went wrong",
-          result.fieldErrors,
+          err instanceof Error ? err.message : "Sunucu ile iletişim kurulurken bir hata oluştu.",
         );
       }
     });
