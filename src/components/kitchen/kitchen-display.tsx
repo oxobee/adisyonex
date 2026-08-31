@@ -178,7 +178,7 @@ export function KitchenDisplay({
     const id = setInterval(() => {
       setNow(Date.now());
       router.refresh();
-    }, 10000);
+    }, 3000);
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(id);
