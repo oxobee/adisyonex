@@ -9,6 +9,8 @@ import {
   PencilIcon,
   PowerIcon,
   SearchIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
   Trash2Icon,
   UtensilsIcon,
 } from "lucide-react";
@@ -21,6 +23,7 @@ import {
 } from "@/actions/admin-management.actions";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { AssignLicenseDialog } from "@/components/admin/assign-license-dialog";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +50,7 @@ export function RestaurantsTable({
   const [detailRestaurant, setDetailRestaurant] = useState<RestaurantListItemDTO | null>(null);
   const [editRestaurant, setEditRestaurant] = useState<RestaurantListItemDTO | null>(null);
   const [deleteRestaurant, setDeleteRestaurant] = useState<RestaurantListItemDTO | null>(null);
+  const [licenseRestaurant, setLicenseRestaurant] = useState<RestaurantListItemDTO | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -140,98 +144,151 @@ export function RestaurantsTable({
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Restoran</th>
                 <th className="px-4 py-3 text-left font-medium">İşletmeci Sahip</th>
-                <th className="px-4 py-3 text-left font-medium">Konum</th>
+                <th className="px-4 py-3 text-left font-medium">Lisans & Kredi</th>
                 <th className="px-4 py-3 text-left font-medium">Durum</th>
                 <th className="px-4 py-3 text-right font-medium">İşlemler</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredItems.map((restaurant) => (
-                <tr key={restaurant.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg">
-                        <UtensilsIcon className="size-4" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">{restaurant.name}</div>
-                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                          <span>/{restaurant.slug}</span>
-                          {restaurant.username ? (
-                            <Link
-                              href={`/order/${restaurant.username}`}
-                              target="_blank"
-                              className="text-primary hover:underline inline-flex items-center gap-0.5"
-                            >
-                              QR Menü <ExternalLinkIcon className="size-2.5" />
-                            </Link>
-                          ) : null}
+              {filteredItems.map((restaurant) => {
+                const plan = restaurant.licensePlan || "TRIAL";
+                const days = restaurant.licenseDaysRemaining ?? 0;
+                const isLifetime = plan === "LIFETIME" || days === 9999;
+                const isExpired = days <= 0 && !isLifetime;
+
+                return (
+                  <tr key={restaurant.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg">
+                          <UtensilsIcon className="size-4" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-foreground">{restaurant.name}</div>
+                          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                            <span>/{restaurant.slug}</span>
+                            {restaurant.username ? (
+                              <Link
+                                href={`/order/${restaurant.username}`}
+                                target="_blank"
+                                className="text-primary hover:underline inline-flex items-center gap-0.5"
+                              >
+                                QR Menü <ExternalLinkIcon className="size-2.5" />
+                              </Link>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{restaurant.ownerName ?? "—"}</div>
-                    <div className="text-muted-foreground font-mono text-xs">
-                      {restaurant.ownerPhone}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    <div>{restaurant.city || "—"}</div>
-                    <div className="text-xs">{restaurant.country}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                        restaurant.isActive
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                          : "bg-muted text-muted-foreground border-border",
-                      )}
-                    >
-                      {restaurant.isActive ? "Aktif" : "Pasif"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        title="Detay Görüntüle"
-                        onClick={() => setDetailRestaurant(restaurant)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-foreground">{restaurant.ownerName ?? "—"}</div>
+                      <div className="text-muted-foreground font-mono text-xs">
+                        {restaurant.ownerPhone}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold",
+                              plan === "YEARLY"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                                : plan === "MONTHLY"
+                                  ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30"
+                                  : plan === "LIFETIME"
+                                    ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30"
+                                    : "bg-muted text-muted-foreground border-border",
+                            )}
+                          >
+                            {plan === "YEARLY" ? "👑 Yıllık" : plan === "MONTHLY" ? "💎 Aylık" : plan === "LIFETIME" ? "♾️ Süresiz" : "⚡ Deneme"}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-xs font-semibold tabular-nums",
+                              isExpired
+                                ? "text-destructive font-bold"
+                                : isLifetime
+                                  ? "text-purple-600 dark:text-purple-400 font-bold"
+                                  : days <= 7
+                                    ? "text-amber-600 font-bold"
+                                    : "text-foreground",
+                            )}
+                          >
+                            {isLifetime ? "Süresiz" : isExpired ? "Doldu" : `${days} gün`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <SparklesIcon className="size-3 text-amber-500" />
+                          <span className="font-bold text-foreground tabular-nums">
+                            {restaurant.aiBalance ?? 0}
+                          </span>
+                          <span>AI Kredisi</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                          restaurant.isActive
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            : "bg-muted text-muted-foreground border-border",
+                        )}
                       >
-                        <EyeIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        title="Düzenle"
-                        onClick={() => openEdit(restaurant)}
-                      >
-                        <PencilIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        title={restaurant.isActive ? "Pasif Yap" : "Aktif Yap"}
-                        className={restaurant.isActive ? "text-amber-600" : "text-emerald-600"}
-                        onClick={() => toggleActiveAction.execute({ id: restaurant.id })}
-                      >
-                        <PowerIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        title="Sil"
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteRestaurant(restaurant)}
-                      >
-                        <Trash2Icon className="size-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {restaurant.isActive ? "Aktif" : "Pasif"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title="Lisans & Kredi Tanımla"
+                          className="text-primary hover:bg-primary/10"
+                          onClick={() => setLicenseRestaurant(restaurant)}
+                        >
+                          <ShieldCheckIcon className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title="Detay Görüntüle"
+                          onClick={() => setDetailRestaurant(restaurant)}
+                        >
+                          <EyeIcon className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title="Düzenle"
+                          onClick={() => openEdit(restaurant)}
+                        >
+                          <PencilIcon className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title={restaurant.isActive ? "Pasif Yap" : "Aktif Yap"}
+                          className={restaurant.isActive ? "text-amber-600" : "text-emerald-600"}
+                          onClick={() => toggleActiveAction.execute({ id: restaurant.id })}
+                        >
+                          <PowerIcon className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title="Sil"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteRestaurant(restaurant)}
+                        >
+                          <Trash2Icon className="size-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -428,6 +485,13 @@ export function RestaurantsTable({
           </DialogContent>
         </Dialog>
       ) : null}
+
+      {/* ASSIGN LICENSE & CREDIT DIALOG */}
+      <AssignLicenseDialog
+        restaurant={licenseRestaurant}
+        open={Boolean(licenseRestaurant)}
+        onOpenChange={(open) => !open && setLicenseRestaurant(null)}
+      />
     </div>
   );
 }

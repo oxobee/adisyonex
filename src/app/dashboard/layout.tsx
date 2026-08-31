@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { requireUserId } from "@/lib/auth-helpers"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
+import { getRestaurantLicenseInfo } from "@/services/license.service"
 import { getSelfOrderShareInfo } from "@/services/restaurant-settings.service"
 import { getManagerById } from "@/services/user.service"
 
@@ -16,7 +17,10 @@ export default async function DashboardLayout({
     getManagerById(userId),
     getManagerContextOrNull(),
   ])
-  const share = ctx ? await getSelfOrderShareInfo(ctx.restaurantId) : null
+  const [share, licenseInfo] = await Promise.all([
+    ctx ? getSelfOrderShareInfo(ctx.restaurantId) : null,
+    ctx ? getRestaurantLicenseInfo(ctx.restaurantId) : null,
+  ])
 
   return (
     <SidebarProvider
@@ -34,6 +38,7 @@ export default async function DashboardLayout({
           contact: user?.phone ?? user?.email ?? "",
           role: user?.role,
         }}
+        license={licenseInfo}
       />
       <SidebarInset>
         <SiteHeader staffLoginUsername={share?.username ?? null} />

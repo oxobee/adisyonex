@@ -42,11 +42,15 @@ const navMain = [
   { title: "Personel", url: "/dashboard/staff", icon: <UsersIcon /> },
 ]
 
+import type { LicenseInfoDTO } from "@/services/license.service"
+
 export function AppSidebar({
   user,
+  license,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: { name: string; contact: string; role?: string }
+  license?: LicenseInfoDTO | null
 }) {
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN"
   const navSecondary = [
@@ -76,7 +80,7 @@ export function AppSidebar({
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} license={license} />
       </SidebarFooter>
     </Sidebar>
   )

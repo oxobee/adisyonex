@@ -27,4 +27,9 @@ export interface RestaurantListItemDTO {
   readonly ownerName: string | null;
   readonly ownerPhone: string;
   readonly onboardedAt: string;
+  readonly licensePlan?: "TRIAL" | "MONTHLY" | "YEARLY" | "LIFETIME";
+  readonly licenseExpiresAt?: string | null;
+  readonly licenseDaysRemaining?: number;
+  readonly licenseStatus?: "ACTIVE" | "EXPIRED" | "GRACE_PERIOD" | "SUSPENDED";
+  readonly aiBalance?: number;
 }

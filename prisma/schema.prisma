@@ -83,6 +83,20 @@ enum OrderSource {
   SELF_ORDER
 }
 
+enum LicensePlan {
+  TRIAL
+  MONTHLY
+  YEARLY
+  LIFETIME
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  GRACE_PERIOD
+  SUSPENDED
+}
+
 /// Restaurant manager / operator account.
 /// Phone number is the primary identifier used to sign in; email is optional
 /// and can be added later for notifications (Resend).
@@ -177,6 +191,13 @@ model Restaurant {
 
   // Custom note printed at the foot of the invoice/bill (owner-editable).
   invoiceFooterNote String?
+
+  // License & Subscription System
+  licensePlan      LicensePlan   @default(TRIAL)
+  licenseStatus    LicenseStatus @default(ACTIVE)
+  licenseStartsAt  DateTime      @default(now())
+  licenseExpiresAt DateTime?     // null for lifetime or active until date
+  licenseNote      String?
 
   isActive    Boolean   @default(true)
   onboardedAt DateTime  @default(now())

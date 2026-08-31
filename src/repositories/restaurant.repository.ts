@@ -128,6 +128,13 @@ const RESTAURANT_LIST_SELECT = {
   addressLine1: true,
   isActive: true,
   onboardedAt: true,
+  createdAt: true,
+  licensePlan: true,
+  licenseStatus: true,
+  licenseStartsAt: true,
+  licenseExpiresAt: true,
+  licenseNote: true,
+  aiWallet: { select: { balance: true } },
   owner: { select: { name: true, phone: true } },
 } satisfies Prisma.RestaurantSelect;
 

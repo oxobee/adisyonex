@@ -46,21 +46,48 @@ export const generateUniqueUsername = async (): Promise<string> => {
   throw new Error("USERNAME_GENERATION_FAILED");
 };
 
-const mapRestaurant = (row: AdminRestaurantRow): RestaurantListItemDTO => ({
-  id: row.id,
-  name: row.name,
-  slug: row.slug,
-  username: row.username ?? null,
-  phone: row.phone ?? null,
-  email: row.email ?? null,
-  city: row.city,
-  country: row.country,
-  addressLine1: row.addressLine1 ?? null,
-  isActive: row.isActive,
-  ownerName: row.owner.name,
-  ownerPhone: row.owner.phone,
-  onboardedAt: row.onboardedAt.toISOString(),
-});
+const mapRestaurant = (row: AdminRestaurantRow): RestaurantListItemDTO => {
+  let expiresAt = row.licenseExpiresAt;
+  let plan = row.licensePlan;
+  let startsAt = row.licenseStartsAt || row.createdAt;
+
+  if (!expiresAt && plan === "TRIAL") {
+    expiresAt = new Date(startsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+  }
+
+  let daysRemaining = 9999;
+  let isExpired = false;
+
+  if (plan === "LIFETIME") {
+    daysRemaining = 9999;
+    isExpired = false;
+  } else if (expiresAt) {
+    const diffMs = new Date(expiresAt).getTime() - Date.now();
+    daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    isExpired = diffMs <= 0;
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    username: row.username ?? null,
+    phone: row.phone ?? null,
+    email: row.email ?? null,
+    city: row.city,
+    country: row.country,
+    addressLine1: row.addressLine1 ?? null,
+    isActive: row.isActive,
+    ownerName: row.owner.name,
+    ownerPhone: row.owner.phone,
+    onboardedAt: row.onboardedAt.toISOString(),
+    licensePlan: row.licensePlan,
+    licenseExpiresAt: expiresAt ? expiresAt.toISOString() : null,
+    licenseDaysRemaining: daysRemaining,
+    licenseStatus: isExpired ? "EXPIRED" : row.licenseStatus,
+    aiBalance: row.aiWallet?.balance ?? 0,
+  };
+};
 
 /**
  * Onboard a restaurant: reuse the owner by phone (or create the manager

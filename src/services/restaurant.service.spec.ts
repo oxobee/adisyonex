@@ -191,6 +191,13 @@ describe("listRestaurants", () => {
       country: "IN",
       isActive: true,
       onboardedAt: new Date("2026-01-01T00:00:00.000Z"),
+      licensePlan: "TRIAL",
+      licenseStatus: "ACTIVE",
+      licenseStartsAt: new Date("2026-01-01T00:00:00.000Z"),
+      licenseExpiresAt: new Date("2026-01-31T00:00:00.000Z"),
+      licenseNote: null,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      aiWallet: { balance: 100 },
       owner: { name: "Asha", phone: "+919876543210" },
     };
     vi.mocked(findRestaurantsPaginated).mockResolvedValue({
@@ -214,6 +221,11 @@ describe("listRestaurants", () => {
       ownerName: "Asha",
       ownerPhone: "+919876543210",
       onboardedAt: "2026-01-01T00:00:00.000Z",
+      licensePlan: "TRIAL",
+      licenseExpiresAt: "2026-01-31T00:00:00.000Z",
+      licenseDaysRemaining: expect.any(Number),
+      licenseStatus: expect.any(String),
+      aiBalance: 100,
     });
   });
 });
