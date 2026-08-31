@@ -53,6 +53,7 @@ export interface MenuItemDTO {
   readonly dietaryType: DietaryType | null;
   readonly price: number;
   readonly prepTimeMinutes: number | null;
+  readonly calories: number | null;
   readonly allergens: readonly AllergenDTO[];
   readonly isActive: boolean;
   readonly available: boolean;

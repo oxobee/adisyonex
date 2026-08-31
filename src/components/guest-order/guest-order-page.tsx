@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import {
   CakeIcon,
   CalendarIcon,
@@ -81,6 +82,7 @@ export function GuestOrderPage({
   tableId,
   tableLabel,
   restaurantName,
+  logoUrl,
   menu,
   initiallyVerified,
   verifiedPhoneMasked,
@@ -91,6 +93,7 @@ export function GuestOrderPage({
   readonly tableId: string;
   readonly tableLabel: string;
   readonly restaurantName: string;
+  readonly logoUrl?: string | null;
   readonly menu: MenuDTO;
   readonly initiallyVerified: boolean;
   readonly verifiedPhoneMasked: string | null;
@@ -145,6 +148,14 @@ export function GuestOrderPage({
       setMyOrders(res.data);
     }
   };
+
+  // Poll orders so when cashier settles table, button resets automatically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void refreshOrders();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   const bill = useMemo(
     () => computeBill(cart.cart.map(toBillLine)),
@@ -253,10 +264,10 @@ export function GuestOrderPage({
               <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-amber-500/20 blur-2xl" />
               <div className="pointer-events-none absolute -bottom-10 -left-10 size-32 rounded-full bg-orange-500/20 blur-2xl" />
 
-              {/* Floating Cake Badge with Pulse */}
+              {/* Floating Cake Badge with Glow */}
               <div className="relative mb-3 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400/25 to-orange-500/25 text-3xl shadow-md ring-4 ring-amber-500/10">
-                <span className="animate-bounce">🎂</span>
-                <span className="absolute -top-1 -right-1 text-sm animate-pulse">✨</span>
+                <span>🎂</span>
+                <span className="absolute -top-1 -right-1 text-sm">✨</span>
               </div>
 
               <h2 className="text-lg font-black tracking-tight text-foreground">
@@ -284,7 +295,7 @@ export function GuestOrderPage({
             </div>
           ) : (
             <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center shadow-xs">
-              <span className="text-3xl mb-1.5 animate-bounce">🎉</span>
+              <span className="text-3xl mb-1.5">🎉</span>
               <p className="text-base font-black text-emerald-700 dark:text-emerald-300">
                 Kaydınız Başarıyla Alındı!
               </p>
@@ -397,7 +408,7 @@ export function GuestOrderPage({
         <Dialog open={registeredSuccess && !customerDrawerOpen} onOpenChange={setRegisteredSuccess}>
           <DialogContent className="max-w-xs rounded-3xl p-6 text-center">
             <div className="flex flex-col items-center gap-3">
-              <div className="flex size-16 items-center justify-center rounded-full bg-amber-500/20 text-3xl animate-bounce">
+              <div className="flex size-16 items-center justify-center rounded-full bg-amber-500/20 text-3xl">
                 🎉
               </div>
               <DialogTitle className="text-lg font-black text-foreground">
@@ -421,15 +432,27 @@ export function GuestOrderPage({
 
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32">
-      {/* Lively & Themed Top Banner */}
+      {/* Lively & Themed Top Banner with Square Logo */}
       <div className="relative mb-4 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card p-4 shadow-sm backdrop-blur-md">
         <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-primary/10 blur-xl" />
 
         <div className="relative flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-primary text-white shadow-md shadow-primary/20">
-              <UtensilsCrossedIcon className="size-6 stroke-[2.2]" />
-            </div>
+            {logoUrl ? (
+              <div className="relative size-12 shrink-0 aspect-square overflow-hidden rounded-2xl border border-primary/20 bg-card p-0.5 shadow-md shadow-primary/15">
+                <Image
+                  src={logoUrl}
+                  alt={restaurantName}
+                  fill
+                  className="object-cover rounded-xl"
+                  sizes="48px"
+                />
+              </div>
+            ) : (
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-primary text-white shadow-md shadow-primary/20">
+                <UtensilsCrossedIcon className="size-6 stroke-[2.2]" />
+              </div>
+            )}
 
             <div className="min-w-0">
               <h1 className="truncate text-base sm:text-lg font-black tracking-tight text-foreground">

@@ -41,6 +41,7 @@ export interface MenuItemWriteData {
   goodsGstRate?: number | null;
   hsnSacCode?: string | null;
   prepTimeMinutes?: number | null;
+  calories?: number | null;
   allergens?: Prisma.InputJsonValue;
   sortOrder?: number;
   isActive?: boolean;
@@ -77,6 +78,7 @@ export const createMenuItem = (
       goodsGstRate: data.goodsGstRate ?? null,
       hsnSacCode: data.hsnSacCode ?? null,
       prepTimeMinutes: data.prepTimeMinutes ?? 15,
+      calories: data.calories ?? null,
       allergens: data.allergens ?? [],
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,
@@ -118,6 +120,7 @@ export const updateMenuItem = (
       goodsGstRate: data.goodsGstRate ?? null,
       hsnSacCode: data.hsnSacCode ?? null,
       prepTimeMinutes: data.prepTimeMinutes !== undefined ? data.prepTimeMinutes : 15,
+      calories: data.calories !== undefined ? data.calories : null,
       allergens: data.allergens !== undefined ? data.allergens : [],
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,

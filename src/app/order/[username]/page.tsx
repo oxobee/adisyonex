@@ -58,14 +58,11 @@ export default async function OrderPage({
   const verifiedPhoneMasked =
     verified && session ? maskPhone(session.phone) : null;
   const verifiedExpiresAt = verified && session ? session.expiresAt : null;
-  const initialOrders =
-    verified && session
-      ? await getGuestOrders(
-          session.restaurantId,
-          session.phone,
-          session.tableId,
-        )
-      : [];
+  const initialOrders = await getGuestOrders(
+    data.restaurantId,
+    session?.phone ?? "",
+    data.tableId,
+  );
 
   return (
     <main className="min-h-svh">
@@ -74,6 +71,7 @@ export default async function OrderPage({
         tableId={data.tableId}
         tableLabel={data.tableLabel}
         restaurantName={data.restaurantName}
+        logoUrl={data.logoUrl}
         menu={data.menu}
         initiallyVerified={Boolean(verified)}
         verifiedPhoneMasked={verifiedPhoneMasked}

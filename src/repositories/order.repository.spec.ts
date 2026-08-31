@@ -122,6 +122,7 @@ describe("orderRepository", () => {
         where: {
           restaurantId: "res_1",
           deletedAt: null,
+          status: "OPEN",
           OR: [{ customerPhone: "+919876543210" }, { tableId: "t1" }],
         },
         orderBy: { createdAt: "desc" },

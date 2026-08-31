@@ -5,6 +5,7 @@ import Image from "next/image";
 import {
   CheckIcon,
   ClockIcon,
+  FlameIcon,
   MinusIcon,
   PlusIcon,
   XIcon,
@@ -146,15 +147,17 @@ export function ItemConfigDialog({
             </div>
           ) : null}
 
-          {/* Price & Prep Time Row */}
+          {/* Price & Calories Row */}
           <div className="flex items-center justify-between">
             <span className="text-2xl font-black tracking-tight text-foreground tabular-nums sm:text-3xl">
               {formatCurrency(unitPrice)}
             </span>
-            <span className="text-muted-foreground bg-muted/60 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
-              <ClockIcon className="size-3.5 text-muted-foreground/80" />
-              {item.prepTimeMinutes ? `${item.prepTimeMinutes} dk` : "15 dk"}
-            </span>
+            {item.calories ? (
+              <span className="text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold">
+                <FlameIcon className="size-3.5 text-amber-500" />
+                {item.calories} kcal
+              </span>
+            ) : null}
           </div>
 
           {/* Product Description */}

@@ -136,6 +136,7 @@ const mapItem = (
     dietaryType: item.dietaryType,
     price: num(item.price),
     prepTimeMinutes: item.prepTimeMinutes ?? 15,
+    calories: item.calories ?? null,
     allergens: Array.isArray(item.allergens)
       ? (item.allergens as unknown as { name: string; icon: string }[]).map((a) => ({
           name: a.name,
@@ -237,6 +238,7 @@ const toWriteData = (
   goodsGstRate: input.goodsGstRate ?? null,
   hsnSacCode: input.hsnSacCode ?? null,
   prepTimeMinutes: input.prepTimeMinutes ?? 15,
+  calories: input.calories ?? null,
   allergens: input.allergens ?? [],
   sortOrder: input.sortOrder,
   isActive: input.isActive,

@@ -152,7 +152,11 @@ export const findOrdersForGuest = (
     where: {
       restaurantId,
       deletedAt: null,
-      OR: [{ customerPhone: phone }, { tableId }],
+      status: "OPEN",
+      OR: [
+        ...(phone ? [{ customerPhone: phone }] : []),
+        { tableId },
+      ],
     },
     include: ORDER_INCLUDE,
     orderBy: { createdAt: "desc" },

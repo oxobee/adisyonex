@@ -286,6 +286,7 @@ model MenuItem {
   goodsGstRate      Decimal?     @db.Decimal(5, 2)
   hsnSacCode        String?
   prepTimeMinutes   Int?         @default(15)
+  calories          Int?
   allergens         Json?
   sortOrder         Int          @default(0)
   isActive          Boolean      @default(true)

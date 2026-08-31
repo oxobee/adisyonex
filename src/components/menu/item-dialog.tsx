@@ -115,6 +115,9 @@ export function ItemDialog({
   const [prepTimeMinutes, setPrepTimeMinutes] = useState(
     item?.prepTimeMinutes != null ? String(item.prepTimeMinutes) : "15",
   );
+  const [calories, setCalories] = useState(
+    item?.calories != null ? String(item.calories) : "",
+  );
   const [allergens, setAllergens] = useState<AllergenDTO[]>(
     item?.allergens ? [...item.allergens] : [],
   );
@@ -178,6 +181,7 @@ export function ItemDialog({
       dietaryType: dietaryType === "NONE" ? undefined : dietaryType,
       price: Number(price),
       prepTimeMinutes: prepTimeMinutes ? Number(prepTimeMinutes) : 15,
+      calories: calories ? Number(calories) : null,
       allergens,
       priceTaxInclusive: gstRegistered ? priceTaxInclusive : undefined,
       goodsGstRate:
@@ -255,23 +259,23 @@ export function ItemDialog({
             </Field>
           </div>
 
-          {/* Prep Time & Dietary Type */}
+          {/* Calories & Dietary Type */}
           <div className="grid grid-cols-2 gap-3">
             <Field>
-              <FieldLabel htmlFor="item-preptime">
+              <FieldLabel htmlFor="item-calories">
                 <span className="flex items-center gap-1.5">
-                  <ClockIcon className="size-3.5 text-muted-foreground" />
-                  Hazırlanma Süresi (dk)
+                  <span className="text-amber-500">🔥</span>
+                  Kalori (kcal)
                 </span>
               </FieldLabel>
               <Input
-                id="item-preptime"
+                id="item-calories"
                 type="number"
                 min={0}
-                max={300}
-                value={prepTimeMinutes}
-                onChange={(e) => setPrepTimeMinutes(e.target.value)}
-                placeholder="15"
+                max={10000}
+                value={calories}
+                onChange={(e) => setCalories(e.target.value)}
+                placeholder="Örn: 450"
               />
             </Field>
 

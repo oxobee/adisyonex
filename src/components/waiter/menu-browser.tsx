@@ -3,58 +3,77 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import {
-  ClockIcon,
   FlameIcon,
-  Grid2x2Icon,
   ImageIcon,
   LayoutGridIcon,
-  ListFilterIcon,
   ListIcon,
   PlusIcon,
   SearchIcon,
-  SlidersHorizontalIcon,
-  SparklesIcon,
-  WheatIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MenuDTO, MenuItemDTO } from "@/types/menu";
 
-const DIET_BADGES: Record<string, { label: string; icon: string; color: string }> = {
-  VEG: { label: "Vejetaryen", icon: "🌱", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
-  NON_VEG: { label: "Et / Tavuk", icon: "🥩", color: "text-red-600 bg-red-500/10 border-red-500/20" },
-  EGG: { label: "Yumurtalı", icon: "🥚", color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
+const DIET_BADGES = {
+  VEG: { label: "Vejetaryen", icon: "🌱" },
+  NON_VEG: { label: "Et / Tavuk", icon: "🥩" },
+  EGG: { label: "Yumurtalı", icon: "🥚" },
 };
 
-function getCategoryEmoji(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes("burger") || n.includes("sandviç")) return "🍔";
-  if (n.includes("pizza") || n.includes("pide") || n.includes("lahmacun")) return "🍕";
-  if (n.includes("içecek") || n.includes("meşrubat") || n.includes("kola") || n.includes("drink") || n.includes("su") || n.includes("kahve")) return "🥤";
-  if (n.includes("atıştırma") || n.includes("patates") || n.includes("snack") || n.includes("kızartma")) return "🍟";
-  if (n.includes("menü") || n.includes("avantaj") || n.includes("fırsat") || n.includes("combo")) return "⭐";
-  if (n.includes("tatlı") || n.includes("pasta") || n.includes("dessert") || n.includes("dondurma")) return "🍰";
-  if (n.includes("tavuk") || n.includes("chicken") || n.includes("kanat") || n.includes("nugget")) return "🍗";
-  if (n.includes("döner") || n.includes("kebap") || n.includes("dürüm") || n.includes("et") || n.includes("köfte")) return "🥩";
-  if (n.includes("salata") || n.includes("meze") || n.includes("bowl")) return "🥗";
-  if (n.includes("çorba") || n.includes("soup")) return "🍲";
-  if (n.includes("makarna") || n.includes("pasta")) return "🍝";
-  if (n.includes("kahvaltı") || n.includes("yumurta")) return "🍳";
+const CATEGORY_EMOJIS: Record<string, string> = {
+  burger: "🍔",
+  hamburger: "🍔",
+  pizza: "🍕",
+  pizzalar: "🍕",
+  makarna: "🍝",
+  salata: "🥗",
+  tatli: "🍰",
+  tatlı: "🍰",
+  tatlılar: "🍰",
+  icecek: "🥤",
+  içecek: "🥤",
+  içecekler: "🥤",
+  kahve: "☕",
+  kahveler: "☕",
+  corba: "🥣",
+  çorba: "🥣",
+  çorbalar: "🥣",
+  atistirmalik: "🍟",
+  atıştırmalık: "🍟",
+  kahvalti: "🍳",
+  kahvaltı: "🍳",
+  kebap: "🍢",
+  kebaplar: "🍢",
+  doner: "🥙",
+  döner: "🥙",
+  durum: "🌯",
+  dürüm: "🌯",
+  pide: "🥖",
+  lahmacun: "🫓",
+  tavuk: "🍗",
+  et: "🥩",
+  balik: "🐟",
+  balık: "🐟",
+};
+
+const getCategoryEmoji = (name: string): string => {
+  const normalized = name.toLowerCase().replace(/[^a-z0-9ğüşıöç]/g, "");
+  for (const [key, emoji] of Object.entries(CATEGORY_EMOJIS)) {
+    if (normalized.includes(key)) return emoji;
+  }
   return "🍽️";
-}
+};
 
 export function MenuBrowser({
   menu,
   onQuickAdd,
   onOpenDetail,
 }: {
-  readonly menu: MenuDTO;
-  readonly onQuickAdd: (item: MenuItemDTO) => void;
-  readonly onOpenDetail: (item: MenuItemDTO) => void;
+  menu: MenuDTO;
+  onQuickAdd: (item: MenuItemDTO) => void;
+  onOpenDetail: (item: MenuItemDTO) => void;
 }) {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -65,7 +84,6 @@ export function MenuBrowser({
     [menu.categories],
   );
 
-  // Calculate item counts per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const item of menu.items) {
@@ -76,55 +94,45 @@ export function MenuBrowser({
     return counts;
   }, [menu.items]);
 
-  const activeCategory = useMemo(
-    () => categories.find((c) => c.id === categoryId) ?? null,
-    [categories, categoryId],
-  );
-
   const items = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return menu.items
-      .filter((i) => i.isActive)
-      .filter((i) => (q ? i.name.toLowerCase().includes(q) || (i.shortDescription && i.shortDescription.toLowerCase().includes(q)) : true))
-      .filter((i) => (categoryId && !q ? i.categoryId === categoryId : true));
-  }, [menu.items, query, categoryId]);
+    return menu.items.filter((item) => {
+      if (!item.isActive) return false;
+      if (categoryId && item.categoryId !== categoryId) return false;
+      if (query.trim()) {
+        const q = query.toLowerCase();
+        const matchesName = item.name.toLowerCase().includes(q);
+        const matchesDesc =
+          item.shortDescription?.toLowerCase().includes(q) ?? false;
+        return matchesName || matchesDesc;
+      }
+      return true;
+    });
+  }, [menu.items, categoryId, query]);
+
+  const activeCategory = categories.find((c) => c.id === categoryId);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* 1. TOP BAR: Modern Rounded Search Bar + Layout / Filter Icons */}
+    <div className="flex flex-col gap-3">
+      {/* 1. STICKY TOP CONTROLS: Clean Full-Width Search & Categories */}
       <div className="sticky top-0 z-20 -mx-1 bg-background/95 px-1 pt-1 pb-2 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <SearchIcon className="text-muted-foreground absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ürün Ara…"
-              className="h-12 rounded-full border-border/80 bg-card/90 pl-10 pr-10 text-sm shadow-xs transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
-              inputMode="search"
-            />
-            {query.trim() ? (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3.5 -translate-y-1/2 text-xs font-semibold"
-              >
-                ✕
-              </button>
-            ) : (
-              <SlidersHorizontalIcon className="text-muted-foreground/60 pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2" />
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setViewMode((v) => (v === "list" ? "grid" : "list"))}
-            title={viewMode === "list" ? "Izgara Görünümü" : "Liste Görünümü"}
-            className="border-border/80 bg-card/90 text-foreground flex size-12 shrink-0 items-center justify-center rounded-full border shadow-xs transition-all hover:bg-accent active:scale-95"
-            aria-label="Görünüm değiştir"
-          >
-            <Grid2x2Icon className="size-4.5" />
-          </button>
+        <div className="relative w-full">
+          <SearchIcon className="text-muted-foreground absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ürün Ara…"
+            className="h-12 w-full rounded-full border-border/80 bg-card/90 pl-10 pr-10 text-sm shadow-xs transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
+            inputMode="search"
+          />
+          {query.trim() ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3.5 -translate-y-1/2 text-xs font-semibold"
+            >
+              ✕
+            </button>
+          ) : null}
         </div>
 
         {/* 2. HORIZONTAL CATEGORY CHIPS */}
@@ -215,7 +223,7 @@ export function MenuBrowser({
         </div>
       </div>
 
-      {/* 4. PRODUCTS LIST / GRID */}
+      {/* 4. PRODUCTS LIST / GRID WITH SCROLL REVEAL ANIMATION */}
       {items.length === 0 ? (
         <div className="bg-card flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 text-center">
           <div className="bg-muted text-muted-foreground mb-3 flex size-12 items-center justify-center rounded-full">
@@ -227,9 +235,9 @@ export function MenuBrowser({
           </p>
         </div>
       ) : viewMode === "list" ? (
-        /* --- LIST VIEW (Matches Screenshot Exactly) --- */
+        /* --- LIST VIEW --- */
         <div className="flex flex-col gap-3">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const photo =
               item.images.find((i) => i.isPrimary) ?? item.images[0] ?? null;
             const hasOptions =
@@ -239,8 +247,9 @@ export function MenuBrowser({
             return (
               <div
                 key={item.id}
+                style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
                 className={cn(
-                  "group relative flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3 shadow-xs transition-all duration-200 hover:shadow-md hover:border-border active:scale-[0.99]",
+                  "group relative flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3 shadow-xs transition-all duration-200 hover:shadow-md hover:border-border active:scale-[0.99] animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both",
                   !item.available && "opacity-60",
                 )}
               >
@@ -314,11 +323,13 @@ export function MenuBrowser({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Estimated prep time */}
-                      <span className="text-muted-foreground bg-muted/50 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium">
-                        <ClockIcon className="size-3 text-muted-foreground/80" />
-                        {item.prepTimeMinutes ? `${item.prepTimeMinutes} dk` : "15 dk"}
-                      </span>
+                      {/* Calories badge */}
+                      {item.calories ? (
+                        <span className="text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                          <FlameIcon className="size-3 text-amber-500" />
+                          {item.calories} kcal
+                        </span>
+                      ) : null}
 
                       {/* Quick Add / Option Trigger */}
                       <button
@@ -350,7 +361,7 @@ export function MenuBrowser({
       ) : (
         /* --- GRID VIEW (2 Columns) --- */
         <div className="grid grid-cols-2 gap-3">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const photo =
               item.images.find((i) => i.isPrimary) ?? item.images[0] ?? null;
             const hasOptions =
@@ -359,8 +370,9 @@ export function MenuBrowser({
             return (
               <div
                 key={item.id}
+                style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
                 className={cn(
-                  "group relative flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-3 shadow-xs transition-all duration-200 hover:shadow-md hover:border-border active:scale-[0.98]",
+                  "group relative flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-3 shadow-xs transition-all duration-200 hover:shadow-md hover:border-border active:scale-[0.98] animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both",
                   !item.available && "opacity-60",
                 )}
               >
@@ -391,6 +403,13 @@ export function MenuBrowser({
                       <p className="text-muted-foreground text-xs line-clamp-2 mt-1 leading-relaxed">
                         {item.shortDescription}
                       </p>
+                    ) : null}
+
+                    {item.calories ? (
+                      <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                        <FlameIcon className="size-3 text-amber-500" />
+                        {item.calories} kcal
+                      </div>
                     ) : null}
                   </div>
                 </div>
