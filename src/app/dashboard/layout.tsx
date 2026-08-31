@@ -32,6 +32,7 @@ export default async function DashboardLayout({
         user={{
           name: user?.name ?? "Manager",
           contact: user?.phone ?? user?.email ?? "",
+          role: user?.role,
         }}
       />
       <SidebarInset>

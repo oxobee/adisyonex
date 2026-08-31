@@ -25,6 +25,7 @@ import {
   UsersIcon,
   Settings2Icon,
   CircleHelpIcon,
+  ShieldCheckIcon,
 } from "lucide-react"
 
 const navMain = [
@@ -37,16 +38,20 @@ const navMain = [
   { title: "Personel", url: "/dashboard/staff", icon: <UsersIcon /> },
 ]
 
-const navSecondary = [
-  { title: "Ayarlar", url: "/dashboard/settings", icon: <Settings2Icon /> },
-  { title: "Yardım Al", url: "#", icon: <CircleHelpIcon /> },
-]
 export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  user: { name: string; contact: string }
+  user: { name: string; contact: string; role?: string }
 }) {
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN"
+  const navSecondary = [
+    ...(isAdmin
+      ? [{ title: "Süper Yönetici Paneli", url: "/admin", icon: <ShieldCheckIcon /> }]
+      : []),
+    { title: "Ayarlar", url: "/dashboard/settings", icon: <Settings2Icon /> },
+    { title: "Yardım Al", url: "#", icon: <CircleHelpIcon /> },
+  ]
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>

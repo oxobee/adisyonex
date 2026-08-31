@@ -47,6 +47,15 @@ export function AdminNav() {
           </Link>
         ))}
       </nav>
+      <div className="mt-auto border-t p-3">
+        <Link
+          href="/dashboard"
+          className="text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+        >
+          <UtensilsCrossedIcon className="size-4" aria-hidden />
+          Restoran Paneline Dön
+        </Link>
+      </div>
     </aside>
   );
 }
