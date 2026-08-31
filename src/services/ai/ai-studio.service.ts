@@ -323,10 +323,31 @@ export const generateFoodImage = async (
     `"${input.itemName}" için ${quality} kalite görsel üretimi`,
   );
 
+  let styleDetail =
+    "Soft warm restaurant studio lighting, appetizing natural steam, mouthwatering textures, shallow depth of field with soft bokeh background.";
+
+  if (input.style === "WHITE_BACKGROUND") {
+    styleDetail =
+      "Pure seamless bright solid white studio infinity backdrop, high-key clean commercial studio lighting, soft subtle contact shadow under the plate, isolated modern food catalog presentation.";
+  } else if (input.style === "RUSTIC") {
+    styleDetail =
+      "Warm natural sunlight, rustic dark aged wooden tabletop texture, artisan culinary ambiance, cozy authentic atmosphere.";
+  } else if (input.style === "MODERN_MINIMAL") {
+    styleDetail =
+      "Minimalist fine dining plating on modern slate or artisanal stoneware, artistic culinary arrangement, sleek contemporary aesthetic.";
+  } else if (input.style === "FAST_FOOD_VIBRANT") {
+    styleDetail =
+      "Vibrant saturated colors, dynamic mouthwatering sizzle, fresh dripping sauce and cheese stretch, bold appetizing contrast.";
+  } else if (input.style === "DARK_GOURMET") {
+    styleDetail =
+      "Dark moody gourmet atmosphere, dramatic side rim lighting, rich shadows, luxury steakhouse and fine wine aesthetic.";
+  }
+
   const prompt = `Professional gourmet culinary food photography of: ${input.itemName}.
 ${input.itemDescription ? `Plate composition & ingredients: ${input.itemDescription}. ` : ""}
-Format & Composition: 1:1 SQUARE aspect ratio, centered close-up food plating on an elegant ceramic dish, professional 45-degree angle.
-Lighting & Atmosphere: Soft warm studio lighting, appetizing natural steam and sizzle reflections, mouthwatering textures, shallow depth of field with soft bokeh background, 8k resolution, ultra photorealistic.
+Format & Composition: 1:1 SQUARE aspect ratio, centered close-up food plating, professional 45-degree culinary camera angle.
+Lighting & Background Style: ${styleDetail}
+Resolution & Quality: 8k resolution, ultra photorealistic, pin-sharp delicious textures.
 CRITICAL NEGATIVE CONSTRAINTS - NO TEXT: Absolutely NO text, NO typography, NO words, NO letters, NO writing, NO numbers, NO subtitles, NO watermarks, NO brand logos, NO price tags, NO menu labels, NO human faces. The image must contain ONLY the delicious food dish cleanly presented.`;
 
   try {

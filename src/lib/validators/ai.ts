@@ -30,7 +30,14 @@ export const aiImageGenInputSchema = z.object({
   itemName: z.string().min(2).max(100),
   itemDescription: z.string().max(500).optional(),
   style: z
-    .enum(["STUDIO_FOOD", "RUSTIC", "MODERN_MINIMAL", "FAST_FOOD_VIBRANT", "DARK_GOURMET"])
+    .enum([
+      "STUDIO_FOOD",
+      "WHITE_BACKGROUND",
+      "RUSTIC",
+      "MODERN_MINIMAL",
+      "FAST_FOOD_VIBRANT",
+      "DARK_GOURMET",
+    ])
     .default("STUDIO_FOOD"),
   qualityLevel: z.enum(["ECONOMY", "STANDARD", "PROFESSIONAL", "ULTRA"]).default("STANDARD"),
 });

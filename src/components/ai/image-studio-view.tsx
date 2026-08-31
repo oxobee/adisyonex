@@ -57,7 +57,12 @@ export function ImageStudioView({
   const [itemName, setItemName] = useState<string>(queryName);
   const [itemDescription, setItemDescription] = useState<string>(queryDesc);
   const [style, setStyle] = useState<
-    "STUDIO_FOOD" | "RUSTIC" | "MODERN_MINIMAL" | "FAST_FOOD_VIBRANT" | "DARK_GOURMET"
+    | "STUDIO_FOOD"
+    | "WHITE_BACKGROUND"
+    | "RUSTIC"
+    | "MODERN_MINIMAL"
+    | "FAST_FOOD_VIBRANT"
+    | "DARK_GOURMET"
   >("STUDIO_FOOD");
   const [qualityLevel, setQualityLevel] = useState<QualityLevel>("STANDARD");
 
@@ -156,7 +161,12 @@ export function ImageStudioView({
     {
       id: "STUDIO_FOOD",
       title: "📸 Profesyonel Stüdyo Çekimi",
-      desc: "Yumuşak softbox aydınlatma, makro lezzet odağı, canlı reklam kalitesi.",
+      desc: "Yumuşak softbox aydınlatma, makro lezzet odağı, canlı restoran sunumu.",
+    },
+    {
+      id: "WHITE_BACKGROUND",
+      title: "⚪ Beyaz Fonda Profesyonel Çekim",
+      desc: "Kusursuz beyaz stüdyo fonu, net gölge izolasyonu ve katalog estetiği.",
     },
     {
       id: "RUSTIC",
