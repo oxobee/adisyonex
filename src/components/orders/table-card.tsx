@@ -98,7 +98,7 @@ export function TableCard({
           "ring-4 ring-amber-400 ring-offset-2 ring-offset-background animate-pulse shadow-xl shadow-amber-500/40",
         // Spotlight Selected State:
         isSelected &&
-          "ring-4 ring-white shadow-2xl scale-105 z-50",
+          "ring-4 ring-white/90 shadow-2xl",
       )}
     >
       {/* Top Header: Table Name + Live Elapsed Time or Status */}

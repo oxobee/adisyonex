@@ -638,7 +638,6 @@ export function OrdersBoard({
                   tableOrders.length > 0 ? tableOrders[0].createdAt : null;
 
                 const status: TableStatus = isOccupied ? "OCCUPIED" : "EMPTY";
-                const isSelected = selectedTableId === table.id;
 
                 return (
                   <div key={table.id} className="relative">
@@ -649,7 +648,7 @@ export function OrdersBoard({
                       orders={tableOrders}
                       firstOrderAt={firstOrderAt}
                       hasBillRequest={hasBill}
-                      isSelected={isSelected}
+                      isSelected={false}
                       onClick={() => {
                         setSelectedTableId(table.id);
                       }}
