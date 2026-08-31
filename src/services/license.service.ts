@@ -75,12 +75,12 @@ export const getRestaurantLicenseInfo = async (
   }
 
   let expiresAt = restaurant.licenseExpiresAt;
-  let plan = restaurant.licensePlan;
-  let startsAt = restaurant.licenseStartsAt || restaurant.createdAt;
+  const plan = restaurant.licensePlan || "TRIAL";
+  const startsAt = restaurant.licenseStartsAt || restaurant.createdAt;
 
   // Default: if no expiry set and plan is TRIAL, default 30 days from creation
-  if (!expiresAt && plan === "TRIAL") {
-    const defaultExpiry = new Date(startsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (!expiresAt && plan === "TRIAL" && startsAt) {
+    const defaultExpiry = new Date(new Date(startsAt).getTime() + 30 * 24 * 60 * 60 * 1000);
     expiresAt = defaultExpiry;
   }
 

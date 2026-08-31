@@ -8,17 +8,25 @@ import { cn, serializeForClient } from "@/lib/utils";
 import { restaurantListQuerySchema } from "@/lib/validators/admin";
 import { listRestaurants } from "@/services/restaurant.service";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function AdminRestaurantsPage({ searchParams }: PageProps) {
-  const sp = await searchParams;
-  const query = restaurantListQuerySchema.parse({
-    search: typeof sp.search === "string" ? sp.search : undefined,
-    page: typeof sp.page === "string" ? sp.page : undefined,
-  });
-  const result = await listRestaurants(query);
+  let result;
+  try {
+    const sp = await searchParams;
+    const query = restaurantListQuerySchema.parse({
+      search: typeof sp.search === "string" ? sp.search : undefined,
+      page: typeof sp.page === "string" ? sp.page : undefined,
+    });
+    result = await listRestaurants(query);
+  } catch (e) {
+    console.error("Failed to list restaurants:", e);
+    result = { items: [], total: 0, page: 1, pageSize: 20 };
+  }
 
   return (
     <div className="flex flex-col gap-6">

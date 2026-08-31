@@ -5,6 +5,8 @@ import { getManagerContextOrNull } from "@/lib/manager-auth"
 import { getDashboard } from "@/services/dashboard.service"
 import { getLowStockCount } from "@/services/stock.service"
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
   const ctx = await getManagerContextOrNull()
   if (!ctx) {

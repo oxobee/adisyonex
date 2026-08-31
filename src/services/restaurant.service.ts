@@ -48,11 +48,11 @@ export const generateUniqueUsername = async (): Promise<string> => {
 
 const mapRestaurant = (row: AdminRestaurantRow): RestaurantListItemDTO => {
   let expiresAt = row.licenseExpiresAt;
-  let plan = row.licensePlan;
-  let startsAt = row.licenseStartsAt || row.createdAt;
+  const plan = row.licensePlan || "TRIAL";
+  const startsAt = row.licenseStartsAt || row.createdAt;
 
-  if (!expiresAt && plan === "TRIAL") {
-    expiresAt = new Date(startsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (!expiresAt && plan === "TRIAL" && startsAt) {
+    expiresAt = new Date(new Date(startsAt).getTime() + 30 * 24 * 60 * 60 * 1000);
   }
 
   let daysRemaining = 9999;
@@ -80,11 +80,11 @@ const mapRestaurant = (row: AdminRestaurantRow): RestaurantListItemDTO => {
     isActive: row.isActive,
     ownerName: row.owner.name,
     ownerPhone: row.owner.phone,
-    onboardedAt: row.onboardedAt.toISOString(),
-    licensePlan: row.licensePlan,
-    licenseExpiresAt: expiresAt ? expiresAt.toISOString() : null,
+    onboardedAt: row.onboardedAt ? new Date(row.onboardedAt).toISOString() : new Date().toISOString(),
+    licensePlan: plan,
+    licenseExpiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
     licenseDaysRemaining: daysRemaining,
-    licenseStatus: isExpired ? "EXPIRED" : row.licenseStatus,
+    licenseStatus: isExpired ? "EXPIRED" : (row.licenseStatus || "ACTIVE"),
     aiBalance: row.aiWallet?.balance ?? 0,
   };
 };

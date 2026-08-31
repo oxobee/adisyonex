@@ -7,6 +7,8 @@ import { listOrders } from "@/services/order.service";
 import { getTodaySales } from "@/services/sales.service";
 import { getTables } from "@/services/table.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrdersPage() {
   const ctx = await getManagerContextOrNull();
   if (!ctx) {

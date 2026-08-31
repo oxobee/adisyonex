@@ -3,9 +3,12 @@ import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { requireUserId } from "@/lib/auth-helpers"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
-import { getRestaurantLicenseInfo } from "@/services/license.service"
+import { serializeForClient } from "@/lib/utils"
+import { getRestaurantLicenseInfo, type LicenseInfoDTO } from "@/services/license.service"
 import { getSelfOrderShareInfo } from "@/services/restaurant-settings.service"
 import { getManagerById } from "@/services/user.service"
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
   children,
@@ -17,10 +20,22 @@ export default async function DashboardLayout({
     getManagerById(userId),
     getManagerContextOrNull(),
   ])
-  const [share, licenseInfo] = await Promise.all([
-    ctx ? getSelfOrderShareInfo(ctx.restaurantId) : null,
-    ctx ? getRestaurantLicenseInfo(ctx.restaurantId) : null,
-  ])
+
+  let share = null
+  let licenseInfo: LicenseInfoDTO | null = null
+
+  if (ctx) {
+    try {
+      const [s, l] = await Promise.all([
+        getSelfOrderShareInfo(ctx.restaurantId).catch(() => null),
+        getRestaurantLicenseInfo(ctx.restaurantId).catch(() => null),
+      ])
+      share = s
+      licenseInfo = l
+    } catch (e) {
+      console.error("Failed to load restaurant context in layout:", e)
+    }
+  }
 
   return (
     <SidebarProvider
@@ -38,7 +53,7 @@ export default async function DashboardLayout({
           contact: user?.phone ?? user?.email ?? "",
           role: user?.role,
         }}
-        license={licenseInfo}
+        license={licenseInfo ? serializeForClient(licenseInfo) : null}
       />
       <SidebarInset>
         <SiteHeader staffLoginUsername={share?.username ?? null} />
