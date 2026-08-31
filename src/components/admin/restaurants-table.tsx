@@ -13,8 +13,8 @@ export function RestaurantsTable({
   if (data.items.length === 0) {
     return (
       <EmptyState
-        title="No restaurants yet"
-        description="Onboard your first restaurant to get started."
+        title="Henüz restoran bulunmuyor"
+        description="Başlamak için ilk restoranınızı sisteme ekleyin."
       />
     );
   }
@@ -24,10 +24,10 @@ export function RestaurantsTable({
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-muted-foreground">
           <tr>
-            <th className="px-4 py-2.5 text-left font-medium">Name</th>
-            <th className="px-4 py-2.5 text-left font-medium">Owner</th>
-            <th className="px-4 py-2.5 text-left font-medium">Location</th>
-            <th className="px-4 py-2.5 text-left font-medium">Status</th>
+            <th className="px-4 py-2.5 text-left font-medium">Restoran Adı</th>
+            <th className="px-4 py-2.5 text-left font-medium">İşletmeci</th>
+            <th className="px-4 py-2.5 text-left font-medium">Konum</th>
+            <th className="px-4 py-2.5 text-left font-medium">Durum</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -59,7 +59,7 @@ export function RestaurantsTable({
                       : "bg-muted text-muted-foreground",
                   )}
                 >
-                  {restaurant.isActive ? "Active" : "Inactive"}
+                  {restaurant.isActive ? "Aktif" : "Pasif"}
                 </span>
               </td>
             </tr>
@@ -67,7 +67,7 @@ export function RestaurantsTable({
         </tbody>
       </table>
       <div className="text-muted-foreground border-t px-4 py-2 text-xs">
-        {data.total} restaurant{data.total === 1 ? "" : "s"}
+        {data.total} restoran
       </div>
     </div>
   );

@@ -2,16 +2,16 @@
 
 /** The restaurant's display timezone. Pinned so server (RSC/UTC) and client
  *  render the same local time — no hydration flash, no UTC leaking through. */
-const TIME_ZONE = "Asia/Kolkata";
+const TIME_ZONE = "Europe/Istanbul";
 
 export const formatCurrency = (n: number): string =>
-  `₹${n.toLocaleString("en-IN", {
+  `₺${n.toLocaleString("tr-TR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
 export const formatDateTime = (iso: string): string =>
-  new Date(iso).toLocaleString("en-IN", {
+  new Date(iso).toLocaleString("tr-TR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -21,7 +21,7 @@ export const formatDateTime = (iso: string): string =>
   });
 
 export const formatTime = (iso: string): string =>
-  new Date(iso).toLocaleTimeString("en-IN", {
+  new Date(iso).toLocaleTimeString("tr-TR", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: TIME_ZONE,

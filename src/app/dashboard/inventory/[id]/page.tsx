@@ -30,15 +30,15 @@ export default async function StockHistoryPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader
           title={item.name}
-          description={`On hand ${item.onHand} ${UNIT_LABELS[item.unit]}`}
+          description={`Mevcut Stok: ${item.onHand} ${UNIT_LABELS[item.unit]}`}
         />
         <Button variant="outline" render={<Link href="/dashboard/inventory" />}>
-          Back to inventory
+          Envantere Geri Dön
         </Button>
       </div>
 
       {movements.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No movements yet.</p>
+        <p className="text-muted-foreground text-sm">Henüz stok hareketi bulunmuyor.</p>
       ) : (
         <ul className="divide-y rounded-lg border">
           {movements.map((m) => (

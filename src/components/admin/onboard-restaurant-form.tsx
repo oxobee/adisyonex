@@ -37,40 +37,42 @@ export function OnboardRestaurantForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <Field>
-        <FieldLabel htmlFor="name">Restaurant name</FieldLabel>
+        <FieldLabel htmlFor="name">Restoran Adı</FieldLabel>
         <Input
           id="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Spice Route"
+          placeholder="Örn: Lezzet Durağı"
           required
         />
       </Field>
       <Field>
-        <FieldLabel htmlFor="ownerPhone">Owner phone</FieldLabel>
+        <FieldLabel htmlFor="ownerPhone">İşletmeci Telefonu</FieldLabel>
         <PhoneInput
           id="ownerPhone"
           onChange={setOwnerPhone}
           invalid={Boolean(error)}
         />
         <FieldDescription>
-          Used to sign in. An existing manager with this phone is reused.
+          Yönetici paneline giriş yapmak için kullanılır.
         </FieldDescription>
       </Field>
       <Field>
-        <FieldLabel htmlFor="ownerName">Owner name (optional)</FieldLabel>
+        <FieldLabel htmlFor="ownerName">İşletmeci Adı (isteğe bağlı)</FieldLabel>
         <Input
           id="ownerName"
           value={ownerName}
           onChange={(event) => setOwnerName(event.target.value)}
+          placeholder="Ad Soyad"
         />
       </Field>
       <Field>
-        <FieldLabel htmlFor="city">City (optional)</FieldLabel>
+        <FieldLabel htmlFor="city">Şehir (isteğe bağlı)</FieldLabel>
         <Input
           id="city"
           value={city}
           onChange={(event) => setCity(event.target.value)}
+          placeholder="İstanbul"
         />
       </Field>
       {error ? (
@@ -78,7 +80,7 @@ export function OnboardRestaurantForm() {
       ) : null}
       <div>
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Onboarding…" : "Onboard restaurant"}
+          {isPending ? "Kaydediliyor…" : "Restoranı Kaydet"}
         </Button>
       </div>
     </form>

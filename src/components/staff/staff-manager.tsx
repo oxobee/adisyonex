@@ -74,7 +74,7 @@ function StaffRow({
           </p>
           <p className="text-muted-foreground text-xs">
             {member.employeeCode} · {member.phone}
-            {member.hasPin ? " · PIN set" : " · No PIN"}
+            {member.hasPin ? " · PIN Tanımlı" : " · PIN Yok"}
           </p>
         </div>
       </div>
@@ -85,7 +85,7 @@ function StaffRow({
           className="h-8 px-2 text-xs"
           onClick={onEdit}
         >
-          Edit
+          Düzenle
         </Button>
         <Button
           size="sm"
@@ -93,7 +93,7 @@ function StaffRow({
           className="h-8 px-2 text-xs"
           onClick={onResetPin}
         >
-          Reset PIN
+          PIN Sıfırla
         </Button>
         <Button
           size="sm"
@@ -101,7 +101,7 @@ function StaffRow({
           className="text-destructive h-8 px-2 text-xs"
           onClick={onRemove}
         >
-          Remove
+          Kaldır
         </Button>
       </div>
     </li>
@@ -118,7 +118,7 @@ export function StaffManager({ staff }: { readonly staff: StaffDTO[] }) {
   const del = useServerAction(deleteStaffAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success("Staff removed");
+      toast.success("Personel kaldırıldı");
       setDeleteTarget(null);
     },
     onError: (message) => toast.error(message),
@@ -138,16 +138,16 @@ export function StaffManager({ staff }: { readonly staff: StaffDTO[] }) {
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader
-          title="Staff"
-          description="Your team — roles, contact details and POS PINs for the floor and kitchen."
+          title="Personel Yönetimi"
+          description="Ekibiniz — roller, iletişim bilgileri, salon ve mutfak POS PIN kodları."
         />
-        <Button onClick={openNew}>Add staff</Button>
+        <Button onClick={openNew}>Personel Ekle</Button>
       </div>
 
       {staff.length === 0 ? (
         <EmptyState
-          title="No staff yet"
-          description="Add your waiters, kitchen and management team so they can be identified at the POS."
+          title="Henüz personel eklenmemiş"
+          description="Garson, mutfak ve yönetim ekibinizi ekleyerek POS ve mutfak ekranlarında yetkilendirin."
         />
       ) : (
         STAFF_ROLE_OPTIONS.map((role) => {
@@ -159,7 +159,7 @@ export function StaffManager({ staff }: { readonly staff: StaffDTO[] }) {
             <div key={role.value} className="flex flex-col gap-2">
               <h2 className="text-muted-foreground text-sm font-medium">
                 {role.label}{" "}
-                <span className="text-muted-foreground/60">({rows.length})</span>
+                <span className="text-muted-foreground/60">({rows.length} kişi)</span>
               </h2>
               <ul className="divide-y rounded-lg border">
                 {rows.map((member) => (
@@ -195,22 +195,21 @@ export function StaffManager({ staff }: { readonly staff: StaffDTO[] }) {
         <Dialog open onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Remove {deleteTarget.name}?</DialogTitle>
+              <DialogTitle>{deleteTarget.name} personelini kaldırmak istiyor musunuz?</DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">
-              They&apos;ll no longer appear in the staff list. You can re-add them
-              later with the same employee ID.
+              Artık personel listesinde görünmeyecek. İleride aynı personel koduyla tekrar ekleyebilirsiniz.
             </p>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
-                Cancel
+                Vazgeç
               </Button>
               <Button
                 variant="destructive"
                 disabled={del.isPending}
                 onClick={() => del.execute({ id: deleteTarget.id })}
               >
-                {del.isPending ? "Removing…" : "Remove"}
+                {del.isPending ? "Kaldırılıyor…" : "Kaldır"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -42,7 +42,7 @@ export function ModifierGroupsDialog({
 
   const del = useServerAction(deleteGroupAction, {
     onSuccess: () => {
-      toast.success("Group deleted")
+      toast.success("Seçenek grubu silindi")
       onSaved()
     },
     onError: (message) => toast.error(message),
@@ -55,9 +55,9 @@ export function ModifierGroupsDialog({
           <DialogTitle>
             {editing
               ? editing === "new"
-                ? "New add-on group"
-                : "Edit add-on group"
-              : "Add-on groups"}
+                ? "Yeni Seçenek Grubu"
+                : "Seçenek Grubunu Düzenle"
+              : "Ekstra / Seçenek Grupları"}
           </DialogTitle>
         </DialogHeader>
 
@@ -74,8 +74,8 @@ export function ModifierGroupsDialog({
           <div className="flex flex-col gap-3">
             {groups.length === 0 ? (
               <p className="text-muted-foreground text-sm">
-                No add-on groups yet. Create one (e.g. &quot;Milk&quot;,
-                &quot;Extras&quot;).
+                Henüz ekstra grubu yok. Bir grup oluşturun (Örn: &quot;Soslar&quot;,
+                &quot;İçecek Seçimi&quot;).
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -87,9 +87,9 @@ export function ModifierGroupsDialog({
                     <div className="flex flex-col">
                       <span className="font-medium">{g.name}</span>
                       <span className="text-muted-foreground text-xs">
-                        {g.modifiers.length} options ·{" "}
-                        {g.isRequired ? "required" : "optional"} · pick{" "}
-                        {g.minSelect}–{g.maxSelect}
+                        {g.modifiers.length} seçenek ·{" "}
+                        {g.isRequired ? "zorunlu" : "isteğe bağlı"} ·{" "}
+                        {g.minSelect}–{g.maxSelect} adet seçilebilir
                       </span>
                     </div>
                     <div className="flex gap-1">
@@ -97,7 +97,7 @@ export function ModifierGroupsDialog({
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setEditing(g)}
-                        aria-label="Edit group"
+                        aria-label="Grubu düzenle"
                       >
                         <PencilIcon className="size-4" />
                       </Button>
@@ -105,11 +105,11 @@ export function ModifierGroupsDialog({
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => {
-                          if (confirm(`Delete "${g.name}"?`)) {
+                          if (confirm(`"${g.name}" grubunu silmek istediğinize emin misiniz?`)) {
                             del.execute({ id: g.id })
                           }
                         }}
-                        aria-label="Delete group"
+                        aria-label="Grubu sil"
                       >
                         <Trash2Icon className="size-4" />
                       </Button>
@@ -123,7 +123,7 @@ export function ModifierGroupsDialog({
               className="self-start"
               onClick={() => setEditing("new")}
             >
-              <PlusIcon className="size-4" /> New group
+              <PlusIcon className="size-4" /> Yeni Grup Ekle
             </Button>
           </div>
         )}
@@ -156,7 +156,7 @@ function GroupForm({
 
   const save = useServerAction(group ? updateGroupAction : createGroupAction, {
     onSuccess: () => {
-      toast.success(group ? "Group updated" : "Group created")
+      toast.success(group ? "Grup güncellendi" : "Grup oluşturuldu")
       onSaved()
     },
     onError: (message) => toast.error(message),
@@ -185,18 +185,18 @@ function GroupForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <Field>
-        <FieldLabel htmlFor="grp-name">Name</FieldLabel>
+        <FieldLabel htmlFor="grp-name">Grup Adı</FieldLabel>
         <Input
           id="grp-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Milk"
+          placeholder="Örn: Sos Seçimi, Pişme Derecesi"
           autoFocus
         />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field>
-          <FieldLabel htmlFor="grp-min">Min select</FieldLabel>
+          <FieldLabel htmlFor="grp-min">Min Seçim Sayısı</FieldLabel>
           <Input
             id="grp-min"
             inputMode="numeric"
@@ -205,7 +205,7 @@ function GroupForm({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="grp-max">Max select</FieldLabel>
+          <FieldLabel htmlFor="grp-max">Maks Seçim Sayısı</FieldLabel>
           <Input
             id="grp-max"
             inputMode="numeric"
@@ -221,31 +221,31 @@ function GroupForm({
           onCheckedChange={setRequired}
         />
         <label htmlFor="grp-req" className="text-sm">
-          Required
+          Zorunlu Seçim
         </label>
       </div>
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Options</span>
+        <span className="text-sm font-medium">Seçenekler</span>
         {mods.map((m, i) => (
           <div key={i} className="flex gap-2">
             <Input
-              placeholder="Oat milk"
+              placeholder="Örn: Ketçap, Acı Sos"
               value={m.name}
               onChange={(e) => setMod(i, "name", e.target.value)}
             />
             <Input
-              placeholder="+₹"
+              placeholder="+₺ Fiyat Farkı"
               inputMode="decimal"
               value={m.priceDelta}
               onChange={(e) => setMod(i, "priceDelta", e.target.value)}
-              className="w-24"
+              className="w-28"
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => setMods((prev) => prev.filter((_, j) => j !== i))}
-              aria-label="Remove option"
+              aria-label="Seçeneği kaldır"
             >
               <Trash2Icon className="size-4" />
             </Button>
@@ -260,15 +260,15 @@ function GroupForm({
             setMods((prev) => [...prev, { name: "", priceDelta: "" }])
           }
         >
-          <PlusIcon className="size-4" /> Add option
+          <PlusIcon className="size-4" /> + Seçenek Ekle
         </Button>
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+          Vazgeç
         </Button>
         <Button type="submit" disabled={save.isPending || !name.trim()}>
-          {save.isPending ? "Saving…" : "Save group"}
+          {save.isPending ? "Kaydediliyor…" : "Grubu Kaydet"}
         </Button>
       </div>
     </form>

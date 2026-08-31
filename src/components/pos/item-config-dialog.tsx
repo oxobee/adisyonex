@@ -128,7 +128,7 @@ export function ItemConfigDialog({
 
           {item.variants.length > 0 ? (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Size</span>
+              <span className="text-sm font-medium">Porsiyon / Seçenek</span>
               <div className="flex flex-wrap gap-2">
                 {item.variants.map((v) => (
                   <Button
@@ -153,8 +153,8 @@ export function ItemConfigDialog({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{group.name}</span>
                   <span className="text-muted-foreground text-xs">
-                    {group.isRequired ? "Required" : "Optional"}
-                    {group.maxSelect > 1 ? ` · up to ${group.maxSelect}` : ""}
+                    {group.isRequired ? "Zorunlu" : "İsteğe Bağlı"}
+                    {group.maxSelect > 1 ? ` · en fazla ${group.maxSelect}` : ""}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -190,18 +190,18 @@ export function ItemConfigDialog({
           })}
 
           <Field>
-            <FieldLabel htmlFor="line-note">Note</FieldLabel>
+            <FieldLabel htmlFor="line-note">Sipariş Notu</FieldLabel>
             <Textarea
               id="line-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="No onion, extra spicy…"
+              placeholder="Soğansız, az acılı, ekstra soslu…"
               rows={2}
             />
           </Field>
 
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Quantity</span>
+            <span className="text-sm font-medium">Adet / Miktar</span>
             <div className="flex items-center gap-3">
               <Button
                 type="button"
@@ -227,8 +227,8 @@ export function ItemConfigDialog({
         <DialogFooter>
           <Button type="button" onClick={add} disabled={Boolean(unmetGroup)}>
             {unmetGroup
-              ? `Choose ${unmetGroup.name}`
-              : `Add · ${formatCurrency(lineTotal)}`}
+              ? `Lütfen ${unmetGroup.name} seçin`
+              : `Sepete Ekle · ${formatCurrency(lineTotal)}`}
           </Button>
         </DialogFooter>
       </DialogContent>

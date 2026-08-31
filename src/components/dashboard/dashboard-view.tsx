@@ -27,15 +27,15 @@ const ageClass = (mins: number | null): string =>
         : "text-emerald-700";
 
 const MODE_LABEL: Record<string, string> = {
-  CASH: "Cash",
-  UPI: "UPI",
-  CARD: "Card",
-  OTHER: "Other",
+  CASH: "Nakit",
+  UPI: "Havale/EFT",
+  CARD: "Kredi Kartı",
+  OTHER: "Diğer",
 };
 const TYPE_LABEL: Record<string, string> = {
-  DINE_IN: "Dine-in",
-  TAKEAWAY: "Takeaway",
-  DELIVERY: "Delivery",
+  DINE_IN: "Masa",
+  TAKEAWAY: "Gel-Al",
+  DELIVERY: "Paket Servis",
 };
 
 export function DashboardView({
@@ -57,47 +57,46 @@ export function DashboardView({
           className="flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
         >
           <span>
-            <strong>{lowStock}</strong> inventory item
-            {lowStock === 1 ? "" : "s"} at or below reorder level.
+            <strong>{lowStock}</strong> stok kalemi kritik seviyede veya altında.
           </span>
-          <span className="font-medium underline">View inventory</span>
+          <span className="font-medium underline">Stoğu görüntüle</span>
         </Link>
       ) : null}
 
       {/* Today */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-muted-foreground text-sm font-medium">Today</h2>
+        <h2 className="text-muted-foreground text-sm font-medium">Bugün</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Sales today"
+            label="Bugünkü Satış"
             value={formatCurrency(data.today.sales)}
             footer={
               <Delta
                 pct={deltaPct(data.today.sales, data.yesterdaySales)}
-                label="vs yesterday"
+                label="düne göre"
               />
             }
           />
           <StatCard
-            label="Orders today"
+            label="Bugünkü Siparişler"
             value={String(data.today.orders)}
             footer={
               <span className="text-muted-foreground">
-                Avg ticket {formatCurrency(data.today.aov)}
+                Ort. Adisyon {formatCurrency(data.today.aov)}
               </span>
             }
           />
           <StatCard
-            label="Open now"
+            label="Açık Siparişler"
             value={formatCurrency(data.openNow.value)}
             footer={
               <span className="text-muted-foreground">
-                {data.openNow.count} open
+                {data.openNow.count} açık
                 {data.openNow.oldestMinutes !== null ? (
                   <>
-                    {" · oldest "}
+                    {" · en eski "}
                     <span className={ageClass(data.openNow.oldestMinutes)}>
-                      {data.openNow.oldestMinutes}m
+                      {data.openNow.oldestMinutes} dk
                     </span>
                   </>
                 ) : null}
@@ -106,14 +105,14 @@ export function DashboardView({
           />
           <Card className="@container/card">
             <CardHeader>
-              <CardDescription>Payments today</CardDescription>
+              <CardDescription>Bugünkü Ödemeler</CardDescription>
               <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                 {formatCurrency(paymentsTotal)}
               </CardTitle>
             </CardHeader>
             <CardFooter className="text-sm">
               {data.paymentMixToday.length === 0 ? (
-                <span className="text-muted-foreground">No payments yet</span>
+                <span className="text-muted-foreground">Henüz ödeme yok</span>
               ) : (
                 <span className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                   {data.paymentMixToday.map((m) => (
@@ -130,39 +129,39 @@ export function DashboardView({
 
       {/* This month */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-muted-foreground text-sm font-medium">This month</h2>
+        <h2 className="text-muted-foreground text-sm font-medium">Bu Ay</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
-            label="Month sales"
+            label="Aylık Satış"
             value={formatCurrency(data.month.sales)}
             footer={
               <Delta
                 pct={deltaPct(data.month.sales, data.lastMonthSales)}
-                label="vs last month"
+                label="geçen aya göre"
               />
             }
           />
           <StatCard
-            label="Month orders"
+            label="Aylık Siparişler"
             value={String(data.month.orders)}
             footer={
               <span className="text-muted-foreground">
-                Avg ticket {formatCurrency(data.month.aov)}
+                Ort. Adisyon {formatCurrency(data.month.aov)}
               </span>
             }
           />
           <StatCard
-            label="Tables seated"
+            label="Dolu Masalar"
             value={`${data.occupancy.occupied}/${data.occupancy.total}`}
             footer={
-              <span className="text-muted-foreground">Occupied right now</span>
+              <span className="text-muted-foreground">Şu an masada</span>
             }
           />
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daily sales</CardTitle>
-            <CardDescription>Settled sales per day this month</CardDescription>
+            <CardTitle className="text-base">Günlük Satış Trendi</CardTitle>
+            <CardDescription>Bu ayın günlük tamamlanan satışları</CardDescription>
           </CardHeader>
           <CardContent>
             <SalesTrendChart data={data.trend} />
@@ -174,11 +173,11 @@ export function DashboardView({
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Top items today</CardTitle>
+            <CardTitle className="text-base">Bugün En Çok Satanlar</CardTitle>
           </CardHeader>
           <CardContent>
             {data.topItemsToday.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No sales yet today.</p>
+              <p className="text-muted-foreground text-sm">Bugün henüz satış yok.</p>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {data.topItemsToday.map((it) => (
@@ -198,14 +197,14 @@ export function DashboardView({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Today detail</CardTitle>
+            <CardTitle className="text-base">Günün Özeti</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 text-sm">
             <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-              <span>GST {formatCurrency(data.today.tax)}</span>
-              <span>Discounts {formatCurrency(data.today.discount)}</span>
+              <span>KDV: {formatCurrency(data.today.tax)}</span>
+              <span>İndirimler: {formatCurrency(data.today.discount)}</span>
               <span>
-                Voids{" "}
+                İptaller:{" "}
                 <span className={data.voidsToday > 0 ? "text-amber-700" : ""}>
                   {data.voidsToday}
                 </span>

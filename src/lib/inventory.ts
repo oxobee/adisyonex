@@ -2,38 +2,38 @@ import type { StockMovementType, StockUnit } from "@/types/inventory";
 
 export const UNIT_LABELS: Record<StockUnit, string> = {
   KG: "kg",
-  GRAM: "g",
-  LITRE: "L",
+  GRAM: "gr",
+  LITRE: "lt",
   ML: "ml",
-  PIECE: "pc",
-  PACK: "pack",
-  BOTTLE: "bottle",
-  DOZEN: "dozen",
+  PIECE: "adet",
+  PACK: "paket",
+  BOTTLE: "şişe",
+  DOZEN: "düzine",
 };
 
 export const STOCK_UNIT_OPTIONS: readonly { value: StockUnit; label: string }[] = [
   { value: "KG", label: "Kilogram (kg)" },
-  { value: "GRAM", label: "Gram (g)" },
-  { value: "LITRE", label: "Litre (L)" },
-  { value: "ML", label: "Millilitre (ml)" },
-  { value: "PIECE", label: "Piece (pc)" },
-  { value: "PACK", label: "Pack" },
-  { value: "BOTTLE", label: "Bottle" },
-  { value: "DOZEN", label: "Dozen" },
+  { value: "GRAM", label: "Gram (gr)" },
+  { value: "LITRE", label: "Litre (lt)" },
+  { value: "ML", label: "Mililitre (ml)" },
+  { value: "PIECE", label: "Adet" },
+  { value: "PACK", label: "Paket" },
+  { value: "BOTTLE", label: "Şişe" },
+  { value: "DOZEN", label: "Düzine" },
 ];
 
 export const WASTE_REASONS: readonly string[] = [
-  "Spoiled",
-  "Expired",
-  "Breakage",
-  "Prep loss",
-  "Over-portion",
-  "Comp / staff meal",
+  "Bozuldu / Çürüdü",
+  "Son Kullanma Tarihi Geçti",
+  "Kırılma / Dökülme",
+  "Hazırlık Fire / Kayıp",
+  "Porsiyon Aşımı",
+  "Personel Yemeği / İkram",
 ];
 
 export const MOVEMENT_LABELS: Record<StockMovementType, string> = {
-  RECEIVE: "Received",
-  WASTE: "Wasted",
-  CORRECTION: "Count / correction",
-  SALE_DEPLETION: "Sale",
+  RECEIVE: "Giriş / Alım",
+  WASTE: "Fire / Zayi",
+  CORRECTION: "Sayım / Düzeltme",
+  SALE_DEPLETION: "Satıştan Düşüş",
 };

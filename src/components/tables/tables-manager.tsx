@@ -43,7 +43,7 @@ export function TablesManager({
   const del = useServerAction(deleteTableAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success("Table removed");
+      toast.success("Masa kaldırıldı");
       setDeleteTarget(null);
     },
     onError: (message) => toast.error(message),
@@ -62,16 +62,16 @@ export function TablesManager({
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader
-          title="Tables"
-          description="Set up your floor so servers can seat dine-in orders."
+          title="Masalar"
+          description="Garsonların adisyon açabilmesi ve kat planını yönetebilmek için masalarınızı tanımlayın."
         />
-        <Button onClick={openNew}>Add table</Button>
+        <Button onClick={openNew}>Masa Ekle</Button>
       </div>
 
       {tables.length === 0 ? (
         <EmptyState
-          title="No tables yet"
-          description="Add your tables and sections so the POS can attach dine-in orders to a table."
+          title="Henüz masa eklenmemiş"
+          description="POS ekranında masaya sipariş alabilmek için masalarınızı ve bölümlerinizi (Salon, Bahçe vb.) ekleyin."
         />
       ) : (
         groupTablesBySection(tables).map(([section, rows]) => (
@@ -88,13 +88,13 @@ export function TablesManager({
                       {table.label}
                       {!table.isActive ? (
                         <Badge variant="secondary" className="text-[10px]">
-                          Inactive
+                          Pasif
                         </Badge>
                       ) : null}
                     </p>
                     {table.seats != null ? (
                       <p className="text-muted-foreground text-xs">
-                        {table.seats} seats
+                        {table.seats} kişilik
                       </p>
                     ) : null}
                   </div>
@@ -106,7 +106,7 @@ export function TablesManager({
                       onClick={() => setShareTarget(table)}
                     >
                       <QrCodeIcon className="size-4" />
-                      Share
+                      QR Paylaş
                     </Button>
                     <Button
                       size="sm"
@@ -114,7 +114,7 @@ export function TablesManager({
                       className="h-8 px-2 text-xs"
                       onClick={() => openEdit(table)}
                     >
-                      Edit
+                      Düzenle
                     </Button>
                     <Button
                       size="sm"
@@ -122,7 +122,7 @@ export function TablesManager({
                       className="text-destructive h-8 px-2 text-xs"
                       onClick={() => setDeleteTarget(table)}
                     >
-                      Remove
+                      Kaldır
                     </Button>
                   </div>
                 </li>
@@ -153,21 +153,21 @@ export function TablesManager({
         <Dialog open onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Remove {deleteTarget.label}?</DialogTitle>
+              <DialogTitle>{deleteTarget.label} masasını kaldırmak istiyor musunuz?</DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">
-              Past orders keep their record. You can re-add this label later.
+              Geçmiş sipariş kayıtları korunur. İleride bu masa adını tekrar ekleyebilirsiniz.
             </p>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
-                Cancel
+                Vazgeç
               </Button>
               <Button
                 variant="destructive"
                 disabled={del.isPending}
                 onClick={() => del.execute({ id: deleteTarget.id })}
               >
-                {del.isPending ? "Removing…" : "Remove"}
+                {del.isPending ? "Kaldırılıyor…" : "Kaldır"}
               </Button>
             </DialogFooter>
           </DialogContent>

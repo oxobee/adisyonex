@@ -29,7 +29,7 @@ export function BusinessHoursField({
               onCheckedChange={(open) => update(day, { isClosed: !open })}
             />
             {hours.isClosed ? (
-              <span className="text-muted-foreground text-sm">Closed</span>
+              <span className="text-muted-foreground text-sm">Kapalı</span>
             ) : (
               <div className="flex items-center gap-2">
                 <Input

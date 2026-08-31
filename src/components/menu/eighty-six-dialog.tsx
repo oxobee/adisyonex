@@ -20,17 +20,17 @@ import { cn } from "@/lib/utils"
 import type { MenuItemDTO } from "@/types/menu"
 
 const REASONS = [
-  { value: "OUT_OF_STOCK", label: "Out of stock" },
-  { value: "QUALITY", label: "Quality" },
-  { value: "PREP_TIME", label: "Prep time" },
-  { value: "OTHER", label: "Other" },
+  { value: "OUT_OF_STOCK", label: "Stok Tükendi" },
+  { value: "QUALITY", label: "Kalite Standartları" },
+  { value: "PREP_TIME", label: "Hazırlık Süresi" },
+  { value: "OTHER", label: "Diğer / Geçici" },
 ] as const
 
 const DURATIONS = [
-  { value: "eod", label: "Until end of day" },
-  { value: "2h", label: "For 2 hours" },
-  { value: "tomorrow", label: "Until tomorrow" },
-  { value: "manual", label: "Until I re-enable" },
+  { value: "eod", label: "Günün Sonuna Kadar" },
+  { value: "2h", label: "2 Saat Boyunca" },
+  { value: "tomorrow", label: "Yarına Kadar" },
+  { value: "manual", label: "Ben Tekrar Açana Kadar" },
 ] as const
 
 const resumeAtFor = (choice: string): Date | undefined => {
@@ -92,7 +92,7 @@ export function EightySixDialog({
 
   const save = useServerAction(disableItemAction, {
     onSuccess: () => {
-      toast.success("Item marked unavailable")
+      toast.success("Ürün satışa kapatıldı")
       onOpenChange(false)
       onSaved()
     },
@@ -115,11 +115,11 @@ export function EightySixDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mark {item?.name} unavailable</DialogTitle>
+          <DialogTitle>{item?.name} Ürününü Satışa Kapat</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Reason</span>
+            <span className="text-sm font-medium">Kapatma Nedeni</span>
             <div className="flex flex-wrap gap-2">
               {REASONS.map((r) => (
                 <Chip
@@ -133,7 +133,7 @@ export function EightySixDialog({
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">For how long</span>
+            <span className="text-sm font-medium">Ne Kadar Süreyle?</span>
             <div className="flex flex-wrap gap-2">
               {DURATIONS.map((d) => (
                 <Chip
@@ -147,17 +147,17 @@ export function EightySixDialog({
             </div>
           </div>
           <Field>
-            <FieldLabel htmlFor="eightysix-note">Note (optional)</FieldLabel>
+            <FieldLabel htmlFor="eightysix-note">Not (isteğe bağlı)</FieldLabel>
             <Input
               id="eightysix-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. paneer delivery delayed"
+              placeholder="Örn: Malzeme tedariği gecikti"
             />
           </Field>
           <DialogFooter>
             <Button type="submit" variant="destructive" disabled={save.isPending}>
-              {save.isPending ? "Saving…" : "Mark unavailable"}
+              {save.isPending ? "Kaydediliyor…" : "Satışa Kapat"}
             </Button>
           </DialogFooter>
         </form>

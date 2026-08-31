@@ -45,7 +45,7 @@ export function MenuBrowser({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search the menu"
+            placeholder="Menüde ara…"
             className="h-11 pl-9 text-base"
             inputMode="search"
           />
@@ -59,7 +59,7 @@ export function MenuBrowser({
                 categoryId === null ? "bg-primary text-primary-foreground" : ""
               }`}
             >
-              All
+              Tümü
             </button>
             {categories.map((c) => (
               <button
@@ -79,7 +79,7 @@ export function MenuBrowser({
 
       {items.length === 0 ? (
         <p className="text-muted-foreground py-8 text-center text-sm">
-          No items found.
+          Ürün bulunamadı.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -87,9 +87,9 @@ export function MenuBrowser({
             const photo =
               item.images.find((i) => i.isPrimary) ?? item.images[0] ?? null;
             const hint = !item.available
-              ? "Unavailable"
+              ? "Tükendi"
               : item.variants.length > 0 || item.modifierGroups.length > 0
-                ? "Options"
+                ? "Seçenekler"
                 : null;
             return (
               <li
@@ -132,7 +132,7 @@ export function MenuBrowser({
                       </span>
                     ) : null}
                     <span className="block text-sm font-medium tabular-nums">
-                      ₹{item.price.toFixed(0)}
+                      {item.price.toFixed(0)} ₺
                     </span>
                   </span>
                 </button>
@@ -142,7 +142,7 @@ export function MenuBrowser({
                   className="shrink-0"
                   disabled={!item.available}
                   onClick={() => onQuickAdd(item)}
-                  aria-label={`Add ${item.name}`}
+                  aria-label={`${item.name} ekle`}
                 >
                   <PlusIcon className="size-4" />
                 </Button>

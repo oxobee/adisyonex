@@ -38,7 +38,7 @@ export function AdjustDialog({
 
   const save = useServerAction(adjustStockAction, {
     onSuccess: () => {
-      toast.success(isWaste ? "Waste logged" : "Stock received");
+      toast.success(isWaste ? "Fire kaydı eklendi" : "Stok girişi kaydedildi");
       onOpenChange(false);
       onDone();
     },
@@ -64,13 +64,13 @@ export function AdjustDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {isWaste ? "Log waste" : "Receive"} · {item.name}
+            {isWaste ? "Fire / Zayi Kaydı" : "Stok Girişi"} · {item.name}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <Field>
             <FieldLabel htmlFor="adj-qty">
-              Quantity ({UNIT_LABELS[item.unit]})
+              Miktar ({UNIT_LABELS[item.unit]})
             </FieldLabel>
             <Input
               id="adj-qty"
@@ -83,7 +83,7 @@ export function AdjustDialog({
           </Field>
           {isWaste ? (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Reason</span>
+              <span className="text-sm font-medium">Fire Nedeni</span>
               <div className="flex flex-wrap gap-1.5">
                 {WASTE_REASONS.map((r) => (
                   <button
@@ -104,12 +104,12 @@ export function AdjustDialog({
             </div>
           ) : null}
           <Field>
-            <FieldLabel htmlFor="adj-note">Note</FieldLabel>
+            <FieldLabel htmlFor="adj-note">Açıklama / Not</FieldLabel>
             <Input
               id="adj-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Optional"
+              placeholder="İsteğe bağlı"
             />
           </Field>
         </div>
@@ -119,7 +119,7 @@ export function AdjustDialog({
             disabled={save.isPending || !(qty > 0)}
             onClick={submit}
           >
-            {save.isPending ? "Saving…" : isWaste ? "Log waste" : "Receive"}
+            {save.isPending ? "Kaydediliyor…" : isWaste ? "Fireyi Kaydet" : "Girişi Kaydet"}
           </Button>
         </DialogFooter>
       </DialogContent>

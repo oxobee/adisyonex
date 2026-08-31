@@ -16,9 +16,9 @@ const prisma = new PrismaClient({
 
 const ADMINS = [
   {
-    name: "Dharmendra Soni",
-    phone: "+917597365803",
-    email: "soni@elitale.com",
+    name: "Uğur UĞURLU",
+    phone: "+905550570368",
+    email: "ugur@adisyonex.com",
   },
 ] as const;
 

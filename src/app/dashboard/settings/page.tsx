@@ -42,12 +42,12 @@ import {
 import { getPinStatus } from "@/services/pin-auth.service"
 
 const TABS = [
-  { value: "profile", label: "Profile", icon: StoreIcon },
-  { value: "location", label: "Location", icon: MapPinIcon },
-  { value: "ordering", label: "Ordering", icon: QrCodeIcon },
-  { value: "billing", label: "Billing & tax", icon: ReceiptIcon },
-  { value: "media", label: "Media", icon: ImagesIcon },
-  { value: "access", label: "Access", icon: KeyRoundIcon },
+  { value: "profile", label: "İşletme Profili", icon: StoreIcon },
+  { value: "location", label: "Konum & Harita", icon: MapPinIcon },
+  { value: "ordering", label: "QR Menü & Sipariş", icon: QrCodeIcon },
+  { value: "billing", label: "Fatura & Vergi", icon: ReceiptIcon },
+  { value: "media", label: "Görseller & Medya", icon: ImagesIcon },
+  { value: "access", label: "Giriş & Güvenlik", icon: KeyRoundIcon },
 ] as const
 
 const NAV_TRIGGER =
@@ -59,12 +59,12 @@ export default async function SettingsPage() {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
-          title="Settings"
-          description="Manage your restaurant configuration."
+          title="Ayarlar"
+          description="Restoran ayarlarını ve yapılandırmasını yönetin."
         />
         <EmptyState
-          title="No restaurant yet"
-          description="Ask an admin to onboard your restaurant first."
+          title="Henüz restoran tanımlanmamış"
+          description="Lütfen yöneticinizle iletişime geçin."
         />
       </div>
     )
@@ -109,8 +109,8 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <PageHeader
-        title="Settings"
-        description="Your restaurant profile, branding, location and tax configuration."
+        title="Ayarlar"
+        description="Restoran profili, marka, konum, vergi ve erişim yapılandırması."
       />
       <ProfileHeader profile={profile} completeness={completeness} />
 
@@ -171,9 +171,9 @@ export default async function SettingsPage() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Photos</CardTitle>
+                <CardTitle>Fotoğraflar</CardTitle>
                 <CardDescription>
-                  A showcase gallery for your restaurant (up to 8).
+                  Restoranınız için vitrin fotoğraf galerisi (en fazla 8 adet).
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -182,10 +182,9 @@ export default async function SettingsPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Videos</CardTitle>
+                <CardTitle>Videolar</CardTitle>
                 <CardDescription>
-                  Add promo clips by link (YouTube / Instagram / Vimeo) or
-                  upload a file (up to 6).
+                  Tanıtım videoları bağlantısı (YouTube / Instagram / Vimeo) ekleyin veya video yükleyin (en fazla 6 adet).
                 </CardDescription>
               </CardHeader>
               <CardContent>

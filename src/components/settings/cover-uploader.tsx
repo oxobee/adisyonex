@@ -20,16 +20,16 @@ export function CoverUploader({
   const router = useRouter();
   const { inputRef, uploading, onFile, open } = useImageUpload(
     uploadCoverAction,
-    "Cover updated",
+    "Kapak fotoğrafı güncellendi",
   );
 
   const remove = async () => {
     const result = await removeCoverAction();
     if (result.success) {
-      toast.success("Cover removed");
+      toast.success("Kapak fotoğrafı kaldırıldı");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Failed");
+      toast.error(result.error ?? "İşlem başarısız oldu");
     }
   };
 
@@ -39,7 +39,7 @@ export function CoverUploader({
       style={!coverUrl && brandColor ? { backgroundColor: brandColor } : undefined}
     >
       {coverUrl ? (
-        <Image src={coverUrl} alt="Cover" fill className="object-cover" />
+        <Image src={coverUrl} alt="Kapak" fill className="object-cover" />
       ) : (
         <div className="text-muted-foreground bg-muted/40 flex size-full items-center justify-center">
           <ImageIcon className="size-8" />
@@ -54,7 +54,7 @@ export function CoverUploader({
           disabled={uploading}
         >
           <UploadIcon className="size-3.5" />
-          {coverUrl ? "Change" : "Add cover"}
+          {coverUrl ? "Değiştir" : "Kapak Ekle"}
         </Button>
         {coverUrl ? (
           <Button
@@ -62,7 +62,7 @@ export function CoverUploader({
             size="icon-sm"
             variant="secondary"
             onClick={remove}
-            aria-label="Remove cover"
+            aria-label="Kapak fotoğrafını kaldır"
           >
             <XIcon className="size-3.5" />
           </Button>

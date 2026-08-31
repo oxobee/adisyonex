@@ -145,18 +145,23 @@ const tokenPayloadFor = (user: MobileAuthUser) => ({
   role: user.role,
 });
 
+const isOtpDisabled = (): boolean =>
+  process.env.DISABLE_OTP === "true" && process.env.NODE_ENV !== "test";
+
 /** Issue an OTP challenge for a phone that belongs to a manager or a staff row. */
 export const requestMobileOtp = async (
   phone: string,
 ): Promise<RequestOtpResult> => {
   const owner = await resolvePhoneOwner(phone);
 
-  const recentCutoff = new Date(Date.now() - RESEND_WINDOW_MS);
-  if ((await countRecentChallenges(phone, recentCutoff)) > 0) {
-    throw new Error(MOBILE_OTP_RATE_LIMITED);
+  if (!isOtpDisabled()) {
+    const recentCutoff = new Date(Date.now() - RESEND_WINDOW_MS);
+    if ((await countRecentChallenges(phone, recentCutoff)) > 0) {
+      throw new Error(MOBILE_OTP_RATE_LIMITED);
+    }
   }
 
-  const code = generateOtpCode();
+  const code = isOtpDisabled() ? "123456" : generateOtpCode();
   const challenge = await createOtpChallenge({
     phone,
     codeHash: hashOtpCode(code),
@@ -181,6 +186,24 @@ export const verifyMobileOtp = async (input: {
   challengeId: string;
   code: string;
 }): Promise<AuthResult> => {
+  const owner = await resolvePhoneOwner(input.phone);
+
+  if (isOtpDisabled()) {
+    if (owner.kind === "manager") {
+      if (owner.user.pinFailedAttempts > 0 || owner.user.pinLockedUntil) {
+        await resetPinCounters(owner.user.id);
+      }
+    } else if (
+      owner.staff.loginFailedAttempts > 0 ||
+      owner.staff.loginLockedUntil
+    ) {
+      await resetStaffLoginCounters(owner.staff.id);
+    }
+    const user = await toAuthUser(owner);
+    const token = await issueMobileBearerToken(tokenPayloadFor(user));
+    return { token, user };
+  }
+
   const challenge = await findLatestActiveChallenge(input.phone, new Date());
   // Match by id so an unrelated concurrent challenge can't be silently spent.
   if (!challenge || challenge.id !== input.challengeId) {
@@ -194,7 +217,6 @@ export const verifyMobileOtp = async (input: {
     throw new Error(MOBILE_OTP_INVALID);
   }
 
-  const owner = await resolvePhoneOwner(input.phone);
   await consumeChallenge(challenge.id);
 
   // Reset PIN counters on a successful sign-in — either channel unlocks the account.

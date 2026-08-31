@@ -31,12 +31,12 @@ export function VideosManager({
   const [caption, setCaption] = useState("");
   const { inputRef, uploading, onFile, open } = useImageUpload(
     uploadVideoAction,
-    "Video uploaded",
+    "Video yüklendi",
   );
 
   const addLink = useServerAction(addVideoLinkAction, {
     onSuccess: () => {
-      toast.success("Video added");
+      toast.success("Video eklendi");
       setUrl("");
       setCaption("");
       router.refresh();
@@ -45,7 +45,7 @@ export function VideosManager({
   });
   const remove = useServerAction(removeVideoAction, {
     onSuccess: () => {
-      toast.success("Video removed");
+      toast.success("Video kaldırıldı");
       router.refresh();
     },
     onError: (message) => toast.error(message),
@@ -83,14 +83,14 @@ export function VideosManager({
                       rel="noreferrer"
                       className="bg-muted/40 text-muted-foreground flex aspect-video w-full items-center justify-center gap-2 text-sm"
                     >
-                      <PlayIcon className="size-5" /> Open video
+                      <PlayIcon className="size-5" /> Videoyu Aç
                     </a>
                   )}
                   <button
                     type="button"
                     onClick={() => remove.execute({ id: video.id })}
                     className="bg-destructive absolute top-1.5 right-1.5 rounded-full p-1 text-white"
-                    aria-label="Remove video"
+                    aria-label="Videoyu kaldır"
                   >
                     <Trash2Icon className="size-3" />
                   </button>
@@ -106,7 +106,7 @@ export function VideosManager({
 
       {atCap ? (
         <p className="text-muted-foreground text-sm">
-          You&apos;ve reached the {MAX_VIDEOS}-video limit.
+          En fazla {MAX_VIDEOS} video sınırına ulaştınız.
         </p>
       ) : (
         <div className="flex flex-col gap-3">
@@ -114,12 +114,12 @@ export function VideosManager({
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste a YouTube / Instagram / Vimeo link"
+              placeholder="YouTube / Instagram / Vimeo linki yapıştırın"
             />
             <Input
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Caption (optional)"
+              placeholder="Başlık (isteğe bağlı)"
               className="sm:w-48"
             />
             <Button
@@ -133,7 +133,7 @@ export function VideosManager({
               }
               disabled={!url.trim() || addLink.isPending}
             >
-              <LinkIcon className="size-4" /> Add link
+              <LinkIcon className="size-4" /> Bağlantı Ekle
             </Button>
           </div>
           <div>
@@ -144,7 +144,7 @@ export function VideosManager({
               disabled={uploading}
             >
               <UploadIcon className="size-4" />
-              {uploading ? "Uploading…" : "Upload video file"}
+              {uploading ? "Yükleniyor…" : "Video Dosyası Yükle"}
             </Button>
             <input
               ref={inputRef}
@@ -154,7 +154,7 @@ export function VideosManager({
               onChange={onFile}
             />
             <p className="text-muted-foreground mt-1 text-xs">
-              MP4 / WebM / MOV, up to 25 MB.
+              MP4 / WebM / MOV, maksimum 25 MB.
             </p>
           </div>
         </div>

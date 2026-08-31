@@ -22,18 +22,24 @@ export default async function KotPage({
 
   const lines = order.lines.filter((l) => l.state !== "VOID");
 
+  const typeLabels: Record<string, string> = {
+    DINE_IN: "Masa",
+    TAKEAWAY: "Gel-Al",
+    DELIVERY: "Paket",
+  };
+
   return (
     <div className="mx-auto max-w-sm p-6 font-mono text-sm">
       <div className="mb-4 flex items-center justify-between print:hidden">
-        <span className="text-muted-foreground text-xs">Kitchen ticket</span>
-        <PrintButton label="Print KOT" />
+        <span className="text-muted-foreground text-xs">Mutfak Fişi</span>
+        <PrintButton label="Fişi Yazdır" />
       </div>
 
       <div className="border-b border-dashed pb-2 text-center">
-        <p className="text-base font-bold">KOT · #{order.orderNumber}</p>
-        <p>{order.orderType.replace("_", "-")}</p>
-        {order.tableLabel ? <p>Table {order.tableLabel}</p> : null}
-        {order.customerName ? <p>{order.customerName}</p> : null}
+        <p className="text-base font-bold">ADİSYON / KOT · #{order.orderNumber}</p>
+        <p>{typeLabels[order.orderType] ?? order.orderType}</p>
+        {order.tableLabel ? <p>Masa {order.tableLabel}</p> : null}
+        {order.customerName ? <p>Müşteri: {order.customerName}</p> : null}
         <p className="text-xs">{formatDateTime(order.createdAt)}</p>
       </div>
 
@@ -58,7 +64,7 @@ export default async function KotPage({
 
       {order.note ? (
         <p className="border-t border-dashed pt-2 text-xs italic">
-          Note: {order.note}
+          Not: {order.note}
         </p>
       ) : null}
     </div>

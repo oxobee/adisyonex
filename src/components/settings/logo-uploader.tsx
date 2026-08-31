@@ -13,16 +13,16 @@ export function LogoUploader({ logoUrl }: { readonly logoUrl: string | null }) {
   const router = useRouter();
   const { inputRef, uploading, onFile, open } = useImageUpload(
     uploadLogoAction,
-    "Logo updated",
+    "Logo güncellendi",
   );
 
   const remove = async () => {
     const result = await removeLogoAction();
     if (result.success) {
-      toast.success("Logo removed");
+      toast.success("Logo kaldırıldı");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Failed");
+      toast.error(result.error ?? "İşlem başarısız oldu");
     }
   };
 
@@ -50,7 +50,7 @@ export function LogoUploader({ logoUrl }: { readonly logoUrl: string | null }) {
         type="button"
         onClick={open}
         className="bg-primary text-primary-foreground absolute right-0 bottom-0 rounded-full p-1.5 shadow"
-        aria-label="Upload logo"
+        aria-label="Logo yükle"
       >
         <UploadIcon className="size-3.5" />
       </button>
@@ -59,7 +59,7 @@ export function LogoUploader({ logoUrl }: { readonly logoUrl: string | null }) {
           type="button"
           onClick={remove}
           className="bg-destructive absolute -top-1 -right-1 rounded-full p-1 text-white"
-          aria-label="Remove logo"
+          aria-label="Logoyu kaldır"
         >
           <XIcon className="size-3" />
         </button>

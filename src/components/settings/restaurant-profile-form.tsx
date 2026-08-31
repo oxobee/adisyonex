@@ -92,7 +92,7 @@ export function RestaurantProfileForm({
 
   const save = useServerAction(updateRestaurantProfileAction, {
     onSuccess: () => {
-      toast.success("Profile saved");
+      toast.success("Profil kaydedildi");
       router.refresh();
     },
     onError: (message) => toast.error(message),
@@ -137,51 +137,50 @@ export function RestaurantProfileForm({
       {/* Identity */}
       <Card>
         <CardHeader>
-          <CardTitle>Business identity</CardTitle>
+          <CardTitle>İşletme Kimliği</CardTitle>
           <CardDescription>
-            The brand name shows on the POS + bill header; the legal entity name
-            appears on the GST tax invoice.
+            Marka adı POS ekranında ve fiş başlığında görünür; resmi unvan ise faturalarda yer alır.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="p-name">Brand name</FieldLabel>
+              <FieldLabel htmlFor="p-name">Marka Adı</FieldLabel>
               <Input
                 id="p-name"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
-                placeholder="Spice Route"
+                placeholder="Örn: Lezzet Restoran"
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-legal">Legal entity name</FieldLabel>
+              <FieldLabel htmlFor="p-legal">Resmi Ticari Unvan</FieldLabel>
               <Input
                 id="p-legal"
                 value={form.legalName}
                 onChange={(e) => set("legalName", e.target.value)}
-                placeholder="Spice Route Foods Pvt Ltd"
+                placeholder="Örn: Lezzet Gıda San. ve Tic. Ltd. Şti."
               />
             </Field>
           </div>
           <Field>
-            <FieldLabel htmlFor="p-tagline">Tagline</FieldLabel>
+            <FieldLabel htmlFor="p-tagline">Slogan / Tanıtım Metni</FieldLabel>
             <Input
               id="p-tagline"
               value={form.tagline}
               onChange={(e) => set("tagline", e.target.value)}
-              placeholder="Authentic flavours, since 1998"
+              placeholder="Örn: 1998'den beri değişmeyen lezzet"
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="p-color">Brand colour</FieldLabel>
+            <FieldLabel htmlFor="p-color">Marka / Tema Rengi</FieldLabel>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={form.brandColor || "#C2410C"}
                 onChange={(e) => set("brandColor", e.target.value)}
                 className="size-9 shrink-0 rounded-md border"
-                aria-label="Brand colour"
+                aria-label="Marka rengi"
               />
               <Input
                 value={form.brandColor}
@@ -197,12 +196,12 @@ export function RestaurantProfileForm({
       {/* Location & contact */}
       <Card>
         <CardHeader>
-          <CardTitle>Location &amp; contact</CardTitle>
-          <CardDescription>Prints on the invoice and POs.</CardDescription>
+          <CardTitle>Konum &amp; İletişim Bilgileri</CardTitle>
+          <CardDescription>Müşteri fişlerinde ve resmi evraklarda basılır.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="p-addr1">Address line 1</FieldLabel>
+            <FieldLabel htmlFor="p-addr1">Adres Satırı 1</FieldLabel>
             <Input
               id="p-addr1"
               value={form.addressLine1}
@@ -210,7 +209,7 @@ export function RestaurantProfileForm({
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="p-addr2">Address line 2</FieldLabel>
+            <FieldLabel htmlFor="p-addr2">Adres Satırı 2</FieldLabel>
             <Input
               id="p-addr2"
               value={form.addressLine2}
@@ -219,7 +218,7 @@ export function RestaurantProfileForm({
           </Field>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field>
-              <FieldLabel htmlFor="p-city">City</FieldLabel>
+              <FieldLabel htmlFor="p-city">İlçe</FieldLabel>
               <Input
                 id="p-city"
                 value={form.city}
@@ -227,7 +226,7 @@ export function RestaurantProfileForm({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-state">State</FieldLabel>
+              <FieldLabel htmlFor="p-state">İl / Şehir</FieldLabel>
               <Input
                 id="p-state"
                 value={form.state}
@@ -235,7 +234,7 @@ export function RestaurantProfileForm({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-pin">PIN code</FieldLabel>
+              <FieldLabel htmlFor="p-pin">Posta Kodu</FieldLabel>
               <Input
                 id="p-pin"
                 value={form.postalCode}
@@ -245,7 +244,7 @@ export function RestaurantProfileForm({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="p-phone">Phone</FieldLabel>
+              <FieldLabel htmlFor="p-phone">Telefon Numarası</FieldLabel>
               <Input
                 id="p-phone"
                 value={form.phone}
@@ -254,7 +253,7 @@ export function RestaurantProfileForm({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-email">Email</FieldLabel>
+              <FieldLabel htmlFor="p-email">E-posta</FieldLabel>
               <Input
                 id="p-email"
                 value={form.email}
@@ -265,7 +264,7 @@ export function RestaurantProfileForm({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="p-web">Website</FieldLabel>
+              <FieldLabel htmlFor="p-web">Web Sitesi</FieldLabel>
               <Input
                 id="p-web"
                 value={form.website}
@@ -279,7 +278,7 @@ export function RestaurantProfileForm({
                 id="p-ig"
                 value={form.instagramUrl}
                 onChange={(e) => set("instagramUrl", e.target.value)}
-                placeholder="@handle or link"
+                placeholder="@kullaniciadi veya link"
               />
             </Field>
             <Field>
@@ -291,7 +290,7 @@ export function RestaurantProfileForm({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-goog">Google listing</FieldLabel>
+              <FieldLabel htmlFor="p-goog">Google Haritalar Bağlantısı</FieldLabel>
               <Input
                 id="p-goog"
                 value={form.googleUrl}
@@ -305,35 +304,24 @@ export function RestaurantProfileForm({
       {/* Compliance */}
       <Card>
         <CardHeader>
-          <CardTitle>Compliance</CardTitle>
+          <CardTitle>Yasal Bilgiler &amp; Ruhsat</CardTitle>
           <CardDescription>
-            FSSAI licence prints on the customer bill (legally required). PAN is
-            kept back-office and never printed.
+            İşletme ruhsat numarası ve vergi kimlik numarası.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {profile.fssaiStatus === "expired" ? (
-            <p className="rounded-md bg-red-100 px-3 py-2 text-sm text-red-800">
-              Your FSSAI licence has expired — renew it before printing more bills.
-            </p>
-          ) : profile.fssaiStatus === "expiring" ? (
-            <p className="rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-800">
-              Your FSSAI licence expires soon — renew it to stay compliant.
-            </p>
-          ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="p-fssai">FSSAI licence no.</FieldLabel>
+              <FieldLabel htmlFor="p-fssai">İşletme Ruhsat / Kayıt No</FieldLabel>
               <Input
                 id="p-fssai"
                 value={form.fssaiLicense}
                 onChange={(e) => set("fssaiLicense", e.target.value)}
-                placeholder="14-digit number"
-                inputMode="numeric"
+                placeholder="Ruhsat numarası"
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-fssai-exp">FSSAI expiry</FieldLabel>
+              <FieldLabel htmlFor="p-fssai-exp">Ruhsat Geçerlilik Tarihi</FieldLabel>
               <Input
                 id="p-fssai-exp"
                 type="date"
@@ -342,12 +330,12 @@ export function RestaurantProfileForm({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-pan">PAN</FieldLabel>
+              <FieldLabel htmlFor="p-pan">Vergi / TC Kimlik No</FieldLabel>
               <Input
                 id="p-pan"
                 value={form.panNumber}
                 onChange={(e) => set("panNumber", e.target.value)}
-                placeholder="ABCDE1234F"
+                placeholder="Vergi No"
               />
             </Field>
           </div>
@@ -357,16 +345,16 @@ export function RestaurantProfileForm({
       {/* Service & hours */}
       <Card>
         <CardHeader>
-          <CardTitle>Service &amp; hours</CardTitle>
-          <CardDescription>What you offer and when you&apos;re open.</CardDescription>
+          <CardTitle>Hizmet Türleri &amp; Çalışma Saatleri</CardTitle>
+          <CardDescription>Sunduğunuz servis türleri ve açık olduğunuz saatler.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
           <div>
-            <p className="mb-2 text-sm font-medium">Service options</p>
+            <p className="mb-2 text-sm font-medium">Sipariş Hizmetleri</p>
             <ServiceOptionsField value={services} onChange={setServices} />
           </div>
           <div>
-            <p className="mb-2 text-sm font-medium">Business hours</p>
+            <p className="mb-2 text-sm font-medium">Çalışma Saatleri</p>
             <BusinessHoursField value={hours} onChange={setHours} />
           </div>
         </CardContent>
@@ -375,13 +363,13 @@ export function RestaurantProfileForm({
       {/* Optional details */}
       <Card>
         <CardHeader>
-          <CardTitle>Details</CardTitle>
-          <CardDescription>Optional — helps describe your restaurant.</CardDescription>
+          <CardTitle>Ek Detaylar &amp; Mutfak</CardTitle>
+          <CardDescription>İsteğe bağlı — restoranınızı tanımlamaya yardımcı olur.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="p-format">Format</FieldLabel>
+              <FieldLabel htmlFor="p-format">İşletme Formatı</FieldLabel>
               <Select
                 value={restaurantFormat || undefined}
                 onValueChange={(v) => setRestaurantFormat((v ?? "") as RestaurantFormat | "")}
@@ -389,7 +377,7 @@ export function RestaurantProfileForm({
                 <SelectTrigger id="p-format">
                   <span>
                     {FORMAT_OPTIONS.find((o) => o.value === restaurantFormat)
-                      ?.label ?? "Select…"}
+                      ?.label ?? "Seçiniz…"}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
@@ -402,7 +390,7 @@ export function RestaurantProfileForm({
               </Select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="p-seats">Seating capacity</FieldLabel>
+              <FieldLabel htmlFor="p-seats">Masa / Sandalye Kapasitesi</FieldLabel>
               <Input
                 id="p-seats"
                 inputMode="numeric"
@@ -413,7 +401,7 @@ export function RestaurantProfileForm({
             </Field>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Cuisines</span>
+            <span className="text-sm font-medium">Mutfak Çeşitleri</span>
             <div className="flex flex-wrap gap-1.5">
               {CUISINE_OPTIONS.map((cuisine) => {
                 const active = cuisines.includes(cuisine);
@@ -440,7 +428,7 @@ export function RestaurantProfileForm({
 
       <div className="bg-background/80 sticky bottom-0 flex justify-end gap-2 border-t py-3 backdrop-blur">
         <Button type="submit" disabled={save.isPending || !form.name.trim()}>
-          {save.isPending ? "Saving…" : "Save changes"}
+          {save.isPending ? "Kaydediliyor…" : "Değişiklikleri Kaydet"}
         </Button>
       </div>
     </form>

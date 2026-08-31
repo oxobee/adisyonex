@@ -24,9 +24,9 @@ import { computeBill, type BillLineInput, type DiscountKind } from "@/services/b
 import type { OrderDTO } from "@/types/order";
 
 const DISCOUNTS: readonly { value: DiscountKind; label: string }[] = [
-  { value: "NONE", label: "None" },
-  { value: "PERCENT", label: "%" },
-  { value: "FLAT", label: "₹ off" },
+  { value: "NONE", label: "Yok" },
+  { value: "PERCENT", label: "% İndirim" },
+  { value: "FLAT", label: "Sabit İndirim" },
 ];
 
 export function SettleDialog({
@@ -67,7 +67,7 @@ export function SettleDialog({
 
   const settle = useServerAction(settleOrderAction, {
     onSuccess: () => {
-      toast.success("Order settled");
+      toast.success("Hesap başarıyla kapatıldı");
       onOpenChange(false);
       onSettled(order.id);
     },
@@ -94,13 +94,13 @@ export function SettleDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Settle order #{order.orderNumber}</DialogTitle>
+          <DialogTitle>#{order.orderNumber} Nolu Hesabı Kapat</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           {/* Discount */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Discount</span>
+            <span className="text-sm font-medium">İndirim / İkram</span>
             <div className="flex gap-2">
               {DISCOUNTS.map((d) => (
                 <Button
@@ -126,7 +126,7 @@ export function SettleDialog({
               <Input
                 value={discountReason}
                 onChange={(e) => setDiscountReason(e.target.value)}
-                placeholder="Discount reason (optional)"
+                placeholder="İndirim nedeni (isteğe bağlı)"
               />
             ) : null}
           </div>
@@ -134,27 +134,27 @@ export function SettleDialog({
           {/* Bill */}
           <dl className="flex flex-col gap-1 rounded-md bg-muted/50 p-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
+              <dt className="text-muted-foreground">Ara Toplam</dt>
               <dd className="tabular-nums">{formatCurrency(bill.subtotal)}</dd>
             </div>
             {bill.discountTotal > 0 ? (
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Discount</dt>
+                <dt className="text-muted-foreground">İndirim</dt>
                 <dd className="tabular-nums">−{formatCurrency(bill.discountTotal)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">GST</dt>
+              <dt className="text-muted-foreground">KDV</dt>
               <dd className="tabular-nums">{formatCurrency(bill.taxTotal)}</dd>
             </div>
             {bill.roundOff !== 0 ? (
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Round off</dt>
+                <dt className="text-muted-foreground">Yuvarlama</dt>
                 <dd className="tabular-nums">{formatCurrency(bill.roundOff)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between text-base font-semibold">
-              <dt>Grand total</dt>
+              <dt>Genel Toplam</dt>
               <dd className="tabular-nums">{formatCurrency(bill.grandTotal)}</dd>
             </div>
           </dl>
@@ -165,8 +165,8 @@ export function SettleDialog({
         <DialogFooter>
           <Button disabled={!canSettle} onClick={submit}>
             {settle.isPending
-              ? "Settling…"
-              : `Settle · ${formatCurrency(bill.grandTotal)}`}
+              ? "Kapatılıyor…"
+              : `Hesabı Kapat · ${formatCurrency(bill.grandTotal)}`}
           </Button>
         </DialogFooter>
       </DialogContent>

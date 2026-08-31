@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/format";
 import type { DashboardTrendPoint } from "@/types/dashboard";
 
 const config = {
-  sales: { label: "Sales", color: "var(--primary)" },
+  sales: { label: "Satış", color: "var(--primary)" },
 } satisfies ChartConfig;
 
 export function SalesTrendChart({
@@ -38,7 +38,7 @@ export function SalesTrendChart({
         <ChartTooltip
           content={
             <ChartTooltipContent
-              labelFormatter={(label) => `Day ${label}`}
+              labelFormatter={(label) => `${label}. Gün`}
               formatter={(value) => formatCurrency(Number(value))}
             />
           }

@@ -11,14 +11,14 @@ const ROWS: readonly {
   label: string;
   hint: string;
 }[] = [
-  { key: "dineIn", type: "DINE_IN", label: "Dine-in", hint: "Seat guests at tables" },
+  { key: "dineIn", type: "DINE_IN", label: "Masada Servis", hint: "Masada oturan müşterilere servis" },
   {
     key: "takeaway",
     type: "TAKEAWAY",
-    label: "Takeaway",
-    hint: "Counter / pickup orders",
+    label: "Gel-Al / Paket",
+    hint: "Tezgah / kasadan teslim siparişler",
   },
-  { key: "delivery", type: "DELIVERY", label: "Delivery", hint: "Send orders out" },
+  { key: "delivery", type: "DELIVERY", label: "Paket Servis / Kurye", hint: "Adrese teslimat siparişleri" },
 ];
 
 export function ServiceOptionsField({
@@ -62,7 +62,7 @@ export function ServiceOptionsField({
                     : "text-muted-foreground hover:border-primary",
                 )}
               >
-                {isDefault ? "Default" : "Set default"}
+                {isDefault ? "Varsayılan" : "Varsayılan Yap"}
               </button>
               <Switch
                 checked={enabled}
@@ -73,8 +73,7 @@ export function ServiceOptionsField({
         );
       })}
       <p className="text-muted-foreground text-xs">
-        These control which order types appear in the POS — the default is
-        pre-selected there.
+        POS ekranında hangi sipariş türlerinin aktif olacağını ve hangisinin varsayılan olarak seçileceğini belirler.
       </p>
     </div>
   );

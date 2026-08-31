@@ -21,9 +21,9 @@ import { phoneSchema } from "@/lib/validators/shared"
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   OTP_USER_NOT_FOUND:
-    "This phone number isn't registered. Ask your administrator to add you.",
-  PIN_INVALID: "Incorrect PIN.",
-  PIN_LOCKED: "Too many attempts. Use a one-time code to sign in.",
+    "Bu telefon numarası kayıtlı değil. Lütfen yöneticinizle iletişime geçin.",
+  PIN_INVALID: "Hatalı PIN kodu.",
+  PIN_LOCKED: "Çok fazla başarısız deneme. Giriş yapmak için tek kullanımlık kod kullanın.",
 }
 
 const toAuthMessage = (raw: string) => AUTH_ERROR_MESSAGES[raw] ?? raw
@@ -76,7 +76,7 @@ export function LoginForm({
     event.preventDefault()
     const parsed = phoneSchema.safeParse(phone)
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Enter a valid phone number")
+      setError(parsed.error.issues[0]?.message ?? "Geçerli bir telefon numarası girin")
       return
     }
     setError(null)
@@ -86,7 +86,7 @@ export function LoginForm({
   const handlePinSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!/^\d{4,6}$/.test(pin)) {
-      setError("Enter your 4–6 digit PIN")
+      setError("4–6 haneli PIN kodunuzu girin")
       return
     }
     setError(null)
@@ -96,7 +96,7 @@ export function LoginForm({
   const handleCodeSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!/^\d{6}$/.test(code)) {
-      setError("Enter the 6-digit code")
+      setError("6 haneli doğrulama kodunu girin")
       return
     }
     setError(null)
@@ -116,9 +116,9 @@ export function LoginForm({
         <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
           <UtensilsCrossedIcon className="size-6" />
         </span>
-        <h1 className="text-xl font-bold">Sign in to ElitaleRestro</h1>
+        <h1 className="text-xl font-bold">ElitaleRestro&apos;ya Giriş Yapın</h1>
         <FieldDescription>
-          Run your restaurant&apos;s orders, inventory, and billing in one place.
+          Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.
         </FieldDescription>
       </div>
 
@@ -126,7 +126,7 @@ export function LoginForm({
         <form onSubmit={handlePhoneSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="phone">Phone number</FieldLabel>
+              <FieldLabel htmlFor="phone">Telefon Numarası</FieldLabel>
               <PhoneInput
                 id="phone"
                 onChange={(value) => {
@@ -139,7 +139,7 @@ export function LoginForm({
                 disabled={start.isPending}
               />
               <FieldDescription>
-                Enter your PIN, or we&apos;ll text you a one-time code.
+                PIN kodunuzu girin veya size bir kerelik SMS kodu gönderelim.
               </FieldDescription>
               {error ? (
                 <FieldDescription className="text-destructive">
@@ -149,7 +149,7 @@ export function LoginForm({
             </Field>
             <Field>
               <Button type="submit" disabled={start.isPending}>
-                {start.isPending ? "Please wait…" : "Continue"}
+                {start.isPending ? "Lütfen bekleyin…" : "Devam Et"}
               </Button>
             </Field>
           </FieldGroup>
@@ -160,7 +160,7 @@ export function LoginForm({
         <form onSubmit={handlePinSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="pin">PIN</FieldLabel>
+              <FieldLabel htmlFor="pin">PIN Kodu</FieldLabel>
               <Input
                 id="pin"
                 type="password"
@@ -179,13 +179,13 @@ export function LoginForm({
                 autoFocus
               />
               <FieldDescription>
-                Signing in as {phone}.{" "}
+                {phone} olarak giriş yapılıyor.{" "}
                 <button
                   type="button"
                   className="underline"
                   onClick={changeNumber}
                 >
-                  Change number
+                  Numarayı değiştir
                 </button>
               </FieldDescription>
               {error ? (
@@ -196,17 +196,17 @@ export function LoginForm({
             </Field>
             <Field>
               <Button type="submit" disabled={verifyPin.isPending}>
-                {verifyPin.isPending ? "Verifying…" : "Sign in"}
+                {verifyPin.isPending ? "Doğrulanıyor…" : "Giriş Yap"}
               </Button>
               <FieldDescription className="text-center">
-                Forgot your PIN?{" "}
+                PIN kodunuzu mu unuttunuz?{" "}
                 <button
                   type="button"
                   className="underline"
                   disabled={sendCode.isPending}
                   onClick={() => sendCode.execute({ phone })}
                 >
-                  Sign in with a code instead
+                  SMS kodu ile giriş yapın
                 </button>
               </FieldDescription>
             </Field>
@@ -218,7 +218,7 @@ export function LoginForm({
         <form onSubmit={handleCodeSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="code">Verification code</FieldLabel>
+              <FieldLabel htmlFor="code">Doğrulama Kodu</FieldLabel>
               <Input
                 id="code"
                 inputMode="numeric"
@@ -236,13 +236,13 @@ export function LoginForm({
                 autoFocus
               />
               <FieldDescription>
-                Sent to {phone}.{" "}
+                {phone} numarasına gönderildi.{" "}
                 <button
                   type="button"
                   className="underline"
                   onClick={changeNumber}
                 >
-                  Change number
+                  Numarayı değiştir
                 </button>
               </FieldDescription>
               {error ? (
@@ -253,17 +253,17 @@ export function LoginForm({
             </Field>
             <Field>
               <Button type="submit" disabled={verify.isPending}>
-                {verify.isPending ? "Verifying…" : "Verify & continue"}
+                {verify.isPending ? "Doğrulanıyor…" : "Doğrula ve Devam Et"}
               </Button>
               <FieldDescription className="text-center">
-                Didn&apos;t get it?{" "}
+                Kod gelmedi mi?{" "}
                 <button
                   type="button"
                   className="underline"
                   disabled={sendCode.isPending}
                   onClick={() => sendCode.execute({ phone })}
                 >
-                  Resend code
+                  Kodu tekrar gönder
                 </button>
               </FieldDescription>
             </Field>
@@ -272,8 +272,8 @@ export function LoginForm({
       ) : null}
 
       <FieldDescription className="px-6 text-center">
-        By continuing, you agree to our <a href="#">Terms of Service</a> and{" "}
-        <a href="#">Privacy Policy</a>.
+        Devam ederek <a href="#">Kullanım Şartları</a> ve{" "}
+        <a href="#">Gizlilik Politikası</a>&apos;nı kabul etmiş olursunuz.
       </FieldDescription>
     </div>
   )

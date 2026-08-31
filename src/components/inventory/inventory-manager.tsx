@@ -32,7 +32,7 @@ const groupByCategory = (
 ): [string, StockItemDTO[]][] => {
   const groups = new Map<string, StockItemDTO[]>();
   for (const item of items) {
-    const key = item.category?.trim() || "Uncategorized";
+    const key = item.category?.trim() || "Genel / Kategorisiz";
     const rows = groups.get(key) ?? [];
     rows.push(item);
     groups.set(key, rows);
@@ -62,7 +62,7 @@ export function InventoryManager({
   const del = useServerAction(deleteStockItemAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success("Item removed");
+      toast.success("Malzeme kaldırıldı");
       setDeleteTarget(null);
     },
     onError: (message) => toast.error(message),
@@ -82,13 +82,13 @@ export function InventoryManager({
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader
-          title="Inventory"
-          description="A manual stock log — receive, waste and count to keep on-hand honest."
+          title="Stok & Envanter"
+          description="Hammadde ve malzeme stok takibi — stok girişi, fire kaydı ve sayım kontrolü."
         />
         <div className="flex flex-wrap gap-2">
           {lowCount > 0 ? (
-            <Badge variant="secondary" className="self-center">
-              {lowCount} low
+            <Badge variant="secondary" className="self-center text-amber-800">
+              {lowCount} kritik stok
             </Badge>
           ) : null}
           <Button
@@ -96,23 +96,23 @@ export function InventoryManager({
             disabled={activeItems.length === 0}
             onClick={() => setBulkOpen(true)}
           >
-            Receive
+            Toplu Giriş
           </Button>
           <Button
             variant="outline"
             disabled={activeItems.length === 0}
             onClick={() => setCountOpen(true)}
           >
-            Count
+            Sayım Yap
           </Button>
-          <Button onClick={openNew}>Add item</Button>
+          <Button onClick={openNew}>Malzeme Ekle</Button>
         </div>
       </div>
 
       {items.length === 0 ? (
         <EmptyState
-          title="No stock items yet"
-          description="Add the ingredients + supplies you want to track, then log deliveries and wastage."
+          title="Henüz stok malzemesi eklenmemiş"
+          description="Takip etmek istediğiniz malzemeleri ve hammaddeleri ekleyin, ardından alım ve fire hareketlerini kaydedin."
         />
       ) : (
         groupByCategory(items).map(([category, rows]) => (
@@ -129,21 +129,21 @@ export function InventoryManager({
                       {item.name}
                       {item.isLow ? (
                         <Badge className="bg-amber-100 text-[10px] text-amber-800">
-                          Low
+                          Kritik
                         </Badge>
                       ) : null}
                       {!item.isActive ? (
                         <Badge variant="secondary" className="text-[10px]">
-                          Inactive
+                          Pasif
                         </Badge>
                       ) : null}
                     </p>
                     <p className="text-muted-foreground text-xs">
                       {item.reorderLevel != null
-                        ? `Reorder at ${item.reorderLevel}`
-                        : "No reorder level"}
-                      {item.parLevel != null ? ` · Par ${item.parLevel}` : ""}
-                      {item.costPerUnit != null ? ` · ₹${item.costPerUnit}/${UNIT_LABELS[item.unit]}` : ""}
+                        ? `Kritik Seviye: ${item.reorderLevel}`
+                        : "Kritik seviye yok"}
+                      {item.parLevel != null ? ` · Hedef ${item.parLevel}` : ""}
+                      {item.costPerUnit != null ? ` · ${item.costPerUnit} ₺/${UNIT_LABELS[item.unit]}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -160,7 +160,7 @@ export function InventoryManager({
                         className="h-8 px-2 text-xs"
                         onClick={() => setAdjust({ item, type: "RECEIVE" })}
                       >
-                        Receive
+                        Giriş
                       </Button>
                       <Button
                         size="sm"
@@ -168,7 +168,7 @@ export function InventoryManager({
                         className="text-destructive h-8 px-2 text-xs"
                         onClick={() => setAdjust({ item, type: "WASTE" })}
                       >
-                        Waste
+                        Fire
                       </Button>
                       <Button
                         size="sm"
@@ -176,7 +176,7 @@ export function InventoryManager({
                         className="h-8 px-2 text-xs"
                         render={<Link href={`/dashboard/inventory/${item.id}`} />}
                       >
-                        History
+                        Geçmiş
                       </Button>
                       <Button
                         size="sm"
@@ -184,7 +184,7 @@ export function InventoryManager({
                         className="h-8 px-2 text-xs"
                         onClick={() => openEdit(item)}
                       >
-                        Edit
+                        Düzenle
                       </Button>
                       <Button
                         size="sm"
@@ -192,7 +192,7 @@ export function InventoryManager({
                         className="text-destructive h-8 px-2 text-xs"
                         onClick={() => setDeleteTarget(item)}
                       >
-                        Remove
+                        Kaldır
                       </Button>
                     </div>
                   </div>
@@ -236,21 +236,21 @@ export function InventoryManager({
         <Dialog open onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Remove {deleteTarget.name}?</DialogTitle>
+              <DialogTitle>{deleteTarget.name} malzemesini kaldırmak istiyor musunuz?</DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">
-              Its movement history is kept. You can re-add the name later.
+              Geçmiş stok hareketleri korunur. İleride bu malzemeyi tekrar ekleyebilirsiniz.
             </p>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
-                Cancel
+                Vazgeç
               </Button>
               <Button
                 variant="destructive"
                 disabled={del.isPending}
                 onClick={() => del.execute({ id: deleteTarget.id })}
               >
-                {del.isPending ? "Removing…" : "Remove"}
+                {del.isPending ? "Kaldırılıyor…" : "Kaldır"}
               </Button>
             </DialogFooter>
           </DialogContent>

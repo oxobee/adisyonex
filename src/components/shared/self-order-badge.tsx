@@ -4,7 +4,7 @@ export function SelfOrderBadge({ className }: { readonly className?: string }) {
     <span
       className={`inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold tracking-wide text-violet-900 uppercase ring-1 ring-violet-300${className ? ` ${className}` : ""}`}
     >
-      Self-order
+      QR Sipariş
     </span>
   );
 }

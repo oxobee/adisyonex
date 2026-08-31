@@ -12,9 +12,9 @@ const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 1
 const money = (n: number): string => n.toFixed(2);
 
 const TYPE_LABEL: Record<string, string> = {
-  DINE_IN: "Dine In",
-  TAKEAWAY: "Takeaway",
-  DELIVERY: "Delivery",
+  DINE_IN: "Masa",
+  TAKEAWAY: "Gel-Al",
+  DELIVERY: "Paket",
 };
 
 const unitPrice = (line: OrderLineDTO): number =>
@@ -24,19 +24,17 @@ const lineAmount = (line: OrderLineDTO): number =>
   line.isComp ? 0 : unitPrice(line) * line.quantity;
 
 const dateIST = (iso: string): string =>
-  new Date(iso).toLocaleDateString("en-GB", {
+  new Date(iso).toLocaleDateString("tr-TR", {
     day: "2-digit",
     month: "2-digit",
-    year: "2-digit",
-    timeZone: "Asia/Kolkata",
+    year: "numeric",
   });
 
 const timeIST = (iso: string): string =>
-  new Date(iso).toLocaleTimeString("en-GB", {
+  new Date(iso).toLocaleTimeString("tr-TR", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "Asia/Kolkata",
   });
 
 function Hr() {
@@ -84,9 +82,9 @@ export default async function InvoicePage({
   if (order.status !== "COMPLETED") {
     return (
       <div className="mx-auto max-w-sm p-6 text-center text-sm">
-        <p>This order hasn&apos;t been settled yet.</p>
+        <p>Bu sipariş henüz kapatılmadı.</p>
         <Link href={`/dashboard/orders/${order.id}`} className="underline">
-          Back to order
+          Siparişe Geri Dön
         </Link>
       </div>
     );
@@ -103,7 +101,7 @@ export default async function InvoicePage({
     lines.filter((l) => !l.isComp && l.taxRate > 0).map((l) => l.taxRate),
   );
   const halfRate = taxableRates.size === 1 ? [...taxableRates][0] / 2 : null;
-  const rateSuffix = halfRate != null ? `@${halfRate}%` : "";
+  const rateSuffix = halfRate != null ? `@%${halfRate}` : "";
 
   const addressLine = [
     restaurant.addressLine1,
@@ -120,22 +118,22 @@ export default async function InvoicePage({
       : `${order.roundOff > 0 ? "+" : "−"}${money(Math.abs(order.roundOff))}`;
 
   const footer =
-    restaurant.invoiceFooterNote?.trim() || "Thank you! Visit again.";
+    restaurant.invoiceFooterNote?.trim() || "Bizi tercih ettiğiniz için teşekkür ederiz. Yine bekleriz!";
 
   return (
     <div className="mx-auto w-full max-w-[320px] p-4 font-mono text-[12px] leading-tight text-black">
       <div className="mb-4 flex items-center justify-between print:hidden">
         <span className="text-muted-foreground text-xs">
-          {registered ? "Tax invoice" : "Bill of supply"}
+          {registered ? "Satış Faturası" : "Adisyon Fişi"}
         </span>
-        <PrintButton label="Print invoice" />
+        <PrintButton label="Fatura Yazdır" />
       </div>
 
       {/* Header */}
       <div className="flex flex-col items-center text-center">
         <p className="text-sm font-bold tracking-wide">
-          {registered ? "TAX INVOICE" : "BILL OF SUPPLY"}
-          {copy === "1" ? " (DUPLICATE)" : ""}
+          {registered ? "SATIŞ FATURASI" : "ADİSYON FİŞİ"}
+          {copy === "1" ? " (KOPYA)" : ""}
         </p>
         {restaurant.legalName ? (
           <p className="uppercase">{restaurant.legalName}</p>
@@ -143,12 +141,12 @@ export default async function InvoicePage({
         <p className="text-sm font-bold uppercase">{restaurant.name}</p>
         {restaurant.tagline ? <p>{restaurant.tagline}</p> : null}
         {addressLine ? <p>{addressLine}</p> : null}
-        {restaurant.phone ? <p>M: {restaurant.phone}</p> : null}
+        {restaurant.phone ? <p>Tel: {restaurant.phone}</p> : null}
         {registered && restaurant.gstin ? (
-          <p>GSTIN: {restaurant.gstin}</p>
+          <p>Vergi No: {restaurant.gstin}</p>
         ) : null}
         {restaurant.fssaiLicense ? (
-          <p>FSSAI: {restaurant.fssaiLicense}</p>
+          <p>İşletme Belge No: {restaurant.fssaiLicense}</p>
         ) : null}
       </div>
 
@@ -156,9 +154,9 @@ export default async function InvoicePage({
 
       {/* Meta */}
       <div className="flex flex-col gap-0.5">
-        {order.customerName ? <p>Name: {order.customerName}</p> : null}
+        {order.customerName ? <p>Müşteri: {order.customerName}</p> : null}
         <div className="flex justify-between">
-          <span>Date: {order.settledAt ? dateIST(order.settledAt) : ""}</span>
+          <span>Tarih: {order.settledAt ? dateIST(order.settledAt) : ""}</span>
           <span className="font-bold">
             {TYPE_LABEL[order.orderType] ?? order.orderType}
             {order.orderType === "DINE_IN" && order.tableLabel
@@ -166,10 +164,10 @@ export default async function InvoicePage({
               : ""}
           </span>
         </div>
-        {order.settledAt ? <span>{timeIST(order.settledAt)}</span> : null}
+        {order.settledAt ? <span>Saat: {timeIST(order.settledAt)}</span> : null}
         <div className="flex justify-between">
-          <span>Bill No.: {order.invoiceNumber ?? order.orderNumber}</span>
-          <span>Token No.: {order.orderNumber}</span>
+          <span>Fatura No: {order.invoiceNumber ?? order.orderNumber}</span>
+          <span>Sipariş No: #{order.orderNumber}</span>
         </div>
       </div>
 
@@ -177,10 +175,10 @@ export default async function InvoicePage({
 
       {/* Items */}
       <div className="flex font-bold">
-        <span className="flex-1">Item</span>
-        <span className="w-8 text-right">Qty</span>
-        <span className="w-14 text-right">Price</span>
-        <span className="w-16 text-right">Amount</span>
+        <span className="flex-1">Ürün</span>
+        <span className="w-8 text-right">Adet</span>
+        <span className="w-14 text-right">Fiyat</span>
+        <span className="w-16 text-right">Tutar</span>
       </div>
       <Hr />
       <div className="flex flex-col gap-0.5">
@@ -189,7 +187,7 @@ export default async function InvoicePage({
             <span className="flex-1 pr-1">
               {line.name}
               {line.variantName ? ` (${line.variantName})` : ""}
-              {line.isComp ? " — comp" : ""}
+              {line.isComp ? " — ikram" : ""}
             </span>
             <span className="w-8 text-right tabular-nums">{line.quantity}</span>
             <span className="w-14 text-right tabular-nums">
@@ -207,27 +205,26 @@ export default async function InvoicePage({
       {/* Totals */}
       <div className="flex flex-col gap-0.5">
         <TotalRow
-          label={`Sub Total  Qty: ${totalQty}`}
+          label={`Ara Toplam (Toplam Adet: ${totalQty})`}
           value={money(order.subtotal)}
         />
         {order.discountTotal > 0 ? (
-          <TotalRow label="Discount" value={`−${money(order.discountTotal)}`} />
+          <TotalRow label="İndirim" value={`−${money(order.discountTotal)}`} />
         ) : null}
         {registered ? (
           <>
-            <TotalRow label={`SGST${rateSuffix}`} value={money(sgst)} />
-            <TotalRow label={`CGST${rateSuffix}`} value={money(cgst)} />
+            <TotalRow label={`KDV${rateSuffix}`} value={money(sgst + cgst)} />
           </>
         ) : null}
         {roundOffLabel ? (
-          <TotalRow label="Round off" value={roundOffLabel} />
+          <TotalRow label="Yuvarlama" value={roundOffLabel} />
         ) : null}
       </div>
 
       <Hr />
 
       <TotalRow
-        label="Grand Total"
+        label="Genel Toplam"
         value={formatCurrency(order.grandTotal)}
         bold
       />

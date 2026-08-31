@@ -36,7 +36,7 @@ export default async function OrderPage({
     return (
       <GuestNotice
         title={result.restaurantName}
-        message="Self-ordering isn't available here right now. Please ask a server to take your order."
+        message="Müşteri QR sipariş sistemi şu an kapalıdır. Lütfen garsonunuza sipariş veriniz."
       />
     );
   }
@@ -44,7 +44,7 @@ export default async function OrderPage({
     return (
       <GuestNotice
         title={result.restaurantName}
-        message="We couldn't find your table. Please scan the QR code on your table again, or ask a server."
+        message="Masa bilgisi bulunamadı. Lütfen masanızdaki QR kodu tekrar okutun veya garsonunuza danışın."
       />
     );
   }

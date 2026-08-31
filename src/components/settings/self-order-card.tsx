@@ -27,7 +27,7 @@ export function SelfOrderCard({
 
   const save = useServerAction(setSelfOrderEnabledAction, {
     refresh: true,
-    onSuccess: () => toast.success("Self-ordering updated"),
+    onSuccess: () => toast.success("Müşteri QR sipariş ayarı güncellendi"),
     onError: (message) => {
       setChecked((prev) => !prev);
       toast.error(message);
@@ -42,16 +42,16 @@ export function SelfOrderCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Guest self-ordering</CardTitle>
+        <CardTitle>Müşteri QR Siparişi (Self-Ordering)</CardTitle>
         <CardDescription>
-          Let seated guests scan a QR code and order from their phone. Orders go
-          straight to the kitchen and attach to the table&apos;s bill.
+          Masadaki müşterilerin QR kod okutarak kendi telefonlarından sipariş vermesini sağlayın.
+          Siparişler doğrudan mutfak ekranına düşer ve masa hesabına bağlanır.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
           <label htmlFor="self-order" className="text-sm font-medium">
-            {checked ? "Enabled" : "Disabled"}
+            {checked ? "Aktif" : "Devre Dışı"}
           </label>
           <Switch
             id="self-order"
@@ -61,9 +61,9 @@ export function SelfOrderCard({
           />
         </div>
         <FieldDescription>
-          Each table&apos;s QR links to{" "}
-          <span className="font-mono">/order/{username}?table=…</span>. Guests
-          verify their phone with a one-time code before their first order.
+          Masa QR kodları{" "}
+          <span className="font-mono">/order/{username}?table=…</span> adresine yönlendirir.
+          Müşteriler ilk siparişlerinde telefon numaraları ile tek seferlik doğrulama yapabilirler.
         </FieldDescription>
       </CardContent>
     </Card>

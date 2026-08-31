@@ -29,19 +29,24 @@ const findEligibleUser = async (phone: string): Promise<User> => {
   return user;
 };
 
+const isOtpDisabled = (): boolean =>
+  process.env.DISABLE_OTP === "true" && process.env.NODE_ENV !== "test";
+
 /** Generate + store a hashed OTP for a registered phone and text it via Twilio. */
 export const requestOtp = async (phone: string): Promise<void> => {
   await findEligibleUser(phone);
 
-  const recent = await countRecentChallenges(
-    phone,
-    new Date(Date.now() - RESEND_WINDOW_MS),
-  );
-  if (recent > 0) {
-    throw new Error(OTP_RATE_LIMITED);
+  if (!isOtpDisabled()) {
+    const recent = await countRecentChallenges(
+      phone,
+      new Date(Date.now() - RESEND_WINDOW_MS),
+    );
+    if (recent > 0) {
+      throw new Error(OTP_RATE_LIMITED);
+    }
   }
 
-  const code = generateOtpCode();
+  const code = isOtpDisabled() ? "123456" : generateOtpCode();
   await createOtpChallenge({
     phone,
     codeHash: hashOtpCode(code),
@@ -59,6 +64,14 @@ export const verifyOtp = async (
   phone: string,
   code: string,
 ): Promise<string> => {
+  if (isOtpDisabled()) {
+    const user = await findEligibleUser(phone);
+    if (user.pinFailedAttempts > 0 || user.pinLockedUntil) {
+      await resetPinCounters(user.id);
+    }
+    return user.id;
+  }
+
   const challenge = await findLatestActiveChallenge(phone, new Date());
   if (!challenge) {
     throw new Error(OTP_EXPIRED);
@@ -72,6 +85,7 @@ export const verifyOtp = async (
   }
 
   const user = await findEligibleUser(phone);
+
   await consumeChallenge(challenge.id);
   if (user.pinFailedAttempts > 0 || user.pinLockedUntil) {
     await resetPinCounters(user.id);

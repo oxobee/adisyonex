@@ -34,7 +34,7 @@ export function PinDialog({
 
   const save = useServerAction(setPinAction, {
     onSuccess: () => {
-      toast.success(mode === "set" ? "PIN enabled" : "PIN updated");
+      toast.success(mode === "set" ? "PIN kodu tanımlandı" : "PIN kodu güncellendi");
       onOpenChange(false);
       onSaved();
     },
@@ -44,7 +44,7 @@ export function PinDialog({
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     if (pin !== confirm) {
-      setError("PINs don't match");
+      setError("PIN kodları eşleşmiyor");
       return;
     }
     setError(null);
@@ -57,11 +57,11 @@ export function PinDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{mode === "set" ? "Set a sign-in PIN" : "Change PIN"}</DialogTitle>
+          <DialogTitle>{mode === "set" ? "Giriş PIN Kodu Belirle" : "PIN Kodunu Değiştir"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="pin-new">New PIN (4–6 digits)</FieldLabel>
+            <FieldLabel htmlFor="pin-new">Yeni PIN Kodu (4–6 Haneli)</FieldLabel>
             <Input
               id="pin-new"
               type="password"
@@ -75,10 +75,10 @@ export function PinDialog({
               placeholder="••••••"
               autoFocus
             />
-            <FieldDescription>6 digits recommended.</FieldDescription>
+            <FieldDescription>6 haneli olması önerilir.</FieldDescription>
           </Field>
           <Field>
-            <FieldLabel htmlFor="pin-confirm">Confirm PIN</FieldLabel>
+            <FieldLabel htmlFor="pin-confirm">PIN Kodunu Onayla</FieldLabel>
             <Input
               id="pin-confirm"
               type="password"
@@ -99,7 +99,7 @@ export function PinDialog({
           </Field>
           <DialogFooter>
             <Button type="submit" disabled={save.isPending || !valid}>
-              {save.isPending ? "Saving…" : "Save PIN"}
+              {save.isPending ? "Kaydediliyor…" : "PIN'i Kaydet"}
             </Button>
           </DialogFooter>
         </form>

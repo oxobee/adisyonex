@@ -47,14 +47,14 @@ import type { MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 
 const ERRORS: Record<string, string> = {
-  GUEST_OTP_RATE_LIMITED: "Please wait a moment before requesting another code.",
-  GUEST_OTP_EXPIRED: "That code expired — request a new one.",
-  GUEST_OTP_INVALID: "Incorrect code. Try again.",
-  GUEST_OTP_TOO_MANY_ATTEMPTS: "Too many attempts. Request a new code.",
-  GUEST_NOT_VERIFIED: "Please verify your phone first.",
-  GUEST_ORDER_DISABLED: "Ordering isn't available right now.",
-  GUEST_ORDER_TABLE_INVALID: "This table link is invalid. Please ask a server.",
-  ITEM_UNAVAILABLE: "An item just sold out. Please review your cart.",
+  GUEST_OTP_RATE_LIMITED: "Lütfen yeni bir kod istemeden önce biraz bekleyin.",
+  GUEST_OTP_EXPIRED: "Doğrulama kodunun süresi doldu — yeni bir kod isteyin.",
+  GUEST_OTP_INVALID: "Hatalı kod girdiniz. Tekrar deneyin.",
+  GUEST_OTP_TOO_MANY_ATTEMPTS: "Çok fazla hatalı deneme. Yeni bir kod isteyin.",
+  GUEST_NOT_VERIFIED: "Lütfen önce telefon numaranızı doğrulayın.",
+  GUEST_ORDER_DISABLED: "Sipariş alımı şu anda kapalıdır.",
+  GUEST_ORDER_TABLE_INVALID: "Bu masa bağlantısı geçersiz. Lütfen garsonunuza danışın.",
+  ITEM_UNAVAILABLE: "Sepetinizdeki bir ürünün stoğu tükendi. Lütfen sepetinizi kontrol edin.",
 };
 const toMessage = (m: string) => ERRORS[m] ?? m;
 
@@ -65,20 +65,20 @@ const orderStatus = (
   o: GuestOrderSummaryDTO,
 ): { label: string; className: string } => {
   if (o.status === "COMPLETED") {
-    return { label: "Paid", className: "bg-slate-100 text-slate-700" };
+    return { label: "Ödendi", className: "bg-slate-100 text-slate-700" };
   }
   if (o.status === "VOID") {
-    return { label: "Cancelled", className: "bg-red-100 text-red-800" };
+    return { label: "İptal Edildi", className: "bg-red-100 text-red-800" };
   }
   switch (o.kitchenStatus) {
     case "WAITING":
-      return { label: "In queue", className: "bg-amber-100 text-amber-900" };
+      return { label: "Sırada", className: "bg-amber-100 text-amber-900" };
     case "PREPARING":
-      return { label: "Preparing", className: "bg-sky-100 text-sky-900" };
+      return { label: "Hazırlanıyor", className: "bg-sky-100 text-sky-900" };
     case "READY":
-      return { label: "Ready", className: "bg-emerald-100 text-emerald-900" };
+      return { label: "Hazır", className: "bg-emerald-100 text-emerald-900" };
     default:
-      return { label: "Served", className: "bg-slate-100 text-slate-700" };
+      return { label: "Servis Edildi", className: "bg-slate-100 text-slate-700" };
   }
 };
 
@@ -119,9 +119,6 @@ export function GuestOrderPage({
 
   const idempotencyKey = useRef(uuid());
 
-  // Persist the in-progress cart + verified marker per table (localStorage), so
-  // a refresh or a return to add another item doesn't lose the draft. The
-  // server cookie stays authoritative for verification; this is convenience.
   const storageKey = guestSessionKey(username, tableId);
   const { replaceAll } = cart;
   const restoredRef = useRef(false);
@@ -146,8 +143,6 @@ export function GuestOrderPage({
   }, [storageKey, replaceAll]);
 
   useEffect(() => {
-    // Only persist after the initial restore, so we never clobber the saved
-    // draft with the empty mount state.
     if (!restoredRef.current) {
       return;
     }
@@ -161,8 +156,6 @@ export function GuestOrderPage({
     }
   }, []);
 
-  // Poll the guest's own orders every 10s so status (Preparing → Ready → Paid)
-  // stays live while they watch.
   useEffect(() => {
     if (!verified) {
       return;
@@ -183,17 +176,14 @@ export function GuestOrderPage({
     setOrdersOpen(false);
     setOtpSent(false);
     setCode("");
-    toast(expired ? "Session expired — verify again to order" : "Logged out");
+    toast(expired ? "Oturum süresi doldu — sipariş için tekrar doğrulayın" : "Çıkış yapıldı");
   };
 
-  // Keep the timer below pointed at the latest logout closure.
   const logoutRef = useRef(logout);
   useEffect(() => {
     logoutRef.current = logout;
   });
 
-  // Auto-logout when the 2-hour session expires (defer so we never setState
-  // synchronously inside the effect body).
   useEffect(() => {
     if (!verified || expiresAt === null) {
       return;
@@ -225,16 +215,12 @@ export function GuestOrderPage({
     onSuccess: () => {
       setReviewOpen(false);
       setVerifyOpen(false);
-      // Clear the draft (the write effect persists the empty cart), but keep
-      // the verified marker so "Order more" stays one tap.
       cart.clear();
       idempotencyKey.current = uuid();
       setPlaced(true);
       void refreshOrders();
     },
     onError: (m) => {
-      // The session cookie expired (or was never set on this device) — fall
-      // back to phone verification instead of a dead end.
       if (m === "GUEST_NOT_VERIFIED") {
         setVerified(false);
         setOtpSent(false);
@@ -259,7 +245,7 @@ export function GuestOrderPage({
   const sendCode = useServerAction(guestRequestOtpAction, {
     onSuccess: () => {
       setOtpSent(true);
-      toast.success("Code sent");
+      toast.success("Doğrulama kodu gönderildi");
     },
     onError: (m) => toast.error(toMessage(m)),
   });
@@ -301,10 +287,10 @@ export function GuestOrderPage({
         <div className="bg-primary/10 text-primary flex size-16 items-center justify-center rounded-full text-3xl">
           ✓
         </div>
-        <h1 className="text-xl font-semibold">Order placed</h1>
+        <h1 className="text-xl font-semibold">Siparişiniz Alındı!</h1>
         <p className="text-muted-foreground text-sm">
-          Your order for <span className="font-medium">{tableLabel}</span> has
-          been sent to the kitchen. A server will bring it over.
+          <span className="font-medium">{tableLabel}</span> için verdiğiniz sipariş mutfağa iletildi.
+          Hazırlandığında servis personeli masanıza getirecektir.
         </p>
         <div className="flex w-full max-w-xs flex-col gap-2">
           <Button
@@ -313,7 +299,7 @@ export function GuestOrderPage({
               setOrdersOpen(true);
             }}
           >
-            Track your orders
+            Siparişlerimi Takip Et
           </Button>
           <Button
             variant="outline"
@@ -323,7 +309,7 @@ export function GuestOrderPage({
               setPlaced(false);
             }}
           >
-            Order more
+            Daha Fazla Sipariş Ver
           </Button>
         </div>
       </div>
@@ -337,11 +323,11 @@ export function GuestOrderPage({
           <h1 className="text-lg font-semibold">{restaurantName}</h1>
           <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
             <span>
-              Ordering for <span className="font-medium">{tableLabel}</span>
+              Masa: <span className="font-medium">{tableLabel}</span>
             </span>
             {verified ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-900">
-                ✓ Verified
+                ✓ Doğrulandı
                 {(verifiedPhoneMasked ?? (phone ? maskPhone(phone) : null))
                   ? ` · ${verifiedPhoneMasked ?? maskPhone(phone)}`
                   : ""}
@@ -357,11 +343,11 @@ export function GuestOrderPage({
                 size="sm"
                 onClick={() => setOrdersOpen(true)}
               >
-                Your orders ({myOrders.length})
+                Siparişleriniz ({myOrders.length})
               </Button>
             ) : null}
             <Button variant="ghost" size="sm" onClick={() => logout(false)}>
-              Log out
+              Çıkış
             </Button>
           </div>
         ) : null}
@@ -379,10 +365,10 @@ export function GuestOrderPage({
             onClick={() => setReviewOpen(true)}
           >
             <span className="block text-sm font-medium">
-              {itemCount} item{itemCount === 1 ? "" : "s"}
+              {itemCount} adet ürün
             </span>
             <span className="text-muted-foreground text-xs">
-              ₹{bill.grandTotal.toFixed(0)} · Review
+              {bill.grandTotal.toFixed(0)} ₺ · Sepeti İncele
             </span>
           </button>
           <Button
@@ -391,7 +377,7 @@ export function GuestOrderPage({
             disabled={itemCount === 0 || busy}
             onClick={onPlaceTap}
           >
-            {busy ? "Placing…" : "Place order"}
+            {busy ? "İletiliyor…" : "Siparişi Ver"}
           </Button>
         </div>
       </div>
@@ -409,11 +395,11 @@ export function GuestOrderPage({
         <Dialog open onOpenChange={setReviewOpen}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Your order</DialogTitle>
+              <DialogTitle>Sipariş Özeti</DialogTitle>
             </DialogHeader>
             {cart.cart.length === 0 ? (
               <p className="text-muted-foreground py-6 text-center text-sm">
-                Your cart is empty.
+                Sepetiniz henüz boş.
               </p>
             ) : (
               <ul className="divide-y">
@@ -467,17 +453,17 @@ export function GuestOrderPage({
                         </Button>
                       </div>
                     </div>
-                    <span className="shrink-0 text-sm tabular-nums">
-                      ₹{linePrice(l).toFixed(0)}
+                    <span className="shrink-0 text-sm tabular-nums font-medium">
+                      {linePrice(l).toFixed(0)} ₺
                     </span>
                   </li>
                 ))}
               </ul>
             )}
             <div className="flex items-center justify-between border-t pt-3">
-              <span className="text-sm font-medium">Total</span>
+              <span className="text-sm font-medium">Toplam Tutar</span>
               <span className="text-base font-semibold tabular-nums">
-                ₹{bill.grandTotal.toFixed(2)}
+                {bill.grandTotal.toFixed(2)} ₺
               </span>
             </div>
             <DialogFooter>
@@ -486,7 +472,7 @@ export function GuestOrderPage({
                 disabled={itemCount === 0 || busy}
                 onClick={onPlaceTap}
               >
-                {busy ? "Placing…" : verified ? "Place order" : "Verify & place"}
+                {busy ? "İletiliyor…" : verified ? "Siparişi Onayla ve Gönder" : "Numaranı Doğrula & Gönder"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -498,10 +484,10 @@ export function GuestOrderPage({
         <Dialog open onOpenChange={(o) => !busy && setVerifyOpen(o)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Verify your phone</DialogTitle>
+              <DialogTitle>Telefon Numaranızı Doğrulayın</DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">
-              We&apos;ll text you a one-time code to confirm your order.
+              Siparişinizi teyit etmek için telefonunuza tek seferlik SMS kodu göndereceğiz.
             </p>
             <div className="flex flex-col gap-3">
               <PhoneInput onChange={setPhone} disabled={otpSent || busy} />
@@ -509,7 +495,7 @@ export function GuestOrderPage({
                 <Input
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="6-digit code"
+                  placeholder="6 haneli kod"
                   inputMode="numeric"
                   maxLength={6}
                   className="h-11 text-center text-lg tracking-widest"
@@ -525,7 +511,7 @@ export function GuestOrderPage({
                     verify.execute({ username, tableId, phone, code })
                   }
                 >
-                  {busy ? "Placing…" : "Verify & place order"}
+                  {busy ? "İletiliyor…" : "Doğrula ve Siparişi Ver"}
                 </Button>
               ) : (
                 <Button
@@ -535,7 +521,7 @@ export function GuestOrderPage({
                     sendCode.execute({ username, tableId, phone })
                   }
                 >
-                  {sendCode.isPending ? "Sending…" : "Send code"}
+                  {sendCode.isPending ? "Gönderiliyor…" : "Doğrulama Kodu Gönder"}
                 </Button>
               )}
             </DialogFooter>
@@ -547,11 +533,11 @@ export function GuestOrderPage({
       <Sheet open={ordersOpen} onOpenChange={setOrdersOpen}>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Your orders</SheetTitle>
+            <SheetTitle>Verdiğiniz Siparişler</SheetTitle>
           </SheetHeader>
           {myOrders.length === 0 ? (
             <p className="text-muted-foreground px-4 pb-6 text-sm">
-              No orders yet.
+              Henüz verilmiş bir siparişiniz bulunmuyor.
             </p>
           ) : (
             <ul className="flex flex-col gap-3 px-4 pb-6">
@@ -583,16 +569,16 @@ export function GuestOrderPage({
                             {l.name}
                             {l.variantName ? ` · ${l.variantName}` : ""}
                           </span>
-                          {l.state === "SERVED" ? <span>Served</span> : null}
+                          {l.state === "SERVED" ? <span>Servis Edildi</span> : null}
                         </li>
                       ))}
                     </ul>
                     <div className="mt-2 flex justify-between border-t pt-2 text-sm">
                       <span>
-                        {o.itemCount} item{o.itemCount === 1 ? "" : "s"}
+                        {o.itemCount} adet ürün
                       </span>
                       <span className="font-semibold tabular-nums">
-                        ₹{o.total.toFixed(2)}
+                        {o.total.toFixed(2)} ₺
                       </span>
                     </div>
                   </li>

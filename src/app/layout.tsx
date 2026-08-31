@@ -25,7 +25,7 @@ const fontMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ElitaleRestro",
   description:
-    "Run your restaurant's orders, inventory, and billing in one place.",
+    "Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.",
 };
 
 export default function RootLayout({
@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="tr"
       className={cn(
         "h-full",
         "antialiased",

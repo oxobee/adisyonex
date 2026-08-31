@@ -4,14 +4,12 @@ type TwilioClient = ReturnType<typeof twilio>;
 
 let client: TwilioClient | null = null;
 
-const getClient = (): TwilioClient => {
+const getClient = (): TwilioClient | null => {
   const accountSid = process.env.TWILLIO_A_SID;
   const authToken =
     process.env.TWILLIO_PRIMARY_TOKEN ?? process.env.TWILLIO_AUTH_SECRET;
   if (!accountSid || !authToken) {
-    throw new Error(
-      "Twilio credentials (TWILLIO_A_SID / TWILLIO_PRIMARY_TOKEN) are not set.",
-    );
+    return null;
   }
   client ??= twilio(accountSid, authToken);
   return client;
@@ -19,9 +17,19 @@ const getClient = (): TwilioClient => {
 
 /** Send an SMS via Twilio Programmable Messaging. */
 export const sendSms = async (to: string, body: string): Promise<void> => {
+  const twilioClient = getClient();
   const from = process.env.TWILLIO_FROM_NUMBER;
-  if (!from) {
-    throw new Error("TWILLIO_FROM_NUMBER is not set.");
+  if (!twilioClient || !from) {
+    if (
+      process.env.NODE_ENV !== "production" ||
+      process.env.DISABLE_OTP === "true"
+    ) {
+      console.log(`[SMS DEV LOG] To: ${to} | Message: ${body}`);
+      return;
+    }
+    throw new Error(
+      "Twilio credentials (TWILLIO_A_SID / TWILLIO_PRIMARY_TOKEN / TWILLIO_FROM_NUMBER) are not set.",
+    );
   }
-  await getClient().messages.create({ to, from, body });
+  await twilioClient.messages.create({ to, from, body });
 };

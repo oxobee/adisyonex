@@ -52,7 +52,7 @@ export function RecipeDialog({
 
   const add = useServerAction(setRecipeComponentAction, {
     onSuccess: () => {
-      toast.success("Ingredient added");
+      toast.success("Malzeme reçeteye eklendi");
       setStockItemId("");
       setQuantity("");
       router.refresh();
@@ -61,7 +61,7 @@ export function RecipeDialog({
   });
   const remove = useServerAction(removeRecipeComponentAction, {
     onSuccess: () => {
-      toast.success("Ingredient removed");
+      toast.success("Malzeme reçeteden kaldırıldı");
       router.refresh();
     },
     onError: (message) => toast.error(message),
@@ -79,17 +79,17 @@ export function RecipeDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Recipe · {item.name}</DialogTitle>
+          <DialogTitle>Reçete & Stok Düşümü · {item.name}</DialogTitle>
         </DialogHeader>
         <p className="text-muted-foreground text-xs">
-          Ingredients are deducted from stock each time this item is sold.
+          Bu ürün her satıldığında aşağıdaki malzemeler envanter stoklarınızdan otomatik olarak düşülür.
         </p>
 
         {components.length > 0 ? (
           <ul className="divide-y rounded-md border">
             {components.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-2 p-2">
-                <span className="text-sm">{c.stockItemName}</span>
+                <span className="text-sm font-medium">{c.stockItemName}</span>
                 <span className="flex items-center gap-2">
                   <span className="text-sm tabular-nums">
                     {c.quantity} {UNIT_LABELS[c.unit]}
@@ -97,7 +97,7 @@ export function RecipeDialog({
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    aria-label="Remove ingredient"
+                    aria-label="Malzemeyi kaldır"
                     onClick={() => remove.execute({ id: c.id })}
                   >
                     <XIcon className="size-3.5" />
@@ -107,23 +107,23 @@ export function RecipeDialog({
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground text-sm">No ingredients yet.</p>
+          <p className="text-muted-foreground text-sm">Henüz reçete malzemesi eklenmemiş.</p>
         )}
 
         {stockItems.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            Add stock items in Inventory first, then link them here.
+            Önce Stok & Envanter bölümünden hammadde/malzeme tanımlayın, ardından reçeteye ekleyin.
           </p>
         ) : (
           <div className="flex items-end gap-2">
             <Field className="flex-1">
-              <FieldLabel htmlFor="rc-stock">Ingredient</FieldLabel>
+              <FieldLabel htmlFor="rc-stock">Malzeme</FieldLabel>
               <Select
                 value={stockItemId || undefined}
                 onValueChange={(v) => v && setStockItemId(v)}
               >
                 <SelectTrigger id="rc-stock">
-                  <span>{selected?.name ?? "Select…"}</span>
+                  <span>{selected?.name ?? "Malzeme Seçin…"}</span>
                 </SelectTrigger>
                 <SelectContent>
                   {available.map((s) => (
@@ -136,7 +136,7 @@ export function RecipeDialog({
             </Field>
             <Field className="w-28">
               <FieldLabel htmlFor="rc-qty">
-                Qty {selected ? `(${UNIT_LABELS[selected.unit]})` : ""}
+                Miktar {selected ? `(${UNIT_LABELS[selected.unit]})` : ""}
               </FieldLabel>
               <Input
                 id="rc-qty"
@@ -150,14 +150,14 @@ export function RecipeDialog({
               onClick={submit}
               disabled={!stockItemId || !(qty > 0) || add.isPending}
             >
-              Add
+              Ekle
             </Button>
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Done
+            Tamam
           </Button>
         </DialogFooter>
       </DialogContent>

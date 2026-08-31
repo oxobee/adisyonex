@@ -22,13 +22,13 @@ import type { OrderDTO } from "@/types/order";
 
 const minutesAgo = (iso: string): string => {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  return `${mins} min`;
+  return `${mins} dk önce`;
 };
 
 const orderTitle = (order: OrderDTO): string =>
   order.orderType === "DINE_IN"
-    ? order.tableLabel ?? "Dine-in"
-    : `Takeaway #${order.orderNumber}`;
+    ? order.tableLabel ?? "Masada Servis"
+    : `Paket #${order.orderNumber}`;
 
 const itemCount = (order: OrderDTO): number =>
   order.lines.filter((l) => l.state !== "VOID").reduce((s, l) => s + l.quantity, 0);
@@ -40,9 +40,9 @@ const hasSelfOrder = (order: OrderDTO): boolean =>
   order.lines.some((l) => l.state !== "VOID" && l.source === "SELF_ORDER");
 
 const AUTH_ERRORS: Record<string, string> = {
-  STAFF_FORBIDDEN: "You don't have permission to do that.",
-  NO_STAFF_SESSION: "Session expired. Please sign in again.",
-  ORDER_NOT_OPEN: "This order is no longer open.",
+  STAFF_FORBIDDEN: "Bu işlemi yapmak için yetkiniz yok.",
+  NO_STAFF_SESSION: "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
+  ORDER_NOT_OPEN: "Bu sipariş artık açık değil.",
 };
 const toMessage = (m: string) => AUTH_ERRORS[m] ?? m;
 
@@ -64,8 +64,7 @@ export function WaiterHome({
   const pickup = useServerAction(markPickedUpAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success("Picked up \u2713");
-      announce("Order utha liya", "boop");
+      toast.success("Sipariş teslim alındı ✓");
     },
     onError: (m) => toast.error(toMessage(m)),
   });
@@ -76,7 +75,6 @@ export function WaiterHome({
     return () => clearInterval(id);
   }, [router]);
 
-  // Announce when an order turns ready in Hindi ("T1 ka order taiyar hai").
   useEffect(() => {
     const ready = openOrders.filter(isReady);
     const ids = ready.map((o) => o.id);
@@ -98,7 +96,7 @@ export function WaiterHome({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-sm">{restaurantName}</p>
-          <h1 className="text-xl font-bold">Hi, {staffName}</h1>
+          <h1 className="text-xl font-bold">Merhaba, {staffName}</h1>
         </div>
         <div className="flex items-center gap-1">
           <SoundToggle
@@ -113,23 +111,23 @@ export function WaiterHome({
             onClick={() => startTransition(() => staffLogoutAction(username))}
           >
             <LogOutIcon className="size-4" />
-            Log out
+            Çıkış
           </Button>
         </div>
       </div>
 
       <Button size="lg" className="h-14 w-full text-base" render={<Link href={`/u/${username}/order/new`} />}>
         <PlusIcon className="size-5" />
-        New order
+        Yeni Sipariş
       </Button>
 
       <div className="flex flex-col gap-2">
         <h2 className="text-muted-foreground text-sm font-medium">
-          Open orders {openOrders.length > 0 ? `(${openOrders.length})` : ""}
+          Açık Siparişler {openOrders.length > 0 ? `(${openOrders.length})` : ""}
         </h2>
         {openOrders.length === 0 ? (
           <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-            No open orders. Tap “New order” to start one.
+            Açık sipariş yok. Başlamak için &quot;Yeni Sipariş&quot;e dokunun.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -153,11 +151,11 @@ export function WaiterHome({
                       {hasSelfOrder(order) ? <SelfOrderBadge /> : null}
                     </span>
                     <span className="text-muted-foreground text-sm">
-                      {itemCount(order)} items · {minutesAgo(order.createdAt)}
+                      {itemCount(order)} ürün · {minutesAgo(order.createdAt)}
                     </span>
                   </span>
-                  <span className="text-muted-foreground text-sm tabular-nums">
-                    ₹{orderRunningTotal(order).toFixed(0)}
+                  <span className="text-muted-foreground text-sm tabular-nums font-medium">
+                    {orderRunningTotal(order).toFixed(0)} ₺
                   </span>
                 </Link>
                 {isReady(order) ? (
@@ -167,7 +165,7 @@ export function WaiterHome({
                       disabled={pickup.isPending}
                       onClick={() => pickup.execute({ orderId: order.id })}
                     >
-                      Pick up
+                      Teslim Al
                     </Button>
                   </div>
                 ) : null}

@@ -12,9 +12,9 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { title: "Overview", href: "/admin", icon: LayoutDashboardIcon },
-  { title: "Users", href: "/admin/users", icon: UsersIcon },
-  { title: "Restaurants", href: "/admin/restaurants", icon: StoreIcon },
+  { title: "Genel Bakış", href: "/admin", icon: LayoutDashboardIcon },
+  { title: "Kullanıcılar", href: "/admin/users", icon: UsersIcon },
+  { title: "Restoranlar", href: "/admin/restaurants", icon: StoreIcon },
 ] as const;
 
 const isActive = (pathname: string, href: string): boolean =>
@@ -28,7 +28,7 @@ export function AdminNav() {
       <div className="flex h-14 items-center gap-2 border-b px-4">
         <UtensilsCrossedIcon className="text-primary size-5" aria-hidden />
         <span className="font-semibold">ElitaleRestro</span>
-        <span className="text-muted-foreground text-xs font-medium">Admin</span>
+        <span className="text-muted-foreground text-xs font-medium">Panel</span>
       </div>
       <nav className="flex flex-col gap-1 p-3">
         {NAV.map((item) => (

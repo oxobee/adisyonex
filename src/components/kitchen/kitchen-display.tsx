@@ -29,8 +29,8 @@ const STATUS_STYLE: Record<KitchenStatus, string> = {
 };
 
 const AUTH_ERRORS: Record<string, string> = {
-  STAFF_FORBIDDEN: "You don't have permission to do that.",
-  NO_STAFF_SESSION: "Session expired. Please sign in again.",
+  STAFF_FORBIDDEN: "Bu işlemi yapmaya yetkiniz yok.",
+  NO_STAFF_SESSION: "Oturum süreniz doldu. Lütfen tekrar giriş yapın.",
 };
 const toMessage = (m: string): string => AUTH_ERRORS[m] ?? m;
 
@@ -40,12 +40,12 @@ const selfOrderLineCount = (t: KitchenTicketDTO): number =>
 
 const ticketTitle = (t: KitchenTicketDTO): string => {
   if (t.orderType === "DINE_IN") {
-    return t.tableLabel ?? "Dine-in";
+    return t.tableLabel ? `Masa ${t.tableLabel}` : "Masada";
   }
   if (t.orderType === "DELIVERY") {
-    return `Delivery #${t.orderNumber}`;
+    return `Paket #${t.orderNumber}`;
   }
-  return `Takeaway #${t.orderNumber}`;
+  return `Gel-Al #${t.orderNumber}`;
 };
 
 const elapsedLabel = (iso: string | null, now: number): string => {
@@ -53,7 +53,7 @@ const elapsedLabel = (iso: string | null, now: number): string => {
     return "";
   }
   const mins = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
-  return `${mins} min`;
+  return `${mins} dk`;
 };
 
 function TicketCard({
@@ -67,6 +67,13 @@ function TicketCard({
     refresh: true,
     onError: (m) => toast.error(toMessage(m)),
   });
+
+  const getButtonText = (label: string | null) => {
+    if (!label) return "";
+    if (label === "Start") return "Hazırlamaya Başla";
+    if (label === "Mark ready") return "Hazırlandı Olarak İşaretle";
+    return label;
+  };
 
   return (
     <li className="bg-card overflow-hidden rounded-2xl border shadow-sm">
@@ -93,7 +100,7 @@ function TicketCard({
               <div className="flex items-center gap-2">
                 {batch.isAddOn ? (
                   <p className="text-xs font-bold tracking-wide text-amber-700 uppercase">
-                    ＋ Added {elapsedLabel(batch.firedAt, now)}
+                    ＋ Eklenen ({elapsedLabel(batch.firedAt, now)})
                   </p>
                 ) : null}
                 {batch.isSelfOrder ? <SelfOrderBadge /> : null}
@@ -136,11 +143,11 @@ function TicketCard({
             disabled={advance.isPending}
             onClick={() => advance.execute({ orderId: ticket.orderId })}
           >
-            {ticket.advanceLabel}
+            {getButtonText(ticket.advanceLabel)}
           </Button>
         ) : (
           <p className="rounded-xl bg-emerald-50 py-3 text-center text-sm font-semibold text-emerald-800">
-            Ready for pickup
+            Servise / Teslime Hazır
           </p>
         )}
       </div>
@@ -209,7 +216,7 @@ export function KitchenDisplay({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-sm">{restaurantName}</p>
-          <h1 className="text-xl font-bold">Kitchen · {staffName}</h1>
+          <h1 className="text-xl font-bold">Mutfak Ekranı · {staffName}</h1>
         </div>
         <div className="flex items-center gap-1">
           <SoundToggle
@@ -224,18 +231,18 @@ export function KitchenDisplay({
             onClick={() => startTransition(() => staffLogoutAction(username))}
           >
             <LogOutIcon className="size-4" />
-            Log out
+            Çıkış Yap
           </Button>
         </div>
       </div>
 
       <h2 className="text-muted-foreground text-sm font-medium">
-        Tickets {tickets.length > 0 ? `(${tickets.length})` : ""}
+        Sipariş Fişleri {tickets.length > 0 ? `(${tickets.length})` : ""}
       </h2>
 
       {tickets.length === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
-          No tickets right now. New orders appear here automatically.
+          Şu an bekleyen mutfak siparişi yok. Yeni siparişler otomatik olarak burada görüntülenecektir.
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

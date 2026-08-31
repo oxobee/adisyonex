@@ -31,7 +31,7 @@ export function ResetPinDialog({
 
   const save = useServerAction(resetPinAction, {
     onSuccess: () => {
-      toast.success("PIN updated");
+      toast.success("PIN kodu güncellendi");
       onOpenChange(false);
       onSaved();
     },
@@ -47,11 +47,11 @@ export function ResetPinDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Reset PIN — {staff.name}</DialogTitle>
+          <DialogTitle>PIN Kodunu Yenile — {staff.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="rp-pin">New POS PIN (4–6 digits)</FieldLabel>
+            <FieldLabel htmlFor="rp-pin">Yeni POS PIN Kodu (4–6 Haneli)</FieldLabel>
             <Input
               id="rp-pin"
               inputMode="numeric"
@@ -64,7 +64,7 @@ export function ResetPinDialog({
           </Field>
           <DialogFooter>
             <Button type="submit" disabled={save.isPending || !/^\d{4,6}$/.test(pin)}>
-              {save.isPending ? "Saving…" : "Update PIN"}
+              {save.isPending ? "Kaydediliyor…" : "PIN'i Güncelle"}
             </Button>
           </DialogFooter>
         </form>

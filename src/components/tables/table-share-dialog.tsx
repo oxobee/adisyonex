@@ -69,10 +69,10 @@ export function TableShareDialog({
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
-      toast.success("Link copied");
+      toast.success("Bağlantı kopyalandı");
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      toast.error("Couldn't copy the link");
+      toast.error("Bağlantı kopyalanamadı");
     }
   };
 
@@ -80,14 +80,14 @@ export function TableShareDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Share {table.label}</DialogTitle>
+          <DialogTitle>{table.label} QR Kodunu Paylaş</DialogTitle>
         </DialogHeader>
 
         {!selfOrderEnabled ? (
           <p className="rounded-md bg-amber-50 p-2 text-xs text-amber-800">
-            Guest self-ordering is off. Turn it on in{" "}
-            <span className="font-medium">Settings → Guest self-ordering</span>{" "}
-            for this link to work.
+            Müşteri QR siparişi kapalı. Bu bağlantının çalışması için{" "}
+            <span className="font-medium">Ayarlar → Müşteri QR Siparişi</span>{" "}
+            bölümünden aktif hale getirin.
           </p>
         ) : null}
 
@@ -95,7 +95,7 @@ export function TableShareDialog({
           {qr ? (
             <Image
               src={qr}
-              alt={`QR code for ${table.label}`}
+              alt={`${table.label} için QR kod`}
               width={200}
               height={200}
               unoptimized
@@ -105,7 +105,7 @@ export function TableShareDialog({
             <div className="bg-muted size-[200px] animate-pulse rounded-lg" />
           )}
           <p className="text-muted-foreground text-center text-xs">
-            Guests scan this to order for {table.label}.
+            Müşteriler bu QR kodu okutarak {table.label} masasına sipariş verebilir.
           </p>
         </div>
 
@@ -115,7 +115,7 @@ export function TableShareDialog({
             size="icon"
             variant="outline"
             onClick={copy}
-            aria-label="Copy link"
+            aria-label="Bağlantıyı kopyala"
           >
             {copied ? (
               <CheckIcon className="size-4" />
@@ -134,7 +134,7 @@ export function TableShareDialog({
             }
           >
             <DownloadIcon className="size-4" />
-            Download QR
+            QR Kodu İndir
           </Button>
           <Button
             variant="outline"
@@ -142,10 +142,10 @@ export function TableShareDialog({
             render={
               <a href={link || undefined} target="_blank" rel="noopener noreferrer" />
             }
-            aria-label="Preview order page"
+            aria-label="Sipariş sayfasını önizle"
           >
             <ExternalLinkIcon className="size-4" />
-            Preview
+            Önizle
           </Button>
         </div>
       </DialogContent>

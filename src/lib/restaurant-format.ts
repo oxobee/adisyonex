@@ -1,15 +1,15 @@
 import type { RestaurantFormat } from "@/types/settings";
 
 export const FORMAT_LABELS: Record<RestaurantFormat, string> = {
-  FINE_DINING: "Fine dining",
-  CASUAL_DINING: "Casual dining",
-  QSR: "Quick service (QSR)",
-  CAFE: "Café",
-  CLOUD_KITCHEN: "Cloud kitchen",
-  BAR: "Bar / Pub",
-  BAKERY: "Bakery",
-  FOOD_TRUCK: "Food truck",
-  OTHER: "Other",
+  FINE_DINING: "Lüks Restoran (Fine dining)",
+  CASUAL_DINING: "Klasik Restoran (Casual dining)",
+  QSR: "Fast Food / Hızlı Servis (QSR)",
+  CAFE: "Kafe / Kahve Evi",
+  CLOUD_KITCHEN: "Paket Mutfak (Cloud kitchen)",
+  BAR: "Bar / Pub / Bistro",
+  BAKERY: "Fırın / Pastane",
+  FOOD_TRUCK: "Yemek Karavanı (Food truck)",
+  OTHER: "Diğer",
 };
 
 export const FORMAT_OPTIONS = (
@@ -17,20 +17,18 @@ export const FORMAT_OPTIONS = (
 ).map((value) => ({ value, label: FORMAT_LABELS[value] }));
 
 export const CUISINE_OPTIONS: readonly string[] = [
-  "North Indian",
-  "South Indian",
-  "Chinese",
-  "Continental",
-  "Italian",
-  "Mughlai",
-  "Bengali",
-  "Punjabi",
-  "Fast Food",
-  "Desserts",
-  "Beverages",
-  "Street Food",
-  "Biryani",
-  "Tandoor",
-  "Seafood",
-  "Vegan",
+  "Türk Mutfağı",
+  "Dünya Mutfağı",
+  "İtalyan",
+  "Uzak Doğu / Asya",
+  "Fast Food / Burger",
+  "Kebap & Izgara",
+  "Pide & Lahmacun",
+  "Ev Yemekleri",
+  "Kahvaltı",
+  "Tatlı & Pasta",
+  "Kahve & İçecek",
+  "Deniz Ürünleri / Balık",
+  "Vejetaryen / Vegan",
+  "Sokak Lezzetleri",
 ];

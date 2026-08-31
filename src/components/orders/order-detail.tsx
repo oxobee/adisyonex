@@ -27,12 +27,12 @@ const STATE_BADGE: Record<
   OrderLineState,
   { label: string; className: string }
 > = {
-  UNSENT: { label: "Unsent", className: "bg-muted text-muted-foreground" },
-  FIRED: { label: "Fired", className: "bg-amber-100 text-amber-800" },
-  PREPARING: { label: "Preparing", className: "bg-sky-100 text-sky-800" },
-  PREPARED: { label: "Prepared", className: "bg-emerald-100 text-emerald-800" },
-  SERVED: { label: "Served", className: "bg-green-100 text-green-800" },
-  VOID: { label: "Void", className: "bg-red-100 text-red-800" },
+  UNSENT: { label: "Gönderilmedi", className: "bg-muted text-muted-foreground" },
+  FIRED: { label: "İletildi", className: "bg-amber-100 text-amber-800" },
+  PREPARING: { label: "Hazırlanıyor", className: "bg-sky-100 text-sky-800" },
+  PREPARED: { label: "Hazırlandı", className: "bg-emerald-100 text-emerald-800" },
+  SERVED: { label: "Servis Edildi", className: "bg-green-100 text-green-800" },
+  VOID: { label: "İptal", className: "bg-red-100 text-red-800" },
 };
 
 const lineTotal = (line: OrderLineDTO): number =>
@@ -76,7 +76,7 @@ export function OrderDetail({
 
   const fire = useServerAction(fireOrderAction, {
     refresh: true,
-    onSuccess: () => toast.success("Sent to kitchen"),
+    onSuccess: () => toast.success("Mutfağa gönderildi"),
     onError: (m) => toast.error(m),
   });
   const serve = useServerAction(serveLineAction, {
@@ -86,7 +86,7 @@ export function OrderDetail({
   const voidLine = useServerAction(voidLineAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success("Line voided");
+      toast.success("Ürün iptal edildi");
       setVoidLineTarget(null);
     },
     onError: (m) => toast.error(m),
@@ -94,7 +94,7 @@ export function OrderDetail({
   const voidOrder = useServerAction(voidOrderAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success("Order voided");
+      toast.success("Sipariş iptal edildi");
       setVoidOrderOpen(false);
     },
     onError: (m) => toast.error(m),
@@ -102,23 +102,36 @@ export function OrderDetail({
 
   const openTab = (path: string) => window.open(path, "_blank");
 
+  const typeLabels: Record<string, string> = {
+    DINE_IN: "Masa",
+    TAKEAWAY: "Gel-Al",
+    DELIVERY: "Paket",
+  };
+
+  const statusLabel =
+    order.status === "OPEN"
+      ? "Açık"
+      : order.status === "COMPLETED"
+        ? "Tamamlandı"
+        : "İptal Edildi";
+
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">
-            Order #{order.orderNumber}
+            Sipariş #{order.orderNumber}
             {order.invoiceNumber ? (
               <span className="text-muted-foreground font-normal">
                 {" "}
-                · Invoice {order.invoiceNumber}
+                · Fatura #{order.invoiceNumber}
               </span>
             ) : null}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {order.orderType.replace("_", "-")}
-            {order.tableLabel ? ` · Table ${order.tableLabel}` : ""}
+            {typeLabels[order.orderType] ?? order.orderType}
+            {order.tableLabel ? ` · Masa ${order.tableLabel}` : ""}
             {order.customerName ? ` · ${order.customerName}` : ""}
             {" · "}
             {formatDateTime(order.createdAt)}
@@ -128,7 +141,7 @@ export function OrderDetail({
           variant={order.status === "OPEN" ? "default" : "secondary"}
           className={cn(order.status === "VOID" && "bg-red-100 text-red-800")}
         >
-          {order.status}
+          {statusLabel}
         </Badge>
       </div>
 
@@ -137,7 +150,7 @@ export function OrderDetail({
         {isOpen ? (
           <>
             <Button variant="outline" onClick={() => setAddOpen(true)}>
-              Add items
+              Ürün Ekle
             </Button>
             {hasUnsent ? (
               <Button
@@ -145,16 +158,16 @@ export function OrderDetail({
                 disabled={fire.isPending}
                 onClick={() => fire.execute({ orderId: order.id })}
               >
-                Fire
+                Mutfağa Gönder
               </Button>
             ) : null}
-            <Button onClick={() => setSettleOpen(true)}>Settle</Button>
+            <Button onClick={() => setSettleOpen(true)}>Hesabı Kapat</Button>
             <Button
               variant="ghost"
               className="text-destructive"
               onClick={() => setVoidOrderOpen(true)}
             >
-              Void order
+              Siparişi İptal Et
             </Button>
           </>
         ) : null}
@@ -162,14 +175,14 @@ export function OrderDetail({
           variant="outline"
           onClick={() => openTab(`/dashboard/orders/${order.id}/kot`)}
         >
-          Print KOT
+          Adisyon Yazdır
         </Button>
         {order.status === "COMPLETED" ? (
           <Button
             variant="outline"
             onClick={() => openTab(`/dashboard/orders/${order.id}/invoice`)}
           >
-            Print invoice
+            Fatura Yazdır
           </Button>
         ) : null}
       </div>
@@ -209,7 +222,7 @@ export function OrderDetail({
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-sm tabular-nums">
-                {line.isComp ? "Comp" : formatCurrency(lineTotal(line))}
+                {line.isComp ? "İkram" : formatCurrency(lineTotal(line))}
               </span>
               {isOpen && line.state !== "VOID" ? (
                 <div className="flex gap-1 print:hidden">
@@ -223,7 +236,7 @@ export function OrderDetail({
                         serve.execute({ orderId: order.id, itemId: line.id })
                       }
                     >
-                      Serve
+                      Servis Et
                     </Button>
                   ) : null}
                   <Button
@@ -232,7 +245,7 @@ export function OrderDetail({
                     className="text-destructive h-7 px-2 text-xs"
                     onClick={() => setVoidLineTarget(line)}
                   >
-                    Void
+                    İptal
                   </Button>
                 </div>
               ) : null}
@@ -245,15 +258,15 @@ export function OrderDetail({
       <dl className="ml-auto flex w-full max-w-xs flex-col gap-1 text-sm">
         {order.status === "COMPLETED" ? (
           <>
-            <Row label="Subtotal" value={order.subtotal} />
+            <Row label="Ara Toplam" value={order.subtotal} />
             {order.discountTotal > 0 ? (
-              <Row label="Discount" value={-order.discountTotal} />
+              <Row label="İndirim" value={-order.discountTotal} />
             ) : null}
-            <Row label="GST" value={order.taxTotal} />
+            <Row label="KDV" value={order.taxTotal} />
             {order.roundOff !== 0 ? (
-              <Row label="Round off" value={order.roundOff} />
+              <Row label="Yuvarlama" value={order.roundOff} />
             ) : null}
-            <Row label="Grand total" value={order.grandTotal} strong />
+            <Row label="Genel Toplam" value={order.grandTotal} strong />
             {order.payments.map((p) => (
               <div key={p.id} className="text-muted-foreground flex justify-between">
                 <dt>{p.mode}</dt>
@@ -263,9 +276,9 @@ export function OrderDetail({
           </>
         ) : (
           <>
-            <Row label="Subtotal" value={preview.subtotal} />
-            <Row label="GST" value={preview.taxTotal} />
-            <Row label="Total (est.)" value={preview.grandTotal} strong />
+            <Row label="Ara Toplam" value={preview.subtotal} />
+            <Row label="KDV" value={preview.taxTotal} />
+            <Row label="Tahmini Toplam" value={preview.grandTotal} strong />
           </>
         )}
       </dl>
@@ -287,8 +300,8 @@ export function OrderDetail({
       ) : null}
       {voidOrderOpen ? (
         <ReasonDialog
-          title={`Void order #${order.orderNumber}?`}
-          confirmLabel="Void order"
+          title={`#${order.orderNumber} numaralı siparişi iptal etmek istiyor musunuz?`}
+          confirmLabel="Siparişi İptal Et"
           pending={voidOrder.isPending}
           onConfirm={(reason) => voidOrder.execute({ orderId: order.id, reason })}
           onOpenChange={setVoidOrderOpen}
@@ -296,8 +309,8 @@ export function OrderDetail({
       ) : null}
       {voidLineTarget ? (
         <ReasonDialog
-          title={`Void ${voidLineTarget.name}?`}
-          confirmLabel="Void line"
+          title={`"${voidLineTarget.name}" ürününü iptal etmek istiyor musunuz?`}
+          confirmLabel="Ürünü İptal Et"
           pending={voidLine.isPending}
           onConfirm={(reason) =>
             voidLine.execute({

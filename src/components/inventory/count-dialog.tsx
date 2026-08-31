@@ -47,7 +47,7 @@ export function CountDialog({
 
   const save = useServerAction(countStockAction, {
     onSuccess: () => {
-      toast.success(`Updated ${rows.length} count${rows.length === 1 ? "" : "s"}`);
+      toast.success(`${rows.length} malzeme sayımı güncellendi`);
       onOpenChange(false);
       onDone();
     },
@@ -58,16 +58,15 @@ export function CountDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] max-h-[85vh] w-[95vw] flex-col sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Physical count</DialogTitle>
+          <DialogTitle>Fiziksel Stok Sayımı</DialogTitle>
         </DialogHeader>
         <p className="text-muted-foreground text-xs">
-          Enter what&apos;s actually on the shelf. Only changed rows are saved as
-          corrections.
+          Raflarda fiilen sayılan miktarları girin. Yalnızca değişen miktarlar düzeltme kaydı olarak işlenir.
         </p>
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search items…"
+          placeholder="Malzeme ara…"
         />
         <div className="min-h-0 flex-1 divide-y overflow-y-auto rounded-md border">
           {visible.map((item) => (
@@ -75,7 +74,7 @@ export function CountDialog({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{item.name}</p>
                 <p className="text-muted-foreground text-xs">
-                  System {item.onHand} {UNIT_LABELS[item.unit]}
+                  Sistem: {item.onHand} {UNIT_LABELS[item.unit]}
                 </p>
               </div>
               <Input
@@ -89,7 +88,7 @@ export function CountDialog({
             </div>
           ))}
           {visible.length === 0 ? (
-            <p className="text-muted-foreground p-3 text-sm">No items.</p>
+            <p className="text-muted-foreground p-3 text-sm">Malzeme bulunamadı.</p>
           ) : null}
         </div>
         <DialogFooter>
@@ -97,7 +96,7 @@ export function CountDialog({
             disabled={rows.length === 0 || save.isPending}
             onClick={() => save.execute({ rows })}
           >
-            {save.isPending ? "Saving…" : `Save ${rows.length} change(s)`}
+            {save.isPending ? "Kaydediliyor…" : `Sayımı Kaydet (${rows.length} değişiklik)`}
           </Button>
         </DialogFooter>
       </DialogContent>

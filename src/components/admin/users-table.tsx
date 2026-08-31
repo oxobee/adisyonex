@@ -6,15 +6,21 @@ import type { Paginated } from "@/types";
 import type { AdminUserListItemDTO } from "@/types/admin";
 
 const ROLE_LABEL: Record<AdminUserListItemDTO["role"], string> = {
-  MANAGER: "Manager",
-  ADMIN: "Admin",
-  SUPER_ADMIN: "Super admin",
+  MANAGER: "İşletmeci / Müdür",
+  ADMIN: "Yönetici",
+  SUPER_ADMIN: "Süper Yönetici",
 };
 
 const STATUS_CLASS: Record<AdminUserListItemDTO["status"], string> = {
   active: "bg-primary/10 text-primary",
   suspended: "bg-destructive/10 text-destructive",
   deleted: "bg-muted text-muted-foreground",
+};
+
+const STATUS_LABEL: Record<AdminUserListItemDTO["status"], string> = {
+  active: "Aktif",
+  suspended: "Askıya Alındı",
+  deleted: "Silindi",
 };
 
 export function UsersTable({
@@ -25,8 +31,8 @@ export function UsersTable({
   if (data.items.length === 0) {
     return (
       <EmptyState
-        title="No users yet"
-        description="Onboard a restaurant to create the first manager account."
+        title="Henüz kullanıcı bulunmuyor"
+        description="İlk yönetici hesabını oluşturmak için bir restoran kaydedin."
       />
     );
   }
@@ -36,11 +42,11 @@ export function UsersTable({
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-muted-foreground">
           <tr>
-            <th className="px-4 py-2.5 text-left font-medium">Name</th>
-            <th className="px-4 py-2.5 text-left font-medium">Phone</th>
-            <th className="px-4 py-2.5 text-left font-medium">Role</th>
-            <th className="px-4 py-2.5 text-left font-medium">Status</th>
-            <th className="px-4 py-2.5 text-right font-medium">Restaurants</th>
+            <th className="px-4 py-2.5 text-left font-medium">Ad Soyad</th>
+            <th className="px-4 py-2.5 text-left font-medium">Telefon</th>
+            <th className="px-4 py-2.5 text-left font-medium">Rol</th>
+            <th className="px-4 py-2.5 text-left font-medium">Durum</th>
+            <th className="px-4 py-2.5 text-right font-medium">Restoran Sayısı</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -52,11 +58,11 @@ export function UsersTable({
               <td>
                 <span
                   className={cn(
-                    "inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+                    "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
                     STATUS_CLASS[user.status],
                   )}
                 >
-                  {user.status}
+                  {STATUS_LABEL[user.status] ?? user.status}
                 </span>
               </td>
               <td className="text-right tabular-nums">{user.restaurantCount}</td>
@@ -65,7 +71,7 @@ export function UsersTable({
         </tbody>
       </table>
       <div className="text-muted-foreground border-t px-4 py-2 text-xs">
-        {data.total} user{data.total === 1 ? "" : "s"}
+        {data.total} kullanıcı
       </div>
     </div>
   );

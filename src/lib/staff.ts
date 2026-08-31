@@ -6,33 +6,33 @@ import type {
 } from "@/types/staff";
 
 export const STAFF_ROLE_OPTIONS: readonly { value: StaffRole; label: string }[] = [
-  { value: "WAITER", label: "Waiter" },
-  { value: "KITCHEN", label: "Kitchen" },
-  { value: "MANAGEMENT", label: "Management" },
+  { value: "WAITER", label: "Garson / Servis" },
+  { value: "KITCHEN", label: "Mutfak / Aşçı" },
+  { value: "MANAGEMENT", label: "Yönetici / Kasa" },
 ];
 
 export const STAFF_STATUS_OPTIONS: readonly {
   value: StaffStatus;
   label: string;
 }[] = [
-  { value: "ACTIVE", label: "Active" },
-  { value: "ON_LEAVE", label: "On leave" },
-  { value: "INACTIVE", label: "Inactive" },
+  { value: "ACTIVE", label: "Aktif" },
+  { value: "ON_LEAVE", label: "İzinde" },
+  { value: "INACTIVE", label: "Pasif" },
 ];
 
 export const EMPLOYMENT_TYPE_OPTIONS: readonly {
   value: EmploymentType;
   label: string;
 }[] = [
-  { value: "FULL_TIME", label: "Full-time" },
-  { value: "PART_TIME", label: "Part-time" },
-  { value: "CONTRACT", label: "Contract" },
+  { value: "FULL_TIME", label: "Tam Zamanlı" },
+  { value: "PART_TIME", label: "Yarı Zamanlı" },
+  { value: "CONTRACT", label: "Sözleşmeli" },
 ];
 
 export const GENDER_OPTIONS: readonly { value: Gender; label: string }[] = [
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
-  { value: "OTHER", label: "Other" },
+  { value: "MALE", label: "Erkek" },
+  { value: "FEMALE", label: "Kadın" },
+  { value: "OTHER", label: "Diğer" },
 ];
 
 export const staffRoleLabel = (role: StaffRole): string =>

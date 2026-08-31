@@ -29,9 +29,9 @@ import { useServerAction } from "@/hooks/use-server-action"
 import type { GstRegistrationType, TaxProfileDTO } from "@/types/settings"
 
 const TYPES: { value: GstRegistrationType; label: string }[] = [
-  { value: "UNREGISTERED", label: "Not GST registered" },
-  { value: "REGULAR", label: "Regular (collect GST)" },
-  { value: "COMPOSITION", label: "Composition scheme" },
+  { value: "UNREGISTERED", label: "KDV Muaf / Mükellef Değil" },
+  { value: "REGULAR", label: "Normal KDV Mükellefi" },
+  { value: "COMPOSITION", label: "Basit Usul / Özel Matrah" },
 ]
 
 export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
@@ -48,7 +48,7 @@ export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
 
   const save = useServerAction(updateTaxProfileAction, {
     onSuccess: () => {
-      toast.success("Tax settings saved")
+      toast.success("Vergi ayarları kaydedildi")
       router.refresh()
     },
     onError: (message) => toast.error(message),
@@ -71,15 +71,15 @@ export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
     <>
       <Card className="max-w-xl">
         <CardHeader>
-          <CardTitle>GST / Tax</CardTitle>
+          <CardTitle>KDV &amp; Vergi Ayarları</CardTitle>
           <CardDescription>
-            Controls how GST is applied to your menu items and bills.
+            Menü ürünleri ve hesap fişlerindeki KDV / vergi oranlarını yapılandırın.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="flex flex-col gap-4">
             <Field>
-              <FieldLabel htmlFor="reg-type">Registration</FieldLabel>
+              <FieldLabel htmlFor="reg-type">Vergi Mükellefiyeti</FieldLabel>
               <Select
                 value={type}
                 onValueChange={(v) =>
@@ -103,17 +103,17 @@ export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <Field>
-                    <FieldLabel htmlFor="rate">Service GST %</FieldLabel>
+                    <FieldLabel htmlFor="rate">KDV Oranı (%)</FieldLabel>
                     <Input
                       id="rate"
                       inputMode="decimal"
                       value={rate}
                       onChange={(e) => setRate(e.target.value)}
-                      placeholder="5"
+                      placeholder="10"
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="sac">SAC code</FieldLabel>
+                    <FieldLabel htmlFor="sac">Vergi / Hizmet Kodu</FieldLabel>
                     <Input
                       id="sac"
                       value={sacCode}
@@ -123,12 +123,12 @@ export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
                   </Field>
                 </div>
                 <Field>
-                  <FieldLabel htmlFor="gstin">GSTIN</FieldLabel>
+                  <FieldLabel htmlFor="gstin">Vergi Numarası (VKN / TCKN)</FieldLabel>
                   <Input
                     id="gstin"
                     value={gstin}
                     onChange={(e) => setGstin(e.target.value)}
-                    placeholder="22AAAAA0000A1Z5"
+                    placeholder="VKN veya TC Kimlik No"
                   />
                 </Field>
                 <div className="flex items-center gap-2">
@@ -138,25 +138,24 @@ export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
                     onCheckedChange={setInclusive}
                   />
                   <label htmlFor="incl" className="text-sm">
-                    Menu prices include GST
+                    Menü fiyatlarına KDV dahildir
                   </label>
                 </div>
                 {type === "COMPOSITION" ? (
                   <p className="text-muted-foreground text-xs">
-                    Composition scheme: GST isn&apos;t charged separately on the
-                    bill — prices are treated as inclusive.
+                    Basit Usul: Fiş üzerinde KDV ayrı gösterilmez — fiyatlar KDV dahil kabul edilir.
                   </p>
                 ) : null}
               </>
             ) : (
               <p className="text-muted-foreground text-sm">
-                No GST will be charged. Menu items show &quot;No GST&quot;.
+                KDV uygulanmayacak. Ürünlerde ve fişlerde KDV muaf olarak işlem görür.
               </p>
             )}
 
             <div className="flex justify-end">
               <Button type="submit" disabled={save.isPending}>
-                {save.isPending ? "Saving…" : "Save"}
+                {save.isPending ? "Kaydediliyor…" : "Kaydet"}
               </Button>
             </div>
           </form>

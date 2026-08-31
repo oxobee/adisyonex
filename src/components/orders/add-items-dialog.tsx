@@ -50,7 +50,7 @@ export function AddItemsDialog({
 
   const add = useServerAction(addItemsAction, {
     onSuccess: () => {
-      toast.success("Items added to order");
+      toast.success("Ürünler siparişe eklendi");
       onOpenChange(false);
       onAdded();
     },
@@ -79,7 +79,7 @@ export function AddItemsDialog({
       <Dialog open onOpenChange={onOpenChange}>
         <DialogContent className="flex h-[85vh] max-h-[85vh] w-[95vw] flex-col sm:max-w-5xl">
           <DialogHeader>
-            <DialogTitle>Add items</DialogTitle>
+            <DialogTitle>Siparişe Ürün Ekle</DialogTitle>
           </DialogHeader>
           <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[1fr_320px]">
             <MenuItemGrid menu={menu} onTapItem={onTapItem} />
@@ -99,10 +99,8 @@ export function AddItemsDialog({
                   onClick={submit}
                 >
                   {add.isPending
-                    ? "Adding…"
-                    : `Add ${cart.cart.length} ${
-                        cart.cart.length === 1 ? "item" : "items"
-                      } · ${formatCurrency(bill.grandTotal)}`}
+                    ? "Ekleniyor…"
+                    : `Siparişe Ekle (${cart.cart.length} çeşit) · ${formatCurrency(bill.grandTotal)}`}
                 </Button>
               </div>
             </div>

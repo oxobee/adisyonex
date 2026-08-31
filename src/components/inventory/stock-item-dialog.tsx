@@ -61,7 +61,7 @@ export function StockItemDialog({
 
   const save = useServerAction(item ? updateStockItemAction : createStockItemAction, {
     onSuccess: () => {
-      toast.success(item ? "Item updated" : "Item added");
+      toast.success(item ? "Malzeme güncellendi" : "Malzeme eklendi");
       onOpenChange(false);
       onSaved();
     },
@@ -92,22 +92,22 @@ export function StockItemDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{item ? "Edit item" : "New stock item"}</DialogTitle>
+          <DialogTitle>{item ? "Malzemeyi Düzenle" : "Yeni Stok Malzemesi Ekle"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <Field className="col-span-2">
-              <FieldLabel htmlFor="s-name">Name</FieldLabel>
+              <FieldLabel htmlFor="s-name">Malzeme Adı</FieldLabel>
               <Input
                 id="s-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Paneer"
+                placeholder="Örn: Un, Kaşar Peyniri, Süt"
                 autoFocus
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="s-unit">Unit</FieldLabel>
+              <FieldLabel htmlFor="s-unit">Birim</FieldLabel>
               <Select value={unit} onValueChange={(v) => v && setUnit(v as StockUnit)}>
                 <SelectTrigger id="s-unit">
                   <span>
@@ -124,19 +124,19 @@ export function StockItemDialog({
               </Select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="s-cat">Category</FieldLabel>
+              <FieldLabel htmlFor="s-cat">Kategori</FieldLabel>
               <Input
                 id="s-cat"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Dairy, Packaging…"
+                placeholder="Süt Ürünleri, Ambalaj…"
               />
             </Field>
           </div>
 
           {item ? null : (
             <Field>
-              <FieldLabel htmlFor="s-opening">Opening stock on hand</FieldLabel>
+              <FieldLabel htmlFor="s-opening">Mevcut Açılış Stoğu</FieldLabel>
               <Input
                 id="s-opening"
                 inputMode="decimal"
@@ -149,7 +149,7 @@ export function StockItemDialog({
 
           <div className="grid grid-cols-3 gap-3">
             <Field>
-              <FieldLabel htmlFor="s-reorder">Reorder at</FieldLabel>
+              <FieldLabel htmlFor="s-reorder">Kritik Seviye</FieldLabel>
               <Input
                 id="s-reorder"
                 inputMode="decimal"
@@ -159,7 +159,7 @@ export function StockItemDialog({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="s-par">Par level</FieldLabel>
+              <FieldLabel htmlFor="s-par">Hedef Stok</FieldLabel>
               <Input
                 id="s-par"
                 inputMode="decimal"
@@ -169,28 +169,28 @@ export function StockItemDialog({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="s-cost">Cost / unit</FieldLabel>
+              <FieldLabel htmlFor="s-cost">Birim Maliyet (₺)</FieldLabel>
               <Input
                 id="s-cost"
                 inputMode="decimal"
                 value={costPerUnit}
                 onChange={(e) => setCostPerUnit(e.target.value)}
-                placeholder="₹"
+                placeholder="₺"
               />
             </Field>
           </div>
 
           <Field>
-            <FieldLabel htmlFor="s-supplier">Supplier</FieldLabel>
+            <FieldLabel htmlFor="s-supplier">Tedarikçi / Toptancı</FieldLabel>
             <Input
               id="s-supplier"
               value={supplier}
               onChange={(e) => setSupplier(e.target.value)}
-              placeholder="Optional"
+              placeholder="İsteğe bağlı"
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="s-notes">Notes</FieldLabel>
+            <FieldLabel htmlFor="s-notes">Notlar</FieldLabel>
             <Textarea
               id="s-notes"
               value={notes}
@@ -202,13 +202,13 @@ export function StockItemDialog({
           <div className="flex items-center gap-2">
             <Switch id="s-active" checked={isActive} onCheckedChange={setIsActive} />
             <label htmlFor="s-active" className="text-sm">
-              Active
+              Aktif Stok Takibi
             </label>
           </div>
 
           <DialogFooter>
             <Button type="submit" disabled={save.isPending || !name.trim()}>
-              {save.isPending ? "Saving…" : "Save"}
+              {save.isPending ? "Kaydediliyor…" : "Kaydet"}
             </Button>
           </DialogFooter>
         </form>

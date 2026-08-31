@@ -44,7 +44,7 @@ export function BulkReceiveDialog({
 
   const save = useServerAction(bulkReceiveAction, {
     onSuccess: () => {
-      toast.success(`Received ${rows.length} item${rows.length === 1 ? "" : "s"}`);
+      toast.success(`${rows.length} malzeme için stok girişi yapıldı`);
       onOpenChange(false);
       onDone();
     },
@@ -55,12 +55,12 @@ export function BulkReceiveDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] max-h-[85vh] w-[95vw] flex-col sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Receive stock</DialogTitle>
+          <DialogTitle>Toplu Malzeme Girişi</DialogTitle>
         </DialogHeader>
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search items…"
+          placeholder="Malzeme ara…"
         />
         <div className="min-h-0 flex-1 divide-y overflow-y-auto rounded-md border">
           {visible.map((item) => (
@@ -68,11 +68,11 @@ export function BulkReceiveDialog({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{item.name}</p>
                 <p className="text-muted-foreground text-xs">
-                  On hand {item.onHand} {UNIT_LABELS[item.unit]}
+                  Mevcut: {item.onHand} {UNIT_LABELS[item.unit]}
                 </p>
               </div>
               <Input
-                className="w-24"
+                className="w-28"
                 inputMode="decimal"
                 value={qtyById[item.id] ?? ""}
                 onChange={(e) =>
@@ -83,7 +83,7 @@ export function BulkReceiveDialog({
             </div>
           ))}
           {visible.length === 0 ? (
-            <p className="text-muted-foreground p-3 text-sm">No items.</p>
+            <p className="text-muted-foreground p-3 text-sm">Malzeme bulunamadı.</p>
           ) : null}
         </div>
         <DialogFooter>
@@ -91,7 +91,7 @@ export function BulkReceiveDialog({
             disabled={rows.length === 0 || save.isPending}
             onClick={() => save.execute({ rows })}
           >
-            {save.isPending ? "Saving…" : `Receive ${rows.length} item(s)`}
+            {save.isPending ? "Kaydediliyor…" : `Girişi Kaydet (${rows.length} malzeme)`}
           </Button>
         </DialogFooter>
       </DialogContent>

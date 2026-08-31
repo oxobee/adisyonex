@@ -24,7 +24,7 @@ export function ImageManager({
 
   const remove = useServerAction(deleteItemImageAction, {
     onSuccess: () => {
-      toast.success("Photo removed")
+      toast.success("Fotoğraf silindi")
       router.refresh()
     },
     onError: (message) => toast.error(message),
@@ -41,16 +41,16 @@ export function ImageManager({
     setUploading(false)
     if (inputRef.current) inputRef.current.value = ""
     if (result.success) {
-      toast.success("Photo added")
+      toast.success("Fotoğraf eklendi")
       router.refresh()
     } else {
-      toast.error(result.error ?? "Upload failed")
+      toast.error(result.error ?? "Yükleme başarısız oldu")
     }
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-medium">Photos</span>
+      <span className="text-sm font-medium">Ürün Fotoğrafları</span>
       <div className="flex flex-wrap gap-2">
         {images.map((img) => (
           <div key={img.id} className="relative">
@@ -65,7 +65,7 @@ export function ImageManager({
               type="button"
               onClick={() => remove.execute({ imageId: img.id })}
               className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive p-1 text-white"
-              aria-label="Remove photo"
+              aria-label="Fotoğrafı sil"
             >
               <Trash2Icon className="size-3" />
             </button>
@@ -76,7 +76,7 @@ export function ImageManager({
           onClick={() => inputRef.current?.click()}
           disabled={uploading || images.length >= 3}
           className="flex size-16 items-center justify-center rounded-md border border-dashed text-muted-foreground disabled:opacity-50"
-          aria-label="Add photo"
+          aria-label="Fotoğraf ekle"
         >
           <UploadIcon className="size-5" />
         </button>
@@ -89,7 +89,7 @@ export function ImageManager({
         onChange={onFile}
       />
       <p className="text-muted-foreground text-xs">
-        Up to 3 photos, max 5 MB each.
+        En fazla 3 fotoğraf yükleyebilirsiniz (maks. 5 MB).
       </p>
     </div>
   )

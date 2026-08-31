@@ -40,7 +40,7 @@ export function ProfileHeader({
           </div>
         </div>
         <Badge variant={complete ? "default" : "secondary"}>
-          Bill essentials {completeness.done}/{completeness.total}
+          Fatura Zorunlu Alanları {completeness.done}/{completeness.total}
         </Badge>
       </div>
     </div>

@@ -36,8 +36,8 @@ import type { ServiceOptions } from "@/types/settings";
 import type { TableDTO } from "@/types/table";
 
 const AUTH_ERRORS: Record<string, string> = {
-  STAFF_FORBIDDEN: "You don't have permission to do that.",
-  NO_STAFF_SESSION: "Session expired. Please sign in again.",
+  STAFF_FORBIDDEN: "Bu işlemi yapmak için yetkiniz yok.",
+  NO_STAFF_SESSION: "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
 };
 const toMessage = (m: string) => AUTH_ERRORS[m] ?? m;
 
@@ -46,7 +46,7 @@ const groupBySection = (
 ): [string, TableDTO[]][] => {
   const groups = new Map<string, TableDTO[]>();
   for (const t of tables) {
-    const key = t.section?.trim() || "Tables";
+    const key = t.section?.trim() || "Masalar";
     const arr = groups.get(key) ?? [];
     arr.push(t);
     groups.set(key, arr);
@@ -111,7 +111,7 @@ export function OrderBuilder({
     l.isComp ? 0 : (l.unitPrice + modifiersDelta(l.modifiers)) * l.quantity;
 
   const done = () => {
-    toast.success(mode === "new" ? "Sent to kitchen ✓" : "Items sent ✓");
+    toast.success(mode === "new" ? "Mutfağa iletildi ✓" : "Ürünler iletildi ✓");
     cart.clear();
     idempotencyKey.current = uuid();
     router.push(`/u/${username}`);
@@ -128,7 +128,7 @@ export function OrderBuilder({
 
   const pickup = useServerAction(markPickedUpAction, {
     refresh: true,
-    onSuccess: () => toast.success("Picked up ✓"),
+    onSuccess: () => toast.success("Sipariş teslim alındı ✓"),
     onError: (m) => toast.error(toMessage(m)),
   });
 
@@ -184,12 +184,12 @@ export function OrderBuilder({
           size="sm"
           onClick={() => router.push(`/u/${username}`)}
         >
-          ← Back
+          ← Geri
         </Button>
         <span className="ml-auto text-sm font-medium">
           {mode === "add"
             ? existingOrder?.tableLabel ?? `#${existingOrder?.orderNumber}`
-            : "New order"}
+            : "Yeni Sipariş"}
         </span>
       </div>
 
@@ -202,7 +202,7 @@ export function OrderBuilder({
                 className="flex-1"
                 onClick={() => setOrderType("DINE_IN")}
               >
-                Dine-in
+                Masada Servis
               </Button>
             ) : null}
             {allowTakeaway ? (
@@ -211,7 +211,7 @@ export function OrderBuilder({
                 className="flex-1"
                 onClick={() => setOrderType("TAKEAWAY")}
               >
-                Takeaway
+                Gel-Al / Paket
               </Button>
             ) : null}
           </div>
@@ -221,7 +221,7 @@ export function OrderBuilder({
               className="justify-start"
               onClick={() => setTableOpen(true)}
             >
-              {tableName ? `Table: ${tableName}` : "Select a table"}
+              {tableName ? `Masa: ${tableName}` : "Masa Seçin"}
             </Button>
           ) : null}
         </div>
@@ -231,10 +231,10 @@ export function OrderBuilder({
         <div className="mb-3 rounded-xl border">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="flex items-center gap-2 text-sm font-medium">
-              Sent to kitchen
+              Mutfağa İletilenler
               <KitchenStatusBadge states={kitchenStates} />
             </span>
-            <span className="text-muted-foreground text-xs">Read-only</span>
+            <span className="text-muted-foreground text-xs">Salt okunur</span>
           </div>
           <ul className="divide-y">
             {sentLines.map((l) => (
@@ -255,24 +255,24 @@ export function OrderBuilder({
                       {[
                         l.modifiers.map((m) => m.name).join(", "),
                         l.lineNote,
-                        l.state === "SERVED" ? "Served" : null,
-                        l.isComp ? "Comp" : null,
+                        l.state === "SERVED" ? "Servis Edildi" : null,
+                        l.isComp ? "İkram" : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
                   ) : null}
                 </span>
-                <span className="shrink-0 text-sm tabular-nums">
-                  {l.isComp ? "—" : `₹${lineAmount(l).toFixed(0)}`}
+                <span className="shrink-0 text-sm tabular-nums font-medium">
+                  {l.isComp ? "—" : `${lineAmount(l).toFixed(0)} ₺`}
                 </span>
               </li>
             ))}
           </ul>
           <div className="flex items-center justify-between border-t px-3 py-2">
-            <span className="text-sm font-medium">Order total</span>
+            <span className="text-sm font-medium">Sipariş Toplamı</span>
             <span className="text-sm font-semibold tabular-nums">
-              ₹{existingTotal.toFixed(2)}
+              {existingTotal.toFixed(2)} ₺
             </span>
           </div>
           {isReadyForPickup ? (
@@ -284,7 +284,7 @@ export function OrderBuilder({
                   pickup.execute({ orderId: existingOrder.id })
                 }
               >
-                Picked up
+                Teslim Alındı
               </Button>
             </div>
           ) : null}
@@ -303,10 +303,10 @@ export function OrderBuilder({
             onClick={() => setReviewOpen(true)}
           >
             <span className="block text-sm font-medium">
-              {itemCount} item{itemCount === 1 ? "" : "s"}
+              {itemCount} adet ürün
             </span>
             <span className="text-muted-foreground text-xs">
-              ₹{bill.grandTotal.toFixed(0)} · Review
+              {bill.grandTotal.toFixed(0)} ₺ · Sepeti İncele
             </span>
           </button>
           <Button
@@ -315,7 +315,7 @@ export function OrderBuilder({
             disabled={!canSend}
             onClick={send}
           >
-            {isPending ? "Sending…" : needsTable ? "Pick a table" : "Send"}
+            {isPending ? "Gönderiliyor…" : needsTable ? "Masa Seçin" : "Mutfağa Gönder"}
           </Button>
         </div>
       </div>
@@ -333,16 +333,16 @@ export function OrderBuilder({
         <Dialog open onOpenChange={setTableOpen}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Select a table</DialogTitle>
+              <DialogTitle>Masa Seçin</DialogTitle>
             </DialogHeader>
             {tables.length === 0 ? (
               <Field>
-                <FieldLabel htmlFor="tl">Table name</FieldLabel>
+                <FieldLabel htmlFor="tl">Masa Adı / No</FieldLabel>
                 <Input
                   id="tl"
                   value={tableLabel}
                   onChange={(e) => setTableLabel(e.target.value)}
-                  placeholder="T1"
+                  placeholder="M-1"
                   className="h-11 text-base"
                 />
               </Field>
@@ -378,7 +378,7 @@ export function OrderBuilder({
             )}
             {tables.length === 0 ? (
               <DialogFooter>
-                <Button onClick={() => setTableOpen(false)}>Done</Button>
+                <Button onClick={() => setTableOpen(false)}>Tamam</Button>
               </DialogFooter>
             ) : null}
           </DialogContent>
@@ -390,7 +390,7 @@ export function OrderBuilder({
         <Dialog open onOpenChange={setReviewOpen}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Review order</DialogTitle>
+              <DialogTitle>Siparişi İncele</DialogTitle>
             </DialogHeader>
             <ul className="flex flex-col divide-y">
               {cart.cart.map((l) => (
@@ -413,7 +413,7 @@ export function OrderBuilder({
                       size="icon-sm"
                       variant="outline"
                       onClick={() => cart.changeQty(l.key, -1)}
-                      aria-label="Decrease"
+                      aria-label="Azalt"
                     >
                       <MinusIcon className="size-4" />
                     </Button>
@@ -424,7 +424,7 @@ export function OrderBuilder({
                       size="icon-sm"
                       variant="outline"
                       onClick={() => cart.changeQty(l.key, 1)}
-                      aria-label="Increase"
+                      aria-label="Arttır"
                     >
                       <PlusIcon className="size-4" />
                     </Button>
@@ -433,7 +433,7 @@ export function OrderBuilder({
                       variant="ghost"
                       className="text-destructive"
                       onClick={() => cart.removeLine(l.key)}
-                      aria-label="Remove"
+                      aria-label="Kaldır"
                     >
                       <Trash2Icon className="size-4" />
                     </Button>
@@ -444,12 +444,12 @@ export function OrderBuilder({
 
             {mode === "new" ? (
               <Field>
-                <FieldLabel htmlFor="phone">Customer phone (optional)</FieldLabel>
+                <FieldLabel htmlFor="phone">Müşteri Telefonu (isteğe bağlı)</FieldLabel>
                 <Input
                   id="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Skip if not needed"
+                  placeholder="İsteğe bağlı"
                   inputMode="tel"
                   className="h-11 text-base"
                 />
@@ -457,9 +457,9 @@ export function OrderBuilder({
             ) : null}
 
             <div className="flex items-center justify-between border-t pt-3 text-sm">
-              <span className="text-muted-foreground">Total</span>
+              <span className="text-muted-foreground">Toplam Tutar</span>
               <span className="font-semibold tabular-nums">
-                ₹{bill.grandTotal.toFixed(2)}
+                {bill.grandTotal.toFixed(2)} ₺
               </span>
             </div>
 
@@ -473,7 +473,7 @@ export function OrderBuilder({
                   send();
                 }}
               >
-                {isPending ? "Sending…" : "Send to kitchen"}
+                {isPending ? "Gönderiliyor…" : "Mutfağa Gönder"}
               </Button>
             </DialogFooter>
           </DialogContent>

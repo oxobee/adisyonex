@@ -39,7 +39,7 @@ export function CategoryDialog({
     category ? updateCategoryAction : createCategoryAction,
     {
       onSuccess: () => {
-        toast.success(category ? "Category updated" : "Category created")
+        toast.success(category ? "Kategori güncellendi" : "Kategori oluşturuldu")
         onOpenChange(false)
         onSaved()
       },
@@ -61,21 +61,21 @@ export function CategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{category ? "Edit category" : "New category"}</DialogTitle>
+          <DialogTitle>{category ? "Kategoriyi Düzenle" : "Yeni Kategori Ekle"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="cat-name">Name</FieldLabel>
+            <FieldLabel htmlFor="cat-name">Kategori Adı</FieldLabel>
             <Input
               id="cat-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Starters"
+              placeholder="Örn: Başlangıçlar, Burgerler, İçecekler"
               autoFocus
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="cat-desc">Description</FieldLabel>
+            <FieldLabel htmlFor="cat-desc">Açıklama</FieldLabel>
             <Textarea
               id="cat-desc"
               value={description}
@@ -90,12 +90,12 @@ export function CategoryDialog({
               onCheckedChange={setIsActive}
             />
             <label htmlFor="cat-active" className="text-sm">
-              Visible on the menu
+              Menüde görünür (Aktif)
             </label>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={save.isPending || !name.trim()}>
-              {save.isPending ? "Saving…" : "Save"}
+              {save.isPending ? "Kaydediliyor…" : "Kaydet"}
             </Button>
           </DialogFooter>
         </form>

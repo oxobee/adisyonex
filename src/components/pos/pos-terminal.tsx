@@ -38,9 +38,9 @@ const ORDER_TYPES: readonly {
   label: string;
   key: keyof ServiceOptions;
 }[] = [
-  { value: "DINE_IN", label: "Dine-in", key: "dineIn" },
-  { value: "TAKEAWAY", label: "Takeaway", key: "takeaway" },
-  { value: "DELIVERY", label: "Delivery", key: "delivery" },
+  { value: "DINE_IN", label: "Masa", key: "dineIn" },
+  { value: "TAKEAWAY", label: "Gel-Al", key: "takeaway" },
+  { value: "DELIVERY", label: "Paket", key: "delivery" },
 ];
 
 export function PosTerminal({
@@ -109,9 +109,9 @@ export function PosTerminal({
       if (!data) {
         return;
       }
-      toast.success(`Order #${data.orderNumber} sent to kitchen`, {
+      toast.success(`Sipariş #${data.orderNumber} mutfağa gönderildi`, {
         action: {
-          label: "Print KOT",
+          label: "Adisyon Yazdır",
           onClick: () => window.open(`/dashboard/orders/${data.id}/kot`, "_blank"),
         },
       });
@@ -165,7 +165,7 @@ export function PosTerminal({
             setPhoneSkipped(false);
           }
         }}
-        placeholder={phoneSkipped ? "Phone skipped" : "Phone number (required)"}
+        placeholder={phoneSkipped ? "Telefon atlandı" : "Telefon numarası"}
         inputMode="tel"
         disabled={phoneSkipped}
       />
@@ -176,7 +176,7 @@ export function PosTerminal({
           variant="ghost"
           onClick={() => setPhoneSkipped(false)}
         >
-          Undo
+          Geri Al
         </Button>
       ) : (
         <Button
@@ -189,7 +189,7 @@ export function PosTerminal({
             setCustomerPhone("");
           }}
         >
-          Skip
+          Atla
         </Button>
       )}
     </div>
@@ -227,12 +227,12 @@ export function PosTerminal({
                 />
               ) : (
                 <Field>
-                  <FieldLabel htmlFor="pos-table">Table</FieldLabel>
+                  <FieldLabel htmlFor="pos-table">Masa</FieldLabel>
                   <Input
                     id="pos-table"
                     value={tableLabel}
                     onChange={(e) => setTableLabel(e.target.value)}
-                    placeholder="T1"
+                    placeholder="Masa No (örn: M1)"
                   />
                 </Field>
               )}
@@ -245,7 +245,7 @@ export function PosTerminal({
                 <Textarea
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="Delivery address"
+                  placeholder="Teslimat adresi"
                   rows={2}
                 />
               ) : null}
@@ -266,39 +266,39 @@ export function PosTerminal({
           <Textarea
             value={orderNote}
             onChange={(e) => setOrderNote(e.target.value)}
-            placeholder="Order note (optional)"
+            placeholder="Sipariş notu (isteğe bağlı)"
             rows={1}
           />
           <dl className="flex flex-col gap-1 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
+              <dt className="text-muted-foreground">Ara Toplam</dt>
               <dd className="tabular-nums">{formatCurrency(bill.subtotal)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">GST</dt>
+              <dt className="text-muted-foreground">KDV</dt>
               <dd className="tabular-nums">{formatCurrency(bill.taxTotal)}</dd>
             </div>
             {bill.compTotal > 0 ? (
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Comp</dt>
+                <dt className="text-muted-foreground">İkram</dt>
                 <dd className="tabular-nums">−{formatCurrency(bill.compTotal)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between text-base font-semibold">
-              <dt>Total</dt>
+              <dt>Genel Toplam</dt>
               <dd className="tabular-nums">{formatCurrency(bill.grandTotal)}</dd>
             </div>
           </dl>
           <Button size="lg" disabled={!canSend} onClick={send}>
             {createOrder.isPending
-              ? "Sending…"
+              ? "Gönderiliyor…"
               : cart.length === 0
-                ? `Send to kitchen · ${formatCurrency(bill.grandTotal)}`
+                ? `Mutfağa Gönder · ${formatCurrency(bill.grandTotal)}`
                 : phoneMissing
-                  ? "Add phone number"
+                  ? "Telefon numarası ekleyin"
                   : deliveryNeedsAddress
-                    ? "Add delivery address"
-                    : `Send to kitchen · ${formatCurrency(bill.grandTotal)}`}
+                    ? "Teslimat adresi ekleyin"
+                    : `Mutfağa Gönder · ${formatCurrency(bill.grandTotal)}`}
           </Button>
         </div>
       </aside>
@@ -323,12 +323,11 @@ export function PosTerminal({
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle>
-                {occupiedConfirm.table.label} has an open order
+                {occupiedConfirm.table.label} masasında açık sipariş var
               </DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">
-              This table already has a running order. Open it to add a round, or
-              start a separate new order.
+              Bu masada zaten açık bir adisyon bulunuyor. Yeni ürünler eklemek için mevcut adisyonu açabilir veya ayrı bir yeni sipariş başlatabilirsiniz.
             </p>
             <DialogFooter className="flex-col gap-2 sm:flex-row">
               <Button
@@ -337,7 +336,7 @@ export function PosTerminal({
                   router.push(`/dashboard/orders/${occupiedConfirm.orderId}`)
                 }
               >
-                Open existing order
+                Mevcut siparişi aç
               </Button>
               <Button
                 onClick={() => {
@@ -345,7 +344,7 @@ export function PosTerminal({
                   setOccupiedConfirm(null);
                 }}
               >
-                New order anyway
+                Yine de yeni sipariş aç
               </Button>
             </DialogFooter>
           </DialogContent>

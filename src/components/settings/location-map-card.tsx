@@ -75,7 +75,7 @@ export function LocationMapCard({
       if (submittedRef.current) {
         setSavedPin(submittedRef.current);
       }
-      toast.success("Location saved");
+      toast.success("Konum kaydedildi");
     },
     onError: (message) => toast.error(message),
   });
@@ -120,11 +120,11 @@ export function LocationMapCard({
       setAccuracy(Math.round(best.accuracy));
       setPin(best.lat, best.lng);
       toast.success(
-        `Location detected (\u00b1${Math.round(best.accuracy)} m) \u2014 adjust if needed, then Save.`,
+        `Konum tespit edildi (±${Math.round(best.accuracy)} m) — gerekirse ayarlayın ve Kaydedin.`,
       );
     } else {
       toast.error(
-        "Couldn't get an accurate fix. Try again or enter it manually.",
+        "Doğru konum alınamadı. Tekrar deneyin veya elle girin.",
       );
     }
   };
@@ -143,15 +143,13 @@ export function LocationMapCard({
 
   const useMyLocation = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      toast.error("Geolocation isn't supported on this device.");
+      toast.error("Bu cihazda konum servisi desteklenmiyor.");
       return;
     }
     stopWatch();
     bestRef.current = null;
     setAccuracy(null);
     setLocating(true);
-    // Sample for a few seconds and keep the most accurate fix — a single
-    // reading is often coarse, especially on Wi-Fi / desktop.
     watchTimerRef.current = setTimeout(finishWatch, 8000);
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -171,8 +169,8 @@ export function LocationMapCard({
         setLocating(false);
         toast.error(
           error.code === error.PERMISSION_DENIED
-            ? "Location permission denied — allow access or enter it manually."
-            : "Couldn't get your location. Try again or enter it manually.",
+            ? "Konum izni reddedildi — tarayıcıdan izin verin veya koordinatları elle girin."
+            : "Konumunuz alınamadı. Tekrar deneyin veya elle girin.",
         );
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
@@ -197,7 +195,7 @@ export function LocationMapCard({
 
   const saveManual = () => {
     if (!pin) {
-      toast.error("Enter a valid latitude (\u221290\u202685) and longitude.");
+      toast.error("Geçerli bir enlem (-90…90) ve boylam (-180…180) girin.");
       return;
     }
     persist(pin.lat, pin.lng);
@@ -213,10 +211,10 @@ export function LocationMapCard({
       setLngInput("");
       setAccuracy(null);
       submittedRef.current = null;
-      toast.success("Map pin removed");
+      toast.success("Harita konumu kaldırıldı");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Something went wrong");
+      toast.error(result.error ?? "İşlem başarısız oldu");
     }
   };
 
@@ -230,17 +228,17 @@ export function LocationMapCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Location &amp; map pin</CardTitle>
+        <CardTitle>Konum &amp; Harita İğnesi</CardTitle>
         <CardDescription>
-          Drop a precise pin so guests, delivery riders and Google can find you.
-          Fetch it in one tap, or enter the coordinates by hand.
+          Müşterilerin, kuryelerin ve haritaların sizi tam bulabilmesi için konumunuzu işaretleyin.
+          Tek dokunuşla mevcut konumunuzu alın veya koordinatları elle girin.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {address ? (
           <p className="text-muted-foreground text-sm">
-            Address: <span className="text-foreground">{address}</span>{" "}
-            <span className="text-xs">(edit the text address in Profile)</span>
+            Adres: <span className="text-foreground">{address}</span>{" "}
+            <span className="text-xs">(metin adresini İşletme Profili sekmesinden düzenleyin)</span>
           </p>
         ) : null}
 
@@ -252,9 +250,9 @@ export function LocationMapCard({
           >
             {locating
               ? accuracy != null
-                ? `Refining… ±${accuracy} m`
-                : "Locating…"
-              : "Use my current location"}
+                ? `Hassaslaştırılıyor… ±${accuracy} m`
+                : "Konum alınıyor…"
+              : "Mevcut Konumumu Kullan"}
           </Button>
           {mapsUrl ? (
             <Button
@@ -264,44 +262,43 @@ export function LocationMapCard({
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer" />
               }
             >
-              Open in Google Maps
+              Google Haritalar&apos;da Aç
             </Button>
           ) : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor="geo-lat">Latitude</FieldLabel>
+            <FieldLabel htmlFor="geo-lat">Enlem (Latitude)</FieldLabel>
             <Input
               id="geo-lat"
               value={latInput}
               onChange={(e) => setLatInput(e.target.value)}
               inputMode="decimal"
-              placeholder="19.0760"
+              placeholder="41.0082"
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="geo-lng">Longitude</FieldLabel>
+            <FieldLabel htmlFor="geo-lng">Boylam (Longitude)</FieldLabel>
             <Input
               id="geo-lng"
               value={lngInput}
               onChange={(e) => setLngInput(e.target.value)}
               inputMode="decimal"
-              placeholder="72.8777"
+              placeholder="28.9784"
             />
           </Field>
         </div>
         <FieldDescription>
-          Browser positioning can be off by 10–50 m (more on Wi-Fi / desktop).
-          Fetch to get close, then nudge the pin to your exact entrance and
-          Save.
+          Tarayıcı konumu masaüstü veya Wi-Fi ağlarında sapma gösterebilir.
+          Otomatik aldıktan sonra ok butonlarıyla tam kapı girişine hizalayıp kaydedin.
         </FieldDescription>
 
         {pin ? (
           <div className="flex flex-col gap-3">
             <div className="overflow-hidden rounded-lg border">
               <iframe
-                title="Restaurant location on Google Maps"
+                title="Google Haritalar Restoran Konumu"
                 src={embedUrl ?? undefined}
                 className="h-64 w-full"
                 loading="lazy"
@@ -310,7 +307,7 @@ export function LocationMapCard({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium">Nudge</span>
+              <span className="text-sm font-medium">Hassas Kaydır</span>
               <div className="flex overflow-hidden rounded-md border">
                 {[1, 5, 10].map((s) => (
                   <button
@@ -333,7 +330,7 @@ export function LocationMapCard({
                   type="button"
                   variant="outline"
                   size="icon-sm"
-                  aria-label={`Move pin ${step} m north`}
+                  aria-label={`İğneyi ${step} m kuzeye taşı`}
                   onClick={() => nudge(step, 0)}
                 >
                   <ArrowUpIcon />
@@ -342,7 +339,7 @@ export function LocationMapCard({
                   type="button"
                   variant="outline"
                   size="icon-sm"
-                  aria-label={`Move pin ${step} m south`}
+                  aria-label={`İğneyi ${step} m güneye taşı`}
                   onClick={() => nudge(-step, 0)}
                 >
                   <ArrowDownIcon />
@@ -351,7 +348,7 @@ export function LocationMapCard({
                   type="button"
                   variant="outline"
                   size="icon-sm"
-                  aria-label={`Move pin ${step} m west`}
+                  aria-label={`İğneyi ${step} m batıya taşı`}
                   onClick={() => nudge(0, -step)}
                 >
                   <ArrowLeftIcon />
@@ -360,7 +357,7 @@ export function LocationMapCard({
                   type="button"
                   variant="outline"
                   size="icon-sm"
-                  aria-label={`Move pin ${step} m east`}
+                  aria-label={`İğneyi ${step} m doğuya taşı`}
                   onClick={() => nudge(0, step)}
                 >
                   <ArrowRightIcon />
@@ -371,8 +368,8 @@ export function LocationMapCard({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="text-muted-foreground text-xs">
                 {pin.lat}, {pin.lng}
-                {accuracy != null ? ` · detected ±${accuracy} m` : ""}
-                {dirty ? " · unsaved" : savedPin ? " · saved" : ""}
+                {accuracy != null ? ` · sapma ±${accuracy} m` : ""}
+                {dirty ? " · kaydedilmemiş" : savedPin ? " · kaydedildi" : ""}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -382,7 +379,7 @@ export function LocationMapCard({
                   onClick={removePin}
                   disabled={clearing}
                 >
-                  {clearing ? "Removing…" : "Remove pin"}
+                  {clearing ? "Kaldırılıyor…" : "İğneyi Kaldır"}
                 </Button>
                 <Button
                   type="button"
@@ -390,22 +387,20 @@ export function LocationMapCard({
                   onClick={saveManual}
                   disabled={save.isPending || !dirty}
                 >
-                  {save.isPending ? "Saving…" : "Save pin"}
+                  {save.isPending ? "Kaydediliyor…" : "İğneyi Kaydet"}
                 </Button>
               </div>
             </div>
 
             {accuracy != null && accuracy > 40 ? (
               <p className="text-xs text-amber-700">
-                Approximate fix (±{accuracy} m). Nudge to your exact spot, or
-                fetch again from a phone with GPS for a tighter reading.
+                Yaklaşık tespit (±{accuracy} m). Tam konumu ayarlamak için ok butonlarıyla kaydırın veya telefon üzerinden deneyin.
               </p>
             ) : null}
           </div>
         ) : (
           <p className="text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm">
-            No map pin yet. Fetch your location or enter coordinates to preview
-            it here.
+            Henüz harita konumu işaretlenmemiş. Konumunuzu tespit edin veya koordinatları girin.
           </p>
         )}
       </CardContent>

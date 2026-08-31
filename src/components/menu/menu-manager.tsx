@@ -57,10 +57,10 @@ const DIET_DOT: Record<string, string> = {
 }
 
 const REASON_LABEL: Record<string, string> = {
-  OUT_OF_STOCK: "Out of stock",
-  QUALITY: "Quality",
-  PREP_TIME: "Prep time",
-  OTHER: "Off",
+  OUT_OF_STOCK: "Tükendi",
+  QUALITY: "Kalite",
+  PREP_TIME: "Hazırlık Süresi",
+  OTHER: "Kapalı",
 }
 
 export function MenuManager({
@@ -96,21 +96,21 @@ export function MenuManager({
 
   const deleteCategory = useServerAction(deleteCategoryAction, {
     onSuccess: () => {
-      toast.success("Category deleted")
+      toast.success("Kategori silindi")
       refresh()
     },
     onError: (message) => toast.error(message),
   })
   const deleteItem = useServerAction(deleteItemAction, {
     onSuccess: () => {
-      toast.success("Item deleted")
+      toast.success("Ürün silindi")
       refresh()
     },
     onError: (message) => toast.error(message),
   })
   const reenable = useServerAction(reenableItemAction, {
     onSuccess: () => {
-      toast.success("Item available again")
+      toast.success("Ürün tekrar satışa açıldı")
       refresh()
     },
     onError: (message) => toast.error(message),
@@ -120,32 +120,32 @@ export function MenuManager({
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader
-          title="Menu"
-          description="Categories, dishes, prices, add-ons and availability."
+          title="Menü Yönetimi"
+          description="Kategoriler, ürünler, fiyatlar, porsiyonlar, ekstralar ve stok durumu."
         />
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setGroupsOpen(true)}>
-            <SlidersHorizontalIcon className="size-4" /> Add-ons
+            <SlidersHorizontalIcon className="size-4" /> Ekstra Seçenekler
           </Button>
           <Button
             variant="outline"
             onClick={() => setCategoryDialog({ open: true, category: null })}
           >
-            <FolderPlusIcon className="size-4" /> New category
+            <FolderPlusIcon className="size-4" /> Yeni Kategori
           </Button>
           <Button
             onClick={() => setItemDialog({ open: true, item: null })}
             disabled={menu.categories.length === 0}
           >
-            <PlusIcon className="size-4" /> New item
+            <PlusIcon className="size-4" /> Yeni Ürün
           </Button>
         </div>
       </div>
 
       {menu.categories.length === 0 ? (
         <EmptyState
-          title="No categories yet"
-          description="Create a category (e.g. Starters) to start adding dishes."
+          title="Henüz kategori bulunmuyor"
+          description="Ürün eklemeye başlamak için bir kategori (Örn: Başlangıçlar, Ana Yemekler) oluşturun."
         />
       ) : (
         <div className="flex flex-col gap-8">
@@ -159,17 +159,17 @@ export function MenuManager({
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold">{category.name}</h2>
                     {!category.isActive ? (
-                      <Badge variant="outline">Hidden</Badge>
+                      <Badge variant="outline">Gizli</Badge>
                     ) : null}
                     <span className="text-muted-foreground text-sm">
-                      {items.length}
+                      ({items.length} ürün)
                     </span>
                   </div>
                   <div className="flex gap-1">
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="Edit category"
+                      aria-label="Kategoriyi düzenle"
                       onClick={() =>
                         setCategoryDialog({ open: true, category })
                       }
@@ -179,9 +179,9 @@ export function MenuManager({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="Delete category"
+                      aria-label="Kategoriyi sil"
                       onClick={() => {
-                        if (window.confirm(`Delete category "${category.name}"?`)) {
+                        if (window.confirm(`"${category.name}" kategorisini silmek istediğinize emin misiniz?`)) {
                           deleteCategory.execute({ id: category.id })
                         }
                       }}
@@ -193,7 +193,7 @@ export function MenuManager({
 
                 {items.length === 0 ? (
                   <p className="text-muted-foreground text-sm">
-                    No dishes in this category yet.
+                    Bu kategoride henüz ürün bulunmuyor.
                   </p>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -203,7 +203,7 @@ export function MenuManager({
                         item={item}
                         onEdit={() => setItemDialog({ open: true, item })}
                         onDelete={() => {
-                          if (window.confirm(`Delete "${item.name}"?`)) {
+                          if (window.confirm(`"${item.name}" ürününü silmek istediğinize emin misiniz?`)) {
                             deleteItem.execute({ id: item.id })
                           }
                         }}
@@ -314,25 +314,25 @@ function ItemCard({
             ) : null}
             <span className="truncate font-medium">{item.name}</span>
           </div>
-          <span className="text-sm">{money(item.price)}</span>
+          <span className="text-sm">{item.price} ₺</span>
           <div className="mt-1 flex flex-wrap gap-1">
             {item.available ? (
               <Badge variant="outline" className="gap-1 text-green-700">
-                <BadgeCheckIcon className="size-3" /> Available
+                <BadgeCheckIcon className="size-3" /> Satışta
               </Badge>
             ) : (
               <Badge variant="destructive">
-                Unavailable
+                Tükendi
                 {item.disabledReason
-                  ? ` · ${REASON_LABEL[item.disabledReason] ?? "Off"}`
+                  ? ` · ${REASON_LABEL[item.disabledReason] ?? "Kapalı"}`
                   : ""}
               </Badge>
             )}
             <Badge variant="secondary">
-              {item.tax.kind === "NONE" ? "No GST" : `GST ${item.tax.rate}%`}
+              {item.tax.kind === "NONE" ? "KDV Yok" : `KDV %${item.tax.rate}`}
             </Badge>
             {item.variants.length ? (
-              <Badge variant="outline">{item.variants.length} sizes</Badge>
+              <Badge variant="outline">{item.variants.length} seçenek</Badge>
             ) : null}
           </div>
         </div>
@@ -340,20 +340,20 @@ function ItemCard({
       <div className="flex justify-end gap-1">
         {item.available ? (
           <Button variant="ghost" size="sm" onClick={on86}>
-            Mark unavailable
+            Tükendi İşaretle
           </Button>
         ) : (
           <Button variant="ghost" size="sm" onClick={onReenable}>
-            Available again
+            Tekrar Satışa Aç
           </Button>
         )}
         <Button variant="ghost" size="sm" onClick={onRecipe}>
-          Recipe
+          Reçete
         </Button>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Edit item"
+          aria-label="Ürünü düzenle"
           onClick={onEdit}
         >
           <PencilIcon className="size-4" />
@@ -361,7 +361,7 @@ function ItemCard({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Delete item"
+          aria-label="Ürünü sil"
           onClick={onDelete}
         >
           <Trash2Icon className="size-4" />

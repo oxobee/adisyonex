@@ -48,7 +48,7 @@ export function TableSettleDialog({
   const settle = useServerAction(settleTableAction, {
     refresh: true,
     onSuccess: () => {
-      toast.success(`Settled ${orders.length} orders on ${tableLabel}`);
+      toast.success(`${tableLabel} masasındaki ${orders.length} siparişin hesabı kapatıldı`);
       onOpenChange(false);
       onSettled();
     },
@@ -71,7 +71,7 @@ export function TableSettleDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Settle table {tableLabel}</DialogTitle>
+          <DialogTitle>{tableLabel} Masasının Hesabını Kapat</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
@@ -86,7 +86,7 @@ export function TableSettleDialog({
               </div>
             ))}
             <div className="mt-1 flex justify-between border-t pt-1 text-base font-semibold">
-              <dt>Combined total</dt>
+              <dt>Genel Toplam</dt>
               <dd className="tabular-nums">{formatCurrency(combined)}</dd>
             </div>
           </dl>
@@ -97,8 +97,8 @@ export function TableSettleDialog({
         <DialogFooter>
           <Button disabled={!canSettle} onClick={submit}>
             {settle.isPending
-              ? "Settling…"
-              : `Settle · ${formatCurrency(combined)}`}
+              ? "Kapatılıyor…"
+              : `Hesabı Kapat · ${formatCurrency(combined)}`}
           </Button>
         </DialogFooter>
       </DialogContent>

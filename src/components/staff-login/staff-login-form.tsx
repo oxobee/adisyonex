@@ -12,14 +12,15 @@ import { useServerAction } from "@/hooks/use-server-action";
 import type { StaffLoginOption } from "@/services/staff-auth.service";
 
 const AUTH_ERRORS: Record<string, string> = {
-  STAFF_LOGIN_INVALID: "Incorrect PIN.",
-  STAFF_LOGIN_LOCKED: "Too many attempts. Wait a minute and try again.",
+  STAFF_LOGIN_INVALID: "Hatalı PIN kodu.",
+  STAFF_LOGIN_LOCKED: "Çok fazla hatalı deneme. Lütfen bir dakika bekleyip tekrar deneyin.",
 };
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const ROLE_LABEL: Record<string, string> = {
-  WAITER: "Waiter",
-  KITCHEN: "Kitchen",
+  WAITER: "Garson / Servis",
+  KITCHEN: "Mutfak / Aşçı",
+  ADMIN: "Yönetici",
 };
 
 const initials = (name: string) =>
@@ -129,12 +130,12 @@ export function StaffLoginForm({
             )}
           </span>
           <h1 className="text-xl font-bold">{restaurantName}</h1>
-          <p className="text-muted-foreground text-sm">Tap your name to sign in</p>
+          <p className="text-muted-foreground text-sm">Giriş yapmak için isminize dokunun</p>
         </div>
 
         {staff.length === 0 ? (
           <p className="text-muted-foreground text-center text-sm">
-            No staff can sign in yet. Ask your manager to add you.
+            Giriş yapabilecek personel tanımlanmamış. Lütfen yöneticinize başvurun.
           </p>
         ) : (
           <ul className="flex max-h-[60svh] flex-col gap-2 overflow-y-auto">
@@ -159,7 +160,7 @@ export function StaffLoginForm({
                     </span>
                   </span>
                   <span className="bg-primary text-primary-foreground inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-sm font-semibold">
-                    Login
+                    Giriş
                   </span>
                 </button>
               </li>
@@ -186,13 +187,13 @@ export function StaffLoginForm({
             onClick={back}
             className="text-muted-foreground text-sm underline"
           >
-            Not you? Change
+            Siz değil misiniz? Değiştir
           </button>
         </div>
       </div>
 
       <div className="flex flex-col items-center gap-4">
-        <div className="flex h-4 items-center gap-2.5" aria-label="PIN entered">
+        <div className="flex h-4 items-center gap-2.5" aria-label="Girilen PIN">
           {Array.from({ length: 6 }).map((_, i) => (
             <span
               key={i}
@@ -228,7 +229,7 @@ export function StaffLoginForm({
             variant="ghost"
             className="h-16 touch-manipulation select-none"
             onClick={backspace}
-            aria-label="Delete last digit"
+            aria-label="Son rakamı sil"
           >
             <DeleteIcon className="size-6" />
           </Button>
@@ -247,7 +248,7 @@ export function StaffLoginForm({
         className="h-12 w-full text-base"
         disabled={!valid || login.isPending}
       >
-        {login.isPending ? "Signing in…" : "Sign in"}
+        {login.isPending ? "Giriş yapılıyor…" : "Giriş Yap"}
       </Button>
     </form>
   );

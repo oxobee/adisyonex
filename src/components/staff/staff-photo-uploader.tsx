@@ -38,20 +38,20 @@ export function StaffPhotoUploader({
       inputRef.current.value = "";
     }
     if (result.success) {
-      toast.success("Photo updated");
+      toast.success("Fotoğraf güncellendi");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Upload failed");
+      toast.error(result.error ?? "Yükleme başarısız oldu");
     }
   };
 
   const remove = async () => {
     const result = await removeStaffPhotoAction(staffId);
     if (result.success) {
-      toast.success("Photo removed");
+      toast.success("Fotoğraf kaldırıldı");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Failed");
+      toast.error(result.error ?? "İşlem başarısız oldu");
     }
   };
 
@@ -79,7 +79,7 @@ export function StaffPhotoUploader({
         type="button"
         onClick={() => inputRef.current?.click()}
         className="bg-primary text-primary-foreground absolute right-0 bottom-0 rounded-full p-1.5 shadow"
-        aria-label="Upload photo"
+        aria-label="Fotoğraf yükle"
       >
         <UploadIcon className="size-3.5" />
       </button>
@@ -88,7 +88,7 @@ export function StaffPhotoUploader({
           type="button"
           onClick={remove}
           className="bg-destructive absolute -top-1 -right-1 rounded-full p-1 text-white"
-          aria-label="Remove photo"
+          aria-label="Fotoğrafı kaldır"
         >
           <XIcon className="size-3" />
         </button>

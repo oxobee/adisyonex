@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { useServerAction } from "@/hooks/use-server-action";
 
 const USERNAME_ERRORS: Record<string, string> = {
-  USERNAME_TAKEN: "That username is already taken.",
+  USERNAME_TAKEN: "Bu kullanıcı adı zaten kullanılıyor.",
 };
 
 const clean = (value: string) =>
@@ -35,7 +35,7 @@ export function UsernameCard({ username }: { readonly username: string }) {
 
   const save = useServerAction(updateUsernameAction, {
     refresh: true,
-    onSuccess: () => toast.success("Username updated"),
+    onSuccess: () => toast.success("Kullanıcı adı güncellendi"),
     onError: (message) => toast.error(USERNAME_ERRORS[message] ?? message),
   });
 
@@ -45,10 +45,10 @@ export function UsernameCard({ username }: { readonly username: string }) {
     setRegenerating(false);
     if (result.success) {
       setValue(result.data ?? value);
-      toast.success("New username generated");
+      toast.success("Yeni kullanıcı adı oluşturuldu");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Something went wrong");
+      toast.error(result.error ?? "İşlem başarısız oldu");
     }
   };
 
@@ -58,10 +58,9 @@ export function UsernameCard({ username }: { readonly username: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Username</CardTitle>
+        <CardTitle>Restoran Kullanıcı Adı (Handle)</CardTitle>
         <CardDescription>
-          A unique handle for your restaurant, generated automatically. Change it
-          to something memorable.
+          Restoranınız için benzersiz kısa ad. QR menü ve sipariş bağlantılarınızda yer alır.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
@@ -69,7 +68,7 @@ export function UsernameCard({ username }: { readonly username: string }) {
           <div className="border-input flex flex-1 items-center rounded-md border pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
             <span className="text-muted-foreground text-sm">@</span>
             <Input
-              aria-label="Username"
+              aria-label="Kullanıcı Adı"
               value={value}
               onChange={(e) => setValue(clean(e.target.value))}
               className="border-0 shadow-none focus-visible:ring-0"
@@ -79,18 +78,18 @@ export function UsernameCard({ username }: { readonly username: string }) {
             onClick={() => save.execute({ username: value })}
             disabled={save.isPending || !valid || !dirty}
           >
-            {save.isPending ? "Saving…" : "Save"}
+            {save.isPending ? "Kaydediliyor…" : "Kaydet"}
           </Button>
           <Button
             variant="outline"
             onClick={regenerate}
             disabled={regenerating || save.isPending}
           >
-            {regenerating ? "Generating…" : "Generate new"}
+            {regenerating ? "Oluşturuluyor…" : "Otomatik Üret"}
           </Button>
         </div>
         <FieldDescription className={valid ? "" : "text-destructive"}>
-          3–20 lowercase letters, numbers or underscores.
+          3–20 karakter arası küçük harf, rakam veya alt çizgi (_).
         </FieldDescription>
       </CardContent>
     </Card>

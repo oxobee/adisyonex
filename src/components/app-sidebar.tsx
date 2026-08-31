@@ -28,18 +28,18 @@ import {
 } from "lucide-react"
 
 const navMain = [
-  { title: "Dashboard", url: "/dashboard", icon: <LayoutDashboardIcon /> },
-  { title: "POS", url: "/dashboard/pos", icon: <CalculatorIcon /> },
-  { title: "Orders", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
-  { title: "Menu", url: "/dashboard/menu", icon: <BookOpenIcon /> },
-  { title: "Tables", url: "/dashboard/tables", icon: <ArmchairIcon /> },
-  { title: "Inventory", url: "/dashboard/inventory", icon: <BoxesIcon /> },
-  { title: "Staff", url: "/dashboard/staff", icon: <UsersIcon /> },
+  { title: "Yönetim Paneli", url: "/dashboard", icon: <LayoutDashboardIcon /> },
+  { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
+  { title: "Siparişler", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
+  { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
+  { title: "Masalar", url: "/dashboard/tables", icon: <ArmchairIcon /> },
+  { title: "Stok & Envanter", url: "/dashboard/inventory", icon: <BoxesIcon /> },
+  { title: "Personel", url: "/dashboard/staff", icon: <UsersIcon /> },
 ]
 
 const navSecondary = [
-  { title: "Settings", url: "/dashboard/settings", icon: <Settings2Icon /> },
-  { title: "Get Help", url: "#", icon: <CircleHelpIcon /> },
+  { title: "Ayarlar", url: "/dashboard/settings", icon: <Settings2Icon /> },
+  { title: "Yardım Al", url: "#", icon: <CircleHelpIcon /> },
 ]
 export function AppSidebar({
   user,

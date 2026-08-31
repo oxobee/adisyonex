@@ -19,10 +19,10 @@ const round2 = (n: number): number =>
   Math.round((n + Number.EPSILON) * 100) / 100;
 
 const MODES: readonly { value: PaymentMode; label: string }[] = [
-  { value: "CASH", label: "Cash" },
-  { value: "UPI", label: "UPI" },
-  { value: "CARD", label: "Card" },
-  { value: "OTHER", label: "Other" },
+  { value: "CASH", label: "Nakit" },
+  { value: "UPI", label: "Havale/EFT" },
+  { value: "CARD", label: "Kredi Kartı" },
+  { value: "OTHER", label: "Diğer" },
 ];
 
 interface PaymentRow {
@@ -75,7 +75,7 @@ export function usePaymentEntry(grandTotal: number): PaymentEntry {
 
   const updateRow = (key: string, patch: Partial<PaymentRow>): void =>
     setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
-  const addRow = (): void => setRows((prev) => [...prev, newRow("UPI")]);
+  const addRow = (): void => setRows((prev) => [...prev, newRow("CARD")]);
   const removeRow = (key: string): void =>
     setRows((prev) =>
       prev.length > 1 ? prev.filter((r) => r.key !== key) : prev,
@@ -125,9 +125,9 @@ export function PaymentEntryFields({
     <>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Payments</span>
+          <span className="text-sm font-medium">Ödeme Yöntemleri</span>
           <Button size="sm" variant="ghost" onClick={addRow}>
-            + Split
+            + Parçalı Ödeme
           </Button>
         </div>
         {rows.map((row) => (
@@ -154,14 +154,14 @@ export function PaymentEntryFields({
                 inputMode="decimal"
                 value={row.amount}
                 onChange={(e) => updateRow(row.key, { amount: e.target.value })}
-                placeholder="Amount"
+                placeholder="Tutar"
               />
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => fillExact(row.key)}
               >
-                Exact
+                Tamamı
               </Button>
               {rows.length > 1 ? (
                 <Button
@@ -178,13 +178,13 @@ export function PaymentEntryFields({
                 inputMode="decimal"
                 value={row.tendered}
                 onChange={(e) => updateRow(row.key, { tendered: e.target.value })}
-                placeholder="Cash tendered (for change)"
+                placeholder="Verilen Nakit (para üstü için)"
               />
             ) : (
               <Input
                 value={row.reference}
                 onChange={(e) => updateRow(row.key, { reference: e.target.value })}
-                placeholder="Reference (optional)"
+                placeholder="Referans / Not (isteğe bağlı)"
               />
             )}
           </div>
@@ -193,17 +193,17 @@ export function PaymentEntryFields({
 
       <dl className="flex flex-col gap-1 text-sm">
         <div className="flex justify-between">
-          <dt className="text-muted-foreground">Paid</dt>
+          <dt className="text-muted-foreground">Ödenen</dt>
           <dd className="tabular-nums">{formatCurrency(paid)}</dd>
         </div>
         {remaining > 0.5 ? (
           <div className="text-destructive flex justify-between font-medium">
-            <dt>Remaining</dt>
+            <dt>Kalan Tutar</dt>
             <dd className="tabular-nums">{formatCurrency(remaining)}</dd>
           </div>
         ) : change > 0 ? (
           <div className="flex justify-between font-medium">
-            <dt>Change due</dt>
+            <dt>Para Üstü</dt>
             <dd className="tabular-nums">{formatCurrency(change)}</dd>
           </div>
         ) : null}

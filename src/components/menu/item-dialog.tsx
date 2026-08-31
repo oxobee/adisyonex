@@ -37,10 +37,10 @@ import { ImageManager } from "./image-manager"
 type VariantRow = { name: string; price: string }
 
 const DIETARY = [
-  { value: "NONE", label: "Not set" },
-  { value: "VEG", label: "Veg" },
-  { value: "NON_VEG", label: "Non-veg" },
-  { value: "EGG", label: "Egg" },
+  { value: "NONE", label: "Belirtilmemiş" },
+  { value: "VEG", label: "Vejetaryen" },
+  { value: "NON_VEG", label: "Et / Tavuk / Balık" },
+  { value: "EGG", label: "Yumurtalı" },
 ]
 
 export function ItemDialog({
@@ -74,7 +74,7 @@ export function ItemDialog({
   )
   const [hsnSacCode, setHsn] = useState(item?.tax.code ?? "")
   const [priceTaxInclusive, setInclusive] = useState(
-    item?.tax.inclusive ?? false,
+    item?.tax.inclusive ?? true,
   )
   const [isActive, setIsActive] = useState(item?.isActive ?? true)
   const [variants, setVariants] = useState<VariantRow[]>(
@@ -88,7 +88,7 @@ export function ItemDialog({
 
   const save = useServerAction(item ? updateItemAction : createItemAction, {
     onSuccess: () => {
-      toast.success(item ? "Item updated" : "Item created")
+      toast.success(item ? "Ürün güncellendi" : "Ürün eklendi")
       onOpenChange(false)
       onSaved()
     },
@@ -131,23 +131,23 @@ export function ItemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{item ? "Edit item" : "New item"}</DialogTitle>
+          <DialogTitle>{item ? "Ürünü Düzenle" : "Yeni Ürün Ekle"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="item-name">Name</FieldLabel>
+            <FieldLabel htmlFor="item-name">Ürün Adı</FieldLabel>
             <Input
               id="item-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Paneer Tikka"
+              placeholder="Örn: Mercimek Çorbası, Karışık Pizza"
               autoFocus
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
             <Field>
-              <FieldLabel htmlFor="item-category">Category</FieldLabel>
+              <FieldLabel htmlFor="item-category">Kategori</FieldLabel>
               <Select
                 value={categoryId}
                 onValueChange={(v) => v && setCategoryId(v)}
@@ -155,7 +155,7 @@ export function ItemDialog({
                 <SelectTrigger id="item-category">
                   <span>
                     {categories.find((c) => c.id === categoryId)?.name ??
-                      "Select"}
+                      "Kategori Seçin"}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
@@ -168,20 +168,20 @@ export function ItemDialog({
               </Select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="item-price">Price (₹)</FieldLabel>
+              <FieldLabel htmlFor="item-price">Fiyat (₺)</FieldLabel>
               <Input
                 id="item-price"
                 inputMode="decimal"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="250"
+                placeholder="150"
               />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Field>
-              <FieldLabel htmlFor="item-diet">Dietary</FieldLabel>
+              <FieldLabel htmlFor="item-diet">Beslenme Türü</FieldLabel>
               <Select value={dietaryType} onValueChange={(v) => v && setDietary(v)}>
                 <SelectTrigger id="item-diet">
                   <span>
@@ -198,32 +198,32 @@ export function ItemDialog({
               </Select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="item-type">Type</FieldLabel>
+              <FieldLabel htmlFor="item-type">Ürün Türü</FieldLabel>
               <Select value={itemType} onValueChange={(v) => v && setItemType(v)}>
                 <SelectTrigger id="item-type">
                   <span>
-                    {itemType === "PACKAGED_GOODS" ? "Packaged goods" : "Served"}
+                    {itemType === "PACKAGED_GOODS" ? "Paketli / Hazır Ürün" : "Mutfak / Hazırlanan"}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SERVED">Served</SelectItem>
-                  <SelectItem value="PACKAGED_GOODS">Packaged goods</SelectItem>
+                  <SelectItem value="SERVED">Mutfak / Hazırlanan</SelectItem>
+                  <SelectItem value="PACKAGED_GOODS">Paketli / Hazır Ürün</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
           </div>
 
           <Field>
-            <FieldLabel htmlFor="item-short">Short description</FieldLabel>
+            <FieldLabel htmlFor="item-short">Kısa Açıklama</FieldLabel>
             <Input
               id="item-short"
               value={shortDescription}
               onChange={(e) => setShort(e.target.value)}
-              placeholder="Chargrilled cottage cheese, mint chutney"
+              placeholder="Örn: Tereyağlı kruton ve limon ile..."
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="item-long">Long description</FieldLabel>
+            <FieldLabel htmlFor="item-long">Detaylı Açıklama / İçindekiler</FieldLabel>
             <Textarea
               id="item-long"
               value={longDescription}
@@ -234,26 +234,26 @@ export function ItemDialog({
 
           {gstRegistered ? (
             <div className="flex flex-col gap-3 rounded-md border p-3">
-              <span className="text-sm font-medium">GST</span>
+              <span className="text-sm font-medium">KDV Oranı & Kod</span>
               <div className="grid grid-cols-2 gap-3">
                 {itemType === "PACKAGED_GOODS" ? (
                   <Field>
-                    <FieldLabel htmlFor="item-gst">Goods GST %</FieldLabel>
+                    <FieldLabel htmlFor="item-gst">Özel KDV %</FieldLabel>
                     <Input
                       id="item-gst"
                       inputMode="decimal"
                       value={goodsGstRate}
                       onChange={(e) => setGoodsGst(e.target.value)}
-                      placeholder="18"
+                      placeholder="10"
                     />
                   </Field>
                 ) : (
                   <p className="text-muted-foreground col-span-2 text-xs">
-                    Served items use the restaurant service GST rate.
+                    Mutfak ve servis ürünleri restoran genel KDV oranını kullanır.
                   </p>
                 )}
                 <Field>
-                  <FieldLabel htmlFor="item-hsn">HSN / SAC</FieldLabel>
+                  <FieldLabel htmlFor="item-hsn">GTİP / Gelir Kodu</FieldLabel>
                   <Input
                     id="item-hsn"
                     value={hsnSacCode}
@@ -269,23 +269,23 @@ export function ItemDialog({
                   onCheckedChange={setInclusive}
                 />
                 <label htmlFor="item-inclusive" className="text-sm">
-                  Price includes GST
+                  Fiyatlara KDV Dahildir
                 </label>
               </div>
             </div>
           ) : null}
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Sizes / variants</span>
+            <span className="text-sm font-medium">Porsiyonlar / Seçenekler</span>
             {variants.map((v, i) => (
               <div key={i} className="flex gap-2">
                 <Input
-                  placeholder="Half / Full"
+                  placeholder="Yarım / Tam, Küçük / Büyük"
                   value={v.name}
                   onChange={(e) => setVariant(i, "name", e.target.value)}
                 />
                 <Input
-                  placeholder="Price"
+                  placeholder="Fiyat (₺)"
                   inputMode="decimal"
                   value={v.price}
                   onChange={(e) => setVariant(i, "price", e.target.value)}
@@ -298,7 +298,7 @@ export function ItemDialog({
                   onClick={() =>
                     setVariants((prev) => prev.filter((_, j) => j !== i))
                   }
-                  aria-label="Remove variant"
+                  aria-label="Porsiyonu kaldır"
                 >
                   <Trash2Icon className="size-4" />
                 </Button>
@@ -313,13 +313,13 @@ export function ItemDialog({
                 setVariants((prev) => [...prev, { name: "", price: "" }])
               }
             >
-              <PlusIcon className="size-4" /> Add size
+              <PlusIcon className="size-4" /> + Porsiyon Ekle
             </Button>
           </div>
 
           {groups.length ? (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Add-on groups</span>
+              <span className="text-sm font-medium">Ekstra Seçenek Grupları</span>
               <div className="flex flex-col gap-1.5">
                 {groups.map((g) => (
                   <label
@@ -338,7 +338,7 @@ export function ItemDialog({
                     />
                     {g.name}
                     <span className="text-muted-foreground">
-                      ({g.modifiers.length})
+                      ({g.modifiers.length} seçenek)
                     </span>
                   </label>
                 ))}
@@ -353,7 +353,7 @@ export function ItemDialog({
               onCheckedChange={setIsActive}
             />
             <label htmlFor="item-active" className="text-sm">
-              Available on the menu
+              Menüde satışa açık (Aktif)
             </label>
           </div>
 
@@ -361,13 +361,13 @@ export function ItemDialog({
             <ImageManager itemId={item.id} images={item.images} />
           ) : (
             <p className="text-muted-foreground text-sm">
-              Save the item first to add photos.
+              Ürüne fotoğraf eklemek için önce kaydedin.
             </p>
           )}
 
           <DialogFooter>
             <Button type="submit" disabled={save.isPending || !canSave}>
-              {save.isPending ? "Saving…" : "Save item"}
+              {save.isPending ? "Kaydediliyor…" : "Ürünü Kaydet"}
             </Button>
           </DialogFooter>
         </form>

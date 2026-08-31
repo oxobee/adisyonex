@@ -35,12 +35,12 @@ export function ReasonDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <Field>
-          <FieldLabel htmlFor="reason">Reason</FieldLabel>
+          <FieldLabel htmlFor="reason">Gerekçe</FieldLabel>
           <Textarea
             id="reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Why?"
+            placeholder="İptal / İade nedenini belirtin..."
             rows={2}
             autoFocus
           />
@@ -51,7 +51,7 @@ export function ReasonDialog({
             disabled={!reason.trim() || pending}
             onClick={() => onConfirm(reason.trim())}
           >
-            {pending ? "Working…" : confirmLabel}
+            {pending ? "İşleniyor…" : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -20,7 +20,7 @@ export function CartLineList({
   if (cart.length === 0) {
     return (
       <p className="text-muted-foreground py-8 text-center text-sm">
-        Tap items to start an order.
+        Sipariş oluşturmak için ürün seçin.
       </p>
     );
   }
@@ -51,7 +51,7 @@ export function CartLineList({
             <span className="text-sm tabular-nums">
               {line.isComp ? (
                 <Badge variant="secondary" className="text-[10px]">
-                  Comp
+                  İkram
                 </Badge>
               ) : (
                 formatCurrency(linePrice(line))
@@ -82,7 +82,7 @@ export function CartLineList({
               className="ml-auto h-7 px-2 text-xs"
               onClick={() => onToggleComp(line.key)}
             >
-              {line.isComp ? "Uncomp" : "Comp"}
+              {line.isComp ? "İkramı Kaldır" : "İkram"}
             </Button>
             <Button
               size="sm"
@@ -90,7 +90,7 @@ export function CartLineList({
               className="text-destructive h-7 px-2 text-xs"
               onClick={() => onRemove(line.key)}
             >
-              Remove
+              Kaldır
             </Button>
           </div>
         </li>

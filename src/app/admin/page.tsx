@@ -14,16 +14,16 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Overview" description="Platform activity at a glance." />
+      <PageHeader title="Genel Bakış" description="Platform etkinliklerine genel bakış." />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon={<UsersIcon className="size-5" />}
-          label="Users"
+          label="Kullanıcılar"
           value={users.total}
         />
         <StatCard
           icon={<StoreIcon className="size-5" />}
-          label="Restaurants"
+          label="Restoranlar"
           value={restaurants.total}
         />
       </div>

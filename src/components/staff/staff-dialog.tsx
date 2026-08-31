@@ -81,7 +81,7 @@ export function StaffDialog({
 
   const save = useServerAction(staff ? updateStaffAction : createStaffAction, {
     onSuccess: () => {
-      toast.success(staff ? "Staff updated" : "Staff added");
+      toast.success(staff ? "Personel güncellendi" : "Personel eklendi");
       onOpenChange(false);
       onSaved();
     },
@@ -125,7 +125,7 @@ export function StaffDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{staff ? "Edit staff" : "New staff member"}</DialogTitle>
+          <DialogTitle>{staff ? "Personeli Düzenle" : "Yeni Personel Ekle"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-5">
           {staff ? (
@@ -134,26 +134,26 @@ export function StaffDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <Field>
-              <FieldLabel htmlFor="st-code">Employee ID</FieldLabel>
+              <FieldLabel htmlFor="st-code">Personel Kodu / No</FieldLabel>
               <Input
                 id="st-code"
                 value={form.employeeCode}
                 onChange={set("employeeCode")}
-                placeholder="E-001"
+                placeholder="P-001"
                 autoFocus
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="st-name">Full name</FieldLabel>
+              <FieldLabel htmlFor="st-name">Ad Soyad</FieldLabel>
               <Input
                 id="st-name"
                 value={form.name}
                 onChange={set("name")}
-                placeholder="Ramesh Kumar"
+                placeholder="Ahmet Yılmaz"
               />
             </Field>
             <Field className="col-span-2">
-              <FieldLabel htmlFor="st-phone">Phone</FieldLabel>
+              <FieldLabel htmlFor="st-phone">Telefon Numarası</FieldLabel>
               <PhoneInput
                 id="st-phone"
                 initialValue={staff?.phone}
@@ -161,7 +161,7 @@ export function StaffDialog({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="st-role">Role</FieldLabel>
+              <FieldLabel htmlFor="st-role">Rol / Görev</FieldLabel>
               <Select value={role} onValueChange={(v) => v && setRole(v as StaffRole)}>
                 <SelectTrigger id="st-role">
                   <span>
@@ -178,7 +178,7 @@ export function StaffDialog({
               </Select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="st-status">Status</FieldLabel>
+              <FieldLabel htmlFor="st-status">Çalışma Durumu</FieldLabel>
               <Select
                 value={status}
                 onValueChange={(v) => v && setStatus(v as StaffStatus)}
@@ -201,7 +201,7 @@ export function StaffDialog({
 
           {staff ? null : (
             <Field>
-              <FieldLabel htmlFor="st-pin">POS PIN (4–6 digits)</FieldLabel>
+              <FieldLabel htmlFor="st-pin">POS PIN Kodu (4–6 Haneli)</FieldLabel>
               <Input
                 id="st-pin"
                 inputMode="numeric"
@@ -211,53 +211,53 @@ export function StaffDialog({
                 placeholder="••••"
               />
               <p className="text-muted-foreground text-xs">
-                Used at the POS. Not a login password.
+                POS ve mutfak ekranı girişi için kullanılır.
               </p>
             </Field>
           )}
 
           <div className="border-border/60 flex flex-col gap-3 border-t pt-4">
             <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Contact & personal
+              İletişim & Kişisel Bilgiler
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Field className="col-span-2">
-                <FieldLabel htmlFor="st-email">Email</FieldLabel>
+                <FieldLabel htmlFor="st-email">E-posta</FieldLabel>
                 <Input
                   id="st-email"
                   type="email"
                   value={form.email}
                   onChange={set("email")}
-                  placeholder="Optional"
+                  placeholder="İsteğe bağlı"
                 />
               </Field>
               <Field className="col-span-2">
-                <FieldLabel htmlFor="st-addr1">Address</FieldLabel>
+                <FieldLabel htmlFor="st-addr1">Adres</FieldLabel>
                 <Input
                   id="st-addr1"
                   value={form.addressLine1}
                   onChange={set("addressLine1")}
-                  placeholder="Street / area"
+                  placeholder="Mahalle, Cadde, Sokak"
                 />
               </Field>
               <Field className="col-span-2">
                 <Input
-                  aria-label="Address line 2"
+                  aria-label="Adres satırı 2"
                   value={form.addressLine2}
                   onChange={set("addressLine2")}
-                  placeholder="Apartment, landmark (optional)"
+                  placeholder="Bina No, Daire, Tarif (isteğe bağlı)"
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-city">City</FieldLabel>
+                <FieldLabel htmlFor="st-city">İlçe</FieldLabel>
                 <Input id="st-city" value={form.city} onChange={set("city")} />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-state">State</FieldLabel>
+                <FieldLabel htmlFor="st-state">İl / Şehir</FieldLabel>
                 <Input id="st-state" value={form.state} onChange={set("state")} />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-postal">Postal code</FieldLabel>
+                <FieldLabel htmlFor="st-postal">Posta Kodu</FieldLabel>
                 <Input
                   id="st-postal"
                   value={form.postalCode}
@@ -265,7 +265,7 @@ export function StaffDialog({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-dob">Date of birth</FieldLabel>
+                <FieldLabel htmlFor="st-dob">Doğum Tarihi</FieldLabel>
                 <Input
                   id="st-dob"
                   type="date"
@@ -274,7 +274,7 @@ export function StaffDialog({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-gender">Gender</FieldLabel>
+                <FieldLabel htmlFor="st-gender">Cinsiyet</FieldLabel>
                 <Select
                   value={gender || undefined}
                   onValueChange={(v) => setGender((v as Gender) ?? "")}
@@ -282,7 +282,7 @@ export function StaffDialog({
                   <SelectTrigger id="st-gender">
                     <span>
                       {GENDER_OPTIONS.find((o) => o.value === gender)?.label ??
-                        "Select"}
+                        "Seçin"}
                     </span>
                   </SelectTrigger>
                   <SelectContent>
@@ -299,11 +299,11 @@ export function StaffDialog({
 
           <div className="border-border/60 flex flex-col gap-3 border-t pt-4">
             <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Employment
+              İstihdam Detayları
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <FieldLabel htmlFor="st-joining">Joining date</FieldLabel>
+                <FieldLabel htmlFor="st-joining">İşe Başlama Tarihi</FieldLabel>
                 <Input
                   id="st-joining"
                   type="date"
@@ -312,7 +312,7 @@ export function StaffDialog({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-emp">Employment type</FieldLabel>
+                <FieldLabel htmlFor="st-emp">Çalışma Şekli</FieldLabel>
                 <Select
                   value={employmentType || undefined}
                   onValueChange={(v) => setEmploymentType((v as EmploymentType) ?? "")}
@@ -321,7 +321,7 @@ export function StaffDialog({
                     <span>
                       {EMPLOYMENT_TYPE_OPTIONS.find(
                         (o) => o.value === employmentType,
-                      )?.label ?? "Select"}
+                      )?.label ?? "Seçin"}
                     </span>
                   </SelectTrigger>
                   <SelectContent>
@@ -334,25 +334,25 @@ export function StaffDialog({
                 </Select>
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-ec-name">Emergency contact</FieldLabel>
+                <FieldLabel htmlFor="st-ec-name">Acil Durum Kişisi</FieldLabel>
                 <Input
                   id="st-ec-name"
                   value={form.emergencyContactName}
                   onChange={set("emergencyContactName")}
-                  placeholder="Name"
+                  placeholder="Ad Soyad"
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="st-ec-phone">Emergency phone</FieldLabel>
+                <FieldLabel htmlFor="st-ec-phone">Acil Durum Telefonu</FieldLabel>
                 <Input
                   id="st-ec-phone"
                   value={form.emergencyContactPhone}
                   onChange={set("emergencyContactPhone")}
-                  placeholder="Phone"
+                  placeholder="Telefon"
                 />
               </Field>
               <Field className="col-span-2">
-                <FieldLabel htmlFor="st-notes">Notes</FieldLabel>
+                <FieldLabel htmlFor="st-notes">Notlar</FieldLabel>
                 <Textarea
                   id="st-notes"
                   value={form.notes}
@@ -365,7 +365,7 @@ export function StaffDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={disabled}>
-              {save.isPending ? "Saving…" : "Save"}
+              {save.isPending ? "Kaydediliyor…" : "Kaydet"}
             </Button>
           </DialogFooter>
         </form>

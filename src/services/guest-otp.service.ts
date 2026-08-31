@@ -22,16 +22,21 @@ const MAX_ATTEMPTS = 5;
  * Unlike the manager OTP, this never looks up (or creates) a user account —
  * any diner can verify a phone to place a table order.
  */
+const isOtpDisabled = (): boolean =>
+  process.env.DISABLE_OTP === "true" && process.env.NODE_ENV !== "test";
+
 export const requestGuestOtp = async (phone: string): Promise<void> => {
-  const recent = await countRecentChallenges(
-    phone,
-    new Date(Date.now() - RESEND_WINDOW_MS),
-  );
-  if (recent > 0) {
-    throw new Error(GUEST_OTP_RATE_LIMITED);
+  if (!isOtpDisabled()) {
+    const recent = await countRecentChallenges(
+      phone,
+      new Date(Date.now() - RESEND_WINDOW_MS),
+    );
+    if (recent > 0) {
+      throw new Error(GUEST_OTP_RATE_LIMITED);
+    }
   }
 
-  const code = generateOtpCode();
+  const code = isOtpDisabled() ? "123456" : generateOtpCode();
   await createOtpChallenge({
     phone,
     codeHash: hashOtpCode(code),
@@ -49,6 +54,9 @@ export const verifyGuestOtp = async (
   phone: string,
   code: string,
 ): Promise<void> => {
+  if (isOtpDisabled()) {
+    return;
+  }
   const challenge = await findLatestActiveChallenge(phone, new Date());
   if (!challenge) {
     throw new Error(GUEST_OTP_EXPIRED);

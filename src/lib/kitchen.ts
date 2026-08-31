@@ -4,9 +4,9 @@ export type KitchenStatus = "WAITING" | "PREPARING" | "READY";
 export const KITCHEN_ACTIVE_STATES = ["FIRED", "PREPARING", "PREPARED"] as const;
 
 export const KITCHEN_STATUS_LABEL: Record<KitchenStatus, string> = {
-  WAITING: "Waiting",
-  PREPARING: "Preparing",
-  READY: "Ready",
+  WAITING: "Bekliyor",
+  PREPARING: "Hazırlanıyor",
+  READY: "Hazır",
 };
 
 const isActive = (state: string): boolean =>

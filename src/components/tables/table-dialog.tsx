@@ -35,7 +35,7 @@ export function TableDialog({
 
   const save = useServerAction(table ? updateTableAction : createTableAction, {
     onSuccess: () => {
-      toast.success(table ? "Table updated" : "Table added");
+      toast.success(table ? "Masa güncellendi" : "Masa eklendi");
       onOpenChange(false);
       onSaved();
     },
@@ -57,22 +57,22 @@ export function TableDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{table ? "Edit table" : "New table"}</DialogTitle>
+          <DialogTitle>{table ? "Masayı Düzenle" : "Yeni Masa Ekle"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <Field>
-              <FieldLabel htmlFor="t-label">Label</FieldLabel>
+              <FieldLabel htmlFor="t-label">Masa Adı / No</FieldLabel>
               <Input
                 id="t-label"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder="T1"
+                placeholder="Örn: M1, Masa 5"
                 autoFocus
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="t-seats">Seats</FieldLabel>
+              <FieldLabel htmlFor="t-seats">Kapasite</FieldLabel>
               <Input
                 id="t-seats"
                 inputMode="numeric"
@@ -83,23 +83,23 @@ export function TableDialog({
             </Field>
           </div>
           <Field>
-            <FieldLabel htmlFor="t-section">Section</FieldLabel>
+            <FieldLabel htmlFor="t-section">Bölüm / Alan</FieldLabel>
             <Input
               id="t-section"
               value={section}
               onChange={(e) => setSection(e.target.value)}
-              placeholder="Rooftop, AC hall…"
+              placeholder="Salon, Teras, Bahçe…"
             />
           </Field>
           <div className="flex items-center gap-2">
             <Switch id="t-active" checked={isActive} onCheckedChange={setIsActive} />
             <label htmlFor="t-active" className="text-sm">
-              Available for seating
+              Müşteri oturumuna açık (Aktif)
             </label>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={save.isPending || !label.trim()}>
-              {save.isPending ? "Saving…" : "Save"}
+              {save.isPending ? "Kaydediliyor…" : "Kaydet"}
             </Button>
           </DialogFooter>
         </form>
