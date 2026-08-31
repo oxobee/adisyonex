@@ -261,11 +261,12 @@ const settleWithinTx = async (
   });
   const invoiceNumber = seq.nextInvoiceSeq - 1;
 
-  return tx.order.update({
+  const updated = await tx.order.update({
     where: { id },
     data: {
       status: "COMPLETED",
       settledAt: new Date(),
+      billRequestedAt: null,
       invoiceNumber,
       subtotal: data.subtotal,
       taxTotal: data.taxTotal,
@@ -288,6 +289,15 @@ const settleWithinTx = async (
     },
     include: ORDER_INCLUDE,
   });
+
+  if (updated.tableId) {
+    await tx.diningTable.updateMany({
+      where: { id: updated.tableId, restaurantId },
+      data: { billRequestedAt: null },
+    });
+  }
+
+  return updated;
 };
 
 /** Assign the next gap-free invoice number + record settlement, atomically. */

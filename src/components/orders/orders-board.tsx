@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { TableSettleDialog } from "@/components/orders/table-settle-dialog";
 import { orderRunningTotal } from "@/components/pos/types";
@@ -12,6 +13,7 @@ import { KitchenStatusBadge } from "@/components/shared/kitchen-status-badge";
 import { PageHeader } from "@/components/shared/page-header";
 import { SelfOrderBadge } from "@/components/shared/self-order-badge";
 import { SoundToggle } from "@/components/shared/sound-toggle";
+import { Toaster } from "@/components/ui/sonner";
 import { useAnnouncer } from "@/hooks/use-announcer";
 import {
   alertSignatureMap,
@@ -20,6 +22,7 @@ import {
   selfOrderAlertPhrase,
 } from "@/lib/announce";
 import { formatCurrency, formatTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { OrderDTO, TodaySalesDTO } from "@/types/order";
 
 type Tab = "OPEN" | "COMPLETED";
@@ -60,6 +63,52 @@ const groupByTable = (orders: readonly OrderDTO[]): TableGroup[] => {
   }));
 };
 
+/** Pleasant 3-tone chime for bill request notifications using Web Audio API */
+const playBillAlertSound = () => {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    // Tone 1: E5
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(659.25, now);
+    gain1.gain.setValueAtTime(0.3, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+
+    // Tone 2: G5
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(783.99, now + 0.15);
+    gain2.gain.setValueAtTime(0.35, now + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.15);
+    osc2.stop(now + 0.55);
+
+    // Tone 3: C6
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.type = "sine";
+    osc3.frequency.setValueAtTime(1046.5, now + 0.3);
+    gain3.gain.setValueAtTime(0.4, now + 0.3);
+    gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+    osc3.connect(gain3);
+    gain3.connect(ctx.destination);
+    osc3.start(now + 0.3);
+    osc3.stop(now + 0.9);
+  } catch {}
+};
+
 export function OrdersBoard({
   open,
   completed,
@@ -75,17 +124,46 @@ export function OrdersBoard({
   const router = useRouter();
   const { supported, enabled, toggle, announce } = useAnnouncer();
   const seenRef = useRef<Map<string, number> | null>(null);
+  const seenBillRef = useRef<Set<string>>(new Set());
 
   const groups = useMemo(() => groupByTable(open), [open]);
 
-  // Poll every 10s so new orders surface hands-free.
+  // Active bill requests
+  const activeBillRequests = useMemo(
+    () => open.filter((o) => o.billRequestedAt !== null),
+    [open],
+  );
+
+  // Poll every 5s so new orders & bill requests surface in real-time.
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), 10000);
+    const id = setInterval(() => router.refresh(), 5000);
     return () => clearInterval(id);
   }, [router]);
 
-  // Voice-announce new orders (self-orders get a distinct phrase) and guest
-  // add-ons to an existing table order.
+  // Detect bill requests and fire chime & banner
+  useEffect(() => {
+    const currentBillIds = new Set(
+      open.filter((o) => o.billRequestedAt !== null).map((o) => o.id),
+    );
+
+    for (const id of currentBillIds) {
+      if (!seenBillRef.current.has(id)) {
+        const ord = open.find((o) => o.id === id);
+        playBillAlertSound();
+        const label = ord?.tableLabel ? `Masa ${ord.tableLabel}` : `#${ord?.orderNumber}`;
+        toast.warning(`🧾 ${label} Hesap İstedi!`, {
+          duration: 10000,
+          description: "Müşteri hesap talebinde bulundu. Lütfen adisyonu masaya iletin.",
+        });
+        if (ord?.tableLabel) {
+          announce(`${ord.tableLabel} hesap istedi`, "beep");
+        }
+      }
+    }
+    seenBillRef.current = currentBillIds;
+  }, [open, announce]);
+
+  // Voice-announce new orders
   useEffect(() => {
     const sigs = open.map((o) => ({
       id: o.id,
@@ -125,6 +203,44 @@ export function OrdersBoard({
           <Button render={<Link href="/dashboard/pos" />}>Yeni Sipariş</Button>
         </div>
       </div>
+
+      {/* Top Drop-down Alert Banner for Bill Requests */}
+      {activeBillRequests.length > 0 ? (
+        <div className="flex flex-col gap-2 animate-in slide-in-from-top-4 duration-300">
+          {activeBillRequests.map((req) => (
+            <div
+              key={req.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-500 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 p-4 text-foreground shadow-lg shadow-amber-500/15 ring-2 ring-amber-500/30 animate-pulse"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-2xl text-black shadow-md">
+                  🧾
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-black text-base text-foreground">
+                      {req.tableLabel ?? `#${req.orderNumber}`} Masası Hesap İstedi!
+                    </p>
+                    <span className="rounded-full bg-amber-500 text-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                      Hesap İste
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-xs mt-0.5">
+                    Müşteri QR menüden hesap talep etti. Lütfen adisyonu masaya götürün veya tahsil edin.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-black font-black shadow-sm cursor-pointer rounded-xl"
+                render={<Link href={`/dashboard/orders/${req.id}`} />}
+              >
+                Adisyona Git & Tahsil Et
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {/* Today's sales */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -177,19 +293,33 @@ export function OrdersBoard({
         <p className="text-muted-foreground text-sm">Açık adisyon bulunmuyor.</p>
       ) : (
         <div className="flex flex-col gap-5">
-          {groups.map((group) =>
-            group.orders.length >= 2 && group.tableLabel ? (
+          {groups.map((group) => {
+            const hasBill = group.orders.some((o) => o.billRequestedAt !== null);
+
+            return group.orders.length >= 2 && group.tableLabel ? (
               <div
                 key={group.key}
-                className="flex flex-col gap-3 rounded-xl border p-3"
+                className={cn(
+                  "flex flex-col gap-3 rounded-2xl border p-4 transition-all duration-300",
+                  hasBill
+                    ? "border-2 border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/20 ring-2 ring-amber-500/40"
+                    : "border-border",
+                )}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-medium">
-                    {group.tableLabel} · {group.orders.length} sipariş ·{" "}
-                    <span className="tabular-nums">
-                      {formatCurrency(group.total)}
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold">
+                      {group.tableLabel} · {group.orders.length} sipariş ·{" "}
+                      <span className="tabular-nums">
+                        {formatCurrency(group.total)}
+                      </span>
                     </span>
-                  </span>
+                    {hasBill ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-black text-black shadow-sm">
+                        <span>🧾</span> HESAP İSTENDİ
+                      </span>
+                    ) : null}
+                  </div>
                   <Button size="sm" onClick={() => setSettleGroup(group)}>
                     Masayı Kapat
                   </Button>
@@ -209,8 +339,8 @@ export function OrdersBoard({
                   <OrderCard key={order.id} order={order} tab={tab} />
                 ))}
               </ul>
-            ),
-          )}
+            );
+          })}
         </div>
       )}
 
@@ -226,6 +356,7 @@ export function OrdersBoard({
           onSettled={() => setSettleGroup(null)}
         />
       ) : null}
+      <Toaster position="top-right" />
     </div>
   );
 }
@@ -242,14 +373,22 @@ function OrderCard({
     TAKEAWAY: "Gel-Al",
     DELIVERY: "Paket",
   };
+
+  const hasBill = order.billRequestedAt !== null;
+
   return (
     <li>
       <Link
         href={`/dashboard/orders/${order.id}`}
-        className="hover:border-primary flex flex-col gap-2 rounded-lg border p-4 transition-colors"
+        className={cn(
+          "flex flex-col gap-2 rounded-2xl border p-4 transition-all duration-200 hover:shadow-md",
+          hasBill
+            ? "border-2 border-amber-500 bg-amber-500/10 shadow-md shadow-amber-500/20 ring-2 ring-amber-500/40"
+            : "hover:border-primary border-border",
+        )}
       >
         <div className="flex items-center justify-between">
-          <span className="font-medium">
+          <span className="font-bold text-foreground">
             #{order.orderNumber}
             {order.invoiceNumber ? (
               <span className="text-muted-foreground font-normal">
@@ -258,9 +397,16 @@ function OrderCard({
               </span>
             ) : null}
           </span>
-          <span className="text-muted-foreground text-xs">
-            {formatTime(order.createdAt)}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {hasBill ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-black shadow-xs">
+                <span>🧾</span> HESAP İSTENDİ
+              </span>
+            ) : null}
+            <span className="text-muted-foreground text-xs">
+              {formatTime(order.createdAt)}
+            </span>
+          </div>
         </div>
         <div className="text-muted-foreground flex items-center justify-between text-sm">
           <span>
@@ -277,7 +423,7 @@ function OrderCard({
             ) ? (
               <SelfOrderBadge />
             ) : null}
-            <span className="tabular-nums">
+            <span className="tabular-nums font-semibold text-foreground">
               {tab === "COMPLETED"
                 ? formatCurrency(order.grandTotal)
                 : `${activeCount(order.lines)} ürün`}
@@ -291,9 +437,9 @@ function OrderCard({
 
 function Stat({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-2xl border p-4 bg-card shadow-2xs">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="text-lg font-semibold tabular-nums">{value}</p>
+      <p className="text-lg font-bold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }

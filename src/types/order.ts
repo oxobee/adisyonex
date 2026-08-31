@@ -59,6 +59,7 @@ export interface OrderDTO {
   readonly grandTotal: number;
   readonly createdAt: string;
   readonly settledAt: string | null;
+  readonly billRequestedAt: string | null;
   readonly lines: readonly OrderLineDTO[];
   readonly payments: readonly OrderPaymentDTO[];
 }
@@ -90,6 +91,7 @@ export interface GuestOrderSummaryDTO {
   readonly tableLabel: string | null;
   readonly status: OrderStatus;
   readonly kitchenStatus: GuestOrderKitchenStatus | null;
+  readonly billRequestedAt: string | null;
   readonly itemCount: number;
   readonly total: number;
   readonly lines: readonly GuestOrderSummaryLineDTO[];

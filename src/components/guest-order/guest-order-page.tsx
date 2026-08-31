@@ -21,6 +21,7 @@ import {
   guestLogoutAction,
   guestMyOrdersAction,
   guestPlaceOrderAction,
+  guestRequestBillAction,
 } from "@/actions/guest-order.actions";
 import { ItemConfigDialog } from "@/components/pos/item-config-dialog";
 import { linePrice, toBillLine } from "@/components/pos/types";
@@ -29,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -104,6 +106,7 @@ export function GuestOrderPage({
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
+  const [requestBillConfirmOpen, setRequestBillConfirmOpen] = useState(false);
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [registeredSuccess, setRegisteredSuccess] = useState(false);
   const [myOrders, setMyOrders] = useState<readonly GuestOrderSummaryDTO[]>(initialOrders);
@@ -143,7 +146,7 @@ export function GuestOrderPage({
   }, [persistSession]);
 
   const refreshOrders = async () => {
-    const res = await guestMyOrdersAction();
+    const res = await guestMyOrdersAction({ username, tableId });
     if (res.success && res.data) {
       setMyOrders(res.data);
     }
@@ -156,6 +159,15 @@ export function GuestOrderPage({
     }, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  const requestBill = useServerAction(guestRequestBillAction, {
+    onSuccess: () => {
+      toast.success("Hesap talebiniz garsona iletildi!");
+      setRequestBillConfirmOpen(false);
+      void refreshOrders();
+    },
+    onError: (m) => toast.error(m || "Hesap talebi iletilemedi"),
+  });
 
   const bill = useMemo(
     () => computeBill(cart.cart.map(toBillLine)),
@@ -628,61 +640,124 @@ export function GuestOrderPage({
 
       {/* Your orders sheet */}
       <Sheet open={ordersOpen} onOpenChange={setOrdersOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl">
-          <SheetHeader className="pb-3 border-b">
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl p-0 flex flex-col">
+          <SheetHeader className="p-4 border-b">
             <SheetTitle className="font-black text-lg">Verdiğiniz Siparişler</SheetTitle>
           </SheetHeader>
+
           {myOrders.length === 0 ? (
-            <p className="text-muted-foreground px-4 py-8 text-center text-sm">
+            <p className="text-muted-foreground px-4 py-12 text-center text-sm">
               Henüz verilmiş bir siparişiniz bulunmuyor.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3 px-2 py-4">
-              {myOrders.map((o) => {
-                const st = orderStatus(o);
-                return (
-                  <li key={o.id} className="rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold">
-                        {o.tableLabel ?? `#${o.orderNumber}`}
-                        <span className="text-muted-foreground font-normal text-xs">
-                          {" "}· {formatTime(o.createdAt)}
-                        </span>
-                      </span>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${st.className}`}
-                      >
-                        {st.label}
-                      </span>
-                    </div>
-                    <ul className="mt-2 flex flex-col gap-0.5">
-                      {o.lines.map((l, i) => (
-                        <li
-                          key={`${o.id}-${i}`}
-                          className="text-muted-foreground flex justify-between gap-2 text-xs"
-                        >
-                          <span className="min-w-0 truncate">
-                            <span className="tabular-nums font-bold">{l.quantity}×</span>{" "}
-                            {l.name}
-                            {l.variantName ? ` · ${l.variantName}` : ""}
+            <div className="flex-1 overflow-y-auto p-4">
+              <ul className="flex flex-col gap-3">
+                {myOrders.map((o) => {
+                  const st = orderStatus(o);
+                  return (
+                    <li key={o.id} className="rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold">
+                          {o.tableLabel ?? `#${o.orderNumber}`}
+                          <span className="text-muted-foreground font-normal text-xs">
+                            {" "}· {formatTime(o.createdAt)}
                           </span>
-                          {l.state === "SERVED" ? <span>Servis Edildi</span> : null}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 text-xs">
-                      <span className="font-medium text-muted-foreground">Tutar</span>
-                      <span className="font-bold text-foreground tabular-nums">
-                        {o.total.toFixed(2)} ₺
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                        </span>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${st.className}`}
+                        >
+                          {st.label}
+                        </span>
+                      </div>
+                      <ul className="mt-2 flex flex-col gap-0.5">
+                        {o.lines.map((l, i) => (
+                          <li
+                            key={`${o.id}-${i}`}
+                            className="text-muted-foreground flex justify-between gap-2 text-xs"
+                          >
+                            <span className="min-w-0 truncate">
+                              <span className="tabular-nums font-bold">{l.quantity}×</span>{" "}
+                              {l.name}
+                              {l.variantName ? ` · ${l.variantName}` : ""}
+                            </span>
+                            {l.state === "SERVED" ? <span>Servis Edildi</span> : null}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 text-xs">
+                        <span className="font-medium text-muted-foreground">Tutar</span>
+                        <span className="font-bold text-foreground tabular-nums">
+                          {o.total.toFixed(2)} ₺
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
+
+          {/* Sticky Bottom "Hesap İste" Action Area */}
+          {myOrders.length > 0 ? (
+            <div className="sticky bottom-0 border-t bg-background/95 p-4 backdrop-blur-md">
+              {myOrders.some((o) => o.billRequestedAt !== null) ? (
+                <div className="flex items-center justify-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3.5 text-center text-xs font-bold text-amber-700 dark:text-amber-300 shadow-xs animate-pulse">
+                  <span className="text-base">🧾</span>
+                  <span>Hesap Talebiniz Alındı — Garson Masanıza Geliyor</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRequestBillConfirmOpen(true)}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-sm font-black text-white shadow-md shadow-orange-500/25 transition-all duration-200 hover:scale-[1.01] active:scale-95 cursor-pointer"
+                >
+                  <span className="text-base">🧾</span>
+                  <span>Hesap İste</span>
+                </button>
+              )}
+            </div>
+          ) : null}
         </SheetContent>
       </Sheet>
+
+      {/* CUTE "HESAP İSTE" CONFIRMATION DIALOG */}
+      {requestBillConfirmOpen ? (
+        <Dialog open onOpenChange={(open) => !open && setRequestBillConfirmOpen(false)}>
+          <DialogContent className="max-w-xs rounded-3xl p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-500/20 text-3xl shadow-inner">
+                🧾
+              </div>
+              <DialogTitle className="text-lg font-black text-foreground">
+                Hesap İste
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+                Masa hesabınızın kapatılması için garsonumuza bildirim gönderilsin mi?
+              </DialogDescription>
+            </div>
+
+            <DialogFooter className="mt-4 flex flex-row gap-2 sm:justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 rounded-xl font-bold cursor-pointer"
+                onClick={() => setRequestBillConfirmOpen(false)}
+                disabled={requestBill.isPending}
+              >
+                Vazgeç
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-orange-500/20 cursor-pointer"
+                onClick={() => requestBill.execute({ username, tableId })}
+                disabled={requestBill.isPending}
+              >
+                {requestBill.isPending ? "İletiliyor…" : "🧾 Evet, İste"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   );
 }

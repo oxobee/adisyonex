@@ -62,28 +62,54 @@ export const guestPlaceOrderAction = withValidation(
   },
 );
 
-/** The verified guest's own orders (by phone + current table) with live status. */
-export const guestMyOrdersAction = async (): Promise<
-  ActionResult<GuestOrderSummaryDTO[]>
-> => {
-  const session = await getGuestSession();
-  if (!session) {
-    return failure<GuestOrderSummaryDTO[]>(GUEST_NOT_VERIFIED);
-  }
+import { z } from "zod";
+import { requestBillForTable } from "@/services/guest-order.service";
+
+/** The guest's table orders with live kitchen & bill status. */
+export const guestMyOrdersAction = async (targetParam?: {
+  username: string;
+  tableId: string;
+}): Promise<ActionResult<GuestOrderSummaryDTO[]>> => {
   try {
-    return success(
-      await getGuestOrders(
-        session.restaurantId,
-        session.phone,
-        session.tableId,
-      ),
-    );
+    const session = await getGuestSession();
+    if (session) {
+      return success(
+        await getGuestOrders(
+          session.restaurantId,
+          session.phone,
+          session.tableId,
+        ),
+      );
+    }
+    if (targetParam?.username && targetParam?.tableId) {
+      const target = await resolveGuestOrderTarget(
+        targetParam.username,
+        targetParam.tableId,
+      );
+      return success(
+        await getGuestOrders(target.restaurantId, "", target.tableId),
+      );
+    }
+    return failure<GuestOrderSummaryDTO[]>(GUEST_NOT_VERIFIED);
   } catch (error) {
     return failure<GuestOrderSummaryDTO[]>(
       error instanceof Error ? error.message : "Something went wrong",
     );
   }
 };
+
+/** Request the bill for the table from the QR menu. */
+export const guestRequestBillAction = withValidation(
+  z.object({
+    username: z.string().min(1),
+    tableId: z.string().min(1),
+  }),
+  async (data) => {
+    const target = await resolveGuestOrderTarget(data.username, data.tableId);
+    await requestBillForTable(target.restaurantId, target.tableId);
+    return { success: true };
+  },
+);
 
 /** Log the guest out by clearing their session cookie. */
 export const guestLogoutAction = async (): Promise<void> => {

@@ -1,4 +1,5 @@
 import type { GuestPlaceOrderInput } from "@/lib/validators/guest-order";
+import { prisma } from "@/lib/prisma";
 import { deriveKitchenStatus } from "@/lib/kitchen";
 import {
   findOrdersForGuest,
@@ -181,6 +182,7 @@ const toGuestSummary = (o: OrderWithRelations): GuestOrderSummaryDTO => {
     tableLabel: o.tableLabel,
     status: o.status,
     kitchenStatus: deriveKitchenStatus(active.map((i) => i.state)),
+    billRequestedAt: o.billRequestedAt ? o.billRequestedAt.toISOString() : null,
     itemCount: active.reduce((s, i) => s + i.quantity, 0),
     total,
     lines: active.map((i) => ({
@@ -208,4 +210,37 @@ export const getGuestOrders = async (
     GUEST_ORDER_LIMIT,
   );
   return orders.map(toGuestSummary);
+};
+
+export const requestBillForTable = async (
+  restaurantId: string,
+  tableId: string,
+): Promise<{ success: boolean }> => {
+  const now = new Date();
+
+  // Set billRequestedAt on all open orders for this table
+  await prisma.order.updateMany({
+    where: {
+      restaurantId,
+      tableId,
+      status: "OPEN",
+      deletedAt: null,
+    },
+    data: {
+      billRequestedAt: now,
+    },
+  });
+
+  // Also stamp on the dining table record
+  await prisma.diningTable.updateMany({
+    where: {
+      id: tableId,
+      restaurantId,
+    },
+    data: {
+      billRequestedAt: now,
+    },
+  });
+
+  return { success: true };
 };

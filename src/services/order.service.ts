@@ -70,6 +70,7 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
   grandTotal: num(o.grandTotal),
   createdAt: o.createdAt.toISOString(),
   settledAt: o.settledAt ? o.settledAt.toISOString() : null,
+  billRequestedAt: o.billRequestedAt ? o.billRequestedAt.toISOString() : null,
   lines: o.items.map((i) => ({
     id: i.id,
     name: i.name,
