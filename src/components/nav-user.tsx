@@ -1,34 +1,23 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Avatar,
   AvatarFallback,
 } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   SidebarMenu,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
-  BellIcon,
   CircleUserRoundIcon,
-  CrownIcon,
   EllipsisVerticalIcon,
   InfinityIcon,
   LogOutIcon,
-  ShieldCheckIcon,
   SparklesIcon,
-  ZapIcon,
+  XIcon,
 } from "lucide-react";
 
 import { logoutAction } from "@/actions/auth.actions";
@@ -48,8 +37,34 @@ export function NavUser({
   license?: LicenseInfoDTO | null;
 }) {
   const router = useRouter();
-  const { isMobile, state } = useSidebar();
+  const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   const initials =
     user.name
@@ -128,8 +143,18 @@ export function NavUser({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger
+        <div ref={menuRef} className="relative w-full">
+          {/* Manager Profile Card / Trigger */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setIsOpen((prev) => !prev)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsOpen((prev) => !prev);
+              }
+            }}
             className={cn(
               "group flex w-full text-left transition-all duration-200 outline-none select-none cursor-pointer",
               isCollapsed
@@ -137,7 +162,7 @@ export function NavUser({
                 : "flex-col gap-2.5 rounded-2xl border border-border/80 bg-gradient-to-b from-card to-muted/30 p-3 shadow-xs hover:border-border hover:shadow-md active:scale-[0.99]",
             )}
           >
-            {/* Top Row: User Avatar + Name + More Icon */}
+            {/* Top Row: User Avatar + Name + 3 Dots Button */}
             <div className="flex w-full items-center gap-3">
               <Avatar className="size-9 shrink-0 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/20 via-amber-500/10 to-primary/10 text-primary shadow-xs">
                 <AvatarFallback className="rounded-xl text-xs font-black text-primary">
@@ -155,7 +180,14 @@ export function NavUser({
                       {user.contact}
                     </span>
                   </div>
-                  <EllipsisVerticalIcon className="size-4 shrink-0 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
+                  <div
+                    className={cn(
+                      "flex size-7 items-center justify-center rounded-lg hover:bg-muted/80 text-muted-foreground/80 group-hover:text-foreground transition-colors",
+                      isOpen && "bg-muted text-foreground",
+                    )}
+                  >
+                    <EllipsisVerticalIcon className="size-4" />
+                  </div>
                 </>
               )}
             </div>
@@ -215,60 +247,81 @@ export function NavUser({
                 </div>
               </div>
             )}
-          </DropdownMenuTrigger>
+          </div>
 
-          <DropdownMenuContent
-            className="w-64 rounded-2xl p-2 shadow-xl"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
-            sideOffset={8}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2.5 px-2 py-2 text-left text-sm">
-                <Avatar className="size-8 rounded-xl">
-                  <AvatarFallback className="rounded-xl text-xs font-bold">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-xs leading-tight">
-                  <span className="truncate font-bold text-foreground">{user.name}</span>
-                  <span className="truncate text-[10px] text-muted-foreground">{user.contact}</span>
+          {/* 3-Dots Popup Menu */}
+          {isOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 z-50 overflow-hidden rounded-2xl border border-border bg-popover/95 p-1.5 text-popover-foreground shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150">
+              <div className="flex items-center justify-between p-2 border-b border-border/50">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Avatar className="size-7 shrink-0 rounded-lg">
+                    <AvatarFallback className="rounded-lg text-xs font-bold">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-bold text-foreground">
+                      {user.name}
+                    </span>
+                    <span className="block truncate text-[10px] text-muted-foreground">
+                      {user.contact}
+                    </span>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                  }}
+                  className="flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
               </div>
-            </DropdownMenuLabel>
 
-            <DropdownMenuSeparator />
+              <div className="flex flex-col gap-0.5 p-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    router.push("/dashboard/ai-studio");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
+                >
+                  <SparklesIcon className="size-4 text-amber-500" />
+                  <span>Yapay Zeka Stüdyosu</span>
+                </button>
 
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                className="rounded-xl font-medium cursor-pointer"
-                onClick={() => router.push("/dashboard/ai-studio")}
-              >
-                <SparklesIcon className="mr-2 size-4 text-amber-500" />
-                <span>Yapay Zeka Stüdyosu</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-xl font-medium cursor-pointer"
-                onClick={() => router.push("/dashboard/settings")}
-              >
-                <CircleUserRoundIcon className="mr-2 size-4" />
-                <span>Hesap & Profil</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    router.push("/dashboard/settings");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
+                >
+                  <CircleUserRoundIcon className="size-4 text-primary" />
+                  <span>Hesap & Profil</span>
+                </button>
 
-            <DropdownMenuSeparator />
+                <div className="my-1 border-t border-border/50" />
 
-            <DropdownMenuItem
-              className="rounded-xl font-medium text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-              onClick={async () => {
-                await logoutAction();
-              }}
-            >
-              <LogOutIcon className="mr-2 size-4" />
-              <span>Çıkış Yap</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsOpen(false);
+                    await logoutAction();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
+                >
+                  <LogOutIcon className="size-4" />
+                  <span>Çıkış Yap</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </SidebarMenuItem>
     </SidebarMenu>
   );
