@@ -37,11 +37,11 @@ export function AdminNav({
   return (
     <aside className="bg-sidebar text-sidebar-foreground flex w-60 shrink-0 flex-col border-r">
       <div className="flex h-14 items-center gap-2.5 border-b px-4">
-        {systemSettings?.logoUrl ? (
+        {systemSettings?.faviconUrl || systemSettings?.logoUrl ? (
           <div className="relative size-6 shrink-0 overflow-hidden rounded-md">
             <Image
-              src={systemSettings.logoUrl}
-              alt={systemSettings.systemName || "Logo"}
+              src={systemSettings.faviconUrl || systemSettings.logoUrl || ""}
+              alt="İkon"
               fill
               className="object-contain"
               unoptimized
@@ -50,8 +50,20 @@ export function AdminNav({
         ) : (
           <UtensilsCrossedIcon className="text-primary size-5" aria-hidden />
         )}
-        <span className="font-bold text-sm truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
-        <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded ml-auto">
+        {systemSettings?.logoUrl ? (
+          <div className="relative h-6 max-w-[110px] w-full min-w-0 flex-1">
+            <Image
+              src={systemSettings.logoUrl}
+              alt={systemSettings.systemName || "Logo"}
+              fill
+              className="object-contain object-left"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <span className="font-bold text-sm truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
+        )}
+        <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded ml-auto shrink-0">
           Süper Admin
         </span>
       </div>

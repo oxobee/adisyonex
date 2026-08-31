@@ -83,11 +83,11 @@ export function AppSidebar({
               className="data-[slot=sidebar-menu-button]:p-1.5! h-11"
               render={<a href="/dashboard" />}
             >
-              {systemSettings?.logoUrl ? (
+              {systemSettings?.faviconUrl || systemSettings?.logoUrl ? (
                 <div className="relative size-7 shrink-0 overflow-hidden rounded-lg">
                   <Image
-                    src={systemSettings.logoUrl}
-                    alt={systemSettings.systemName || "Logo"}
+                    src={systemSettings.faviconUrl || systemSettings.logoUrl || ""}
+                    alt="İkon"
                     fill
                     className="object-contain"
                     unoptimized
@@ -98,7 +98,19 @@ export function AppSidebar({
                   <UtensilsCrossedIcon className="size-4!" />
                 </div>
               )}
-              <span className="text-sm font-black truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
+              {systemSettings?.logoUrl ? (
+                <div className="relative h-6 max-w-[140px] w-full min-w-0 flex-1">
+                  <Image
+                    src={systemSettings.logoUrl}
+                    alt={systemSettings.systemName || "Logo"}
+                    fill
+                    className="object-contain object-left"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <span className="text-sm font-black truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
