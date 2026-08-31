@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 
 import { logoutAction } from "@/actions/auth.actions";
+import { directStaffLogoutAction } from "@/actions/staff-auth.actions";
 import { cn } from "@/lib/utils";
 import type { LicenseInfoDTO } from "@/services/license.service";
 
@@ -42,6 +43,7 @@ export function NavUser({
   user: {
     name: string;
     contact: string;
+    role?: string;
   };
   license?: LicenseInfoDTO | null;
 }) {
@@ -56,6 +58,55 @@ export function NavUser({
       .join("")
       .slice(0, 2)
       .toUpperCase() || "?";
+
+  // STAFF ONLY PROFILE CARD (No dropdown, no license/credits, only direct logout button)
+  if (user.role === "STAFF") {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div
+            className={cn(
+              "flex w-full items-center justify-between gap-3 rounded-2xl border border-border/80 bg-gradient-to-b from-card to-muted/30 p-3 shadow-xs",
+              isCollapsed && "p-2 justify-center",
+            )}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar className="size-9 shrink-0 rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-xs">
+                <AvatarFallback className="rounded-xl text-xs font-black text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-black text-foreground leading-tight">
+                    {user.name}
+                  </span>
+                  <span className="inline-block mt-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.2 text-[10px] font-black uppercase truncate">
+                    {user.contact || "Personel"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {!isCollapsed && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await directStaffLogoutAction();
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground px-2.5 py-1.5 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer shrink-0"
+                title="Çıkış Yap"
+              >
+                <LogOutIcon className="size-3.5" />
+                <span>Çıkış</span>
+              </button>
+            )}
+          </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   const plan = license?.plan || "TRIAL";
   const days = license?.daysRemaining ?? 0;
@@ -152,13 +203,13 @@ export function NavUser({
                   </span>
                 </div>
 
-                {/* AI Credits Bar */}
-                <div className="flex items-center justify-between rounded-xl bg-muted/60 px-2.5 py-1 text-xs">
-                  <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
+                {/* AI Balance Bar */}
+                <div className="flex items-center justify-between gap-1 text-[11px] font-bold">
+                  <span className="flex items-center gap-1 text-muted-foreground">
                     <SparklesIcon className="size-3 text-amber-500" />
-                    AI Kredisi:
+                    <span>AI Kredisi:</span>
                   </span>
-                  <span className="font-black text-amber-600 dark:text-amber-400 text-xs tabular-nums">
+                  <span className="font-black text-amber-600 dark:text-amber-400 tabular-nums">
                     {aiBalance} Kredi
                   </span>
                 </div>
@@ -167,85 +218,54 @@ export function NavUser({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            className="min-w-64 rounded-2xl p-1.5 shadow-xl"
+            className="w-64 rounded-2xl p-2 shadow-xl"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={6}
+            sideOffset={8}
           >
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="p-2 font-normal">
-                <div className="flex items-center gap-2.5 text-left text-sm">
-                  <Avatar className="size-9 rounded-xl border border-primary/20 bg-primary/10">
-                    <AvatarFallback className="rounded-xl text-xs font-black text-primary">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 text-sm leading-tight">
-                    <span className="block truncate font-bold text-foreground">{user.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {user.contact}
-                    </span>
-                  </div>
+            <DropdownMenuLabel className="p-0 font-normal">
+              <div className="flex items-center gap-2.5 px-2 py-2 text-left text-sm">
+                <Avatar className="size-8 rounded-xl">
+                  <AvatarFallback className="rounded-xl text-xs font-bold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-xs leading-tight">
+                  <span className="truncate font-bold text-foreground">{user.name}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">{user.contact}</span>
                 </div>
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator />
-
-            {/* License & AI Info Summary */}
-            <div className="p-2 flex flex-col gap-1.5 bg-muted/40 rounded-xl my-1 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground font-medium">Lisans Planı:</span>
-                <span className="font-bold text-foreground">{license?.planLabel || "Deneme Sürümü"}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground font-medium">Kalan Gün:</span>
-                <span className={cn("font-bold tabular-nums", isExpired ? "text-destructive" : "text-emerald-600 dark:text-emerald-400")}>
-                  {isLifetime ? "Süresiz" : isExpired ? "Doldu" : `${days} Gün`}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground font-medium">Kalan AI Kredisi:</span>
-                <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                  {aiBalance} Kredi
-                </span>
-              </div>
-            </div>
+            </DropdownMenuLabel>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
               <DropdownMenuItem
-                className="cursor-pointer rounded-xl font-medium"
+                className="rounded-xl font-medium cursor-pointer"
                 onClick={() => router.push("/dashboard/ai-studio")}
               >
-                <SparklesIcon className="size-4 text-amber-500 mr-2" />
-                Yapay Zeka Stüdyosu
+                <SparklesIcon className="mr-2 size-4 text-amber-500" />
+                <span>Yapay Zeka Stüdyosu</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="cursor-pointer rounded-xl font-medium"
+                className="rounded-xl font-medium cursor-pointer"
                 onClick={() => router.push("/dashboard/settings")}
               >
-                <CircleUserRoundIcon className="size-4 mr-2" />
-                Hesap & Restoran Ayarları
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer rounded-xl font-medium"
-                onClick={() => router.push("/dashboard/orders")}
-              >
-                <BellIcon className="size-4 mr-2" />
-                Sipariş Bildirimleri
+                <CircleUserRoundIcon className="mr-2 size-4" />
+                <span>Hesap & Profil</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
-              className="cursor-pointer rounded-xl font-medium text-destructive focus:text-destructive"
-              onClick={() => void logoutAction()}
+              className="rounded-xl font-medium text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+              onClick={async () => {
+                await logoutAction();
+              }}
             >
-              <LogOutIcon className="size-4 mr-2" />
-              Çıkış Yap
+              <LogOutIcon className="mr-2 size-4" />
+              <span>Çıkış Yap</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

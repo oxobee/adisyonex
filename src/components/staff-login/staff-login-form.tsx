@@ -76,7 +76,10 @@ export function StaffLoginForm({
   const [error, setError] = useState<string | null>(null);
 
   const login = useServerAction(staffLoginAction, {
-    onSuccess: () => router.push(`/u/${username}`),
+    onSuccess: (result) => {
+      router.push(result?.redirectUrl || `/dashboard/orders`);
+      router.refresh();
+    },
     onError: (message) => {
       setError(AUTH_ERRORS[message] ?? message);
       setPin("");

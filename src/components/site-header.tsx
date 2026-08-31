@@ -25,7 +25,7 @@ export function SiteHeader({
             className="ml-auto"
             render={
               <a
-                href={`/u/${staffLoginUsername}/login`}
+                href="/personelgiris"
                 target="_blank"
                 rel="noopener noreferrer"
               />
