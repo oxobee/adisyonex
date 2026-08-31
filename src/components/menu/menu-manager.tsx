@@ -37,18 +37,14 @@ import type {
 } from "@/types/menu"
 import type { RecipeComponentDTO, StockItemDTO } from "@/types/inventory"
 
+import { formatCurrency } from "@/lib/format"
 import { CategoryDialog } from "./category-dialog"
 import { EightySixDialog } from "./eighty-six-dialog"
 import { ItemDialog } from "./item-dialog"
 import { ModifierGroupsDialog } from "./modifier-groups-dialog"
 import { RecipeDialog } from "./recipe-dialog"
 
-const money = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(n)
+const money = (n: number) => formatCurrency(n)
 
 const DIET_DOT: Record<string, string> = {
   VEG: "bg-green-600",
