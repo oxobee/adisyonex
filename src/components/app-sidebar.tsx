@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -27,13 +28,12 @@ import {
   CircleHelpIcon,
   ShieldCheckIcon,
   GiftIcon,
-  SparklesIcon,
 } from "lucide-react"
 
 const navMain = [
+  { title: "Anlık Durum", url: "/dashboard/orders", icon: <ReceiptTextIcon />, isHighlighted: true },
   { title: "Yönetim Paneli", url: "/dashboard", icon: <LayoutDashboardIcon /> },
   { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
-  { title: "Anlık Durum", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
   { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
   { title: "Masalar", url: "/dashboard/tables", icon: <ArmchairIcon /> },
   { title: "Kayıtlı Müşteriler", url: "/dashboard/customers", icon: <GiftIcon /> },
@@ -42,14 +42,17 @@ const navMain = [
 ]
 
 import type { LicenseInfoDTO } from "@/services/license.service"
+import type { SystemSettingsDTO } from "@/services/system-setting.service"
 
 export function AppSidebar({
   user,
   license,
+  systemSettings,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: { name: string; contact: string; role?: string }
   license?: LicenseInfoDTO | null
+  systemSettings?: Partial<SystemSettingsDTO> | null
 }) {
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN"
   const navSecondary = [
@@ -65,11 +68,25 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              className="data-[slot=sidebar-menu-button]:p-1.5! h-11"
               render={<a href="/dashboard" />}
             >
-              <UtensilsCrossedIcon className="size-5!" />
-              <span className="text-base font-semibold">ElitaleRestro</span>
+              {systemSettings?.logoUrl ? (
+                <div className="relative size-7 shrink-0 overflow-hidden rounded-lg">
+                  <Image
+                    src={systemSettings.logoUrl}
+                    alt={systemSettings.systemName || "Logo"}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <UtensilsCrossedIcon className="size-4!" />
+                </div>
+              )}
+              <span className="text-sm font-black truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

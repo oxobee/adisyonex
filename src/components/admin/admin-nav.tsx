@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   GlobeIcon,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { SystemSettingsDTO } from "@/services/system-setting.service";
 
 const NAV = [
   { title: "Genel Bakış", href: "/admin", icon: LayoutDashboardIcon },
@@ -25,15 +27,33 @@ const NAV = [
 const isActive = (pathname: string, href: string): boolean =>
   href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
-export function AdminNav() {
+export function AdminNav({
+  systemSettings,
+}: {
+  readonly systemSettings?: Partial<SystemSettingsDTO> | null;
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="bg-sidebar text-sidebar-foreground flex w-60 shrink-0 flex-col border-r">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <UtensilsCrossedIcon className="text-primary size-5" aria-hidden />
-        <span className="font-semibold">ElitaleRestro</span>
-        <span className="text-muted-foreground text-xs font-medium">Panel</span>
+      <div className="flex h-14 items-center gap-2.5 border-b px-4">
+        {systemSettings?.logoUrl ? (
+          <div className="relative size-6 shrink-0 overflow-hidden rounded-md">
+            <Image
+              src={systemSettings.logoUrl}
+              alt={systemSettings.systemName || "Logo"}
+              fill
+              className="object-contain"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <UtensilsCrossedIcon className="text-primary size-5" aria-hidden />
+        )}
+        <span className="font-bold text-sm truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
+        <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded ml-auto">
+          Süper Admin
+        </span>
       </div>
       <nav className="flex flex-col gap-1 p-3">
         {NAV.map((item) => (
@@ -41,9 +61,9 @@ export function AdminNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
               isActive(pathname, item.href)
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-bold shadow-xs"
                 : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
             )}
           >
@@ -55,7 +75,7 @@ export function AdminNav() {
       <div className="mt-auto border-t p-3">
         <Link
           href="/dashboard"
-          className="text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+          className="text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-colors"
         >
           <UtensilsCrossedIcon className="size-4" aria-hidden />
           Restoran Paneline Dön

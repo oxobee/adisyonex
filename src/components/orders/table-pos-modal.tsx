@@ -234,12 +234,12 @@ export function TablePosModal({
               {/* Category Pills & Search */}
               <div className="flex flex-col gap-3 shrink-0 pb-3 border-b border-border/60">
                 <div className="relative">
-                  <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                  <SearchIcon className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-zinc-400" />
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Menüde ürün ara (örn. Burger, Kola, Çorba)..."
-                    className="h-10 rounded-xl pl-9 text-xs"
+                    className="h-11 rounded-2xl pl-10 text-xs font-medium border-border/80 bg-background shadow-xs"
                   />
                 </div>
 
@@ -249,10 +249,10 @@ export function TablePosModal({
                     type="button"
                     onClick={() => setActiveCategoryId("ALL")}
                     className={cn(
-                      "rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer",
+                      "rounded-full px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer",
                       activeCategoryId === "ALL"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "bg-muted text-muted-foreground hover:text-foreground",
+                        ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-xs"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
                     )}
                   >
                     Tümü ({menu?.items.length ?? 0})
@@ -263,10 +263,10 @@ export function TablePosModal({
                       type="button"
                       onClick={() => setActiveCategoryId(cat.id)}
                       className={cn(
-                        "rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer",
+                        "rounded-full px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer",
                         activeCategoryId === cat.id
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "bg-muted text-muted-foreground hover:text-foreground",
+                          ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-xs"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
                       )}
                     >
                       {cat.name} ({menu?.items.filter((i) => i.categoryId === cat.id).length ?? 0})
@@ -283,7 +283,7 @@ export function TablePosModal({
                     <p className="text-xs font-medium">Bu kategoride ürün bulunamadı.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                     {filteredItems.map((item) => {
                       const hasOptions =
                         item.variants.length > 0 || item.modifierGroups.length > 0;
@@ -291,13 +291,12 @@ export function TablePosModal({
                         item.images.find((i) => i.isPrimary)?.url || item.images[0]?.url;
 
                       return (
-                        <button
+                        <div
                           key={item.id}
-                          type="button"
                           onClick={() => handleTapItem(item)}
-                          className="group flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-2.5 text-left transition-all hover:border-primary hover:shadow-md active:scale-[0.98] cursor-pointer"
+                          className="group flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-2.5 text-left transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md active:scale-[0.98] cursor-pointer"
                         >
-                          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted mb-2">
+                          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted/60 mb-2 flex items-center justify-center">
                             {primaryPhoto ? (
                               <Image
                                 src={primaryPhoto}
@@ -308,29 +307,29 @@ export function TablePosModal({
                               />
                             ) : (
                               <div className="flex size-full items-center justify-center text-muted-foreground/40">
-                                <UtensilsIcon className="size-5" />
+                                <UtensilsIcon className="size-6" />
                               </div>
                             )}
                             {hasOptions && (
-                              <span className="absolute bottom-1 right-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-xs">
+                              <span className="absolute bottom-1 right-1 rounded-md bg-zinc-900/90 text-white px-1.5 py-0.5 text-[9px] font-bold backdrop-blur-xs shadow-xs">
                                 Seçenekli
                               </span>
                             )}
                           </div>
                           <div>
-                            <div className="font-bold text-xs text-foreground line-clamp-1">
+                            <div className="font-bold text-xs text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                               {item.name}
                             </div>
-                            <div className="mt-1 flex items-center justify-between">
+                            <div className="mt-1.5 flex items-center justify-between pt-0.5">
                               <span className="font-black text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
                                 {formatCurrency(Number(item.price))}
                               </span>
-                              <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                <PlusIcon className="size-3.5" />
+                              <span className="flex size-6 items-center justify-center rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-xs">
+                                <PlusIcon className="size-3.5 stroke-[2.5]" />
                               </span>
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

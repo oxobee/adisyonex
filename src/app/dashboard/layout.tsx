@@ -6,6 +6,7 @@ import { getManagerContextOrNull } from "@/lib/manager-auth"
 import { serializeForClient } from "@/lib/utils"
 import { getRestaurantLicenseInfo, type LicenseInfoDTO } from "@/services/license.service"
 import { getRestaurantProfile, getSelfOrderShareInfo } from "@/services/restaurant-settings.service"
+import { getSystemSettings, type SystemSettingsDTO } from "@/services/system-setting.service"
 import { getManagerById } from "@/services/user.service"
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,10 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const userId = await requireUserId()
-  const [user, ctx] = await Promise.all([
+  const [user, ctx, systemSettings] = await Promise.all([
     getManagerById(userId),
     getManagerContextOrNull(),
+    getSystemSettings().catch(() => null),
   ])
 
   let share = null
@@ -78,6 +80,7 @@ export default async function DashboardLayout({
             role: user?.role,
           }}
           license={licenseInfo ? serializeForClient(licenseInfo) : null}
+          systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
         />
         <SidebarInset>
           <SiteHeader staffLoginUsername={share?.username ?? null} />

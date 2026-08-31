@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -12,10 +12,15 @@ import {
   SearchIcon,
   ShieldCheckIcon,
   SparklesIcon,
+  Trash2Icon,
+  UploadCloudIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { updateSystemSettingsAction } from "@/actions/system-setting.actions";
+import {
+  updateSystemSettingsAction,
+  uploadSystemAssetAction,
+} from "@/actions/system-setting.actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +33,173 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useServerAction } from "@/hooks/use-server-action";
+import { cn } from "@/lib/utils";
 import type { SystemSettingsDTO } from "@/services/system-setting.service";
+
+function DropzoneUploader({
+  label,
+  recommendation,
+  currentUrl,
+  kind,
+  aspect = "square",
+  onUploaded,
+  onClear,
+}: {
+  label: string;
+  recommendation: string;
+  currentUrl?: string | null;
+  kind: "logo" | "favicon" | "ogImage";
+  aspect?: "square" | "wide" | "favicon";
+  onUploaded: (url: string) => void;
+  onClear: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await uploadSystemAssetAction(formData, kind);
+      if (res.success && res.data?.url) {
+        onUploaded(res.data.url);
+        toast.success(`${label} başarıyla yüklendi!`);
+      } else {
+        toast.error(res.error || "Yükleme başarısız oldu");
+      }
+    } catch (e) {
+      toast.error("Dosya yüklenirken hata oluştu");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <label className="text-xs font-bold text-foreground">{label}</label>
+        <span className="text-[11px] text-muted-foreground font-medium">{recommendation}</span>
+      </div>
+
+      <div
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onClick={() => !currentUrl && fileInputRef.current?.click()}
+        className={cn(
+          "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 transition-all duration-200",
+          isDragging
+            ? "border-primary bg-primary/10 scale-[1.01]"
+            : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
+          !currentUrl && "cursor-pointer",
+          aspect === "wide" ? "min-h-[140px]" : "min-h-[120px]",
+        )}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.ico"
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              handleUpload(e.target.files[0]);
+            }
+          }}
+        />
+
+        {isUploading ? (
+          <div className="flex flex-col items-center gap-2 text-primary">
+            <Loader2Icon className="size-7 animate-spin" />
+            <span className="text-xs font-bold">Yükleniyor…</span>
+          </div>
+        ) : currentUrl ? (
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+            <div
+              className={cn(
+                "relative overflow-hidden rounded-xl border border-border bg-white dark:bg-zinc-950 p-2 shadow-xs shrink-0 flex items-center justify-center",
+                aspect === "wide" ? "w-44 h-24" : aspect === "favicon" ? "size-16" : "size-24",
+              )}
+            >
+              <Image
+                src={currentUrl}
+                alt={label}
+                fill
+                className="object-contain p-1"
+                unoptimized
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1 min-w-0">
+              <span className="text-xs font-bold text-foreground truncate">{label} Aktif</span>
+              <span className="text-[11px] text-muted-foreground truncate max-w-xs">{currentUrl}</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="rounded-xl text-xs h-7 cursor-pointer"
+                >
+                  <UploadCloudIcon className="size-3 mr-1" />
+                  Değiştir
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClear();
+                  }}
+                  className="rounded-xl text-xs h-7 text-destructive hover:bg-destructive/10 cursor-pointer"
+                >
+                  <Trash2Icon className="size-3 mr-1" />
+                  Kaldır
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
+              <UploadCloudIcon className="size-5" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-foreground block">
+                Görseli buraya sürükleyip bırakın
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                veya bilgisayarınızdan seçmek için tıklayın
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function SystemSettingsForm({
   initialSettings,
@@ -52,7 +223,7 @@ export function SystemSettingsForm({
 
   const update = useServerAction(updateSystemSettingsAction, {
     onSuccess: () => {
-      toast.success("Sistem genel bilgileri ve SEO meta etiketleri güncellendi!");
+      toast.success("Sistem genel bilgileri ve SEO ayarları başarıyla kaydedildi!");
       router.refresh();
     },
     onError: (msg) => toast.error(msg || "Ayarlar güncellenemedi."),
@@ -69,7 +240,7 @@ export function SystemSettingsForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-4xl">
-      {/* Platform Branding & Logo */}
+      {/* Platform Branding & Visual Identity */}
       <Card className="rounded-3xl border-border/80 shadow-xs">
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -78,15 +249,15 @@ export function SystemSettingsForm({
             </div>
             <div>
               <CardTitle className="text-lg font-black text-foreground">
-                Sistem & Yazılım Marka Kimliği
+                Yazılım Markası & Görsel Kimlik
               </CardTitle>
               <CardDescription className="text-xs">
-                Bu ayarlar tüm platformun genel marka ismini, logosunu ve faviconunu belirler. Firma/Restoran bilgileri ile karıştırılmaz; yalnızca Super Admin tarafından değiştirilebilir.
+                Bu ayarlar tüm platformun genel marka adını, ana logosunu ve tarayıcı sekme ikonunu (favicon) belirler. Yalnızca Super Admin tarafından yönetilir.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="sys-name">Sistem Adı (Yazılım Markası)</FieldLabel>
@@ -112,30 +283,28 @@ export function SystemSettingsForm({
             </Field>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="sys-logo">Sistem Logo URL (Panel ve Üst Bar)</FieldLabel>
-              <Input
-                id="sys-logo"
-                type="url"
-                value={form.logoUrl}
-                onChange={(e) => set("logoUrl", e.target.value)}
-                placeholder="https://example.com/logo.png"
-                className="rounded-xl"
-              />
-            </Field>
+          <div className="grid gap-5 md:grid-cols-2 pt-2">
+            {/* Logo Drag & Drop */}
+            <DropzoneUploader
+              label="Sistem Ana Logosu (Sol Üst Panel)"
+              recommendation="Önerilen: 256x256px veya 512x128px (PNG/SVG, Şeffaf Arka Plan)"
+              currentUrl={form.logoUrl}
+              kind="logo"
+              aspect="wide"
+              onUploaded={(url) => set("logoUrl", url)}
+              onClear={() => set("logoUrl", "")}
+            />
 
-            <Field>
-              <FieldLabel htmlFor="sys-favicon">Favicon URL (Tarayıcı Sekme İkonu)</FieldLabel>
-              <Input
-                id="sys-favicon"
-                type="url"
-                value={form.faviconUrl}
-                onChange={(e) => set("faviconUrl", e.target.value)}
-                placeholder="https://example.com/favicon.ico"
-                className="rounded-xl"
-              />
-            </Field>
+            {/* Favicon Drag & Drop */}
+            <DropzoneUploader
+              label="Favicon (Tarayıcı Sekme İkonu)"
+              recommendation="Önerilen: 32x32px veya 64x64px (ICO/PNG)"
+              currentUrl={form.faviconUrl}
+              kind="favicon"
+              aspect="favicon"
+              onUploaded={(url) => set("faviconUrl", url)}
+              onClear={() => set("faviconUrl", "")}
+            />
           </div>
         </CardContent>
       </Card>
@@ -152,12 +321,12 @@ export function SystemSettingsForm({
                 SEO, OpenGraph (OG) & Meta Tag Yönetimi
               </CardTitle>
               <CardDescription className="text-xs">
-                Arama motorları (Google) ve sosyal medya paylaşımları (WhatsApp, Twitter, Facebook vb.) için meta başlıkları, açıklamaları ve OG görseli.
+                Arama motorları (Google) ve sosyal medya paylaşımları (WhatsApp, Telegram, Twitter vb.) için meta başlıkları, açıklamaları ve OG görseli.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-5">
           <Field>
             <FieldLabel htmlFor="meta-title">Meta Başlık (Title Tag)</FieldLabel>
             <Input
@@ -192,17 +361,18 @@ export function SystemSettingsForm({
             />
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="og-image">OpenGraph (OG) Paylaşım Görseli URL</FieldLabel>
-            <Input
-              id="og-image"
-              type="url"
-              value={form.ogImageUrl}
-              onChange={(e) => set("ogImageUrl", e.target.value)}
-              placeholder="https://example.com/og-banner.jpg (Önerilen: 1200x630px)"
-              className="rounded-xl"
+          {/* OG Image Drag & Drop */}
+          <div className="pt-2">
+            <DropzoneUploader
+              label="OpenGraph (OG) Paylaşım Görseli"
+              recommendation="Önerilen: 1200x630px (JPG/PNG, Max 2MB)"
+              currentUrl={form.ogImageUrl}
+              kind="ogImage"
+              aspect="wide"
+              onUploaded={(url) => set("ogImageUrl", url)}
+              onClear={() => set("ogImageUrl", "")}
             />
-          </Field>
+          </div>
         </CardContent>
       </Card>
 
@@ -218,7 +388,13 @@ export function SystemSettingsForm({
           {/* Google Search Snippet */}
           <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <GlobeIcon className="size-3.5" />
+              {form.faviconUrl ? (
+                <div className="relative size-4 rounded-full overflow-hidden shrink-0">
+                  <Image src={form.faviconUrl} alt="Favicon" fill className="object-contain" unoptimized />
+                </div>
+              ) : (
+                <GlobeIcon className="size-3.5" />
+              )}
               <span>https://adisyonex.vercel.app</span>
             </div>
             <div className="mt-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline">
@@ -238,6 +414,7 @@ export function SystemSettingsForm({
                   alt="OG Preview"
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               </div>
               <div className="p-3">
