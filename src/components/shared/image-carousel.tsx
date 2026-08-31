@@ -55,7 +55,7 @@ export function ImageCarousel({
           src={images[0].url}
           alt={alt}
           fill
-          className="object-cover object-center"
+          className="object-contain object-center p-2"
           sizes="(max-width: 480px) 100vw, 480px"
         />
       </div>
@@ -75,7 +75,7 @@ export function ImageCarousel({
                 src={img.url}
                 alt={alt}
                 fill
-                className="object-cover object-center"
+                className="object-contain object-center p-2"
                 sizes="(max-width: 480px) 100vw, 480px"
               />
             </div>
