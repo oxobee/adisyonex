@@ -32,9 +32,8 @@ import {
 
 const navMain = [
   { title: "Yönetim Paneli", url: "/dashboard", icon: <LayoutDashboardIcon /> },
-  { title: "Yapay Zeka Stüdyosu", url: "/dashboard/ai-studio", icon: <SparklesIcon className="text-amber-500" /> },
   { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
-  { title: "Siparişler", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
+  { title: "Anlık Durum", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
   { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
   { title: "Masalar", url: "/dashboard/tables", icon: <ArmchairIcon /> },
   { title: "Kayıtlı Müşteriler", url: "/dashboard/customers", icon: <GiftIcon /> },

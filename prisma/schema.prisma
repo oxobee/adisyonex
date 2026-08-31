@@ -900,3 +900,18 @@ model AiMenuDraft {
   @@index([restaurantId])
 }
 
+/// Global Platform / System Settings (Super Admin Only)
+model SystemSetting {
+  id              String   @id @default("global")
+  systemName      String   @default("Elitale Restro")
+  systemTagline   String?  @default("Gelişmiş Restoran & QR Menü Yönetim Sistemi")
+  logoUrl         String?
+  faviconUrl      String?
+  ogImageUrl      String?
+  metaTitle       String?  @default("Elitale Restro | Restoran ve QR Menü Otomasyonu")
+  metaDescription String?  @default("Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.")
+  metaKeywords    String?  @default("restoran otomasyonu, adisyon sistemi, qr menü, pos kasa")
+  updatedAt       DateTime @updatedAt
+}
+
+

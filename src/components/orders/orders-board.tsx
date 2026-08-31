@@ -150,12 +150,16 @@ export function OrdersBoard({
   sales,
   tables = [],
   menu,
+  restaurantName = "Elitale Restoran",
+  restaurantTagline,
 }: {
   readonly open: readonly OrderDTO[];
   readonly completed: readonly OrderDTO[];
   readonly sales: TodaySalesDTO;
   readonly tables?: readonly TableDTO[];
   readonly menu?: MenuDTO | null;
+  readonly restaurantName?: string;
+  readonly restaurantTagline?: string | null;
 }) {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>("TABLE_GRID");
@@ -448,7 +452,7 @@ export function OrdersBoard({
       {/* TOP HEADER & ACTION BAR */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <PageHeader
-          title="Siparişler & Masalar"
+          title="Anlık Durum & Masalar"
           description="Canlı masa doluluğu, salon adisyonları ve anlık hesap yönetimi."
         />
 
@@ -756,6 +760,8 @@ export function OrdersBoard({
       <TableBillModal
         table={printBillTable?.table ?? null}
         orders={printBillTable?.orders ?? []}
+        restaurantName={restaurantName}
+        restaurantTagline={restaurantTagline}
         open={Boolean(printBillTable)}
         onOpenChange={(op) => !op && setPrintBillTable(null)}
         onAddProduct={() => {

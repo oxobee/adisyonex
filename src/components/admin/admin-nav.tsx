@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  GlobeIcon,
   LayoutDashboardIcon,
+  Settings2Icon,
   SparklesIcon,
   StoreIcon,
   UsersIcon,
@@ -17,6 +19,7 @@ const NAV = [
   { title: "AI Stüdyo & Krediler", href: "/admin/ai-studio", icon: SparklesIcon },
   { title: "Kullanıcılar", href: "/admin/users", icon: UsersIcon },
   { title: "Restoranlar", href: "/admin/restaurants", icon: StoreIcon },
+  { title: "Sistem & SEO Ayarları", href: "/admin/system", icon: Settings2Icon },
 ] as const;
 
 const isActive = (pathname: string, href: string): boolean =>

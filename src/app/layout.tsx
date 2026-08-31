@@ -22,11 +22,31 @@ const fontMono = Geist_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "ElitaleRestro",
-  description:
-    "Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.",
-};
+import { getSystemSettings } from "@/services/system-setting.service";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSystemSettings().catch(() => null);
+  const title = settings?.metaTitle || settings?.systemName || "Elitale Restro";
+  const description =
+    settings?.metaDescription ||
+    settings?.systemTagline ||
+    "Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.";
+  const icons = settings?.faviconUrl
+    ? [{ rel: "icon", url: settings.faviconUrl }]
+    : undefined;
+
+  return {
+    title,
+    description,
+    keywords: settings?.metaKeywords ? settings.metaKeywords.split(",").map((s) => s.trim()) : undefined,
+    icons,
+    openGraph: {
+      title,
+      description,
+      images: settings?.ogImageUrl ? [{ url: settings.ogImageUrl }] : undefined,
+    },
+  };
+}
 
 export default function RootLayout({
   children,

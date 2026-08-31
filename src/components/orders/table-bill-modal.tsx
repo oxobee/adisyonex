@@ -28,6 +28,7 @@ export function TableBillModal({
   table,
   orders,
   restaurantName = "Elitale Restoran",
+  restaurantTagline,
   open,
   onOpenChange,
   onAddProduct,
@@ -35,6 +36,7 @@ export function TableBillModal({
   table: TableDTO | null;
   orders: readonly OrderDTO[];
   restaurantName?: string;
+  restaurantTagline?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddProduct?: () => void;
@@ -124,9 +126,43 @@ export function TableBillModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-3xl border-border bg-card shadow-2xl">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between border-b border-border/80 px-6 py-4 bg-muted/40 shrink-0">
+      <DialogContent className="sm:max-w-lg max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-3xl border-border bg-card shadow-2xl print:p-0 print:border-none print:shadow-none">
+        {/* CSS for isolating ONLY the thermal receipt when printing */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #printable-thermal-receipt,
+              #printable-thermal-receipt * {
+                visibility: visible !important;
+              }
+              #printable-thermal-receipt {
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 78mm !important;
+                max-width: 78mm !important;
+                margin: 0 !important;
+                padding: 4mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+              }
+              @page {
+                size: 80mm auto;
+                margin: 0;
+              }
+            }
+          `
+        }} />
+
+        {/* Header Bar (hidden in print) */}
+        <div className="flex items-center justify-between border-b border-border/80 px-6 py-4 bg-muted/40 shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <PrinterIcon className="size-5" />
@@ -150,9 +186,9 @@ export function TableBillModal({
         </div>
 
         {/* Scrollable Receipt Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/20 flex flex-col items-center">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/20 flex flex-col items-center print:p-0 print:bg-white">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center my-auto">
+            <div className="flex flex-col items-center justify-center p-8 text-center my-auto print:hidden">
               <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-3">
                 <ReceiptIcon className="size-7" />
               </div>
@@ -179,14 +215,19 @@ export function TableBillModal({
             <div
               ref={receiptRef}
               id="printable-thermal-receipt"
-              className="w-full max-w-[340px] bg-white text-zinc-900 shadow-lg border border-zinc-200 rounded-xl p-5 font-mono text-xs leading-relaxed transition-all"
+              className="w-full max-w-[340px] bg-white text-zinc-900 shadow-lg border border-zinc-200 rounded-xl p-5 font-mono text-xs leading-relaxed transition-all print:border-none print:shadow-none print:p-2 print:max-w-none"
             >
               {/* Receipt Header */}
               <div className="text-center pb-3 border-b border-dashed border-zinc-400">
                 <h2 className="font-black text-sm uppercase tracking-wide text-zinc-950">
                   {restaurantName}
                 </h2>
-                <p className="text-[11px] text-zinc-600 font-sans mt-0.5">
+                {restaurantTagline && (
+                  <p className="text-[10px] text-zinc-500 font-sans italic mt-0.5">
+                    {restaurantTagline}
+                  </p>
+                )}
+                <p className="text-[11px] text-zinc-700 font-sans font-bold mt-1">
                   Adisyon / Hesap Fişi
                 </p>
                 <div className="mt-2 flex items-center justify-between text-[10px] text-zinc-600 font-sans">
@@ -268,8 +309,8 @@ export function TableBillModal({
           )}
         </div>
 
-        {/* Action Buttons Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/80 p-4 bg-card shrink-0">
+        {/* Action Buttons Footer (hidden in print) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/80 p-4 bg-card shrink-0 print:hidden">
           <Button
             type="button"
             variant="outline"

@@ -6,6 +6,7 @@ import { getMenu } from "@/services/menu-item.service";
 import { listOrders } from "@/services/order.service";
 import { getTodaySales } from "@/services/sales.service";
 import { getTables } from "@/services/table.service";
+import { getRestaurantProfile } from "@/services/restaurant-settings.service";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function OrdersPage() {
   if (!ctx) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
-        <PageHeader title="Siparişler & Masalar" description="Canlı masa adisyonları, salon doluluğu ve hesap yönetimi." />
+        <PageHeader title="Anlık Durum & Masalar" description="Canlı masa adisyonları, salon doluluğu ve hesap yönetimi." />
         <EmptyState
           title="Henüz restoran tanımlanmamış"
           description="Siparişleri takip etmeye başlamak için bir yöneticiden restoranınızı tanımlamasını isteyin."
@@ -23,12 +24,13 @@ export default async function OrdersPage() {
     );
   }
 
-  const [open, completed, sales, tables, menu] = await Promise.all([
+  const [open, completed, sales, tables, menu, profile] = await Promise.all([
     listOrders(ctx.restaurantId, ["OPEN"]),
     listOrders(ctx.restaurantId, ["COMPLETED"]),
     getTodaySales(ctx.restaurantId),
     getTables(ctx.restaurantId),
     getMenu(ctx.restaurantId),
+    getRestaurantProfile(ctx.restaurantId).catch(() => null),
   ]);
 
   return (
@@ -38,6 +40,8 @@ export default async function OrdersPage() {
       sales={sales}
       tables={tables}
       menu={menu}
+      restaurantName={profile?.name ?? "Elitale Restoran"}
+      restaurantTagline={profile?.tagline ?? null}
     />
   );
 }

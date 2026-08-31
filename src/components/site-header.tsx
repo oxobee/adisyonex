@@ -32,7 +32,7 @@ export function SiteHeader({
             }
           >
             <ExternalLinkIcon className="size-4" />
-            Staff login
+            Personel Girişi
           </Button>
         ) : null}
       </div>
