@@ -114,3 +114,39 @@ export const resolveTableForOrder = async (
   const table = await loadOwnedTable(restaurantId, tableId);
   return { id: table.id, label: table.label };
 };
+
+/** Transfer all open orders from one table to another */
+export const transferTableOrders = async (
+  restaurantId: string,
+  fromTableId: string,
+  toTableId: string,
+): Promise<{ count: number; targetTableLabel: string }> => {
+  const [fromTable, toTable] = await Promise.all([
+    loadOwnedTable(restaurantId, fromTableId),
+    loadOwnedTable(restaurantId, toTableId),
+  ]);
+
+  const { prisma } = await import("@/lib/prisma");
+  const updated = await prisma.order.updateMany({
+    where: {
+      restaurantId,
+      tableId: fromTable.id,
+      status: "OPEN",
+    },
+    data: {
+      tableId: toTable.id,
+      tableLabel: toTable.label,
+    },
+  });
+
+  return { count: updated.count, targetTableLabel: toTable.label };
+};
+
+/** Merge orders from source table into target table */
+export const mergeTableOrders = async (
+  restaurantId: string,
+  sourceTableId: string,
+  targetTableId: string,
+): Promise<{ count: number; targetTableLabel: string }> => {
+  return transferTableOrders(restaurantId, sourceTableId, targetTableId);
+};

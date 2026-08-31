@@ -25,3 +25,15 @@ export type UpdateTableInput = z.infer<typeof updateTableSchema>;
 
 export const deleteTableSchema = z.object({ id: idSchema });
 export type DeleteTableInput = z.infer<typeof deleteTableSchema>;
+
+export const transferTableSchema = z.object({
+  fromTableId: idSchema,
+  toTableId: idSchema,
+});
+export type TransferTableInput = z.infer<typeof transferTableSchema>;
+
+export const mergeTableSchema = z.object({
+  sourceTableId: idSchema,
+  targetTableId: idSchema,
+});
+export type MergeTableInput = z.infer<typeof mergeTableSchema>;
