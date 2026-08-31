@@ -6,12 +6,14 @@ import type {
   CreateMenuItemInput,
   UpdateMenuItemInput,
 } from "@/lib/validators/menu";
+import { prisma } from "@/lib/prisma";
 import {
   findCategoriesByRestaurant,
   findMenuCategoryById,
 } from "@/repositories/menu-category.repository";
 import {
   createMenuItem,
+  findMenuItemById,
   findMenuItemOwnership,
   findMenuItemsByRestaurant,
   softDeleteMenuItem,
@@ -315,6 +317,71 @@ export const deleteItem = async (
 ): Promise<void> => {
   await assertItemOwned(restaurantId, itemId);
   await softDeleteMenuItem(itemId);
+};
+
+export const duplicateItem = async (
+  restaurantId: string,
+  itemId: string,
+): Promise<{ id: string; name: string }> => {
+  await assertItemOwned(restaurantId, itemId);
+  const source = await findMenuItemById(itemId);
+  if (!source || source.deletedAt) {
+    throw new Error(MENU_ITEM_NOT_FOUND);
+  }
+
+  // Determine next copy name: e.g. "Burger - 2", "Burger - 3"
+  const existingItems = await findMenuItemsByRestaurant(restaurantId);
+  const existingNames = new Set(existingItems.map((i) => i.name.toLowerCase()));
+
+  // Extract base name if it already ends in "- X"
+  const baseName = source.name.replace(/\s*-\s*\d+$/, "").trim();
+  let counter = 2;
+  let newName = `${baseName} - ${counter}`;
+  while (existingNames.has(newName.toLowerCase())) {
+    counter++;
+    newName = `${baseName} - ${counter}`;
+  }
+
+  const cloned = await createMenuItem(restaurantId, {
+    categoryId: source.categoryId,
+    name: newName,
+    shortDescription: source.shortDescription,
+    longDescription: source.longDescription,
+    itemType: source.itemType,
+    dietaryType: source.dietaryType,
+    price: num(source.price),
+    prepTimeMinutes: source.prepTimeMinutes,
+    calories: source.calories,
+    allergens: (source.allergens as any) ?? [],
+    priceTaxInclusive: source.priceTaxInclusive,
+    goodsGstRate: source.goodsGstRate ? num(source.goodsGstRate) : null,
+    hsnSacCode: source.hsnSacCode,
+    sortOrder: source.sortOrder + 1,
+    isActive: true,
+    variants: source.variants.map((v) => ({
+      name: v.name,
+      price: num(v.price),
+      sortOrder: v.sortOrder,
+      isActive: v.isActive,
+    })),
+    modifierGroupIds: source.modifierGroups.map((g) => g.modifierGroupId),
+  });
+
+  if (source.images && source.images.length > 0) {
+    for (const img of source.images) {
+      await prisma.menuItemImage.create({
+        data: {
+          menuItemId: cloned.id,
+          url: img.url,
+          storageKey: img.storageKey,
+          isPrimary: img.isPrimary,
+          sortOrder: img.sortOrder,
+        },
+      });
+    }
+  }
+
+  return { id: cloned.id, name: newName };
 };
 
 export { assertItemOwned };

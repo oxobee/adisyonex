@@ -24,7 +24,12 @@ import {
   addItemImageForRestaurant,
   removeItemImageForRestaurant,
 } from "@/services/menu-image.service";
-import { createItem, deleteItem, updateItem } from "@/services/menu-item.service";
+import {
+  createItem,
+  deleteItem,
+  duplicateItem,
+  updateItem,
+} from "@/services/menu-item.service";
 import { createGroup, deleteGroup, updateGroup } from "@/services/modifier.service";
 import { failure, success, type ActionResult } from "@/types";
 
@@ -60,6 +65,11 @@ export const updateItemAction = withManagerValidation(
 export const deleteItemAction = withManagerValidation(
   idOnlySchema,
   (data, ctx) => deleteItem(ctx.restaurantId, data.id),
+);
+
+export const duplicateItemAction = withManagerValidation(
+  idOnlySchema,
+  (data, ctx) => duplicateItem(ctx.restaurantId, data.id),
 );
 
 // -------------------------------------------------------- modifier groups ---

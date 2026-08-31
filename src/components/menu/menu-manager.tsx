@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 
 import {
   BadgeCheckIcon,
+  CopyIcon,
   FolderPlusIcon,
   ImageIcon,
   PencilIcon,
@@ -20,12 +21,21 @@ import Image from "next/image"
 import {
   deleteCategoryAction,
   deleteItemAction,
+  duplicateItemAction,
   reenableItemAction,
 } from "@/actions/menu.actions"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Toaster } from "@/components/ui/sonner"
 import { useServerAction } from "@/hooks/use-server-action"
 import { cn } from "@/lib/utils"
@@ -47,16 +57,15 @@ import { RecipeDialog } from "./recipe-dialog"
 const money = (n: number) => formatCurrency(n)
 
 const DIET_DOT: Record<string, string> = {
-  VEG: "bg-green-600",
+  VEG: "bg-emerald-600",
   NON_VEG: "bg-red-600",
   EGG: "bg-amber-500",
 }
 
 const REASON_LABEL: Record<string, string> = {
-  OUT_OF_STOCK: "Tükendi",
-  QUALITY: "Kalite",
-  PREP_TIME: "Hazırlık Süresi",
-  OTHER: "Kapalı",
+  OUT_OF_STOCK: "Stokta Yok",
+  KITCHEN_CLOSING: "Mutfak Kapalı",
+  CUSTOM: "Geçici Kapalı",
 }
 
 export function MenuManager({
@@ -89,6 +98,7 @@ export function MenuManager({
     item: MenuItemDTO | null
   }>({ open: false, item: null })
   const [recipeItem, setRecipeItem] = useState<MenuItemDTO | null>(null)
+  const [duplicateTarget, setDuplicateTarget] = useState<MenuItemDTO | null>(null)
 
   const deleteCategory = useServerAction(deleteCategoryAction, {
     onSuccess: () => {
@@ -100,6 +110,14 @@ export function MenuManager({
   const deleteItem = useServerAction(deleteItemAction, {
     onSuccess: () => {
       toast.success("Ürün silindi")
+      refresh()
+    },
+    onError: (message) => toast.error(message),
+  })
+  const duplicateItem = useServerAction(duplicateItemAction, {
+    onSuccess: (res) => {
+      toast.success(`"${res?.name ?? "Ürün"}" kopyası başarıyla oluşturuldu!`)
+      setDuplicateTarget(null)
       refresh()
     },
     onError: (message) => toast.error(message),
@@ -164,40 +182,43 @@ export function MenuManager({
                   <div className="flex gap-1">
                     <Button
                       variant="ghost"
-                      size="icon-sm"
-                      aria-label="Kategoriyi düzenle"
+                      size="sm"
                       onClick={() =>
                         setCategoryDialog({ open: true, category })
                       }
                     >
-                      <PencilIcon className="size-4" />
+                      Düzenle
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon-sm"
-                      aria-label="Kategoriyi sil"
+                      size="sm"
                       onClick={() => {
-                        if (window.confirm(`"${category.name}" kategorisini silmek istediğinize emin misiniz?`)) {
+                        if (
+                          window.confirm(
+                            `"${category.name}" kategorisini ve altındaki tüm ürünleri silmek istediğinize emin misiniz?`,
+                          )
+                        ) {
                           deleteCategory.execute({ id: category.id })
                         }
                       }}
                     >
-                      <Trash2Icon className="size-4" />
+                      Sil
                     </Button>
                   </div>
                 </div>
 
                 {items.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-sm py-4 italic">
                     Bu kategoride henüz ürün bulunmuyor.
                   </p>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {items.map((item) => (
                       <ItemCard
                         key={item.id}
                         item={item}
                         onEdit={() => setItemDialog({ open: true, item })}
+                        onDuplicate={() => setDuplicateTarget(item)}
                         onDelete={() => {
                           if (window.confirm(`"${item.name}" ürününü silmek istediğinize emin misiniz?`)) {
                             deleteItem.execute({ id: item.id })
@@ -261,6 +282,45 @@ export function MenuManager({
           onOpenChange={(open) => !open && setRecipeItem(null)}
         />
       ) : null}
+
+      {/* CUTE DUPLICATE CONFIRMATION POPUP */}
+      {duplicateTarget ? (
+        <Dialog open onOpenChange={(open) => !open && setDuplicateTarget(null)}>
+          <DialogContent className="max-w-sm rounded-3xl p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-500/20 text-3xl shadow-inner">
+                📋
+              </div>
+              <DialogTitle className="text-lg font-black text-foreground">
+                Ürünü Çoğalt / Kopyala
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">{duplicateTarget.name}</strong> ürününü tüm seçenekleri, alerjenleri, porsiyonları ve fiyatıyla kopyalamak istiyor musunuz?
+              </DialogDescription>
+            </div>
+
+            <DialogFooter className="mt-4 flex flex-row gap-2 sm:justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 rounded-xl font-bold cursor-pointer"
+                onClick={() => setDuplicateTarget(null)}
+                disabled={duplicateItem.isPending}
+              >
+                Vazgeç
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-orange-500/20 cursor-pointer"
+                onClick={() => duplicateItem.execute({ id: duplicateTarget.id })}
+                disabled={duplicateItem.isPending}
+              >
+                {duplicateItem.isPending ? "Kopyalanıyor…" : "📋 Evet, Kopyala"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
       <Toaster />
     </div>
   )
@@ -269,6 +329,7 @@ export function MenuManager({
 function ItemCard({
   item,
   onEdit,
+  onDuplicate,
   onDelete,
   on86,
   onReenable,
@@ -276,6 +337,7 @@ function ItemCard({
 }: {
   item: MenuItemDTO
   onEdit: () => void
+  onDuplicate: () => void
   onDelete: () => void
   on86: () => void
   onReenable: () => void
@@ -351,6 +413,16 @@ function ItemCard({
         <Button
           variant="ghost"
           size="icon-sm"
+          title="Ürünü Kopyala / Çoğalt"
+          aria-label="Ürünü kopyala"
+          onClick={onDuplicate}
+        >
+          <CopyIcon className="size-4 text-amber-600 dark:text-amber-400" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title="Ürünü Düzenle"
           aria-label="Ürünü düzenle"
           onClick={onEdit}
         >
@@ -359,6 +431,7 @@ function ItemCard({
         <Button
           variant="ghost"
           size="icon-sm"
+          title="Ürünü Sil"
           aria-label="Ürünü sil"
           onClick={onDelete}
         >
