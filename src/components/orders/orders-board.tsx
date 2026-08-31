@@ -318,6 +318,31 @@ export function OrdersBoard({
     [ordersByTableId, selectedTableId],
   );
 
+  const selectedTableTotal = useMemo(
+    () =>
+      round2(
+        selectedTableOrders.reduce(
+          (sum, o) => sum + orderRunningTotal(o),
+          0,
+        ),
+      ),
+    [selectedTableOrders],
+  );
+
+  const selectedTableHasBill = useMemo(
+    () => selectedTableOrders.some((o) => o.billRequestedAt !== null),
+    [selectedTableOrders],
+  );
+
+  const selectedTableFirstOrderAt = useMemo(
+    () =>
+      selectedTableOrders.length > 0 ? selectedTableOrders[0].createdAt : null,
+    [selectedTableOrders],
+  );
+
+  const selectedTableStatus: TableStatus =
+    selectedTableOrders.length > 0 ? "OCCUPIED" : "EMPTY";
+
   // Handlers for selected table actions
   const handlePrintBill = (t: TableDTO, ords: readonly OrderDTO[]) => {
     if (ords.length === 0) return;
@@ -352,6 +377,7 @@ export function OrdersBoard({
   };
 
   const handleViewDetails = (t: TableDTO, ords: readonly OrderDTO[]) => {
+    if (ords.length === 0) return;
     const total = round2(ords.reduce((s, o) => s + orderRunningTotal(o), 0));
     setDetailGroup({
       key: t.id,
@@ -364,16 +390,53 @@ export function OrdersBoard({
 
   const handleVoid = (t: TableDTO) => {
     setVoidConfirmTable(t);
+    setSelectedTableId(null);
   };
 
   return (
     <div className="relative flex flex-col gap-6 p-4 lg:p-6">
-      {/* SPOTLIGHT GLASSMORPHISM BACKDROP OVERLAY */}
+      {/* SPOTLIGHT GLASSMORPHISM BACKDROP & CRISP ACTION MODAL */}
       {selectedTable && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md transition-all animate-in fade-in duration-300 cursor-pointer"
-          onClick={() => setSelectedTableId(null)}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          {/* Glass Blur Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200 cursor-pointer"
+            onClick={() => setSelectedTableId(null)}
+          />
+
+          {/* Centered Spotlight Card & Crisp Action Menu */}
+          <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-center gap-4 sm:gap-6 w-full max-w-2xl my-auto animate-in zoom-in-95 fade-in duration-200">
+            {/* Live Table Card Highlight */}
+            <div className="w-64 max-w-full shrink-0 shadow-2xl">
+              <TableCard
+                table={selectedTable}
+                status={selectedTableStatus}
+                total={selectedTableTotal}
+                orders={selectedTableOrders}
+                firstOrderAt={selectedTableFirstOrderAt}
+                hasBillRequest={selectedTableHasBill}
+                isSelected={true}
+                onClick={() => setSelectedTableId(null)}
+              />
+            </div>
+
+            {/* Crisp Action Menu (Above blur, 100% sharp) */}
+            <div className="w-full max-w-sm shrink-0 shadow-2xl">
+              <TableActionMenu
+                table={selectedTable}
+                orders={selectedTableOrders}
+                onClose={() => setSelectedTableId(null)}
+                onPrintBill={() => handlePrintBill(selectedTable, selectedTableOrders)}
+                onAddProduct={() => handleAddProduct(selectedTable)}
+                onSettleBill={() => handleSettle(selectedTable, selectedTableOrders)}
+                onTransferTable={() => handleTransfer(selectedTable)}
+                onMergeTable={() => handleMerge(selectedTable)}
+                onViewDetails={() => handleViewDetails(selectedTable, selectedTableOrders)}
+                onVoidTable={() => handleVoid(selectedTable)}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* TOP HEADER & ACTION BAR */}
@@ -588,31 +651,9 @@ export function OrdersBoard({
                       hasBillRequest={hasBill}
                       isSelected={isSelected}
                       onClick={() => {
-                        if (selectedTableId === table.id) {
-                          setSelectedTableId(null);
-                        } else {
-                          setSelectedTableId(table.id);
-                        }
+                        setSelectedTableId(table.id);
                       }}
                     />
-
-                    {/* SPOTLIGHT FLOATING ACTION MENU ATTACHED TO CARD */}
-                    {isSelected && (
-                      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0 sm:absolute sm:top-0 sm:left-full sm:ml-3">
-                        <TableActionMenu
-                          table={table}
-                          orders={tableOrders}
-                          onClose={() => setSelectedTableId(null)}
-                          onPrintBill={() => handlePrintBill(table, tableOrders)}
-                          onAddProduct={() => handleAddProduct(table)}
-                          onSettleBill={() => handleSettle(table, tableOrders)}
-                          onTransferTable={() => handleTransfer(table)}
-                          onMergeTable={() => handleMerge(table)}
-                          onViewDetails={() => handleViewDetails(table, tableOrders)}
-                          onVoidTable={() => handleVoid(table)}
-                        />
-                      </div>
-                    )}
                   </div>
                 );
               })}

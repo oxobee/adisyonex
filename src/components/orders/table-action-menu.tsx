@@ -44,7 +44,7 @@ export function TableActionMenu({
   const isOccupied = orders.length > 0;
 
   return (
-    <div className="flex w-72 sm:w-80 flex-col overflow-hidden rounded-3xl border border-border/80 bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-xl animate-in zoom-in-95 fade-in duration-200">
+    <div className="flex w-full sm:w-80 flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl animate-in zoom-in-95 fade-in duration-200">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/60 p-4 bg-muted/30">
         <div>
