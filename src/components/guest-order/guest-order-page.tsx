@@ -325,51 +325,61 @@ export function GuestOrderPage({
 
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32">
-      {/* Sleek Top Banner */}
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/90 p-3.5 shadow-xs backdrop-blur-md">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl font-bold">
-            <UtensilsCrossedIcon className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-bold tracking-tight text-foreground truncate">
-              {restaurantName}
-            </h1>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-              <span className="font-semibold text-foreground bg-muted px-2 py-0.5 rounded-md">
-                Masa {tableLabel}
-              </span>
-              {verified ? (
-                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                  ✓ Doğrulandı
+      {/* Lively & Themed Top Banner */}
+      <div className="relative mb-4 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card p-4 shadow-sm backdrop-blur-md">
+        {/* Subtle decorative glow element */}
+        <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-primary/10 blur-xl" />
+
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-primary text-white shadow-md shadow-primary/20">
+              <UtensilsCrossedIcon className="size-6 stroke-[2.2]" />
+            </div>
+
+            <div className="min-w-0">
+              <h1 className="truncate text-base sm:text-lg font-black tracking-tight text-foreground">
+                {restaurantName}
+              </h1>
+
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary shadow-2xs">
+                  <span>🍽️</span>
+                  <span>Masa No : {tableLabel}</span>
                 </span>
-              ) : null}
+
+                {verified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Doğrulandı
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
 
-        {verified ? (
-          <div className="flex shrink-0 items-center gap-1.5">
-            {myOrders.length > 0 ? (
+          {verified ? (
+            <div className="flex shrink-0 items-center gap-1.5">
+              {myOrders.length > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-xl border-primary/30 bg-card/80 text-xs font-bold text-primary shadow-xs hover:bg-primary/10"
+                  onClick={() => setOrdersOpen(true)}
+                >
+                  Siparişlerim ({myOrders.length})
+                </Button>
+              ) : null}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-8 rounded-xl text-xs font-semibold"
-                onClick={() => setOrdersOpen(true)}
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => logout(false)}
               >
-                Siparişler ({myOrders.length})
+                Çıkış
               </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-muted-foreground"
-              onClick={() => logout(false)}
-            >
-              Çıkış
-            </Button>
-          </div>
-        ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <MenuBrowser menu={menu} onQuickAdd={onQuickAdd} onOpenDetail={setConfigItem} />
