@@ -53,6 +53,7 @@ export const callOpenRouter = async ({
   chargedCredits?: number;
 }): Promise<{
   content: string;
+  images?: string[];
   tokensUsed: number;
   model: string;
   actualCostUsd: number;
@@ -89,7 +90,23 @@ export const callOpenRouter = async ({
     }
 
     const choice = data.choices?.[0];
-    if (!choice?.message?.content) {
+    let content = choice?.message?.content || "";
+
+    // Check if images are returned in choice.message.images (OpenRouter image format)
+    const images: string[] = [];
+    const rawImages = (choice?.message as any)?.images;
+    if (Array.isArray(rawImages)) {
+      for (const img of rawImages) {
+        const url = img?.image_url?.url || img?.url || (typeof img === "string" ? img : null);
+        if (url) images.push(url);
+      }
+    }
+
+    if (images.length > 0 && !content.startsWith("data:image/") && !content.startsWith("http")) {
+      content = images[0];
+    }
+
+    if (!content && images.length === 0) {
       throw new Error("OpenRouter boş yanıt döndürdü.");
     }
 
@@ -121,7 +138,8 @@ export const callOpenRouter = async ({
     }
 
     return {
-      content: choice.message.content,
+      content,
+      images,
       tokensUsed: totalTokens,
       model: activeModel,
       actualCostUsd,

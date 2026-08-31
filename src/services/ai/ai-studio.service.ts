@@ -307,6 +307,7 @@ JSON formatı:
 };
 
 /** Generate Food Photography Image (Text-to-Image with 4 quality tiers) */
+/** Generate Food Photography Image (Text-to-Image with 4 quality tiers) */
 export const generateFoodImage = async (
   restaurantId: string,
   input: AiImageGenInput & { qualityLevel?: QualityLevel },
@@ -322,9 +323,11 @@ export const generateFoodImage = async (
     `"${input.itemName}" için ${quality} kalite görsel üretimi`,
   );
 
-  const prompt = `Ultra-realistic commercial food photography of ${input.itemName}. ${
-    input.itemDescription ? `Details: ${input.itemDescription}. ` : ""
-  }Professional studio lighting, softbox diffusion, appetizing culinary styling, 8k resolution, authentic restaurant presentation, natural shadows, mouthwatering textures, no text, no watermark, no CGI distortion.`;
+  const prompt = `Award-winning commercial gourmet food photography of: ${input.itemName}.
+${input.itemDescription ? `Dish details, ingredients and presentation: ${input.itemDescription}. ` : ""}
+Format & Composition: 1:1 SQUARE aspect ratio, centered plate composition, square framing.
+Culinary Aesthetics: Freshly prepared, appetizing sizzling textures, softbox warm professional studio lighting, Michelin-star restaurant table background with soft bokeh depth of field, 8k resolution, ultra realistic food magazine advertising quality.
+Strict Negative Constraints: NO text, NO labels, NO humans, NO watermarks, NO CGI cartoon distortion.`;
 
   try {
     const aiRes = await callOpenRouter({
@@ -336,19 +339,20 @@ export const generateFoodImage = async (
       chargedCredits: creditCost,
     });
 
-    // Check if the response returned an inline base64 image or markdown image
     let generatedUrl = "";
-    if (aiRes.content.startsWith("data:image/") || aiRes.content.startsWith("http")) {
+    if (aiRes.images && aiRes.images.length > 0) {
+      generatedUrl = aiRes.images[0];
+    } else if (aiRes.content.startsWith("data:image/") || aiRes.content.startsWith("http")) {
       generatedUrl = aiRes.content;
     } else {
       const match = aiRes.content.match(/(data:image\/[a-zA-Z]+;base64,[^"\s\)]+)|(https?:\/\/[^\s\)"']+)/);
       if (match) {
         generatedUrl = match[0];
-      } else {
-        // Formulate fallback high-res appetizing food unsplash visual URL based on item keywords if text returned
-        const encoded = encodeURIComponent(input.itemName);
-        generatedUrl = `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80`;
       }
+    }
+
+    if (!generatedUrl || (!generatedUrl.startsWith("data:image/") && !generatedUrl.startsWith("http"))) {
+      throw new Error("Görsel verisi alınamadı");
     }
 
     return {
@@ -362,9 +366,9 @@ export const generateFoodImage = async (
       creditCost,
       "IMAGE_GENERATION_FAILED",
       undefined,
-      "Görsel üretimi başarısız oldu, krediniz iade edildi",
+      "Görsel üretimi başarısız oldu, krediniz geri yüklendi",
     );
-    throw err;
+    throw new Error("İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
   }
 };
 
@@ -388,9 +392,11 @@ export const professionalizeFoodPhoto = async (
     `"${input.dishName}" fotoğrafını profesyonelleştirme`,
   );
 
-  const prompt = `Professional food photography enhancement of this exact dish: ${input.dishName}.
-PRESERVE the original dish contents, ingredients, portion and shape.
-IMPROVE: Replace amateur lighting with professional warm studio light, enhance appetizing steam and sizzle reflections, natural soft shadows, crystal-clear gourmet food magazine plating aesthetics. Ultra high resolution.`;
+  const prompt = `Professional commercial food photography enhancement of this exact dish: ${input.dishName}.
+PRESERVE the original food contents, ingredients, portion size, and plating shape.
+Format & Framing: 1:1 SQUARE aspect ratio, centered plate composition.
+IMPROVE: Replace amateur lighting with warm softbox restaurant studio lighting, enhance appetizing steam and sizzle reflections, natural soft shadows, crystal-clear gourmet food magazine plating aesthetics. Ultra high resolution.
+Strict Negative Constraints: NO text, NO watermarks, NO CGI distortion.`;
 
   try {
     const aiRes = await callOpenRouter({
@@ -410,10 +416,20 @@ IMPROVE: Replace amateur lighting with professional warm studio light, enhance a
       chargedCredits: creditCost,
     });
 
-    let enhancedUrl = input.imageUrl;
-    const match = aiRes.content.match(/(data:image\/[a-zA-Z]+;base64,[^"\s\)]+)|(https?:\/\/[^\s\)"']+)/);
-    if (match) {
-      enhancedUrl = match[0];
+    let enhancedUrl = "";
+    if (aiRes.images && aiRes.images.length > 0) {
+      enhancedUrl = aiRes.images[0];
+    } else if (aiRes.content.startsWith("data:image/") || aiRes.content.startsWith("http")) {
+      enhancedUrl = aiRes.content;
+    } else {
+      const match = aiRes.content.match(/(data:image\/[a-zA-Z]+;base64,[^"\s\)]+)|(https?:\/\/[^\s\)"']+)/);
+      if (match) {
+        enhancedUrl = match[0];
+      }
+    }
+
+    if (!enhancedUrl || (!enhancedUrl.startsWith("data:image/") && !enhancedUrl.startsWith("http"))) {
+      throw new Error("İyileştirilmiş görsel verisi alınamadı");
     }
 
     return {
@@ -427,9 +443,9 @@ IMPROVE: Replace amateur lighting with professional warm studio light, enhance a
       creditCost,
       "PHOTO_PROFESSIONALIZE_FAILED",
       undefined,
-      "Fotoğraf iyileştirme başarısız oldu, krediniz iade edildi",
+      "Fotoğraf iyileştirme başarısız oldu, krediniz geri yüklendi",
     );
-    throw err;
+    throw new Error("İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
   }
 };
 

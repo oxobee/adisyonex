@@ -123,7 +123,7 @@ export function ImageManager({
           onImageUpdated?.();
           router.refresh();
         } else {
-          toast.error(res.error || "Görsel üretilemedi.");
+          toast.error(res.error || "İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
         }
       } else {
         // ENHANCE
@@ -145,11 +145,11 @@ export function ImageManager({
           onImageUpdated?.();
           router.refresh();
         } else {
-          toast.error(res.error || "Fotoğraf iyileştirilemedi.");
+          toast.error(res.error || "İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
         }
       }
     } catch (err: any) {
-      toast.error(err.message || "İşlem sırasında bir hata oluştu.");
+      toast.error(err.message || "İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
     } finally {
       setAiLoading(false);
     }
