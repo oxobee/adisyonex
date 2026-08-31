@@ -3,11 +3,14 @@
 import Link from "next/link";
 import {
   BookOpenIcon,
+  CameraIcon,
   ClockIcon,
   FlameIcon,
+  GlobeIcon,
   ImageIcon,
   PenToolIcon,
   PlusIcon,
+  SlidersHorizontalIcon,
   SparklesIcon,
   Wand2Icon,
 } from "lucide-react";
@@ -34,40 +37,40 @@ export function AiStudioView({
 }) {
   const tools = [
     {
-      title: "Menü Dijitalleştirici (OCR)",
-      description: "Menü fotoğrafı veya PDF yükleyin. Yapay zeka tüm ürünleri, fiyatları, kategorileri ve seçenekleri otomatik çıkarsın.",
+      title: "Yapay Zeka ile Menü İçe Aktar",
+      description: "Menü fotoğrafınızı, çok sayfalı PDF dosyanızı veya menü bağlantınızı yükleyin. Yapay zeka kategorileri, ürünleri, açıklamaları ve fiyatları otomatik olarak analiz etsin.",
       icon: BookOpenIcon,
       href: "/dashboard/ai-studio/menu-import",
-      cost: "10 Kredi / Sayfa",
-      badge: "En Popüler",
+      cost: "25 Kredi",
+      badge: "Görsel, PDF & URL",
       color: "from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-500",
     },
     {
-      title: "AI Menü Metin Yazarı",
-      description: "Ürünleriniz için iştah açıcı açıklamalar, kalori tahminleri, alerjen analizleri ve pazarlama etiketleri üretin.",
-      icon: PenToolIcon,
-      href: "/dashboard/ai-studio/copywriter",
-      cost: "2 Kredi / Ürün",
-      badge: "Hızlı & Pratik",
-      color: "from-sky-500/20 to-blue-500/20 border-sky-500/30 text-sky-500",
-    },
-    {
-      title: "Yemek Fotoğrafı & Görsel Stüdyosu",
-      description: "Ürünleriniz için profesyonel stüdyo aydınlatmalı, Michelin yıldızı kalitesinde ultra detaylı görsel promptları oluşturun.",
+      title: "AI ile Yemek Görseli Oluştur",
+      description: "Menü ürünleriniz için gerçekçi ve profesyonel yemek fotoğrafları oluşturun. Ekonomik, Standart, Profesyonel ve Ultra HD kalitelerinden dilediğinizi seçin.",
       icon: ImageIcon,
       href: "/dashboard/ai-studio/image-studio",
-      cost: "1 Kredi / Prompt",
-      badge: "Görsel Tasarım",
+      cost: "10–60 Kredi",
+      badge: "4 Kalite Seviyesi",
       color: "from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-500",
     },
     {
-      title: "İşlem Geçmişi & Kredi Hareketleri",
-      description: "Daha önce ürettiğiniz menü taslaklarını, AI loglarını ve kredi harcama dökümünüzü inceleyin.",
-      icon: ClockIcon,
-      href: "/dashboard/ai-studio/history",
-      cost: "Ücretsiz",
-      badge: "Log & Rapor",
+      title: "Fotoğrafı Profesyonelleştir",
+      description: "Amatör olarak çekilmiş yemek fotoğraflarınızı yemeğin kimliğini ve porsiyonunu bozmadan profesyonel restoran fotoğrafına dönüştürün. (Önce / Sonra Karşılaştırmalı)",
+      icon: SlidersHorizontalIcon,
+      href: "/dashboard/ai-studio/photo-enhance",
+      cost: "20–60 Kredi",
+      badge: "Önce / Sonra Slider",
       color: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-500",
+    },
+    {
+      title: "AI Menü Metin Yazarı & Besin Analizi",
+      description: "Ürünleriniz için iştah kabartan açıklamalar, otomatik kalori ve alerjen tahminleri ve pazarlama etiketleri üretin.",
+      icon: PenToolIcon,
+      href: "/dashboard/ai-studio/copywriter",
+      cost: "2 Kredi",
+      badge: "Kalori & Alerjen",
+      color: "from-sky-500/20 to-blue-500/20 border-sky-500/30 text-sky-500",
     },
   ];
 
@@ -76,8 +79,8 @@ export function AiStudioView({
       {/* Top Header with Credit Wallet Widget */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <PageHeader
-          title="Yapay Zeka Stüdyosu"
-          description="Restoranınızın menüsünü, görsellerini ve pazarlama metinlerini yapay zeka gücüyle saniyeler içinde oluşturun."
+          title="Yapay Zeka Stüdyo"
+          description="Menülerinizi ve ürün görsellerinizi yapay zeka ile dakikalar içinde hazırlayın."
         />
 
         {/* Credit Badge Card */}
@@ -87,12 +90,20 @@ export function AiStudioView({
           </div>
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              AI Kredi Bakiyesi
+              AI Krediniz
             </p>
             <p className="text-xl font-black text-foreground tabular-nums">
               {wallet.balance} <span className="text-xs font-normal text-muted-foreground">Kredi</span>
             </p>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-2 rounded-xl text-xs font-bold"
+            render={<Link href="/dashboard/ai-studio/history" />}
+          >
+            Kredi Geçmişi
+          </Button>
         </div>
       </div>
 
@@ -127,7 +138,7 @@ export function AiStudioView({
                 </CardDescription>
                 <div className="mt-4 flex items-center justify-end">
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
-                    Stüdyoya Git ➔
+                    Stüdyoya Başla ➔
                   </span>
                 </div>
               </CardContent>
@@ -161,12 +172,16 @@ export function AiStudioView({
                     <p className="font-semibold text-foreground">
                       {task.type === "MENU_DIGITIZATION"
                         ? "Menü Dijitalleştirme"
-                        : task.type === "ITEM_DESCRIPTION"
-                          ? "Ürün Metin Yazarlığı"
-                          : "Görsel Prompt Stüdyosu"}
+                        : task.type === "MENU_URL_ANALYSIS"
+                          ? "URL Menü Analizi"
+                          : task.type === "PHOTO_PROFESSIONALIZATION"
+                            ? "Fotoğraf Profesyonelleştirme"
+                            : task.type === "ITEM_DESCRIPTION"
+                              ? "Ürün Metin Yazarlığı"
+                              : "Görsel Üretimi"}
                     </p>
                     <p className="text-muted-foreground text-[10px]">
-                      {formatTime(task.createdAt)} · {task.modelUsed ?? "AI Engine"}
+                      {formatTime(task.createdAt)} · {task.modelUsed ?? "OpenRouter Engine"}
                     </p>
                   </div>
                 </div>

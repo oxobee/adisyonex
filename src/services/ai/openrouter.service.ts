@@ -1,3 +1,7 @@
+import { prisma } from "@/lib/prisma";
+import { getEffectiveOpenRouterKey } from "./ai-setting.service";
+import type { AiTaskType, QualityLevel } from "@/generated/prisma/client";
+
 interface OpenRouterMessage {
   role: "system" | "user" | "assistant";
   content:
@@ -21,6 +25,7 @@ interface OpenRouterResponse {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+    cost?: number;
   };
   error?: {
     message: string;
@@ -28,26 +33,32 @@ interface OpenRouterResponse {
   };
 }
 
-const DEFAULT_VISION_MODEL = "google/gemini-2.0-flash-001";
-const DEFAULT_TEXT_MODEL = "google/gemini-2.0-flash-001";
-const FALLBACK_TEXT_MODEL = "openai/gpt-4o-mini";
-
 export const callOpenRouter = async ({
   messages,
-  model = DEFAULT_TEXT_MODEL,
-  temperature = 0.3,
+  model = "google/gemini-2.5-flash",
+  temperature = 0.2,
   responseFormat,
+  restaurantId,
+  operationType = "MENU_DIGITIZATION",
+  qualityLevel = "STANDARD",
+  chargedCredits = 0,
 }: {
   messages: OpenRouterMessage[];
   model?: string;
   temperature?: number;
   responseFormat?: { type: "json_object" };
-}): Promise<{ content: string; tokensUsed: number; model: string }> => {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY ortam değişkeni tanımlanmamış. Lütfen API anahtarınızı ekleyin.");
-  }
-
+  restaurantId?: string;
+  operationType?: AiTaskType;
+  qualityLevel?: QualityLevel;
+  chargedCredits?: number;
+}): Promise<{
+  content: string;
+  tokensUsed: number;
+  model: string;
+  actualCostUsd: number;
+}> => {
+  const apiKey = await getEffectiveOpenRouterKey();
+  const startTime = Date.now();
   const endpoint = "https://openrouter.ai/api/v1/chat/completions";
 
   const tryModel = async (activeModel: string) => {
@@ -82,23 +93,60 @@ export const callOpenRouter = async ({
       throw new Error("OpenRouter boş yanıt döndürdü.");
     }
 
+    const promptTokens = data.usage?.prompt_tokens ?? 0;
+    const completionTokens = data.usage?.completion_tokens ?? 0;
+    const totalTokens = data.usage?.total_tokens ?? 0;
+    const actualCostUsd = data.usage?.cost ?? 0.0001;
+    const durationMs = Date.now() - startTime;
+
+    // Log real usage and cost if restaurantId is provided
+    if (restaurantId) {
+      await prisma.aiUsageLog
+        .create({
+          data: {
+            restaurantId,
+            operationType,
+            qualityLevel,
+            model: activeModel,
+            promptTokens,
+            completionTokens,
+            totalTokens,
+            actualProviderCost: actualCostUsd,
+            chargedCredits,
+            durationMs,
+            status: "COMPLETED",
+          },
+        })
+        .catch((e) => console.error("Failed to write AiUsageLog:", e));
+    }
+
     return {
       content: choice.message.content,
-      tokensUsed: data.usage?.total_tokens ?? 0,
+      tokensUsed: totalTokens,
       model: activeModel,
+      actualCostUsd,
     };
   };
 
   try {
     return await tryModel(model);
-  } catch (err) {
-    // If primary failed and fallback exists, try fallback
-    if (model !== FALLBACK_TEXT_MODEL) {
-      console.warn(`[OpenRouter] ${model} başarısız oldu, ${FALLBACK_TEXT_MODEL} deneniyor:`, err);
-      return await tryModel(FALLBACK_TEXT_MODEL);
+  } catch (err: any) {
+    if (restaurantId) {
+      await prisma.aiUsageLog
+        .create({
+          data: {
+            restaurantId,
+            operationType,
+            qualityLevel,
+            model,
+            durationMs: Date.now() - startTime,
+            status: "FAILED",
+            errorMessage: err.message,
+            chargedCredits: 0,
+          },
+        })
+        .catch(() => {});
     }
     throw err;
   }
 };
-
-export { DEFAULT_VISION_MODEL, DEFAULT_TEXT_MODEL, FALLBACK_TEXT_MODEL };

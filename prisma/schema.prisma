@@ -774,8 +774,10 @@ enum AiTaskStatus {
 
 enum AiTaskType {
   MENU_DIGITIZATION
+  MENU_URL_ANALYSIS
   ITEM_DESCRIPTION
   IMAGE_GENERATION
+  PHOTO_PROFESSIONALIZATION
   ALLERGEN_CALORIE_EST
 }
 
@@ -799,5 +801,81 @@ model AiTask {
   @@index([restaurantId, type])
   @@index([status])
   @@index([createdAt])
+}
+
+/// Global OpenRouter & AI Studio Settings (managed by Super Admin)
+model AiSetting {
+  id                      String   @id @default("global_ai_settings")
+  openRouterApiKey        String?
+  defaultVisionModel      String   @default("google/gemini-2.5-flash")
+  defaultTextModel        String   @default("google/gemini-2.5-flash")
+  defaultImageModel       String   @default("google/gemini-2.5-flash-image")
+  lowBalanceThresholdUsd  Decimal  @default(5.0) @db.Decimal(10, 2)
+  maxCostPerRequestUsd    Decimal  @default(1.0) @db.Decimal(10, 2)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+enum QualityLevel {
+  ECONOMY
+  STANDARD
+  PROFESSIONAL
+  ULTRA
+}
+
+/// Dynamic Model & Tier Pricing Configuration
+model AiModelConfig {
+  id             String       @id @default(cuid())
+  modelId        String
+  displayName    String
+  provider       String       // "Google", "OpenAI", "Anthropic", "Black Forest Labs"
+  taskType       AiTaskType
+  qualityLevel   QualityLevel @default(STANDARD)
+  creditCost     Int          @default(20)
+  actualCostEst  Decimal      @default(0.02) @db.Decimal(10, 4)
+  isEnabled      Boolean      @default(true)
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([taskType, qualityLevel])
+  @@index([isEnabled])
+}
+
+/// Usage and Real Cost Audit Log
+model AiUsageLog {
+  id                 String       @id @default(cuid())
+  restaurantId       String
+  operationType      AiTaskType
+  qualityLevel       QualityLevel?
+  model              String
+  provider           String?
+  promptTokens       Int          @default(0)
+  completionTokens   Int          @default(0)
+  totalTokens        Int          @default(0)
+  actualProviderCost Decimal      @default(0) @db.Decimal(10, 6)
+  chargedCredits     Int          @default(0)
+  status             AiTaskStatus @default(COMPLETED)
+  durationMs         Int          @default(0)
+  errorMessage       String?
+  createdAt          DateTime     @default(now())
+
+  @@index([restaurantId])
+  @@index([operationType])
+  @@index([createdAt])
+}
+
+/// Staged Menu Analysis Draft
+model AiMenuDraft {
+  id           String       @id @default(cuid())
+  restaurantId String
+  sourceType   String       // "IMAGE", "PDF", "URL", "TEXT"
+  sourceUrl    String?
+  categories   Json
+  status       String       @default("DRAFT") // "DRAFT", "COMMITTED", "DISCARDED"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([restaurantId])
 }
 

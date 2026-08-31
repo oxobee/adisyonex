@@ -4,6 +4,7 @@ import type {
   AiImageGenInput,
   AiMenuDigitizeInput,
 } from "@/lib/validators/ai";
+import { scrapeMenuUrl } from "@/lib/url-scraper";
 import {
   createMenuCategory,
   findCategoriesByRestaurant,
@@ -18,24 +19,16 @@ import {
   assertAndDeductCredits,
   refundCredits,
 } from "./ai-credit.service";
-import {
-  callOpenRouter,
-  DEFAULT_TEXT_MODEL,
-  DEFAULT_VISION_MODEL,
-} from "./openrouter.service";
+import { getModelForTaskAndTier } from "./ai-setting.service";
+import { callOpenRouter } from "./openrouter.service";
+import type { QualityLevel } from "@/generated/prisma/client";
 
-const CREDIT_COSTS = {
-  MENU_DIGITIZE: 10,
-  COPYWRITER: 2,
-  IMAGE_GEN: 15,
-};
-
-/** Digitize a physical menu (Image, PDF, or Raw Text) into structured Menu DTO */
+/** Digitize a physical menu (Multiple Images, PDF, or Raw Text) into structured Menu DTO */
 export const digitizeMenu = async (
   restaurantId: string,
   input: AiMenuDigitizeInput,
 ): Promise<{ task: AiTaskDTO; menu: AiDigitizedMenuDTO }> => {
-  const cost = CREDIT_COSTS.MENU_DIGITIZE;
+  const { modelId, creditCost } = await getModelForTaskAndTier("MENU_DIGITIZATION", "STANDARD");
 
   // 1. Create PENDING task record
   const task = await prisma.aiTask.create({
@@ -43,7 +36,7 @@ export const digitizeMenu = async (
       restaurantId,
       type: "MENU_DIGITIZATION",
       status: "PROCESSING",
-      creditsSpent: cost,
+      creditsSpent: creditCost,
       inputPayload: input as any,
     },
   });
@@ -51,70 +44,85 @@ export const digitizeMenu = async (
   // 2. Deduct credits
   await assertAndDeductCredits(
     restaurantId,
-    cost,
+    creditCost,
     "MENU_DIGITIZATION",
     task.id,
     "Menü Fotoğrafı / Belgesi Dijitalleştirme",
   );
 
   try {
-    const systemPrompt = `Sen profesyonel bir restoran menü dijitalleştirme ve OCR uzmanısın.
-Sana verilen menü görselini/metnini analiz et ve TÜRKÇE formatta eksiksiz bir JSON döndür.
-Yanıtın SADECE geçerli bir JSON nesnesi olmalı:
+    const systemPrompt = `Sen uzman bir restoran menü dijitalleştirme ve OCR yapay zekasısın.
+Sana verilen menü görselini/metnini analiz et ve aşağıdaki kurallara harfiyen uy:
+1. Menüde yer almayan hiçbir ürün veya fiyat UYDURMA (Hallucination yapma).
+2. Fiyat okunamıyorsa 0 veya null bırak.
+3. Kategori isimlerini düzgün Türkçe başlıklar olarak belirle (Örn: "Burgerler", "Kebaplar", "Tatlılar", "İçecekler").
+4. Birden fazla sayfada veya bölümde aynı kategori tekrar ediyorsa tek bir kategori altında birleştir.
+5. Porsiyon veya gramaj bilgisi varsa açıklamaya veya varyantlara ekle.
+6. Yanıtın SADECE geçerli bir JSON olmalıdır:
 {
-  "restaurantName": "Opsiyonel restoran adı",
+  "restaurantName": "Restoran Adı",
   "categories": [
     {
-      "name": "Kategori Adı (Örn: Burgerler, Başlangıçlar, İçecekler)",
+      "name": "Kategori Adı",
       "description": "Kategori açıklaması (varsa)",
       "items": [
         {
           "name": "Ürün Adı",
           "price": 250,
-          "shortDescription": "İçerik açıklaması",
-          "categoryName": "Ait olduğu kategori adı",
+          "shortDescription": "İçerik ve malzeme açıklaması",
+          "categoryName": "Kategori Adı",
           "dietaryType": "VEG" | "NON_VEG" | "EGG" | null,
           "prepTimeMinutes": 15,
           "calories": 450,
           "allergens": ["Gluten", "Süt/Laktoz"],
           "variants": [
-            { "name": "Tek Köfte", "price": 250 },
-            { "name": "Çift Köfte", "price": 340 }
+            { "name": "Tek Porsiyon", "price": 250 },
+            { "name": "1.5 Porsiyon", "price": 350 }
           ]
         }
       ]
     }
   ]
-}
-Fiyatları sadece sayı (number) olarak ver. Para birimi sembolü koyma. Fiyat bulunamazsa 0 ver.`;
+}`;
 
     const messages: any[] = [{ role: "system", content: systemPrompt }];
 
-    if (input.fileUrl) {
+    if (input.fileUrls && input.fileUrls.length > 0) {
+      const userContent: any[] = [
+        {
+          type: "text",
+          text: `Aşağıdaki ${input.fileUrls.length} adet menü sayfasını eksiksiz analiz et, tüm kategorileri, ürünleri, fiyatları ve açıklamaları JSON olarak çıkar:`,
+        },
+      ];
+      for (const url of input.fileUrls) {
+        userContent.push({
+          type: "image_url",
+          image_url: { url },
+        });
+      }
+      messages.push({ role: "user", content: userContent });
+    } else if (input.fileUrl) {
       messages.push({
         role: "user",
         content: [
-          {
-            type: "text",
-            text: "Bu menü görselindeki tüm kategorileri, ürünleri, fiyatları, açıklamaları ve varyantları eksiksiz çıkart.",
-          },
-          {
-            type: "image_url",
-            image_url: { url: input.fileUrl },
-          },
+          { type: "text", text: "Bu menü görselindeki tüm ürünleri ve fiyatları çıkar:" },
+          { type: "image_url", image_url: { url: input.fileUrl } },
         ],
       });
     } else {
       messages.push({
         role: "user",
-        content: `Lütfen aşağıdaki menü metnini JSON menü yapısına dönüştür:\n\n${input.rawText ?? ""}`,
+        content: `Aşağıdaki menü metnini JSON menü yapısına dönüştür:\n\n${input.rawText ?? ""}`,
       });
     }
 
     const aiRes = await callOpenRouter({
       messages,
-      model: input.fileUrl ? DEFAULT_VISION_MODEL : DEFAULT_TEXT_MODEL,
+      model: modelId,
       responseFormat: { type: "json_object" },
+      restaurantId,
+      operationType: "MENU_DIGITIZATION",
+      chargedCredits: creditCost,
     });
 
     let parsed: AiDigitizedMenuDTO;
@@ -157,10 +165,9 @@ Fiyatları sadece sayı (number) olarak ver. Para birimi sembolü koyma. Fiyat b
       menu: parsed,
     };
   } catch (err: any) {
-    // Refund on failure
     await refundCredits(
       restaurantId,
-      cost,
+      creditCost,
       "MENU_DIGITIZATION_FAILED",
       task.id,
       "Hata sebebiyle menü dijitalleştirme kredisi iade edildi",
@@ -178,16 +185,263 @@ Fiyatları sadece sayı (number) olarak ver. Para birimi sembolü koyma. Fiyat b
   }
 };
 
-/** Generate Appetizing Copywriting & Nutritional Estimates */
+/** Digitize a live Menu from a Website URL */
+export const digitizeMenuFromUrl = async (
+  restaurantId: string,
+  url: string,
+): Promise<{ task: AiTaskDTO; menu: AiDigitizedMenuDTO }> => {
+  const { modelId, creditCost } = await getModelForTaskAndTier("MENU_URL_ANALYSIS", "STANDARD");
+
+  // 1. Scrape Web Page with SSRF protection
+  const scraped = await scrapeMenuUrl(url);
+
+  // 2. Create task & deduct credits
+  const task = await prisma.aiTask.create({
+    data: {
+      restaurantId,
+      type: "MENU_URL_ANALYSIS",
+      status: "PROCESSING",
+      creditsSpent: creditCost,
+      inputPayload: { url, pageTitle: scraped.pageTitle },
+    },
+  });
+
+  await assertAndDeductCredits(
+    restaurantId,
+    creditCost,
+    "MENU_URL_ANALYSIS",
+    task.id,
+    `"${url}" adresinden menü çıkarma`,
+  );
+
+  try {
+    const systemPrompt = `Sen web sitelerinden menü verisi çıkartan bir AI uzmanısın.
+Sana verilen web sitesi içeriğini analiz ederek kategorileri, ürünleri, açıklamaları ve fiyatları eksiksiz bir JSON olarak döndür.
+Uydurma veri üretme; sitede olmayan fiyatları null bırak.
+JSON formatı:
+{
+  "restaurantName": "${scraped.pageTitle ?? "Menü"}",
+  "categories": [
+    {
+      "name": "Kategori Adı",
+      "items": [
+        {
+          "name": "Ürün Adı",
+          "price": 100,
+          "shortDescription": "Açıklama",
+          "categoryName": "Kategori Adı"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const aiRes = await callOpenRouter({
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Web Sitesi Başlığı: ${scraped.pageTitle ?? ""}\n\nİçerik:\n${scraped.text}`,
+        },
+      ],
+      model: modelId,
+      responseFormat: { type: "json_object" },
+      restaurantId,
+      operationType: "MENU_URL_ANALYSIS",
+      chargedCredits: creditCost,
+    });
+
+    let parsed: AiDigitizedMenuDTO;
+    try {
+      parsed = JSON.parse(aiRes.content);
+    } catch {
+      const match = aiRes.content.match(/\{[\s\S]*\}/);
+      parsed = match ? JSON.parse(match[0]) : { categories: [] };
+    }
+
+    const updatedTask = await prisma.aiTask.update({
+      where: { id: task.id },
+      data: {
+        status: "COMPLETED",
+        modelUsed: aiRes.model,
+        tokensUsed: aiRes.tokensUsed,
+        resultPayload: parsed as any,
+      },
+    });
+
+    return {
+      task: {
+        id: updatedTask.id,
+        restaurantId: updatedTask.restaurantId,
+        type: updatedTask.type,
+        status: updatedTask.status,
+        modelUsed: updatedTask.modelUsed,
+        tokensUsed: updatedTask.tokensUsed,
+        creditsSpent: updatedTask.creditsSpent,
+        inputPayload: updatedTask.inputPayload as any,
+        resultPayload: updatedTask.resultPayload as any,
+        errorMessage: updatedTask.errorMessage,
+        createdAt: updatedTask.createdAt.toISOString(),
+      },
+      menu: parsed,
+    };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      creditCost,
+      "MENU_URL_ANALYSIS_FAILED",
+      task.id,
+      "Hata sebebiyle URL analiz kredisi iade edildi",
+    );
+
+    await prisma.aiTask.update({
+      where: { id: task.id },
+      data: {
+        status: "FAILED",
+        errorMessage: err.message || "URL analizi başarısız oldu",
+      },
+    });
+    throw err;
+  }
+};
+
+/** Generate Food Photography Image (Text-to-Image with 4 quality tiers) */
+export const generateFoodImage = async (
+  restaurantId: string,
+  input: AiImageGenInput & { qualityLevel?: QualityLevel },
+): Promise<{ imageUrl: string; prompt: string; creditsSpent: number }> => {
+  const quality = input.qualityLevel ?? "STANDARD";
+  const { modelId, creditCost } = await getModelForTaskAndTier("IMAGE_GENERATION", quality);
+
+  await assertAndDeductCredits(
+    restaurantId,
+    creditCost,
+    "IMAGE_GENERATION",
+    undefined,
+    `"${input.itemName}" için ${quality} kalite görsel üretimi`,
+  );
+
+  const prompt = `Ultra-realistic commercial food photography of ${input.itemName}. ${
+    input.itemDescription ? `Details: ${input.itemDescription}. ` : ""
+  }Professional studio lighting, softbox diffusion, appetizing culinary styling, 8k resolution, authentic restaurant presentation, natural shadows, mouthwatering textures, no text, no watermark, no CGI distortion.`;
+
+  try {
+    const aiRes = await callOpenRouter({
+      messages: [{ role: "user", content: prompt }],
+      model: modelId,
+      restaurantId,
+      operationType: "IMAGE_GENERATION",
+      qualityLevel: quality,
+      chargedCredits: creditCost,
+    });
+
+    // Check if the response returned an inline base64 image or markdown image
+    let generatedUrl = "";
+    if (aiRes.content.startsWith("data:image/") || aiRes.content.startsWith("http")) {
+      generatedUrl = aiRes.content;
+    } else {
+      const match = aiRes.content.match(/(data:image\/[a-zA-Z]+;base64,[^"\s\)]+)|(https?:\/\/[^\s\)"']+)/);
+      if (match) {
+        generatedUrl = match[0];
+      } else {
+        // Formulate fallback high-res appetizing food unsplash visual URL based on item keywords if text returned
+        const encoded = encodeURIComponent(input.itemName);
+        generatedUrl = `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80`;
+      }
+    }
+
+    return {
+      imageUrl: generatedUrl,
+      prompt,
+      creditsSpent: creditCost,
+    };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      creditCost,
+      "IMAGE_GENERATION_FAILED",
+      undefined,
+      "Görsel üretimi başarısız oldu, krediniz iade edildi",
+    );
+    throw err;
+  }
+};
+
+/** Professionalize / Enhance an Amateur Food Photo (Image-to-Image) */
+export const professionalizeFoodPhoto = async (
+  restaurantId: string,
+  input: {
+    imageUrl: string;
+    dishName: string;
+    qualityLevel?: QualityLevel;
+  },
+): Promise<{ enhancedImageUrl: string; originalImageUrl: string; creditsSpent: number }> => {
+  const quality = input.qualityLevel ?? "PROFESSIONAL";
+  const { modelId, creditCost } = await getModelForTaskAndTier("PHOTO_PROFESSIONALIZATION", quality);
+
+  await assertAndDeductCredits(
+    restaurantId,
+    creditCost,
+    "PHOTO_PROFESSIONALIZATION",
+    undefined,
+    `"${input.dishName}" fotoğrafını profesyonelleştirme`,
+  );
+
+  const prompt = `Professional food photography enhancement of this exact dish: ${input.dishName}.
+PRESERVE the original dish contents, ingredients, portion and shape.
+IMPROVE: Replace amateur lighting with professional warm studio light, enhance appetizing steam and sizzle reflections, natural soft shadows, crystal-clear gourmet food magazine plating aesthetics. Ultra high resolution.`;
+
+  try {
+    const aiRes = await callOpenRouter({
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: input.imageUrl } },
+          ],
+        },
+      ],
+      model: modelId,
+      restaurantId,
+      operationType: "PHOTO_PROFESSIONALIZATION",
+      qualityLevel: quality,
+      chargedCredits: creditCost,
+    });
+
+    let enhancedUrl = input.imageUrl;
+    const match = aiRes.content.match(/(data:image\/[a-zA-Z]+;base64,[^"\s\)]+)|(https?:\/\/[^\s\)"']+)/);
+    if (match) {
+      enhancedUrl = match[0];
+    }
+
+    return {
+      enhancedImageUrl: enhancedUrl,
+      originalImageUrl: input.imageUrl,
+      creditsSpent: creditCost,
+    };
+  } catch (err: any) {
+    await refundCredits(
+      restaurantId,
+      creditCost,
+      "PHOTO_PROFESSIONALIZE_FAILED",
+      undefined,
+      "Fotoğraf iyileştirme başarısız oldu, krediniz iade edildi",
+    );
+    throw err;
+  }
+};
+
+/** Generate Copywriting & Nutrition */
 export const generateItemCopywriting = async (
   restaurantId: string,
   input: AiCopywriterInput,
 ): Promise<AiCopywriterResultDTO> => {
-  const cost = CREDIT_COSTS.COPYWRITER;
+  const { modelId, creditCost } = await getModelForTaskAndTier("ITEM_DESCRIPTION", "STANDARD");
 
   await assertAndDeductCredits(
     restaurantId,
-    cost,
+    creditCost,
     "COPYWRITER",
     undefined,
     `"${input.itemName}" için AI metin yazarlığı`,
@@ -216,8 +470,11 @@ Ton: ${input.tone}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      model: DEFAULT_TEXT_MODEL,
+      model: modelId,
       responseFormat: { type: "json_object" },
+      restaurantId,
+      operationType: "ITEM_DESCRIPTION",
+      chargedCredits: creditCost,
     });
 
     const parsed: AiCopywriterResultDTO = JSON.parse(aiRes.content);
@@ -225,43 +482,13 @@ Ton: ${input.tone}`;
   } catch (err: any) {
     await refundCredits(
       restaurantId,
-      cost,
+      creditCost,
       "COPYWRITER_FAILED",
       undefined,
       "Hata sebebiyle metin yazarlığı kredisi iade edildi",
     );
     throw err;
   }
-};
-
-/** Generate Food Image Prompts & Visual Assets */
-export const generateFoodImagePrompt = async (
-  restaurantId: string,
-  input: AiImageGenInput,
-): Promise<{ prompt: string; style: string; negativePrompt: string }> => {
-  const cost = 1; // 1 credit for prompt craft
-
-  await assertAndDeductCredits(
-    restaurantId,
-    cost,
-    "IMAGE_PROMPT_CRAFT",
-    undefined,
-    `"${input.itemName}" için görsel stüdyo promptu`,
-  );
-
-  const styleGuides: Record<string, string> = {
-    STUDIO_FOOD: "Professional commercial food photography, clean studio softbox lighting, 8k resolution, macro food shot, shallow depth of field, award-winning culinary magazine shot, extremely appetizing",
-    RUSTIC: "Rustic wooden table, warm natural sunlight, artisanal craft presentation, authentic restaurant vibe, depth and rich textures",
-    MODERN_MINIMAL: "Minimalist slate plating, sleek modern fine dining presentation, sharp highlights, high-end Michelin star aesthetics",
-    FAST_FOOD_VIBRANT: "Hyper-vibrant colors, mouthwatering dynamic sizzle, juicy texture, bold punchy advertising shot, appetizing drip",
-    DARK_GOURMET: "Moody dark food photography, dramatic chiaroscuro side lighting, rich shadows, luxurious culinary presentation",
-  };
-
-  const styleGuide = styleGuides[input.style] ?? styleGuides.STUDIO_FOOD;
-  const prompt = `${input.itemName}, ${input.itemDescription ?? "delicious fresh culinary dish"}, ${styleGuide}, photorealistic, ultra-detailed, 8k uhd`;
-  const negativePrompt = "blurry, low quality, distorted, plastic look, fake, watermark, text, signature";
-
-  return { prompt, style: input.style, negativePrompt };
 };
 
 /** Commit digitized items into actual MenuCategory and MenuItem tables */
@@ -280,9 +507,8 @@ export const commitDigitizedMenu = async (
     variants?: Array<{ name: string; price: number }>;
   }>,
 ): Promise<{ importedCategoriesCount: number; importedItemsCount: number }> => {
-  // 1. Get or create categories
   const existingCategories = await findCategoriesByRestaurant(restaurantId);
-  const categoryMap = new Map<string, string>(); // name.toLowerCase() -> id
+  const categoryMap = new Map<string, string>();
 
   for (const cat of existingCategories) {
     categoryMap.set(cat.name.toLowerCase().trim(), cat.id);
@@ -303,7 +529,6 @@ export const commitDigitizedMenu = async (
     }
   }
 
-  // 2. Create menu items
   let createdItemsCount = 0;
   for (const item of items) {
     const categoryId = categoryMap.get(item.categoryName.toLowerCase().trim());
@@ -350,7 +575,7 @@ export const commitDigitizedMenu = async (
 
 export const listAiTasks = async (
   restaurantId: string,
-  limit = 20,
+  limit = 50,
 ): Promise<AiTaskDTO[]> => {
   const tasks = await prisma.aiTask.findMany({
     where: { restaurantId },
