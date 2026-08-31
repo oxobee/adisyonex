@@ -27,10 +27,12 @@ import {
   CircleHelpIcon,
   ShieldCheckIcon,
   GiftIcon,
+  SparklesIcon,
 } from "lucide-react"
 
 const navMain = [
   { title: "Yönetim Paneli", url: "/dashboard", icon: <LayoutDashboardIcon /> },
+  { title: "Yapay Zeka Stüdyosu", url: "/dashboard/ai-studio", icon: <SparklesIcon className="text-amber-500" /> },
   { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
   { title: "Siparişler", url: "/dashboard/orders", icon: <ReceiptTextIcon /> },
   { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },

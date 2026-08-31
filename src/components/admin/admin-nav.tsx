@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboardIcon,
+  SparklesIcon,
   StoreIcon,
   UsersIcon,
   UtensilsCrossedIcon,
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { title: "Genel Bakış", href: "/admin", icon: LayoutDashboardIcon },
+  { title: "AI Stüdyo & Krediler", href: "/admin/ai-studio", icon: SparklesIcon },
   { title: "Kullanıcılar", href: "/admin/users", icon: UsersIcon },
   { title: "Restoranlar", href: "/admin/restaurants", icon: StoreIcon },
 ] as const;

@@ -197,6 +197,8 @@ model Restaurant {
   stockItems     StockItem[]
   staff          Staff[]
   customers      Customer[]
+  aiWallet       AiCreditWallet?
+  aiTasks        AiTask[]
 
   @@index([ownerId])
   @@index([isActive])
@@ -720,5 +722,82 @@ model Customer {
   @@unique([restaurantId, phone])
   @@index([restaurantId])
   @@index([restaurantId, birthMonth])
+}
+
+// ------------------------------------------------------------- AI Studio ---
+
+/// Restaurant AI Studio Credit Wallet
+model AiCreditWallet {
+  id           String     @id @default(cuid())
+  restaurantId String     @unique
+  balance      Int        @default(100) // 100 free starter credits
+  totalUsed    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  transactions AiCreditTransaction[]
+
+  @@index([restaurantId])
+}
+
+enum AiTransactionType {
+  BONUS_GRANT
+  ADMIN_RECHARGE
+  USAGE_DEDUCT
+  REFUND
+}
+
+/// Ledger of all credit deductions, grants, and refunds
+model AiCreditTransaction {
+  id          String            @id @default(cuid())
+  walletId    String
+  amount      Int               // Positive for grants/refunds, negative for spends
+  type        AiTransactionType
+  action      String            // "MENU_DIGITIZE", "IMAGE_GEN", "COPYWRITING", etc.
+  referenceId String?           // e.g. AiTask.id
+  description String?
+  createdAt   DateTime          @default(now())
+
+  wallet      AiCreditWallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([createdAt])
+}
+
+enum AiTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AiTaskType {
+  MENU_DIGITIZATION
+  ITEM_DESCRIPTION
+  IMAGE_GENERATION
+  ALLERGEN_CALORIE_EST
+}
+
+/// Persistent track of AI requests and results
+model AiTask {
+  id            String       @id @default(cuid())
+  restaurantId  String
+  type          AiTaskType
+  status        AiTaskStatus @default(PENDING)
+  modelUsed     String?
+  tokensUsed    Int?
+  creditsSpent  Int          @default(0)
+  inputPayload  Json
+  resultPayload Json?
+  errorMessage  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  restaurant    Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, type])
+  @@index([status])
+  @@index([createdAt])
 }
 

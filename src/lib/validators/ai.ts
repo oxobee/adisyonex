@@ -1,0 +1,64 @@
+import { z } from "zod";
+
+export const aiMenuDigitizeInputSchema = z.object({
+  fileUrl: z.string().url().optional(),
+  mediaType: z.enum(["IMAGE", "PDF", "TEXT"]).default("IMAGE"),
+  rawText: z.string().max(20000).optional(),
+});
+
+export type AiMenuDigitizeInput = z.infer<typeof aiMenuDigitizeInputSchema>;
+
+export const aiCopywriterInputSchema = z.object({
+  itemName: z.string().min(2).max(100),
+  categoryName: z.string().max(100).optional(),
+  ingredients: z.string().max(500).optional(),
+  tone: z
+    .enum(["APPETIZING", "GOURMET", "CONCISE", "HEALTHY", "CREATIVE"])
+    .default("APPETIZING"),
+});
+
+export type AiCopywriterInput = z.infer<typeof aiCopywriterInputSchema>;
+
+export const aiImageGenInputSchema = z.object({
+  itemName: z.string().min(2).max(100),
+  itemDescription: z.string().max(500).optional(),
+  style: z
+    .enum(["STUDIO_FOOD", "RUSTIC", "MODERN_MINIMAL", "FAST_FOOD_VIBRANT", "DARK_GOURMET"])
+    .default("STUDIO_FOOD"),
+});
+
+export type AiImageGenInput = z.infer<typeof aiImageGenInputSchema>;
+
+export const aiCommitItemSchema = z.object({
+  name: z.string().min(1).max(100),
+  categoryName: z.string().min(1).max(100),
+  price: z.number().min(0),
+  shortDescription: z.string().max(500).optional(),
+  calories: z.number().int().min(0).max(10000).optional().nullable(),
+  prepTimeMinutes: z.number().int().min(0).max(300).optional().nullable(),
+  dietaryType: z.enum(["VEG", "NON_VEG", "EGG"]).optional().nullable(),
+  allergens: z.array(z.string()).default([]),
+  variants: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        price: z.number().min(0),
+      }),
+    )
+    .default([]),
+});
+
+export const aiCommitMenuSchema = z.object({
+  categories: z.array(z.string().min(1)),
+  items: z.array(aiCommitItemSchema).min(1, "En az bir ürün seçilmelidir"),
+});
+
+export type AiCommitMenuInput = z.infer<typeof aiCommitMenuSchema>;
+
+export const aiAdminCreditRechargeSchema = z.object({
+  restaurantId: z.string().min(1),
+  amount: z.number().int().min(1).max(100000),
+  description: z.string().max(200).optional(),
+});
+
+export type AiAdminCreditRechargeInput = z.infer<typeof aiAdminCreditRechargeSchema>;
