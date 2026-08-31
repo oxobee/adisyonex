@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { CheckIcon } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageCarousel } from "@/components/shared/image-carousel";
@@ -110,7 +111,7 @@ export function ItemConfigDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto overscroll-contain sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{item.name}</DialogTitle>
         </DialogHeader>
@@ -157,31 +158,70 @@ export function ItemConfigDialog({
                     {group.maxSelect > 1 ? ` · en fazla ${group.maxSelect}` : ""}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1.5">
                   {group.modifiers.map((m) => {
                     const checked = selected.includes(m.id);
+                    const disabled = !checked && atMax && group.maxSelect > 1;
                     return (
-                      <label
+                      <button
                         key={m.id}
+                        type="button"
+                        disabled={disabled}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleModifier(group, m.id);
+                        }}
                         className={cn(
-                          "flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm",
-                          checked && "border-primary bg-primary/5",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition-colors select-none",
+                          checked
+                            ? "border-primary bg-primary/5 font-medium"
+                            : "hover:bg-muted/50 border-input",
+                          disabled && "cursor-not-allowed opacity-50",
                         )}
                       >
-                        <span className="flex items-center gap-2">
-                          <Checkbox
-                            checked={checked}
-                            disabled={!checked && atMax && group.maxSelect > 1}
-                            onCheckedChange={() => toggleModifier(group, m.id)}
-                          />
-                          {m.name}
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          {group.maxSelect === 1 ? (
+                            <span
+                              className={cn(
+                                "flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                checked
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-input bg-background",
+                              )}
+                            >
+                              {checked ? (
+                                <span className="size-1.5 rounded-full bg-primary-foreground" />
+                              ) : null}
+                            </span>
+                          ) : (
+                            <span
+                              className={cn(
+                                "flex size-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors",
+                                checked
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-input bg-background",
+                              )}
+                            >
+                              {checked ? (
+                                <CheckIcon className="size-3 stroke-[2.5]" />
+                              ) : null}
+                            </span>
+                          )}
+                          <span className="truncate">{m.name}</span>
                         </span>
                         {m.priceDelta !== 0 ? (
-                          <span className="text-muted-foreground">
+                          <span
+                            className={cn(
+                              "text-xs shrink-0 tabular-nums ml-2",
+                              checked
+                                ? "text-primary font-semibold"
+                                : "text-muted-foreground",
+                            )}
+                          >
                             +{formatCurrency(m.priceDelta)}
                           </span>
                         ) : null}
-                      </label>
+                      </button>
                     );
                   })}
                 </div>
