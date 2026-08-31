@@ -26,7 +26,10 @@ import { toast } from "sonner";
 
 import { voidOrderAction } from "@/actions/order.actions";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
+import { TableBillModal } from "@/components/orders/table-bill-modal";
 import { TableCard, type TableStatus } from "@/components/orders/table-card";
+import { TableDetailModal } from "@/components/orders/table-detail-modal";
+import { TablePosModal } from "@/components/orders/table-pos-modal";
 import { TableSettleDialog } from "@/components/orders/table-settle-dialog";
 import { TransferMergeDialog } from "@/components/orders/transfer-merge-dialog";
 import { orderRunningTotal } from "@/components/pos/types";
@@ -163,10 +166,26 @@ export function OrdersBoard({
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   // Dialog States
+  const [printBillTable, setPrintBillTable] = useState<{
+    table: TableDTO;
+    orders: readonly OrderDTO[];
+  } | null>(null);
+  const [posModalTable, setPosModalTable] = useState<{
+    table: TableDTO;
+    orders: readonly OrderDTO[];
+  } | null>(null);
+  const [settleTableModal, setSettleTableModal] = useState<{
+    table: TableDTO;
+    orders: readonly OrderDTO[];
+  } | null>(null);
   const [settleGroup, setSettleGroup] = useState<TableGroup | null>(null);
   const [transferDialog, setTransferDialog] = useState<{
     table: TableDTO;
     mode: "TRANSFER" | "MERGE";
+  } | null>(null);
+  const [detailModalTable, setDetailModalTable] = useState<{
+    table: TableDTO;
+    orders: readonly OrderDTO[];
   } | null>(null);
   const [detailGroup, setDetailGroup] = useState<TableGroup | null>(null);
   const [voidConfirmTable, setVoidConfirmTable] = useState<TableDTO | null>(null);
@@ -345,52 +364,39 @@ export function OrdersBoard({
 
   // Handlers for selected table actions
   const handlePrintBill = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    if (ords.length === 0) return;
-    const targetOrder = ords[0];
-    window.open(`/dashboard/orders/${targetOrder.id}/invoice`, "_blank");
+    setSelectedTableId(null);
+    setPrintBillTable({ table: t, orders: ords });
   };
 
-  const handleAddProduct = (t: TableDTO) => {
-    router.push(`/dashboard/pos?tableId=${t.id}`);
+  const handleAddProduct = (t: TableDTO, ords: readonly OrderDTO[]) => {
+    setSelectedTableId(null);
+    setPosModalTable({ table: t, orders: ords });
   };
 
   const handleSettle = (t: TableDTO, ords: readonly OrderDTO[]) => {
     if (ords.length === 0) return;
-    const total = round2(ords.reduce((s, o) => s + orderRunningTotal(o), 0));
-    setSettleGroup({
-      key: t.id,
-      tableLabel: t.label,
-      orders: ords,
-      total,
-    });
     setSelectedTableId(null);
+    setSettleTableModal({ table: t, orders: ords });
   };
 
   const handleTransfer = (t: TableDTO) => {
-    setTransferDialog({ table: t, mode: "TRANSFER" });
     setSelectedTableId(null);
+    setTransferDialog({ table: t, mode: "TRANSFER" });
   };
 
   const handleMerge = (t: TableDTO) => {
-    setTransferDialog({ table: t, mode: "MERGE" });
     setSelectedTableId(null);
+    setTransferDialog({ table: t, mode: "MERGE" });
   };
 
   const handleViewDetails = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    if (ords.length === 0) return;
-    const total = round2(ords.reduce((s, o) => s + orderRunningTotal(o), 0));
-    setDetailGroup({
-      key: t.id,
-      tableLabel: t.label,
-      orders: ords,
-      total,
-    });
     setSelectedTableId(null);
+    setDetailModalTable({ table: t, orders: ords });
   };
 
   const handleVoid = (t: TableDTO) => {
-    setVoidConfirmTable(t);
     setSelectedTableId(null);
+    setVoidConfirmTable(t);
   };
 
   return (
@@ -427,7 +433,7 @@ export function OrdersBoard({
                 orders={selectedTableOrders}
                 onClose={() => setSelectedTableId(null)}
                 onPrintBill={() => handlePrintBill(selectedTable, selectedTableOrders)}
-                onAddProduct={() => handleAddProduct(selectedTable)}
+                onAddProduct={() => handleAddProduct(selectedTable, selectedTableOrders)}
                 onSettleBill={() => handleSettle(selectedTable, selectedTableOrders)}
                 onTransferTable={() => handleTransfer(selectedTable)}
                 onMergeTable={() => handleMerge(selectedTable)}
@@ -746,8 +752,50 @@ export function OrdersBoard({
         </div>
       )}
 
-      {/* TABLE SETTLE DIALOG */}
-      {settleGroup ? (
+      {/* 1. BILL / RECEIPT THERMAL PRINT MODAL */}
+      <TableBillModal
+        table={printBillTable?.table ?? null}
+        orders={printBillTable?.orders ?? []}
+        open={Boolean(printBillTable)}
+        onOpenChange={(op) => !op && setPrintBillTable(null)}
+        onAddProduct={() => {
+          if (printBillTable) {
+            const currentTable = printBillTable.table;
+            const currentOrders = printBillTable.orders;
+            setPrintBillTable(null);
+            setPosModalTable({
+              table: currentTable,
+              orders: currentOrders,
+            });
+          }
+        }}
+      />
+
+      {/* 2. ADD PRODUCT POS MODAL */}
+      <TablePosModal
+        table={posModalTable?.table ?? null}
+        orders={posModalTable?.orders ?? []}
+        menu={menu ?? null}
+        open={Boolean(posModalTable)}
+        onOpenChange={(op) => !op && setPosModalTable(null)}
+        onAdded={() => {
+          setPosModalTable(null);
+          router.refresh();
+        }}
+      />
+
+      {/* 3. TABLE SETTLE DIALOG */}
+      {settleTableModal ? (
+        <TableSettleDialog
+          tableLabel={settleTableModal.table.label}
+          orders={settleTableModal.orders}
+          onOpenChange={(op) => !op && setSettleTableModal(null)}
+          onSettled={() => {
+            setSettleTableModal(null);
+            router.refresh();
+          }}
+        />
+      ) : settleGroup ? (
         <TableSettleDialog
           tableLabel={settleGroup.tableLabel ?? "Masa"}
           orders={settleGroup.orders}
@@ -759,7 +807,7 @@ export function OrdersBoard({
         />
       ) : null}
 
-      {/* TRANSFER / MERGE DIALOG */}
+      {/* 4 & 5. TRANSFER / MERGE DIALOG */}
       {transferDialog ? (
         <TransferMergeDialog
           sourceTable={transferDialog.table}
@@ -771,75 +819,46 @@ export function OrdersBoard({
         />
       ) : null}
 
-      {/* ORDER DETAILS DIALOG */}
-      {detailGroup ? (
-        <Dialog open onOpenChange={(op) => !op && setDetailGroup(null)}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg rounded-3xl p-6">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-black text-foreground">
-                {detailGroup.tableLabel ?? "Masa"} — Adisyon Detayı
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {detailGroup.orders.length} Açık Sipariş · Toplam: {formatCurrency(detailGroup.total)}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-col gap-4 divide-y">
-              {detailGroup.orders.map((order) => (
-                <div key={order.id} className="flex flex-col gap-2 pt-3 first:pt-0">
-                  <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                    <span>Sipariş #{order.orderNumber}</span>
-                    <span className="text-muted-foreground">{formatTime(order.createdAt)}</span>
-                  </div>
-
-                  <ul className="flex flex-col gap-1.5 text-xs">
-                    {order.lines.map((line) => (
-                      <li key={line.id} className="flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <span className="font-semibold text-foreground">
-                            {line.quantity}x {line.name}
-                          </span>
-                          {line.variantName ? (
-                            <span className="text-muted-foreground ml-1">({line.variantName})</span>
-                          ) : null}
-                          {line.modifiers.length > 0 ? (
-                            <div className="text-[11px] text-muted-foreground truncate">
-                              {line.modifiers.map((m) => m.name).join(", ")}
-                            </div>
-                          ) : null}
-                        </div>
-                        <span className="font-bold text-foreground tabular-nums">
-                          {formatCurrency((line.unitPrice + line.modifiers.reduce((s, m) => s + m.priceDelta, 0)) * line.quantity)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                variant="outline"
-                className="rounded-xl cursor-pointer"
-                onClick={() => setDetailGroup(null)}
-              >
-                Kapat
-              </Button>
-              <Button
-                className="rounded-xl font-bold bg-primary text-primary-foreground cursor-pointer"
-                onClick={() => {
-                  const ords = detailGroup.orders;
-                  setDetailGroup(null);
-                  setSettleGroup(detailGroup);
-                }}
-              >
-                Hesap Al / Masayı Kapat
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ) : null}
+      {/* 6. TABLE DETAIL & ALL ORDERS MODAL */}
+      <TableDetailModal
+        table={detailModalTable?.table ?? null}
+        orders={detailModalTable?.orders ?? []}
+        open={Boolean(detailModalTable)}
+        onOpenChange={(op) => !op && setDetailModalTable(null)}
+        onPrintBill={() => {
+          if (detailModalTable) {
+            const currentTable = detailModalTable.table;
+            const currentOrders = detailModalTable.orders;
+            setDetailModalTable(null);
+            setPrintBillTable({
+              table: currentTable,
+              orders: currentOrders,
+            });
+          }
+        }}
+        onAddProduct={() => {
+          if (detailModalTable) {
+            const currentTable = detailModalTable.table;
+            const currentOrders = detailModalTable.orders;
+            setDetailModalTable(null);
+            setPosModalTable({
+              table: currentTable,
+              orders: currentOrders,
+            });
+          }
+        }}
+        onSettleBill={() => {
+          if (detailModalTable) {
+            const currentTable = detailModalTable.table;
+            const currentOrders = detailModalTable.orders;
+            setDetailModalTable(null);
+            setSettleTableModal({
+              table: currentTable,
+              orders: currentOrders,
+            });
+          }
+        }}
+      />
 
       {/* VOID / CLEAR TABLE CONFIRMATION DIALOG */}
       {voidConfirmTable ? (

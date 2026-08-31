@@ -69,9 +69,8 @@ export function TableActionMenu({
         {/* 1. Print Bill */}
         <button
           type="button"
-          disabled={!isOccupied}
           onClick={onPrintBill}
-          className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left transition-colors hover:bg-muted active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-foreground"
+          className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left transition-colors hover:bg-muted active:scale-[0.98] cursor-pointer text-foreground"
         >
           <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <PrinterIcon className="size-4.5" />
@@ -133,9 +132,8 @@ export function TableActionMenu({
         {/* 6. View Details */}
         <button
           type="button"
-          disabled={!isOccupied}
           onClick={onViewDetails}
-          className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left transition-colors hover:bg-muted active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-foreground"
+          className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left transition-colors hover:bg-muted active:scale-[0.98] cursor-pointer text-foreground"
         >
           <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
             <ReceiptIcon className="size-4.5" />
