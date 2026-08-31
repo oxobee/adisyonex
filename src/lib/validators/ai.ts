@@ -125,3 +125,9 @@ export const enhanceAttachItemImageSchema = z.object({
   dishName: z.string().min(1),
 });
 export type EnhanceAttachItemImageInput = z.infer<typeof enhanceAttachItemImageSchema>;
+
+export const saveImageToItemSchema = z.object({
+  itemId: z.string().min(1),
+  imageUrl: z.string().min(1),
+});
+export type SaveImageToItemInput = z.infer<typeof saveImageToItemSchema>;

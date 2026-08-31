@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CameraIcon,
@@ -237,43 +238,41 @@ export function ImageManager({
         onChange={onFile}
       />
 
-      {/* AI BUTTONS: IF NO IMAGE -> GENERATE, IF HAS IMAGE -> ENHANCE */}
+      {/* AI BUTTONS: IF NO IMAGE -> OPEN IMAGE STUDIO WITH PREFILLED DATA */}
       <div className="mt-1 flex items-center gap-2">
         {images.length === 0 ? (
           <Button
-            type="button"
             size="sm"
             variant="outline"
             className="w-full h-9 rounded-xl font-bold text-xs gap-1.5 border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
-            onClick={() =>
-              setAiConfirmModal({
-                type: "GENERATE",
-                cost: 20,
-                title: "✨ Yapay Zeka ile Yemek Görseli Üret",
-                description: `"${itemName}" için stüdyo aydınlatmalı, profesyonel bir yemek fotoğrafı üretilsin mi?`,
-              })
+            render={
+              <Link
+                href={`/dashboard/ai-studio/image-studio?itemId=${encodeURIComponent(
+                  itemId,
+                )}&name=${encodeURIComponent(itemName)}&desc=${encodeURIComponent(
+                  itemDescription || "",
+                )}`}
+              />
             }
           >
             <SparklesIcon className="size-3.5 text-purple-500" />
-            Yapay Zeka ile Görsel Üret (20 Kredi)
+            Yapay Zeka ile Görsel Üret (Stüdyoyu Aç)
           </Button>
         ) : (
           <Button
-            type="button"
             size="sm"
             variant="outline"
             className="w-full h-9 rounded-xl font-bold text-xs gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
-            onClick={() =>
-              setAiConfirmModal({
-                type: "ENHANCE",
-                cost: 40,
-                title: "✨ Yapay Zeka ile Fotoğrafı Güzelleştir",
-                description: `Mevcut "${itemName}" fotoğrafınız yemeğin malzemeleri korunarak profesyonel restoran çekimi kalitesine dönüştürülsün mü?`,
-              })
+            render={
+              <Link
+                href={`/dashboard/ai-studio/photo-enhance?itemId=${encodeURIComponent(
+                  itemId,
+                )}&name=${encodeURIComponent(itemName)}`}
+              />
             }
           >
             <Wand2Icon className="size-3.5 text-emerald-500" />
-            Yapay Zeka ile Güzelleştir (40 Kredi)
+            Yapay Zeka ile Güzelleştir (Stüdyoyu Aç)
           </Button>
         )}
       </div>

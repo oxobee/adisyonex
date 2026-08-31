@@ -15,7 +15,9 @@ import {
   estimateCaloriesSchema,
   quickLongDescSchema,
   quickShortDescSchema,
+  saveImageToItemSchema,
 } from "@/lib/validators/ai";
+import { addItemImageForRestaurant } from "@/services/menu-image.service";
 import {
   adminRecharge,
   getOrCreateWallet,
@@ -237,4 +239,28 @@ export const generateAndAttachItemImageAction = withManagerValidation(
 export const enhanceAndAttachItemImageAction = withManagerValidation(
   enhanceAttachItemImageSchema,
   (data, ctx) => enhanceAndAttachItemImage(ctx.restaurantId, data),
+);
+
+/** Save an already generated image URL directly to a MenuItem */
+export const saveImageToItemAction = withManagerValidation(
+  saveImageToItemSchema,
+  async (data, ctx) => {
+    let buffer: Buffer;
+    if (data.imageUrl.startsWith("data:image/")) {
+      const base64Data = data.imageUrl.replace(/^data:image\/\w+;base64,/, "");
+      buffer = Buffer.from(base64Data, "base64");
+    } else {
+      const res = await fetch(data.imageUrl);
+      const ab = await res.arrayBuffer();
+      buffer = Buffer.from(ab);
+    }
+
+    const image = await addItemImageForRestaurant(ctx.restaurantId, data.itemId, {
+      buffer,
+      type: "image/png",
+      size: buffer.length,
+    });
+
+    return { imageId: image.id, imageUrl: image.url };
+  },
 );
