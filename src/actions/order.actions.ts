@@ -74,6 +74,8 @@ export const advanceOrderStateAction = withManagerValidation(
   },
 );
 
+import { prisma } from "@/lib/prisma";
+
 export const deliverTableOrdersAction = withManagerValidation(
   z.object({
     tableId: idSchema,
@@ -81,10 +83,35 @@ export const deliverTableOrdersAction = withManagerValidation(
   async (data, ctx) => {
     const orders = await findOrdersByRestaurant(ctx.restaurantId, ["OPEN"]);
     const tableOrders = orders.filter((o) => o.tableId === data.tableId);
+    
     for (const ord of tableOrders) {
-      await advanceLineStates(ord.id, "PREPARED", "SERVED");
-      await advanceLineStates(ord.id, "FIRED", "SERVED");
-      await advanceLineStates(ord.id, "PREPARING", "SERVED");
+      const activeItems = ord.items.filter((i) => i.state !== "SERVED" && i.state !== "VOID");
+      const unservedCooked = activeItems.filter((i) => i.itemType !== "PACKAGED_GOODS");
+      const unservedPackaged = activeItems.filter((i) => i.itemType === "PACKAGED_GOODS");
+      
+      const hasCookingFood = unservedCooked.some(
+        (i) => i.state === "FIRED" || i.state === "UNSENT" || i.state === "PREPARING"
+      );
+      
+      if (hasCookingFood && unservedPackaged.length > 0) {
+        // Mixed order: Deliver packaged items first, keep cooked food preparing in kitchen
+        const packagedIds = unservedPackaged.map((i) => i.id);
+        await prisma.orderItem.updateMany({
+          where: { id: { in: packagedIds } },
+          data: { state: "SERVED" },
+        });
+      } else {
+        // Only cooked food ready (or only packaged items, or everything ready): Deliver all ready items
+        const deliverableIds = activeItems
+          .filter((i) => i.itemType === "PACKAGED_GOODS" || i.state === "PREPARED" || !hasCookingFood)
+          .map((i) => i.id);
+        if (deliverableIds.length > 0) {
+          await prisma.orderItem.updateMany({
+            where: { id: { in: deliverableIds } },
+            data: { state: "SERVED" },
+          });
+        }
+      }
     }
   },
 );

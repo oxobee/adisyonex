@@ -1,4 +1,12 @@
-import type { Order, OrderStatus, Prisma } from "@/generated/prisma/client";
+import type {
+  MenuItemType,
+  Order,
+  OrderLineState,
+  OrderSource,
+  OrderStatus,
+  OrderType,
+  Prisma,
+} from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const ORDER_INCLUDE = {
@@ -10,21 +18,14 @@ export type OrderWithRelations = Prisma.OrderGetPayload<{
   include: typeof ORDER_INCLUDE;
 }>;
 
-export type LineState =
-  | "UNSENT"
-  | "FIRED"
-  | "PREPARING"
-  | "PREPARED"
-  | "SERVED"
-  | "VOID";
-
-export type OrderLineSource = "STAFF" | "SELF_ORDER";
+export type LineState = OrderLineState;
 
 export interface OrderLineWriteData {
   menuItemId: string | null;
   variantId: string | null;
   name: string;
   variantName: string | null;
+  itemType?: MenuItemType | null;
   unitPrice: number;
   quantity: number;
   lineNote: string | null;
@@ -34,7 +35,7 @@ export interface OrderLineWriteData {
   isComp: boolean;
   compReason: string | null;
   state: LineState;
-  source: OrderLineSource;
+  source: OrderSource;
   sortOrder: number;
   modifiers: { modifierId: string | null; name: string; priceDelta: number }[];
 }
@@ -43,7 +44,7 @@ export interface CreateOrderData {
   restaurantId: string;
   orderNumber: number;
   idempotencyKey: string;
-  orderType: "DINE_IN" | "TAKEAWAY" | "DELIVERY";
+  orderType: OrderType;
   tableLabel: string | null;
   tableId: string | null;
   customerName: string | null;
@@ -62,6 +63,7 @@ const lineCreate = (items: OrderLineWriteData[]) => {
     variantId: it.variantId,
     name: it.name,
     variantName: it.variantName,
+    itemType: it.itemType ?? "SERVED",
     unitPrice: it.unitPrice,
     quantity: it.quantity,
     lineNote: it.lineNote,

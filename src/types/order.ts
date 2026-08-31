@@ -28,6 +28,7 @@ export interface OrderLineDTO {
   readonly source: OrderSource;
   readonly taxRate: number;
   readonly taxInclusive: boolean;
+  readonly itemType?: "SERVED" | "PACKAGED_GOODS" | "OTHER" | null;
   readonly modifiers: readonly OrderLineModifierDTO[];
 }
 

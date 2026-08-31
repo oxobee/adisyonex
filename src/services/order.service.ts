@@ -83,6 +83,7 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
     source: i.source,
     taxRate: num(i.taxRate),
     taxInclusive: i.taxInclusive,
+    itemType: (i.itemType as "SERVED" | "PACKAGED_GOODS" | "OTHER" | null) ?? "SERVED",
     modifiers: i.modifiers.map((m) => ({
       id: m.id,
       name: m.name,
@@ -150,6 +151,7 @@ const snapshotLines = (
       variantId: variant?.id ?? null,
       name: item.name,
       variantName: variant?.name ?? null,
+      itemType: item.itemType,
       unitPrice: variant ? variant.price : item.price,
       quantity: line.quantity,
       lineNote: line.lineNote ?? null,

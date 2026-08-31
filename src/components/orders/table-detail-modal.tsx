@@ -273,6 +273,16 @@ export function TableDetailModal({
                               )}
                               <span
                                 className={cn(
+                                  "rounded px-1.5 py-0.2 text-[9px] font-black uppercase",
+                                  line.itemType === "PACKAGED_GOODS"
+                                    ? "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-500/20"
+                                    : "bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-500/20",
+                                )}
+                              >
+                                {line.itemType === "PACKAGED_GOODS" ? "📦 Paketli Ürün" : "🍳 Hazırlanan Yemek"}
+                              </span>
+                              <span
+                                className={cn(
                                   "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase",
                                   line.state === "FIRED" || line.state === "UNSENT"
                                     ? "bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400"

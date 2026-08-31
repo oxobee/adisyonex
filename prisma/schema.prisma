@@ -504,6 +504,7 @@ model OrderItem {
   variantId    String?
   name         String
   variantName  String?
+  itemType     MenuItemType?  @default(SERVED)
   unitPrice    Decimal        @db.Decimal(10, 2)
   quantity     Int            @default(1)
   lineNote     String?

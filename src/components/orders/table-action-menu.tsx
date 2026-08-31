@@ -4,8 +4,10 @@ import { useMemo } from "react";
 import {
   ArrowRightLeftIcon,
   CheckCircle2Icon,
+  ChefHatIcon,
   CreditCardIcon,
   MergeIcon,
+  PackageCheckIcon,
   PlusCircleIcon,
   PrinterIcon,
   ReceiptIcon,
@@ -46,11 +48,50 @@ export function TableActionMenu({
 }: TableActionMenuProps) {
   const isOccupied = orders.length > 0;
 
-  const hasReady = useMemo(() => {
-    return orders.some((o) =>
-      o.lines.some((l) => l.state === "PREPARED" || l.state === "FIRED"),
-    );
-  }, [orders]);
+  const activeLines = useMemo(
+    () => orders.flatMap((o) => o.lines.filter((l) => l.state !== "VOID")),
+    [orders],
+  );
+
+  const unservedLines = useMemo(
+    () => activeLines.filter((l) => l.state !== "SERVED"),
+    [activeLines],
+  );
+
+  const unservedCooked = useMemo(
+    () =>
+      unservedLines.filter(
+        (l) => l.itemType !== "PACKAGED_GOODS" && l.itemType !== "OTHER",
+      ),
+    [unservedLines],
+  );
+
+  const unservedPackaged = useMemo(
+    () =>
+      unservedLines.filter(
+        (l) => l.itemType === "PACKAGED_GOODS" || l.itemType === "OTHER",
+      ),
+    [unservedLines],
+  );
+
+  const hasCooking = useMemo(
+    () =>
+      unservedCooked.some(
+        (l) => l.state === "FIRED" || l.state === "UNSENT" || l.state === "PREPARING",
+      ),
+    [unservedCooked],
+  );
+
+  const hasCookedReady = useMemo(
+    () =>
+      unservedCooked.length > 0 &&
+      unservedCooked.every((l) => l.state === "PREPARED"),
+    [unservedCooked],
+  );
+
+  const canDeliverPackaged = unservedPackaged.length > 0;
+  const isDeliverable = canDeliverPackaged || hasCookedReady;
+  const isOnlyPreparing = !canDeliverPackaged && hasCooking;
 
   return (
     <div className="flex w-full sm:w-80 flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl animate-in zoom-in-95 fade-in duration-200">
@@ -75,8 +116,8 @@ export function TableActionMenu({
 
       {/* Action Buttons List */}
       <div className="flex flex-col p-2 gap-1 text-sm font-semibold">
-        {/* Quick Deliver */}
-        {hasReady && onDeliverTable && (
+        {/* Quick Deliver or Preparing Status */}
+        {isDeliverable && onDeliverTable ? (
           <button
             type="button"
             onClick={onDeliverTable}
@@ -85,9 +126,25 @@ export function TableActionMenu({
             <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-xs">
               <CheckCircle2Icon className="size-4.5" />
             </div>
-            <span>Siparişleri Teslim Et</span>
+            <span>
+              {canDeliverPackaged && hasCooking
+                ? "Paketli Ürünleri Teslim Et"
+                : "Siparişleri Teslim Et"}
+            </span>
           </button>
-        )}
+        ) : isOnlyPreparing ? (
+          <div className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left bg-orange-500/15 text-orange-700 dark:text-orange-300 font-bold">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white shadow-xs">
+              <ChefHatIcon className="size-4.5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-black">Hazırlanıyor</span>
+              <span className="text-[10px] text-muted-foreground">
+                Mutfakta yemekler pişiyor
+              </span>
+            </div>
+          </div>
+        ) : null}
 
         {/* 1. Print Bill */}
         <button
