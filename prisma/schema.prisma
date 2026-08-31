@@ -284,6 +284,8 @@ model MenuItem {
   priceTaxInclusive Boolean?
   goodsGstRate      Decimal?     @db.Decimal(5, 2)
   hsnSacCode        String?
+  prepTimeMinutes   Int?         @default(15)
+  allergens         Json?
   sortOrder         Int          @default(0)
   isActive          Boolean      @default(true)
   createdAt         DateTime     @default(now())

@@ -153,7 +153,7 @@ export function ItemConfigDialog({
             </span>
             <span className="text-muted-foreground bg-muted/60 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
               <ClockIcon className="size-3.5 text-muted-foreground/80" />
-              15 dk
+              {item.prepTimeMinutes ? `${item.prepTimeMinutes} dk` : "15 dk"}
             </span>
           </div>
 
@@ -165,24 +165,35 @@ export function ItemConfigDialog({
           ) : null}
 
           {/* Allergen Badges */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
-              Alerjen bilgisi (içerebilir):
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                🌾 Gluten
+          {item.allergens && item.allergens.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                Alerjen bilgisi (içerebilir):
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-400">
-                🌰 Susam
+              <div className="flex flex-wrap items-center gap-2">
+                {item.allergens.map((a) => (
+                  <span
+                    key={a.name}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                  >
+                    <span>{a.icon}</span>
+                    <span>{a.name}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : item.dietaryType === "VEG" ? (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                Beslenme bilgisi:
               </span>
-              {item.dietaryType === "VEG" ? (
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                   🌱 Vejetaryen
                 </span>
-              ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {/* Portion / Variant Options */}
           {item.variants.length > 0 ? (

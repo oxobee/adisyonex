@@ -40,6 +40,8 @@ export interface MenuItemWriteData {
   priceTaxInclusive?: boolean | null;
   goodsGstRate?: number | null;
   hsnSacCode?: string | null;
+  prepTimeMinutes?: number | null;
+  allergens?: Prisma.InputJsonValue;
   sortOrder?: number;
   isActive?: boolean;
   variants: MenuItemVariantWriteData[];
@@ -74,6 +76,8 @@ export const createMenuItem = (
       priceTaxInclusive: data.priceTaxInclusive ?? null,
       goodsGstRate: data.goodsGstRate ?? null,
       hsnSacCode: data.hsnSacCode ?? null,
+      prepTimeMinutes: data.prepTimeMinutes ?? 15,
+      allergens: data.allergens ?? [],
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,
       variants: { create: variantCreate(data.variants) },
@@ -113,6 +117,8 @@ export const updateMenuItem = (
       priceTaxInclusive: data.priceTaxInclusive ?? null,
       goodsGstRate: data.goodsGstRate ?? null,
       hsnSacCode: data.hsnSacCode ?? null,
+      prepTimeMinutes: data.prepTimeMinutes !== undefined ? data.prepTimeMinutes : 15,
+      allergens: data.allergens !== undefined ? data.allergens : [],
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,
       // v1: replace variants + group links wholesale (nothing references them yet).

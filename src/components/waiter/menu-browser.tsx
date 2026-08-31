@@ -279,7 +279,25 @@ export function MenuBrowser({
                       </p>
                     ) : null}
 
-                    {diet ? (
+                    {/* Allergens & Diet */}
+                    {item.allergens && item.allergens.length > 0 ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {item.allergens.slice(0, 3).map((a) => (
+                          <span
+                            key={a.name}
+                            className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                          >
+                            <span>{a.icon}</span>
+                            <span>{a.name}</span>
+                          </span>
+                        ))}
+                        {item.allergens.length > 3 ? (
+                          <span className="text-[10px] text-muted-foreground">
+                            +{item.allergens.length - 3}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : diet ? (
                       <div className="mt-1.5 flex items-center gap-1.5">
                         <span className="text-xs">{diet.icon}</span>
                         <span className="text-[11px] text-muted-foreground">{diet.label}</span>
@@ -297,9 +315,9 @@ export function MenuBrowser({
 
                     <div className="flex items-center gap-2">
                       {/* Estimated prep time */}
-                      <span className="text-muted-foreground bg-muted/50 hidden sm:inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium">
+                      <span className="text-muted-foreground bg-muted/50 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium">
                         <ClockIcon className="size-3 text-muted-foreground/80" />
-                        15 dk
+                        {item.prepTimeMinutes ? `${item.prepTimeMinutes} dk` : "15 dk"}
                       </span>
 
                       {/* Quick Add / Option Trigger */}

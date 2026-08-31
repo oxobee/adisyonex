@@ -56,6 +56,12 @@ export const menuItemVariantSchema = z.object({
 });
 export type MenuItemVariantInput = z.infer<typeof menuItemVariantSchema>;
 
+export const allergenSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  icon: z.string().trim().min(1).max(10),
+});
+export type AllergenInput = z.infer<typeof allergenSchema>;
+
 // -------------------------------------------------------------------- Item ---
 
 export const createMenuItemSchema = z.object({
@@ -69,6 +75,8 @@ export const createMenuItemSchema = z.object({
   priceTaxInclusive: z.boolean().optional(),
   goodsGstRate: gstRateSchema.optional(),
   hsnSacCode: z.string().trim().max(20).optional(),
+  prepTimeMinutes: z.coerce.number().int().min(0).max(300).optional().nullable(),
+  allergens: z.array(allergenSchema).max(30).default([]),
   sortOrder: sortOrderSchema,
   isActive: z.boolean().default(true),
   variants: z.array(menuItemVariantSchema).max(20).default([]),

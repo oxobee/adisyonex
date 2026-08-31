@@ -38,6 +38,11 @@ export interface MenuItemImageDTO {
 export type DietaryType = "VEG" | "NON_VEG" | "EGG";
 export type MenuItemType = "SERVED" | "PACKAGED_GOODS";
 
+export interface AllergenDTO {
+  readonly name: string;
+  readonly icon: string;
+}
+
 export interface MenuItemDTO {
   readonly id: string;
   readonly categoryId: string;
@@ -47,6 +52,8 @@ export interface MenuItemDTO {
   readonly itemType: MenuItemType;
   readonly dietaryType: DietaryType | null;
   readonly price: number;
+  readonly prepTimeMinutes: number | null;
+  readonly allergens: readonly AllergenDTO[];
   readonly isActive: boolean;
   readonly available: boolean;
   readonly disabledReason: string | null;

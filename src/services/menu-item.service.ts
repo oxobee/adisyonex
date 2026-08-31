@@ -135,6 +135,13 @@ const mapItem = (
     itemType: item.itemType,
     dietaryType: item.dietaryType,
     price: num(item.price),
+    prepTimeMinutes: item.prepTimeMinutes ?? 15,
+    allergens: Array.isArray(item.allergens)
+      ? (item.allergens as unknown as { name: string; icon: string }[]).map((a) => ({
+          name: a.name,
+          icon: a.icon,
+        }))
+      : [],
     isActive: item.isActive,
     available: isItemAvailable(item, now),
     disabledReason: liveDisable?.reason ?? null,
@@ -229,6 +236,8 @@ const toWriteData = (
   priceTaxInclusive: input.priceTaxInclusive ?? null,
   goodsGstRate: input.goodsGstRate ?? null,
   hsnSacCode: input.hsnSacCode ?? null,
+  prepTimeMinutes: input.prepTimeMinutes ?? 15,
+  allergens: input.allergens ?? [],
   sortOrder: input.sortOrder,
   isActive: input.isActive,
   variants: input.variants.map((v) => ({
