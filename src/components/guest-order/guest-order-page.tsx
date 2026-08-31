@@ -543,7 +543,7 @@ export function GuestOrderPage({
       {/* Review sheet (Sipariş Özeti) */}
       {reviewOpen ? (
         <Dialog open onOpenChange={setReviewOpen}>
-          <DialogContent className="max-h-[90vh] w-[94vw] sm:max-w-md overflow-y-auto rounded-3xl p-4 sm:p-5">
+          <DialogContent className="max-h-[90vh] w-[94vw] sm:max-w-md overflow-x-hidden overflow-y-auto rounded-3xl p-4 sm:p-5">
             <DialogHeader className="flex flex-row items-center justify-between border-b pb-3">
               <DialogTitle className="text-lg font-black text-foreground">Sipariş Özeti</DialogTitle>
             </DialogHeader>
@@ -553,70 +553,80 @@ export function GuestOrderPage({
                 Sepetiniz henüz boş.
               </p>
             ) : (
-              <ul className="divide-y divide-border/60">
+              <div className="flex flex-col divide-y divide-border/60 overflow-x-hidden">
                 {cart.cart.map((l) => (
-                  <li key={l.key} className="flex items-start justify-between gap-3 py-3.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-sm font-bold text-foreground break-words">
+                  <div key={l.key} className="flex flex-col gap-2 py-3.5 first:pt-1">
+                    {/* Item title and line total */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-foreground leading-snug break-words">
                           {l.name}
                         </p>
-                        <span className="text-sm font-bold text-foreground tabular-nums shrink-0 whitespace-nowrap">
-                          {linePrice(l).toFixed(0)} ₺
-                        </span>
+                        {l.variantName ? (
+                          <p className="text-xs font-semibold text-primary mt-0.5">
+                            {l.variantName}
+                          </p>
+                        ) : null}
                       </div>
+                      <span className="text-sm font-black text-foreground tabular-nums shrink-0 whitespace-nowrap">
+                        {linePrice(l).toFixed(0)} ₺
+                      </span>
+                    </div>
 
-                      {l.variantName ? (
-                        <p className="text-xs font-semibold text-muted-foreground mt-0.5">
-                          {l.variantName}
-                        </p>
-                      ) : null}
-
-                      {l.modifiers.length > 0 || l.lineNote ? (
-                        <p className="text-muted-foreground text-xs mt-0.5 break-words">
-                          {[
-                            l.modifiers.map((m) => m.name).join(", "),
-                            l.lineNote,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      ) : null}
-
-                      <div className="mt-2.5 flex items-center justify-between gap-2">
-                        <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shrink-0">
-                          <button
-                            type="button"
-                            className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
-                            onClick={() => cart.changeQty(l.key, -1)}
+                    {/* Selected Options / Modifiers as wrapping badge tags */}
+                    {l.modifiers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {l.modifiers.map((m, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground leading-tight max-w-full break-words"
                           >
-                            <MinusIcon className="size-3.5 stroke-[2.5]" />
-                          </button>
-                          <span className="w-7 text-center text-xs font-bold tabular-nums">
-                            {l.quantity}
+                            {m.name}
                           </span>
-                          <button
-                            type="button"
-                            className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
-                            onClick={() => cart.changeQty(l.key, 1)}
-                          >
-                            <PlusIcon className="size-3.5 stroke-[2.5]" />
-                          </button>
-                        </div>
+                        ))}
+                      </div>
+                    ) : null}
 
+                    {l.lineNote ? (
+                      <p className="text-[11px] text-muted-foreground italic break-words mt-0.5">
+                        Not: {l.lineNote}
+                      </p>
+                    ) : null}
+
+                    {/* Quantity Selector and Remove Button */}
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shrink-0">
                         <button
                           type="button"
-                          className="text-muted-foreground hover:text-destructive flex size-7 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
-                          onClick={() => cart.removeLine(l.key)}
-                          title="Ürünü Çıkar"
+                          className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
+                          onClick={() => cart.changeQty(l.key, -1)}
                         >
-                          <Trash2Icon className="size-4" />
+                          <MinusIcon className="size-3.5 stroke-[2.5]" />
+                        </button>
+                        <span className="w-7 text-center text-xs font-bold tabular-nums">
+                          {l.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
+                          onClick={() => cart.changeQty(l.key, 1)}
+                        >
+                          <PlusIcon className="size-3.5 stroke-[2.5]" />
                         </button>
                       </div>
+
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive flex size-7 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
+                        onClick={() => cart.removeLine(l.key)}
+                        title="Ürünü Çıkar"
+                      >
+                        <Trash2Icon className="size-4" />
+                      </button>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
 
             <div className="flex items-center justify-between border-t border-dashed pt-4 mt-2">
