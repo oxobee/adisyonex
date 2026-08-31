@@ -19,7 +19,11 @@ import {
   generateQuickLongDescAction,
   generateQuickShortDescAction,
 } from "@/actions/ai.actions";
-import { createItemAction, updateItemAction } from "@/actions/menu.actions";
+import {
+  createItemAction,
+  updateItemAction,
+  uploadItemImageAction,
+} from "@/actions/menu.actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -170,10 +174,20 @@ export function ItemDialog({
     description: string;
   } | null>(null);
 
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
 
   const save = useServerAction(item ? updateItemAction : createItemAction, {
-    onSuccess: () => {
+    onSuccess: async (createdOrUpdated) => {
+      if (!item && pendingImages.length > 0 && createdOrUpdated && typeof createdOrUpdated === "object" && "id" in createdOrUpdated) {
+        const newItemId = (createdOrUpdated as any).id;
+        for (const file of pendingImages) {
+          const form = new FormData();
+          form.set("itemId", newItemId);
+          form.set("file", file);
+          await uploadItemImageAction(form);
+        }
+      }
       toast.success(item ? "Ürün güncellendi" : "Ürün eklendi");
       onOpenChange(false);
       onSaved();
@@ -736,20 +750,15 @@ export function ItemDialog({
               </div>
             ) : null}
 
-            {/* Photos with ImageManager */}
-            {item ? (
-              <ImageManager
-                itemId={item.id}
-                itemName={name}
-                itemDescription={shortDescription}
-                images={item.images}
-                onImageUpdated={onSaved}
-              />
-            ) : (
-              <p className="text-muted-foreground text-xs rounded-2xl border border-dashed p-3 text-center">
-                Ürün fotoğraflarını ürünü kaydettikten sonra düzenleme ekranından yükleyebilir veya yapay zeka ile oluşturabilirsiniz.
-              </p>
-            )}
+            {/* Photos with ImageManager (New & Edit Modes) */}
+            <ImageManager
+              itemId={item?.id}
+              itemName={name}
+              itemDescription={shortDescription}
+              images={item?.images ?? []}
+              onImageUpdated={onSaved}
+              onPendingFilesChange={(files) => setPendingImages(files)}
+            />
 
             <div className="flex items-center justify-between pt-1">
               <span className="text-sm font-medium">Satışta / Aktif</span>

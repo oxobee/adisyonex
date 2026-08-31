@@ -1,15 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CameraIcon,
-  CheckIcon,
   Loader2Icon,
   SparklesIcon,
   Trash2Icon,
+  UploadCloudIcon,
   UploadIcon,
   Wand2Icon,
 } from "lucide-react";
@@ -19,140 +19,141 @@ import {
   deleteItemImageAction,
   uploadItemImageAction,
 } from "@/actions/menu.actions";
-import {
-  enhanceAndAttachItemImageAction,
-  generateAndAttachItemImageAction,
-} from "@/actions/ai.actions";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useServerAction } from "@/hooks/use-server-action";
 import type { MenuItemImageDTO } from "@/types/menu";
+
+export interface StagedImage {
+  id?: string;
+  url: string;
+  file?: File;
+  isUploading?: boolean;
+}
 
 export function ImageManager({
   itemId,
   itemName = "Ürün",
   itemDescription = "",
-  images,
+  images = [],
   onImageUpdated,
+  onPendingFilesChange,
 }: {
-  itemId: string;
+  itemId?: string;
   itemName?: string;
   itemDescription?: string;
-  images: readonly MenuItemImageDTO[];
+  images?: readonly MenuItemImageDTO[];
   onImageUpdated?: () => void;
+  onPendingFilesChange?: (files: File[]) => void;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [optimisticPreview, setOptimisticPreview] = useState<string | null>(null);
 
-  // AI Confirmation Modal state
-  const [aiConfirmModal, setAiConfirmModal] = useState<{
-    type: "GENERATE" | "ENHANCE";
-    cost: number;
-    title: string;
-    description: string;
-  } | null>(null);
+  // Local state to keep UI in instant sync
+  const [imageList, setImageList] = useState<StagedImage[]>(
+    images.map((img) => ({ id: img.id, url: img.url }))
+  );
+  const [isDragging, setIsDragging] = useState(false);
 
-  const [aiLoading, setAiLoading] = useState(false);
+  // Sync if prop images change
+  useEffect(() => {
+    setImageList(images.map((img) => ({ id: img.id, url: img.url })));
+  }, [images]);
 
-  const remove = useServerAction(deleteItemImageAction, {
-    onSuccess: () => {
-      toast.success("Fotoğraf silindi");
-      onImageUpdated?.();
-      router.refresh();
-    },
-    onError: (message) => toast.error(message),
-  });
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
 
-  const onFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Dosya boyutu 5 MB'tan küçük olmalıdır.");
+    const availableSlots = 3 - imageList.length;
+    if (availableSlots <= 0) {
+      toast.error("En fazla 3 adet fotoğraf yükleyebilirsiniz.");
       return;
     }
 
-    // Instant local preview for zero-lag feeling
-    const localUrl = URL.createObjectURL(file);
-    setOptimisticPreview(localUrl);
-    setUploading(true);
+    const filesToProcess = Array.from(files).slice(0, availableSlots);
 
-    const form = new FormData();
-    form.set("itemId", itemId);
-    form.set("file", file);
+    for (const file of filesToProcess) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} boyutu 5 MB'tan büyük olduğu için yüklenemedi.`);
+        continue;
+      }
 
-    const result = await uploadItemImageAction(form);
-    setUploading(false);
-    setOptimisticPreview(null);
-    URL.revokeObjectURL(localUrl);
+      const localBlobUrl = URL.createObjectURL(file);
 
-    if (inputRef.current) inputRef.current.value = "";
+      if (itemId) {
+        // Edit mode: Optimistic UI addition immediately
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        setImageList((prev) => [
+          ...prev,
+          { id: tempId, url: localBlobUrl, isUploading: true },
+        ]);
 
-    if (result.success) {
-      toast.success("Fotoğraf başarıyla yüklendi!");
-      onImageUpdated?.();
-      router.refresh();
-    } else {
-      toast.error(result.error ?? "Yükleme başarısız oldu");
-    }
-  };
+        // Upload in background
+        const form = new FormData();
+        form.set("itemId", itemId);
+        form.set("file", file);
 
-  const handleAiActionConfirm = async () => {
-    if (!aiConfirmModal) return;
-    setAiLoading(true);
-
-    try {
-      if (aiConfirmModal.type === "GENERATE") {
-        const res = await generateAndAttachItemImageAction({
-          itemId,
-          name: itemName,
-          description: itemDescription || undefined,
-        });
-
-        if (res.success) {
-          toast.success("Yapay zeka ile stüdyo fotoğrafı oluşturuldu ve ürüne eklendi!");
-          setAiConfirmModal(null);
-          onImageUpdated?.();
-          router.refresh();
-        } else {
-          toast.error(res.error || "İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
+        try {
+          const res = await uploadItemImageAction(form);
+          if (res.success && res.data) {
+            setImageList((prev) =>
+              prev.map((item) =>
+                item.id === tempId
+                  ? { id: res.data!.id, url: res.data!.url, isUploading: false }
+                  : item
+              )
+            );
+            toast.success("Fotoğraf eklendi!");
+            onImageUpdated?.();
+            router.refresh();
+          } else {
+            setImageList((prev) => prev.filter((item) => item.id !== tempId));
+            toast.error(res.error || "Görsel yüklenemedi.");
+          }
+        } catch {
+          setImageList((prev) => prev.filter((item) => item.id !== tempId));
+          toast.error("Görsel yüklenirken bir hata oluştu.");
         }
       } else {
-        // ENHANCE
-        const firstImg = images[0];
-        if (!firstImg) {
-          toast.error("Güzelleştirilecek görsel bulunamadı.");
-          return;
-        }
-
-        const res = await enhanceAndAttachItemImageAction({
-          itemId,
-          imageUrl: firstImg.url,
-          dishName: itemName,
+        // Create mode (New item): Stage file locally
+        setImageList((prev) => {
+          const updated = [...prev, { url: localBlobUrl, file }];
+          const pending = updated.filter((x) => x.file).map((x) => x.file!);
+          onPendingFilesChange?.(pending);
+          return updated;
         });
+        toast.success("Fotoğraf eklendi (Ürün kaydedildiğinde yüklenecek)");
+      }
+    }
 
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const handleRemove = async (indexToRemove: number) => {
+    const target = imageList[indexToRemove];
+    if (!target) return;
+
+    // Remove from UI INSTANTLY with zero lag
+    setImageList((prev) => {
+      const updated = prev.filter((_, i) => i !== indexToRemove);
+      const pending = updated.filter((x) => x.file).map((x) => x.file!);
+      onPendingFilesChange?.(pending);
+      return updated;
+    });
+
+    // If already saved on server, delete via action
+    if (target.id && !target.id.startsWith("temp-")) {
+      try {
+        const res = await deleteItemImageAction({ imageId: target.id });
         if (res.success) {
-          toast.success("Fotoğrafınız yapay zeka ile profesyonel stüdyo kalitesine yükseltildi!");
-          setAiConfirmModal(null);
+          toast.success("Fotoğraf silindi!");
           onImageUpdated?.();
           router.refresh();
         } else {
-          toast.error(res.error || "İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
+          toast.error(res.error || "Fotoğraf silinemedi.");
         }
+      } catch {
+        toast.error("Fotoğraf silinirken bir hata oluştu.");
       }
-    } catch (err: any) {
-      toast.error(err.message || "İşlem başarısız oldu, lütfen yeniden deneyiniz. Kredileriniz geri yüklendi.");
-    } finally {
-      setAiLoading(false);
+    } else {
+      toast.success("Fotoğraf kaldırıldı!");
     }
   };
 
@@ -163,93 +164,107 @@ export function ImageManager({
           <CameraIcon className="size-4 text-primary" />
           Ürün Fotoğrafları
         </span>
-        <span className="text-[11px] text-muted-foreground">
-          {images.length}/3 Fotoğraf
+        <span className="text-[11px] font-semibold text-muted-foreground tabular-nums">
+          {imageList.length} / 3 Fotoğraf
         </span>
       </div>
 
-      {/* Image Thumbnails Gallery */}
-      <div className="flex flex-wrap items-center gap-2.5">
-        {images.map((img) => (
-          <div key={img.id} className="relative size-20 shrink-0 group">
-            <div className="bg-muted relative size-20 overflow-hidden rounded-2xl border border-border/80 shadow-xs transition-transform duration-200 group-hover:scale-105">
-              <Image
-                src={img.url}
-                alt={itemName}
-                fill
-                className="object-cover object-center"
-                sizes="80px"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => remove.execute({ imageId: img.id })}
-              className="absolute -top-1.5 -right-1.5 z-10 flex size-6 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-transform active:scale-90 cursor-pointer"
-              aria-label="Fotoğrafı sil"
-              title="Fotoğrafı Sil"
-            >
-              <Trash2Icon className="size-3" />
-            </button>
-          </div>
-        ))}
-
-        {/* Optimistic Preview with Spinner while Uploading */}
-        {optimisticPreview && (
-          <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl border-2 border-primary/50 bg-muted shadow-sm animate-pulse flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={optimisticPreview}
-              alt="Yükleniyor"
-              className="size-full object-cover opacity-60"
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white gap-1">
-              <Loader2Icon className="size-5 animate-spin" />
-              <span className="text-[9px] font-bold">Yükleniyor</span>
-            </div>
+      {/* DRAG & DROP ZONE AND THUMBNAILS */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          handleFiles(e.dataTransfer.files);
+        }}
+        className={`relative flex flex-col gap-3 rounded-2xl border-2 border-dashed p-3.5 transition-all ${
+          isDragging
+            ? "border-primary bg-primary/10 scale-[1.01]"
+            : "border-border/80 bg-card hover:border-primary/40"
+        }`}
+      >
+        {/* Thumbnails list */}
+        {imageList.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            {imageList.map((img, idx) => (
+              <div key={img.id || idx} className="relative size-20 shrink-0 group">
+                <div className="bg-muted relative size-20 overflow-hidden rounded-2xl border border-border/80 shadow-xs transition-transform duration-200 group-hover:scale-105">
+                  <Image
+                    src={img.url}
+                    alt={itemName}
+                    fill
+                    className="object-cover object-center"
+                    sizes="80px"
+                  />
+                  {img.isUploading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white gap-1">
+                      <Loader2Icon className="size-4 animate-spin text-white" />
+                      <span className="text-[9px] font-bold">Yükleniyor</span>
+                    </div>
+                  )}
+                </div>
+                {!img.isUploading && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(idx)}
+                    className="absolute -top-1.5 -right-1.5 z-10 flex size-6 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-transform active:scale-90 cursor-pointer"
+                    aria-label="Fotoğrafı sil"
+                    title="Fotoğrafı Kaldır"
+                  >
+                    <Trash2Icon className="size-3" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Upload Button */}
-        {images.length < 3 && !optimisticPreview && (
-          <button
-            type="button"
+        {/* Upload Trigger Area */}
+        {imageList.length < 3 && (
+          <div
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="flex size-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-border/80 bg-card hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all duration-200 active:scale-95 cursor-pointer"
-            aria-label="Fotoğraf ekle"
+            className="flex flex-col items-center justify-center gap-1.5 py-4 px-2 text-center rounded-xl hover:bg-muted/40 cursor-pointer transition-colors"
           >
-            {uploading ? (
-              <Loader2Icon className="size-5 animate-spin text-primary" />
-            ) : (
-              <>
-                <UploadIcon className="size-5" />
-                <span className="text-[10px] font-bold">Görsel Seç</span>
-              </>
-            )}
-          </button>
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <UploadCloudIcon className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-foreground">
+                Fotoğraf Yükleyin veya Sürükleyip Bırakın
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                PNG, JPG, WEBP (Maks. 5 MB) · Kalan slot: {3 - imageList.length}
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       <input
         ref={inputRef}
         type="file"
+        multiple
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
-        onChange={onFile}
+        onChange={(e) => handleFiles(e.target.files)}
       />
 
-      {/* AI BUTTONS: IF NO IMAGE -> OPEN IMAGE STUDIO WITH PREFILLED DATA */}
+      {/* AI STUDIO DIRECT BUTTONS */}
       <div className="mt-1 flex items-center gap-2">
-        {images.length === 0 ? (
+        {imageList.length === 0 ? (
           <Button
             size="sm"
             variant="outline"
             className="w-full h-9 rounded-xl font-bold text-xs gap-1.5 border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
             render={
               <Link
-                href={`/dashboard/ai-studio/image-studio?itemId=${encodeURIComponent(
-                  itemId,
-                )}&name=${encodeURIComponent(itemName)}&desc=${encodeURIComponent(
+                href={`/dashboard/ai-studio/image-studio?${
+                  itemId ? `itemId=${encodeURIComponent(itemId)}&` : ""
+                }name=${encodeURIComponent(itemName)}&desc=${encodeURIComponent(
                   itemDescription || "",
                 )}`}
               />
@@ -265,9 +280,9 @@ export function ImageManager({
             className="w-full h-9 rounded-xl font-bold text-xs gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
             render={
               <Link
-                href={`/dashboard/ai-studio/photo-enhance?itemId=${encodeURIComponent(
-                  itemId,
-                )}&name=${encodeURIComponent(itemName)}`}
+                href={`/dashboard/ai-studio/photo-enhance?${
+                  itemId ? `itemId=${encodeURIComponent(itemId)}&` : ""
+                }name=${encodeURIComponent(itemName)}`}
               />
             }
           >
@@ -276,60 +291,6 @@ export function ImageManager({
           </Button>
         )}
       </div>
-
-      {/* AI CREDIT CONFIRMATION MODAL */}
-      {aiConfirmModal && (
-        <Dialog open onOpenChange={(open) => !open && !aiLoading && setAiConfirmModal(null)}>
-          <DialogContent className="max-w-sm rounded-3xl p-6">
-            <DialogHeader>
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-purple-500/20 text-purple-600 dark:text-purple-400 mx-auto mb-2 shadow-xs">
-                <SparklesIcon className="size-6 text-amber-500" />
-              </div>
-              <DialogTitle className="text-center font-black text-base">
-                {aiConfirmModal.title}
-              </DialogTitle>
-              <DialogDescription className="text-center text-xs mt-1 leading-relaxed">
-                {aiConfirmModal.description}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="rounded-2xl border bg-muted/40 p-3.5 my-2 text-xs flex items-center justify-between">
-              <span className="font-semibold text-muted-foreground">Kullanılacak Kredi:</span>
-              <span className="font-black text-amber-600 dark:text-amber-400 tabular-nums">
-                {aiConfirmModal.cost} AI Kredisi
-              </span>
-            </div>
-
-            <DialogFooter className="flex gap-2 sm:justify-center mt-2">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-xl font-bold text-xs"
-                disabled={aiLoading}
-                onClick={() => setAiConfirmModal(null)}
-              >
-                Vazgeç
-              </Button>
-              <Button
-                className="flex-1 rounded-xl font-bold text-xs bg-primary text-primary-foreground gap-1.5 cursor-pointer"
-                disabled={aiLoading}
-                onClick={handleAiActionConfirm}
-              >
-                {aiLoading ? (
-                  <>
-                    <Loader2Icon className="size-3.5 animate-spin" />
-                    İşleniyor…
-                  </>
-                ) : (
-                  <>
-                    <CheckIcon className="size-3.5" />
-                    Onayla & Üret
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }
