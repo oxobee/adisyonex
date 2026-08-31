@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -28,6 +30,7 @@ export function NavUser({
     contact: string
   }
 }) {
+  const router = useRouter()
   const { isMobile } = useSidebar()
   const initials =
     user.name
@@ -79,26 +82,34 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <CircleUserRoundIcon
-                />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push("/dashboard/settings")}
+              >
+                <CircleUserRoundIcon />
                 Hesap Bilgileri
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon
-                />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push("/dashboard/settings")}
+              >
+                <CreditCardIcon />
                 Faturalandırma
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push("/dashboard/orders")}
+              >
+                <BellIcon />
                 Bildirimler
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => void logoutAction()}>
-              <LogOutIcon
-              />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => void logoutAction()}
+            >
+              <LogOutIcon />
               Çıkış Yap
             </DropdownMenuItem>
           </DropdownMenuContent>
