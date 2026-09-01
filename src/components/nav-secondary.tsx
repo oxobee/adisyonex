@@ -43,6 +43,7 @@ export function NavSecondary({
                 render={
                   <Link
                     href={item.url}
+                    prefetch={true}
                     onClick={() => setOpenMobile(false)}
                   />
                 }

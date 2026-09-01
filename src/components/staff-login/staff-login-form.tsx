@@ -211,7 +211,7 @@ export function StaffLoginForm({
       <div
         className={cn(
           "flex flex-col items-center gap-3 transition-all",
-          shakeError && "animate-[shake_0.5s_ease-in-out]",
+          shakeError && "animate-shake",
         )}
       >
         <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">

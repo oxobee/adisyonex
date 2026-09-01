@@ -54,6 +54,7 @@ export function NavMain({
                   render={
                     <Link
                       href={item.url}
+                      prefetch={true}
                       onClick={() => setOpenMobile(false)}
                     />
                   }
