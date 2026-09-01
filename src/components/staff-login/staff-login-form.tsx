@@ -19,9 +19,11 @@ const AUTH_ERRORS: Record<string, string> = {
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const ROLE_LABEL: Record<string, string> = {
-  WAITER: "Garson / Servis",
+  WAITER: "Garson",
   KITCHEN: "Mutfak / Aşçı",
-  MANAGEMENT: "Yönetici / Kasa",
+  CASHIER: "Kasa",
+  MANAGEMENT: "Yönetici",
+  OTHER: "Diğer",
   ADMIN: "Yönetici",
   STAFF: "Personel",
 };
@@ -29,7 +31,9 @@ const ROLE_LABEL: Record<string, string> = {
 const ROLE_ICON: Record<string, string> = {
   WAITER: "🍽️",
   KITCHEN: "🍳",
+  CASHIER: "💳",
   MANAGEMENT: "👑",
+  OTHER: "👤",
   ADMIN: "👑",
   STAFF: "👤",
 };
@@ -95,7 +99,7 @@ export function StaffLoginForm({
     { id: "ALL", label: "Tümü", icon: "👥", count: staff.length },
     {
       id: "WAITER",
-      label: "Garson & Servis",
+      label: "Garson",
       icon: "🍽️",
       count: staff.filter((s) => s.role === "WAITER").length,
     },
@@ -106,10 +110,22 @@ export function StaffLoginForm({
       count: staff.filter((s) => s.role === "KITCHEN").length,
     },
     {
+      id: "CASHIER",
+      label: "Kasa",
+      icon: "💳",
+      count: staff.filter((s) => s.role === "CASHIER").length,
+    },
+    {
       id: "MANAGEMENT",
-      label: "Yönetici & Kasa",
+      label: "Yönetici",
       icon: "👑",
       count: staff.filter((s) => s.role === "MANAGEMENT").length,
+    },
+    {
+      id: "OTHER",
+      label: "Diğer",
+      icon: "👤",
+      count: staff.filter((s) => s.role === "OTHER").length,
     },
   ].filter((c) => c.id === "ALL" || c.count > 0);
 

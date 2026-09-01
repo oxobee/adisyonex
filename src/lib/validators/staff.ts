@@ -3,7 +3,13 @@ import { z } from "zod";
 import { idSchema } from "@/lib/validators/shared";
 import { usernameSchema } from "@/lib/validators/restaurant";
 
-export const staffRoleSchema = z.enum(["WAITER", "KITCHEN", "MANAGEMENT"]);
+export const staffRoleSchema = z.enum([
+  "WAITER",
+  "KITCHEN",
+  "MANAGEMENT",
+  "CASHIER",
+  "OTHER",
+]);
 export const staffStatusSchema = z.enum(["ACTIVE", "ON_LEAVE", "INACTIVE"]);
 export const employmentTypeSchema = z.enum([
   "FULL_TIME",

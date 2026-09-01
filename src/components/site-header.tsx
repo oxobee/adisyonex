@@ -13,7 +13,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 const ROLE_LABELS: Record<string, string> = {
   WAITER: "Garson",
   KITCHEN: "Mutfak",
+  CASHIER: "Kasa",
   MANAGEMENT: "Yönetici",
+  OTHER: "Diğer",
   ADMIN: "Yönetici",
   STAFF: "Personel",
 };

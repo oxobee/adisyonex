@@ -1,4 +1,4 @@
-export type StaffRole = "WAITER" | "KITCHEN" | "MANAGEMENT";
+export type StaffRole = "WAITER" | "KITCHEN" | "MANAGEMENT" | "CASHIER" | "OTHER";
 export type StaffStatus = "ACTIVE" | "ON_LEAVE" | "INACTIVE";
 export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT";
 export type Gender = "MALE" | "FEMALE" | "OTHER";

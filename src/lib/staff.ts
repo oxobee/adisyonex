@@ -6,9 +6,11 @@ import type {
 } from "@/types/staff";
 
 export const STAFF_ROLE_OPTIONS: readonly { value: StaffRole; label: string }[] = [
-  { value: "WAITER", label: "Garson / Servis" },
+  { value: "WAITER", label: "Garson" },
   { value: "KITCHEN", label: "Mutfak / Aşçı" },
-  { value: "MANAGEMENT", label: "Yönetici / Kasa" },
+  { value: "CASHIER", label: "Kasa" },
+  { value: "MANAGEMENT", label: "Yönetici" },
+  { value: "OTHER", label: "Diğer" },
 ];
 
 export const STAFF_STATUS_OPTIONS: readonly {

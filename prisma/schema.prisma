@@ -650,6 +650,8 @@ enum StaffRole {
   WAITER
   KITCHEN
   MANAGEMENT
+  CASHIER
+  OTHER
 }
 
 enum StaffStatus {

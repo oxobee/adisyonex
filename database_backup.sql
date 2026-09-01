@@ -289,7 +289,9 @@ ALTER TYPE public."RestaurantFormat" OWNER TO ugurugurlu;
 CREATE TYPE public."StaffRole" AS ENUM (
     'WAITER',
     'KITCHEN',
-    'MANAGEMENT'
+    'MANAGEMENT',
+    'CASHIER',
+    'OTHER'
 );
 
 
