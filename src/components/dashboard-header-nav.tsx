@@ -225,7 +225,7 @@ export function DashboardHeaderNav({
       {/* 2. MAIN HEADER BAR */}
       <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur-2xl transition-all shadow-xs">
         <div className="flex h-16 w-full items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
-          {/* 1. Left: Brand Logo & Mobile Toggle */}
+          {/* 1. Left: Mobile Toggle (Mobile) / Brand Logo & Name (Desktop) */}
           <div className="flex items-center gap-3 shrink-0">
             {/* Mobile Hamburger Button */}
             <button
@@ -237,14 +237,14 @@ export function DashboardHeaderNav({
               <MenuIcon className="size-5" />
             </button>
 
-            {/* Brand Logo */}
+            {/* Desktop Brand Logo (Icon PNG without background box + Name) */}
             <Link
               href="/dashboard/orders"
               prefetch={true}
-              className="flex items-center gap-2.5 group select-none cursor-pointer"
+              className="hidden xl:flex items-center gap-2.5 group select-none cursor-pointer"
             >
               {systemSettings?.faviconUrl || systemSettings?.logoUrl ? (
-                <div className="relative size-9 shrink-0 overflow-hidden rounded-lg border border-primary/20 bg-primary/5 p-0.5 group-hover:scale-105 transition-transform">
+                <div className="relative size-8 shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
                   <Image
                     src={systemSettings.faviconUrl || systemSettings.logoUrl || ""}
                     alt="Logo"
@@ -254,12 +254,12 @@ export function DashboardHeaderNav({
                   />
                 </div>
               ) : (
-                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                <div className="flex size-8 items-center justify-center text-primary group-hover:scale-105 transition-transform">
                   <UtensilsCrossedIcon className="size-5" />
                 </div>
               )}
 
-              <div className="hidden sm:flex flex-col">
+              <div className="flex flex-col">
                 <span className="text-sm font-black tracking-tight text-foreground group-hover:text-primary transition-colors">
                   {systemSettings?.systemName || "AdisyonEx"}
                 </span>
@@ -270,7 +270,32 @@ export function DashboardHeaderNav({
             </Link>
           </div>
 
-          {/* 2. Middle: Navigation items in crisp slightly rounded button style */}
+          {/* 2. Mobile Center: Horizontal Logo ONLY (Yatay logo ortalı, ikon yok) */}
+          <div className="flex xl:hidden flex-1 items-center justify-center min-w-0 px-2">
+            <Link
+              href="/dashboard/orders"
+              prefetch={true}
+              className="flex items-center justify-center select-none"
+            >
+              {systemSettings?.logoUrl ? (
+                <div className="relative h-7 w-36 max-w-[170px]">
+                  <Image
+                    src={systemSettings.logoUrl}
+                    alt={systemSettings.systemName || "Logo"}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <span className="text-sm font-black text-foreground truncate">
+                  {systemSettings?.systemName || "AdisyonEx"}
+                </span>
+              )}
+            </Link>
+          </div>
+
+          {/* 3. Middle: Desktop Navigation items in crisp slightly rounded button style */}
           <nav className="hidden xl:flex items-center gap-1.5 flex-1 justify-center max-w-5xl">
             {NAV_ITEMS.map((item) => {
               const active = isActiveRoute(pathname, item.url);
@@ -304,23 +329,26 @@ export function DashboardHeaderNav({
             })}
           </nav>
 
-          {/* 3. Right: Rectangular Profile Photo Avatar (Çok hafif yuvarlatılmış dikdörtgen) */}
+          {/* 4. Right: Rectangular Profile Photo Avatar (Default Avatar Image) */}
           <div className="flex items-center gap-3 shrink-0">
             <div ref={profileRef} className="relative">
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((p) => !p)}
                 className={cn(
-                  "relative flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 ring-1 ring-primary/15 bg-gradient-to-br from-primary/20 via-amber-500/10 to-primary/10 text-primary shadow-xs hover:border-primary hover:ring-primary/40 hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer select-none outline-none overflow-hidden",
+                  "relative flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 ring-1 ring-primary/15 bg-muted/40 shadow-xs hover:border-primary hover:ring-primary/40 hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer select-none outline-none overflow-hidden p-0.5",
                   isProfileOpen && "ring-2 ring-primary border-primary scale-105 shadow-md",
                 )}
                 aria-label="Profil Menüsü"
               >
-                <Avatar className="size-full rounded-lg">
-                  <AvatarFallback className="rounded-lg text-xs font-black text-primary bg-transparent">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative size-full rounded-md overflow-hidden">
+                  <Image
+                    src="/default-avatar.png"
+                    alt={user.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               </button>
 
               {/* Categorized Dropdown Menu */}
@@ -329,11 +357,14 @@ export function DashboardHeaderNav({
                   {/* Top Profile Header with X Close Button */}
                   <div className="flex items-center justify-between p-2 pb-3 border-b border-border/60">
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar className="size-10 shrink-0 rounded-lg border border-primary/30 ring-1 ring-primary/20 bg-primary/10 text-primary shadow-xs">
-                        <AvatarFallback className="rounded-lg text-sm font-black text-primary">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative size-11 shrink-0 rounded-lg border border-primary/30 ring-1 ring-primary/20 overflow-hidden bg-muted/40 shadow-xs">
+                        <Image
+                          src="/default-avatar.png"
+                          alt={user.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-black text-foreground truncate">
                           {user.name}
