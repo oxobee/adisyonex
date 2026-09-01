@@ -123,12 +123,17 @@
   }
   body {
     @apply bg-background text-foreground;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
   html {
     @apply font-sans;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
   }
   h1,
   h2,
@@ -138,6 +143,20 @@
   h6 {
     font-family: var(--font-heading);
   }
+}
+
+/* Micro-animations & Interactive Effects */
+.btn-press {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+}
+.btn-press:active {
+  transform: scale(0.96);
+}
+.card-hover {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
 }
 
 /* Print: strip dashboard chrome so KOT / invoice routes print clean. */

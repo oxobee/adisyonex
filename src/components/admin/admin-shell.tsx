@@ -11,9 +11,11 @@ export function AdminShell({
   readonly systemSettings?: Partial<SystemSettingsDTO> | null;
 }) {
   return (
-    <div className="flex min-h-svh">
+    <div className="flex flex-col md:flex-row min-h-screen bg-background text-foreground overflow-x-hidden">
       <AdminNav systemSettings={systemSettings} />
-      <main className="min-w-0 flex-1 p-6">{children}</main>
+      <main className="min-w-0 flex-1 p-3.5 sm:p-6 lg:p-8 max-w-full overflow-x-auto">
+        {children}
+      </main>
     </div>
   );
 }

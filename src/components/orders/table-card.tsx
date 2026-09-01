@@ -142,7 +142,7 @@ export function TableCard({
         }
       }}
       className={cn(
-        "group relative flex flex-col justify-between overflow-hidden rounded-2xl p-3.5 transition-all duration-200 select-none cursor-pointer text-white shadow-md active:scale-95",
+        "group relative flex flex-col justify-between overflow-hidden rounded-2xl p-3.5 transition-all duration-200 select-none cursor-pointer text-white shadow-md hover:-translate-y-1 hover:shadow-xl active:scale-95 btn-press",
         // Color coding:
         status === "EMPTY" &&
           "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/15",
@@ -158,7 +158,7 @@ export function TableCard({
           "ring-4 ring-amber-400 ring-offset-2 ring-offset-background animate-pulse shadow-xl shadow-amber-500/40",
         // Spotlight Selected State:
         isSelected &&
-          "ring-4 ring-white/90 shadow-2xl",
+          "ring-4 ring-white/90 shadow-2xl scale-102",
       )}
     >
       {/* Top Header: Table Name + Live Elapsed Time or Status */}

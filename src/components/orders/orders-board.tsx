@@ -473,56 +473,30 @@ export function OrdersBoard({
           description="Canlı masa doluluğu, salon adisyonları ve anlık hesap yönetimi."
         />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <SoundToggle supported={supported} enabled={enabled} onToggle={toggle} />
-
-          {/* View Mode Switcher */}
-          <div className="flex items-center rounded-2xl border border-border/80 bg-muted/40 p-1">
-            <button
-              type="button"
+        <div className="flex items-center gap-2">
+          {viewMode === "COMPLETED" ? (
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setViewMode("TABLE_GRID")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                viewMode === "TABLE_GRID"
-                  ? "bg-card text-foreground shadow-xs scale-102"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              className="rounded-2xl text-xs font-bold gap-1.5 shadow-xs cursor-pointer"
             >
-              <GridIcon className="size-3.5" />
-              <span>Masa Planı</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("ORDER_LIST")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                viewMode === "ORDER_LIST"
-                  ? "bg-card text-foreground shadow-xs scale-102"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <ListIcon className="size-3.5" />
-              <span>Açık Adisyonlar ({open.length})</span>
-            </button>
-            <button
-              type="button"
+              <GridIcon className="size-3.5 text-primary" />
+              <span>Canlı Masalara Dön</span>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setViewMode("COMPLETED")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                viewMode === "COMPLETED"
-                  ? "bg-card text-foreground shadow-xs scale-102"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              className="rounded-2xl text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 border-border/80 bg-background/80 shadow-2xs hover:bg-muted cursor-pointer"
+              title="Kapanan & Geçmiş Adisyonlar"
             >
-              <ReceiptIcon className="size-3.5" />
-              <span>Kapananlar ({completed.length})</span>
-            </button>
-          </div>
-
-          <Button className="rounded-xl font-bold" render={<Link href="/dashboard/pos" />}>
-            <PlusCircleIcon className="size-4 mr-1.5" />
-            Yeni Sipariş / POS
-          </Button>
+              <ReceiptIcon className="size-3.5 text-muted-foreground" />
+              <span className="hidden sm:inline">Kapanan Adisyonlar</span>
+              <span className="text-[11px] font-bold tabular-nums text-foreground/80">({completed.length})</span>
+            </Button>
+          )}
         </div>
       </div>
 
