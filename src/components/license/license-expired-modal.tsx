@@ -19,23 +19,23 @@ export function LicenseExpiredModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex min-h-screen w-screen items-center justify-center bg-background/80 p-4 backdrop-blur-2xl overflow-y-auto animate-in fade-in-0 duration-300">
-      <div className="my-auto flex w-full max-w-xl flex-col gap-5 text-center">
+    <div className="fixed inset-0 z-[9999] flex min-h-screen w-screen items-center justify-center bg-background/80 p-3 sm:p-4 backdrop-blur-2xl overflow-y-auto animate-in fade-in-0 duration-300">
+      <div className="my-auto flex w-full max-w-xl flex-col gap-4 sm:gap-5 text-center">
         {/* Warning Banner */}
-        <div className="relative overflow-hidden rounded-3xl border border-destructive/30 bg-destructive/10 p-6 shadow-2xl">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-destructive/20 text-destructive shadow-inner ring-8 ring-destructive/10 animate-bounce">
-            <LockIcon className="size-8" />
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-destructive/30 bg-destructive/10 p-4 sm:p-6 shadow-2xl">
+          <div className="mx-auto flex size-12 sm:size-16 items-center justify-center rounded-2xl bg-destructive/20 text-destructive shadow-inner ring-4 sm:ring-8 ring-destructive/10 animate-bounce">
+            <LockIcon className="size-6 sm:size-8" />
           </div>
 
-          <h2 className="mt-4 text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+          <h2 className="mt-3 sm:mt-4 text-xl sm:text-3xl font-black tracking-tight text-foreground">
             Lisansınızın Süresi Dolmuştur
           </h2>
 
-          <p className="mt-2 text-sm sm:text-base font-semibold text-destructive leading-relaxed">
+          <p className="mt-1.5 sm:mt-2 text-xs sm:text-base font-semibold text-destructive leading-relaxed">
             Lütfen satış temsilcinizle iletişime geçiniz!
           </p>
 
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground">
             İşletmeniz ({licenseInfo.restaurantName}) için aktif bir abonelik veya lisans yenilemesi gerekmektedir.
           </p>
         </div>

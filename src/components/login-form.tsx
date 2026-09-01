@@ -58,7 +58,7 @@ export function LoginForm({
   })
 
   const verifyPin = useServerAction(verifyPinAction, {
-    redirectTo: "/dashboard",
+    redirectTo: "/dashboard/orders",
     onError: (message) => {
       setError(toAuthMessage(message))
       if (message === "PIN_LOCKED") {
@@ -68,7 +68,7 @@ export function LoginForm({
   })
 
   const verify = useServerAction(verifyOtpAction, {
-    redirectTo: "/dashboard",
+    redirectTo: "/dashboard/orders",
     onError: (message) => setError(toAuthMessage(message)),
   })
 

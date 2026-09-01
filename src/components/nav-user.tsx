@@ -345,15 +345,15 @@ export function NavUser({
 
           {/* Sales Representative Card Modal */}
           <Dialog open={isSalesRepModalOpen} onOpenChange={setIsSalesRepModalOpen}>
-            <DialogContent className="max-w-lg rounded-3xl p-6 shadow-2xl border-primary/20">
-              <DialogHeader className="mb-2">
-                <div className="flex items-center gap-2 text-primary mb-1">
-                  <HeadphonesIcon className="size-5" />
-                  <span className="text-xs font-black uppercase tracking-wider">
+            <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border-primary/20">
+              <DialogHeader className="mb-1 text-left">
+                <div className="flex items-center gap-1.5 text-primary mb-0.5">
+                  <HeadphonesIcon className="size-4" />
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">
                     Özel Müşteri Danışmanı
                   </span>
                 </div>
-                <DialogTitle className="text-xl font-black">
+                <DialogTitle className="text-lg sm:text-xl font-black">
                   Yetkili Satış & Lisans Temsilciniz
                 </DialogTitle>
               </DialogHeader>

@@ -37,14 +37,23 @@ export function PwaInstallPrompt({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // 0. If user previously installed, never show again
+    if (localStorage.getItem("pwa_installed") === "true") {
+      return;
+    }
+
     // 1. Check if already installed / running as standalone PWA
     const checkStandalone = () => {
       const isStandaloneMode =
         window.matchMedia("(display-mode: standalone)").matches ||
         (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
         document.referrer.includes("android-app://");
-      setIsStandalone(Boolean(isStandaloneMode));
-      return isStandaloneMode;
+      if (isStandaloneMode) {
+        setIsStandalone(true);
+        localStorage.setItem("pwa_installed", "true");
+        return true;
+      }
+      return false;
     };
 
     if (checkStandalone()) {
@@ -58,21 +67,31 @@ export function PwaInstallPrompt({
         .catch((err) => console.log("SW registration notice:", err));
     }
 
-    // 3. Detect iOS Safari
+    // 3. Listen for appinstalled event (browser signals successful install)
+    const handleAppInstalled = () => {
+      localStorage.setItem("pwa_installed", "true");
+      setIsVisible(false);
+    };
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    // 4. Detect iOS Safari
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIos(isIosDevice);
 
-    // 4. Check dismiss cooldown from localStorage (24 hours)
+    // 5. Check dismiss cooldown from localStorage (1 hour)
+    const ONE_HOUR_MS = 60 * 60 * 1000;
     const dismissedAt = localStorage.getItem("pwa_install_dismissed_at");
     if (dismissedAt) {
       const timeDiff = Date.now() - parseInt(dismissedAt, 10);
-      if (timeDiff < 24 * 60 * 60 * 1000) {
-        return;
+      if (timeDiff < ONE_HOUR_MS) {
+        return () => {
+          window.removeEventListener("appinstalled", handleAppInstalled);
+        };
       }
     }
 
-    // 5. Listen to beforeinstallprompt event (Android / Chromium / Desktop)
+    // 6. Listen to beforeinstallprompt event (Android / Chromium / Desktop)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -88,11 +107,13 @@ export function PwaInstallPrompt({
       }, 3500);
       return () => {
         clearTimeout(timer);
+        window.removeEventListener("appinstalled", handleAppInstalled);
         window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       };
     }
 
     return () => {
+      window.removeEventListener("appinstalled", handleAppInstalled);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
@@ -102,6 +123,7 @@ export function PwaInstallPrompt({
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
       if (choiceResult.outcome === "accepted") {
+        localStorage.setItem("pwa_installed", "true");
         setIsVisible(false);
       }
       setDeferredPrompt(null);

@@ -8,8 +8,6 @@ import {
   MessageSquareIcon,
   PhoneCallIcon,
   PhoneIcon,
-  SparklesIcon,
-  UserCheckIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +17,6 @@ import type { LicenseSalesRepDTO } from "@/services/license.service";
 export function SalesRepCard({
   salesRep,
   className,
-  compact = false,
 }: {
   readonly salesRep?: LicenseSalesRepDTO | null;
   readonly className?: string;
@@ -30,7 +27,9 @@ export function SalesRepCard({
   const repPhone = salesRep?.phone || "+90 (850) 000 00 00";
   const repEmail = salesRep?.email || "destek@elitalerestro.com";
   const repWhatsapp = salesRep?.whatsapp || repPhone.replace(/[^0-9]/g, "");
-  const repNotes = salesRep?.notes || "Hafta içi & Hafta sonu 09:00 - 22:00 saatleri arasında kesintisiz destek alabilirsiniz.";
+  const repNotes =
+    salesRep?.notes ||
+    "Hafta içi & Hafta sonu kesintisiz destek ve lisans uzatma hizmeti alabilirsiniz.";
 
   const initials =
     repName
@@ -46,29 +45,29 @@ export function SalesRepCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 p-6 shadow-xl text-left",
+        "relative overflow-hidden rounded-2xl sm:rounded-3xl border border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 p-4 sm:p-6 shadow-xl text-left w-full",
         className,
       )}
     >
       {/* Top Background Glow */}
       <div className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-primary/10 blur-2xl" />
 
-      {/* Category Badge */}
-      <div className="mb-4 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-primary shadow-2xs">
-          <HeadphonesIcon className="size-3.5" />
-          <span>Yetkili Satış & Lisans Temsilciniz</span>
+      {/* Category Badge & Status Header */}
+      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] sm:text-xs font-black uppercase tracking-wider text-primary shadow-2xs">
+          <HeadphonesIcon className="size-3.5 shrink-0" />
+          <span>Yetkili Satış Temsilciniz</span>
         </span>
 
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
           <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Çevrimiçi & Aktif
+          Çevrimiçi
         </span>
       </div>
 
       {/* Main Rep Profile */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pb-5 border-b border-border/60">
-        <div className="relative size-16 sm:size-20 shrink-0 overflow-hidden rounded-2xl border-2 border-primary/30 shadow-md bg-primary/10">
+      <div className="flex items-center gap-3 sm:gap-4 pb-4 border-b border-border/60">
+        <div className="relative size-14 sm:size-18 shrink-0 overflow-hidden rounded-2xl border-2 border-primary/30 shadow-md bg-primary/10">
           {salesRep?.photoUrl ? (
             <Image
               src={salesRep.photoUrl}
@@ -79,7 +78,7 @@ export function SalesRepCard({
             />
           ) : (
             <Avatar className="size-full rounded-2xl">
-              <AvatarFallback className="rounded-2xl text-xl font-black text-primary bg-primary/10">
+              <AvatarFallback className="rounded-2xl text-base sm:text-lg font-black text-primary bg-primary/10">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -87,15 +86,15 @@ export function SalesRepCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg sm:text-xl font-black tracking-tight text-foreground">
+          <h3 className="text-base sm:text-lg font-black tracking-tight text-foreground truncate">
             {repName}
           </h3>
-          <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary mt-0.5">
+          <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary mt-0.5 truncate">
             <BriefcaseIcon className="size-3.5 shrink-0" />
-            <span>{repTitle}</span>
+            <span className="truncate">{repTitle}</span>
           </p>
           {repNotes && (
-            <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+            <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground line-clamp-2 leading-tight">
               {repNotes}
             </p>
           )}
@@ -103,20 +102,20 @@ export function SalesRepCard({
       </div>
 
       {/* Contact Channels Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-3.5">
         {/* Phone */}
         <a
           href={`tel:${cleanPhoneForCall}`}
-          className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/60 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-background/60 p-2.5 sm:p-3 hover:border-primary/40 hover:bg-primary/5 transition-all group"
         >
-          <div className="flex size-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
-            <PhoneIcon className="size-5" />
+          <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
+            <PhoneIcon className="size-4 sm:size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              Telefon / Doğrudan Arama
+            <span className="block text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              Doğrudan Arama
             </span>
-            <span className="block text-xs font-black text-foreground group-hover:text-primary transition-colors truncate">
+            <span className="block text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
               {repPhone}
             </span>
           </div>
@@ -125,16 +124,16 @@ export function SalesRepCard({
         {/* Email */}
         <a
           href={`mailto:${repEmail}?subject=Lisans%20Yenileme%20Talebi`}
-          className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/60 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-background/60 p-2.5 sm:p-3 hover:border-primary/40 hover:bg-primary/5 transition-all group"
         >
-          <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
-            <MailIcon className="size-5" />
+          <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
+            <MailIcon className="size-4 sm:size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              E-Posta Adresi
+            <span className="block text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              E-Posta
             </span>
-            <span className="block text-xs font-black text-foreground group-hover:text-primary transition-colors truncate">
+            <span className="block text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
               {repEmail}
             </span>
           </div>
@@ -142,11 +141,11 @@ export function SalesRepCard({
       </div>
 
       {/* Call to Action Buttons */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
         {/* WhatsApp Direct Chat */}
         {cleanWhatsappNumber && (
           <Button
-            className="w-full sm:flex-1 h-12 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm shadow-lg shadow-[#25D366]/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            className="w-full sm:flex-1 h-11 sm:h-12 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#25D366]/20 transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
             render={
               <a
                 href={`https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(
@@ -157,19 +156,19 @@ export function SalesRepCard({
               />
             }
           >
-            <MessageSquareIcon className="size-4 mr-1.5" />
-            WhatsApp ile Hızlı İletişim
+            <MessageSquareIcon className="size-4 mr-1.5 shrink-0" />
+            <span className="truncate">WhatsApp ile İletişim</span>
           </Button>
         )}
 
         {/* Call Button */}
         <Button
           variant="outline"
-          className="w-full sm:w-auto h-12 px-6 rounded-2xl border-primary/30 hover:bg-primary/10 text-primary font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+          className="w-full sm:w-auto h-11 sm:h-12 px-5 rounded-xl border-primary/30 hover:bg-primary/10 text-primary font-bold text-xs sm:text-sm transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
           render={<a href={`tel:${cleanPhoneForCall}`} />}
         >
-          <PhoneCallIcon className="size-4 mr-1.5" />
-          Hemen Ara
+          <PhoneCallIcon className="size-4 mr-1.5 shrink-0" />
+          <span>Hemen Ara</span>
         </Button>
       </div>
     </div>
