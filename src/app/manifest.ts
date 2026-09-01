@@ -17,10 +17,13 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     short_name: shortName,
     description,
     start_url: "/dashboard/orders",
+    scope: "/",
     display: "standalone",
+    display_override: ["standalone", "window-controls-overlay", "minimal-ui"],
     background_color: "#09090b",
     theme_color: "#f97316",
-    orientation: "portrait",
+    orientation: "any",
+    prefer_related_applications: false,
     categories: ["food", "business", "productivity"],
     icons: [
       {
