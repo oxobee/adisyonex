@@ -80,6 +80,8 @@ const USER_LIST_SELECT = {
   suspendedAt: true,
   deletedAt: true,
   createdAt: true,
+  salesRepId: true,
+  salesRep: { select: { id: true, name: true } },
   _count: { select: { ownedRestaurants: true } },
 } satisfies Prisma.UserSelect;
 

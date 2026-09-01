@@ -158,11 +158,17 @@ export async function updateSalesRep(
 }
 
 export async function deleteSalesRep(id: string): Promise<void> {
-  // Disconnect from restaurants first
-  await prisma.restaurant.updateMany({
-    where: { salesRepId: id },
-    data: { salesRepId: null },
-  });
+  // Disconnect from restaurants and users first
+  await Promise.all([
+    prisma.restaurant.updateMany({
+      where: { salesRepId: id },
+      data: { salesRepId: null },
+    }),
+    prisma.user.updateMany({
+      where: { salesRepId: id },
+      data: { salesRepId: null },
+    }),
+  ]);
 
   await prisma.salesRep.delete({
     where: { id },
@@ -176,5 +182,24 @@ export async function assignSalesRepToRestaurant(
   await prisma.restaurant.update({
     where: { id: restaurantId },
     data: { salesRepId: salesRepId || null },
+  });
+}
+
+export async function assignSalesRepToUser(
+  userId: string,
+  salesRepId: string | null,
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    // 1. Update user's assigned sales rep
+    await tx.user.update({
+      where: { id: userId },
+      data: { salesRepId: salesRepId || null },
+    });
+
+    // 2. Also propagate to their owned restaurants
+    await tx.restaurant.updateMany({
+      where: { ownerId: userId },
+      data: { salesRepId: salesRepId || null },
+    });
   });
 }

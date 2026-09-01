@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EyeIcon,
+  HeadphonesIcon,
   PencilIcon,
   SearchIcon,
   ShieldAlertIcon,
@@ -19,6 +20,7 @@ import {
   toggleSuspendAdminUserAction,
   updateAdminUserAction,
 } from "@/actions/admin-management.actions";
+import { AssignSalesRepToUserDialog } from "@/components/admin/assign-sales-rep-to-user-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +38,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Paginated } from "@/types";
 import type { AdminUserListItemDTO } from "@/types/admin";
+import type { SalesRepDTO } from "@/services/sales-rep.service";
 
 const ROLE_LABEL: Record<AdminUserListItemDTO["role"], string> = {
   MANAGER: "İşletmeci / Müdür",
@@ -57,14 +60,17 @@ const STATUS_LABEL: Record<AdminUserListItemDTO["status"], string> = {
 
 export function UsersTable({
   data,
+  salesReps = [],
 }: {
   readonly data: Paginated<AdminUserListItemDTO>;
+  readonly salesReps?: readonly SalesRepDTO[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [detailUser, setDetailUser] = useState<AdminUserListItemDTO | null>(null);
   const [editUser, setEditUser] = useState<AdminUserListItemDTO | null>(null);
   const [deleteUser, setDeleteUser] = useState<AdminUserListItemDTO | null>(null);
+  const [assignRepUser, setAssignRepUser] = useState<AdminUserListItemDTO | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -175,6 +181,22 @@ export function UsersTable({
                     {user.email ? (
                       <div className="text-muted-foreground text-xs">{user.email}</div>
                     ) : null}
+                    <div className="mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setAssignRepUser(user)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer",
+                          user.salesRepName
+                            ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                            : "bg-muted text-muted-foreground border-border hover:bg-accent",
+                        )}
+                        title="Yetkili Satış Temsilcisi Ata / Değiştir"
+                      >
+                        <HeadphonesIcon className="size-2.5" />
+                        <span className="truncate max-w-[120px]">{user.salesRepName || "Temsilci Ata"}</span>
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium">
@@ -203,6 +225,15 @@ export function UsersTable({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="icon-xs"
+                        variant="ghost"
+                        title="Yetkili Temsilci Ata"
+                        className="text-primary hover:bg-primary/10"
+                        onClick={() => setAssignRepUser(user)}
+                      >
+                        <HeadphonesIcon className="size-4" />
+                      </Button>
                       <Button
                         size="icon-xs"
                         variant="ghost"
@@ -401,6 +432,13 @@ export function UsersTable({
           </DialogContent>
         </Dialog>
       ) : null}
+
+      {/* ASSIGN SALES REPRESENTATIVE TO USER DIALOG */}
+      <AssignSalesRepToUserDialog
+        user={assignRepUser}
+        salesReps={salesReps}
+        onOpenChange={(open) => !open && setAssignRepUser(null)}
+      />
     </div>
   );
 }

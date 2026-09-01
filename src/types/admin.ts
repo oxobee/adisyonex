@@ -11,6 +11,8 @@ export interface AdminUserListItemDTO {
   readonly status: AdminUserStatus;
   readonly restaurantCount: number;
   readonly createdAt: string;
+  readonly salesRepId?: string | null;
+  readonly salesRepName?: string | null;
 }
 
 export interface RestaurantListItemDTO {

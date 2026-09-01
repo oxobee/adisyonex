@@ -18,6 +18,8 @@ const makeRow = (overrides: Partial<AdminUserRow> = {}): AdminUserRow => ({
   suspendedAt: null,
   deletedAt: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
+  salesRepId: null,
+  salesRep: null,
   _count: { ownedRestaurants: 2 },
   ...overrides,
 });
@@ -53,6 +55,8 @@ describe("listUsers", () => {
       status: "active",
       restaurantCount: 2,
       createdAt: "2026-01-01T00:00:00.000Z",
+      salesRepId: null,
+      salesRepName: null,
     });
     expect(result.items[1]?.status).toBe("suspended");
   });

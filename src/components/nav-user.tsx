@@ -14,6 +14,7 @@ import {
 import {
   CircleUserRoundIcon,
   EllipsisVerticalIcon,
+  HeadphonesIcon,
   InfinityIcon,
   LogOutIcon,
   SparklesIcon,
@@ -22,6 +23,13 @@ import {
 
 import { logoutAction } from "@/actions/auth.actions";
 import { directStaffLogoutAction } from "@/actions/staff-auth.actions";
+import { SalesRepCard } from "@/components/license/sales-rep-card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { LicenseInfoDTO } from "@/services/license.service";
 
@@ -40,6 +48,7 @@ export function NavUser({
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isOpen, setIsOpen] = useState(false);
+  const [isSalesRepModalOpen, setIsSalesRepModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -302,7 +311,19 @@ export function NavUser({
                   className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
                 >
                   <CircleUserRoundIcon className="size-4 text-primary" />
-                  <span>Hesap & Profil</span>
+                  <span>Hesap & Profil Ayarları</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsSalesRepModalOpen(true);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer text-left"
+                >
+                  <HeadphonesIcon className="size-4 text-primary" />
+                  <span>Yetkili Satış Temsilcim</span>
                 </button>
 
                 <div className="my-1 border-t border-border/50" />
@@ -321,6 +342,25 @@ export function NavUser({
               </div>
             </div>
           )}
+
+          {/* Sales Representative Card Modal */}
+          <Dialog open={isSalesRepModalOpen} onOpenChange={setIsSalesRepModalOpen}>
+            <DialogContent className="max-w-lg rounded-3xl p-6 shadow-2xl border-primary/20">
+              <DialogHeader className="mb-2">
+                <div className="flex items-center gap-2 text-primary mb-1">
+                  <HeadphonesIcon className="size-5" />
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    Özel Müşteri Danışmanı
+                  </span>
+                </div>
+                <DialogTitle className="text-xl font-black">
+                  Yetkili Satış & Lisans Temsilciniz
+                </DialogTitle>
+              </DialogHeader>
+
+              <SalesRepCard salesRep={license?.salesRep} />
+            </DialogContent>
+          </Dialog>
         </div>
       </SidebarMenuItem>
     </SidebarMenu>

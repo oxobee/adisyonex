@@ -30,6 +30,8 @@ const mapUser = (row: AdminUserRow): AdminUserListItemDTO => ({
   status: statusOf(row),
   restaurantCount: row._count.ownedRestaurants,
   createdAt: row.createdAt.toISOString(),
+  salesRepId: row.salesRepId ?? null,
+  salesRepName: row.salesRep?.name ?? null,
 });
 
 export const listUsers = async (

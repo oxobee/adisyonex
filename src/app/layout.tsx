@@ -23,21 +23,33 @@ const fontMono = Geist_Mono({
 });
 
 import { getSystemSettings } from "@/services/system-setting.service";
+import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSystemSettings().catch(() => null);
-  const title = settings?.metaTitle || settings?.systemName || "Elitale Restro";
+  const name = settings?.systemName || "Elitale Restro";
+  const title = settings?.metaTitle || name;
   const description =
     settings?.metaDescription ||
     settings?.systemTagline ||
     "Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.";
   const icons = settings?.faviconUrl
-    ? [{ rel: "icon", url: settings.faviconUrl }]
+    ? [
+        { rel: "icon", url: settings.faviconUrl },
+        { rel: "apple-touch-icon", url: settings.faviconUrl },
+      ]
     : undefined;
 
   return {
     title,
     description,
+    manifest: "/manifest.webmanifest",
+    applicationName: name,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: name,
+    },
     keywords: settings?.metaKeywords ? settings.metaKeywords.split(",").map((s) => s.trim()) : undefined,
     icons,
     openGraph: {
@@ -48,11 +60,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getSystemSettings().catch(() => null);
+
   return (
     <html
       lang="tr"
@@ -67,6 +81,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster />
+        <PwaInstallPrompt
+          appName={settings?.systemName}
+          logoUrl={settings?.logoUrl}
+          faviconUrl={settings?.faviconUrl}
+        />
       </body>
     </html>
   );
