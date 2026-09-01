@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  # 1. PostgreSQL Veritabanı
+  postgres:
+    image: postgres:16-alpine
+    container_name: adisyonex-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: adisyonex
+      POSTGRES_PASSWORD: adisyonex_secure_password_2026
+      POSTGRES_DB: adisyonex_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database_backup.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adisyonex -d adisyonex_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. AdisyonEx Web Uygulaması
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: adisyonex-app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://adisyonex:adisyonex_secure_password_2026@postgres:5432/adisyonex_db
+      - AUTH_SECRET=adisyonex-secret-key-32chars-min-change-this-in-prod-2026
+      - AUTH_URL=http://localhost:3000
+      - AUTH_TRUST_HOST=true
+      - DISABLE_OTP=true
+      - SUPABASE_S3_ENDPOINT=https://nbgcemhwzlaizsrqkzdd.supabase.co/storage/v1/s3
+      - SUPABASE_S3_REGION=eu-central-1
+      - SUPABASE_S3_BUCKET_NAME=restro-media
+      - SUPABASE_S3_ACCESS_KEY=01fb75380da1cb2cac02f34b2b3b5270
+      - SUPABASE_S3_SECRET_KEY=53c8cf1c05196b2f005e19cbe146cb125748df720c4bd2be0fd07a16f889cd92
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+    driver: local

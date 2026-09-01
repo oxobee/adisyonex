@@ -26,12 +26,12 @@ async function main(): Promise<void> {
   for (const admin of ADMINS) {
     const user = await prisma.user.upsert({
       where: { phone: admin.phone },
-      update: { name: admin.name, email: admin.email, role: "ADMIN" },
+      update: { name: admin.name, email: admin.email, role: "SUPER_ADMIN" },
       create: {
         name: admin.name,
         phone: admin.phone,
         email: admin.email,
-        role: "ADMIN",
+        role: "SUPER_ADMIN",
       },
     });
     console.log(
