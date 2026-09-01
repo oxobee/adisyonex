@@ -94,6 +94,7 @@ export default async function DashboardLayout({
           license={licenseInfo ? serializeForClient(licenseInfo) : null}
           systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
           allowedRoutes={staffCtx?.allowedRoutes ?? null}
+          restaurantUsername={share?.username ?? null}
         />
         <SidebarInset>
           <SiteHeader staffLoginUsername={share?.username ?? null} />

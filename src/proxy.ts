@@ -25,6 +25,9 @@ const STAFF_COOKIE_NAME = "restro_staff";
 /** `/u/[username]/login` (exactly) — the only public page under `/u`. */
 const STAFF_LOGIN_PATTERN = /^\/u\/[^/]+\/login$/;
 
+/** `/[username]/personals` — new public staff login page. */
+const PERSONALS_PATTERN = /^\/[^/]+\/personals(\/.*)?$/;
+
 /**
  * Mobile API paths that never require a bearer token — anything a client uses
  * to acquire one. Every other `/api/mobile/*` path must present a valid JWT.
@@ -101,6 +104,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // The staff area runs on its own session, gated separately from the manager.
   if (pathname.startsWith("/u/")) {
     return handleStaffArea(request);
+  }
+
+  // `/[username]/personals` — public staff login page (no manager session needed).
+  if (PERSONALS_PATTERN.test(pathname)) {
+    return NextResponse.next();
   }
 
   const authenticated = hasSession(request);

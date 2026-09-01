@@ -6,14 +6,17 @@ import { usePathname } from "next/navigation"
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { cn, isActiveRoute } from "@/lib/utils"
 
 export function NavMain({
   items,
+  label,
 }: {
   items: {
     title: string
@@ -21,11 +24,19 @@ export function NavMain({
     icon?: React.ReactNode
     isHighlighted?: boolean
   }[]
+  label?: string
 }) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
+
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
+      {label && (
+        <SidebarGroupLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-2 mb-1">
+          {label}
+        </SidebarGroupLabel>
+      )}
+      <SidebarGroupContent className="flex flex-col gap-0.5">
         <SidebarMenu>
           {items.map((item) => {
             const isLive = item.url === "/dashboard/orders" || item.isHighlighted;
@@ -36,10 +47,16 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={active}
                   className={cn(
+                    "rounded-xl transition-all duration-150",
                     isLive &&
-                      "bg-primary/10 border border-primary/30 text-primary font-bold shadow-xs hover:bg-primary/20 hover:border-primary/50 transition-all",
+                      "bg-primary/10 border border-primary/30 text-primary font-bold shadow-xs hover:bg-primary/20 hover:border-primary/50",
                   )}
-                  render={<Link href={item.url} />}
+                  render={
+                    <Link
+                      href={item.url}
+                      onClick={() => setOpenMobile(false)}
+                    />
+                  }
                 >
                   {item.icon}
                   <span className={cn(isLive && "font-bold text-foreground")}>{item.title}</span>
