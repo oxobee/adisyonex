@@ -136,7 +136,7 @@ export function AppSidebar({
                   />
                 </div>
               ) : (
-                <span className="text-sm font-black truncate">{systemSettings?.systemName || "ElitaleRestro"}</span>
+                <span className="text-sm font-black truncate">{systemSettings?.systemName || "AdisyonEx"}</span>
               )}
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -4,8 +4,8 @@ import { getSystemSettings } from "@/services/system-setting.service";
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const settings = await getSystemSettings().catch(() => null);
 
-  const name = settings?.systemName || "Elitale Restro";
-  const shortName = settings?.systemName || "Restro";
+  const name = settings?.systemName || "AdisyonEx";
+  const shortName = settings?.systemName || "AdisyonEx";
   const description =
     settings?.metaDescription ||
     settings?.systemTagline ||

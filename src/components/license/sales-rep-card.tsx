@@ -8,6 +8,7 @@ import {
   MessageSquareIcon,
   PhoneCallIcon,
   PhoneIcon,
+  ShieldCheckIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,16 +21,15 @@ export function SalesRepCard({
 }: {
   readonly salesRep?: LicenseSalesRepDTO | null;
   readonly className?: string;
-  readonly compact?: boolean;
 }) {
   const repName = salesRep?.name || "Adisyon Destek & Satış Ekibi";
   const repTitle = salesRep?.title || "Müşteri ve Lisans Danışmanı";
   const repPhone = salesRep?.phone || "+90 (850) 000 00 00";
-  const repEmail = salesRep?.email || "destek@elitalerestro.com";
+  const repEmail = salesRep?.email || "destek@adisyonex.com";
   const repWhatsapp = salesRep?.whatsapp || repPhone.replace(/[^0-9]/g, "");
   const repNotes =
     salesRep?.notes ||
-    "Hafta içi & Hafta sonu kesintisiz destek ve lisans uzatma hizmeti alabilirsiniz.";
+    "Yetkili lisans danışmanınızla görüşerek lisansınızı anında yenileyebilirsiniz.";
 
   const initials =
     repName
@@ -37,7 +37,7 @@ export function SalesRepCard({
       .map((n) => n[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "ST";
+      .toUpperCase() || "AD";
 
   const cleanPhoneForCall = repPhone.replace(/\s+/g, "");
   const cleanWhatsappNumber = repWhatsapp.replace(/[^0-9]/g, "");
@@ -45,29 +45,25 @@ export function SalesRepCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl sm:rounded-3xl border border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 p-4 sm:p-6 shadow-xl text-left w-full",
+        "rounded-2xl border border-zinc-800 bg-zinc-900/90 p-4 sm:p-5 text-left w-full shadow-lg backdrop-blur-md",
         className,
       )}
     >
-      {/* Top Background Glow */}
-      <div className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-primary/10 blur-2xl" />
-
-      {/* Category Badge & Status Header */}
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] sm:text-xs font-black uppercase tracking-wider text-primary shadow-2xs">
-          <HeadphonesIcon className="size-3.5 shrink-0" />
-          <span>Yetkili Satış Temsilciniz</span>
+      {/* Category Header */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-300">
+          <ShieldCheckIcon className="size-4 text-primary" />
+          <span>Yetkili Satış ve Lisans Danışmanı</span>
         </span>
 
-        <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Çevrimiçi
+        <span className="text-[11px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md">
+          Aktif Temsilci
         </span>
       </div>
 
-      {/* Main Rep Profile */}
-      <div className="flex items-center gap-3 sm:gap-4 pb-4 border-b border-border/60">
-        <div className="relative size-14 sm:size-18 shrink-0 overflow-hidden rounded-2xl border-2 border-primary/30 shadow-md bg-primary/10">
+      {/* Rep Profile */}
+      <div className="flex items-center gap-3.5 pb-3.5 border-b border-zinc-800">
+        <div className="relative size-13 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
           {salesRep?.photoUrl ? (
             <Image
               src={salesRep.photoUrl}
@@ -77,8 +73,8 @@ export function SalesRepCard({
               unoptimized
             />
           ) : (
-            <Avatar className="size-full rounded-2xl">
-              <AvatarFallback className="rounded-2xl text-base sm:text-lg font-black text-primary bg-primary/10">
+            <Avatar className="size-full rounded-xl">
+              <AvatarFallback className="rounded-xl text-sm font-bold text-zinc-200 bg-zinc-800">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -86,15 +82,14 @@ export function SalesRepCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-lg font-black tracking-tight text-foreground truncate">
+          <h3 className="text-sm sm:text-base font-bold text-zinc-100 truncate">
             {repName}
           </h3>
-          <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary mt-0.5 truncate">
-            <BriefcaseIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{repTitle}</span>
+          <p className="text-xs text-primary font-medium mt-0.5 truncate">
+            {repTitle}
           </p>
           {repNotes && (
-            <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground line-clamp-2 leading-tight">
+            <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
               {repNotes}
             </p>
           )}
@@ -102,20 +97,20 @@ export function SalesRepCard({
       </div>
 
       {/* Contact Channels Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 py-3">
         {/* Phone */}
         <a
           href={`tel:${cleanPhoneForCall}`}
-          className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-background/60 p-2.5 sm:p-3 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="flex items-center gap-2.5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-2.5 hover:border-zinc-700 hover:bg-zinc-800/40 transition-colors group"
         >
-          <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
-            <PhoneIcon className="size-4 sm:size-5" />
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300">
+            <PhoneIcon className="size-3.5" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              Doğrudan Arama
+            <span className="block text-[10px] font-medium text-zinc-500">
+              Telefon
             </span>
-            <span className="block text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+            <span className="block text-xs font-semibold text-zinc-200 group-hover:text-primary transition-colors truncate">
               {repPhone}
             </span>
           </div>
@@ -124,50 +119,48 @@ export function SalesRepCard({
         {/* Email */}
         <a
           href={`mailto:${repEmail}?subject=Lisans%20Yenileme%20Talebi`}
-          className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-background/60 p-2.5 sm:p-3 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="flex items-center gap-2.5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-2.5 hover:border-zinc-700 hover:bg-zinc-800/40 transition-colors group"
         >
-          <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
-            <MailIcon className="size-4 sm:size-5" />
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300">
+            <MailIcon className="size-3.5" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            <span className="block text-[10px] font-medium text-zinc-500">
               E-Posta
             </span>
-            <span className="block text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+            <span className="block text-xs font-semibold text-zinc-200 group-hover:text-primary transition-colors truncate">
               {repEmail}
             </span>
           </div>
         </a>
       </div>
 
-      {/* Call to Action Buttons */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-        {/* WhatsApp Direct Chat */}
         {cleanWhatsappNumber && (
           <Button
-            className="w-full sm:flex-1 h-11 sm:h-12 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#25D366]/20 transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
+            className="w-full sm:flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
             render={
               <a
                 href={`https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(
-                  `Merhaba ${repName}, işletmemizin lisans yenileme ve paket uzatma işlemleri hakkında görüşmek istiyorum.`,
+                  `Merhaba ${repName}, ${salesRep ? "" : "işletmemizin "}lisans yenileme ve paket uzatma işlemleri hakkında bilgi almak istiyorum.`,
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
               />
             }
           >
-            <MessageSquareIcon className="size-4 mr-1.5 shrink-0" />
-            <span className="truncate">WhatsApp ile İletişim</span>
+            <MessageSquareIcon className="size-3.5 mr-1.5 shrink-0" />
+            <span className="truncate">WhatsApp Destek Hattı</span>
           </Button>
         )}
 
-        {/* Call Button */}
         <Button
           variant="outline"
-          className="w-full sm:w-auto h-11 sm:h-12 px-5 rounded-xl border-primary/30 hover:bg-primary/10 text-primary font-bold text-xs sm:text-sm transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
+          className="w-full sm:w-auto h-10 px-4 rounded-xl border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 font-bold text-xs transition-colors cursor-pointer"
           render={<a href={`tel:${cleanPhoneForCall}`} />}
         >
-          <PhoneCallIcon className="size-4 mr-1.5 shrink-0" />
+          <PhoneCallIcon className="size-3.5 mr-1.5 shrink-0" />
           <span>Hemen Ara</span>
         </Button>
       </div>

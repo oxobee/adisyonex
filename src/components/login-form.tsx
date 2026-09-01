@@ -28,12 +28,21 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 
 const toAuthMessage = (raw: string) => AUTH_ERROR_MESSAGES[raw] ?? raw
 
+import Image from "next/image"
+
 type Step = "phone" | "pin" | "code"
 
 export function LoginForm({
   className,
+  systemName = "AdisyonEx",
+  logoUrl = null,
+  systemTagline = "Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.",
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & {
+  readonly systemName?: string;
+  readonly logoUrl?: string | null;
+  readonly systemTagline?: string | null;
+}) {
   const [step, setStep] = useState<Step>("phone")
   const [phone, setPhone] = useState("")
   const [pin, setPin] = useState("")
@@ -112,13 +121,31 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <div className="flex flex-col items-center gap-2 text-center">
-        <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <UtensilsCrossedIcon className="size-6" />
-        </span>
-        <h1 className="text-xl font-bold">ElitaleRestro&apos;ya Giriş Yapın</h1>
+      <div className="flex flex-col items-center gap-2.5 text-center">
+        {logoUrl ? (
+          <div className="relative flex h-14 w-auto max-w-[200px] items-center justify-center overflow-hidden">
+            <Image
+              src={logoUrl}
+              alt={systemName}
+              width={160}
+              height={56}
+              className="h-14 w-auto object-contain"
+            />
+          </div>
+        ) : (
+          <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl">
+            <Image
+              src="/icon.png"
+              alt={systemName}
+              width={56}
+              height={56}
+              className="size-full object-contain"
+            />
+          </div>
+        )}
+        <h1 className="text-2xl font-black tracking-tight text-foreground">{systemName}&apos;e Giriş Yapın</h1>
         <FieldDescription>
-          Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin.
+          {systemTagline || "Restoranınızın sipariş, stok ve adisyon yönetimini tek bir noktadan yönetin."}
         </FieldDescription>
       </div>
 

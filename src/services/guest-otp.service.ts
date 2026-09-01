@@ -45,7 +45,7 @@ export const requestGuestOtp = async (phone: string): Promise<void> => {
 
   await sendSms(
     phone,
-    `Your ElitaleRestro order verification code is ${code}. It expires in 5 minutes.`,
+    `AdisyonEx sipariş doğrulama kodunuz: ${code}. 5 dakika içinde geçerliliğini yitirecektir.`,
   );
 };
 

@@ -170,7 +170,7 @@ export const requestMobileOtp = async (
 
   await sendSms(
     phone,
-    `Your ElitaleRestro verification code is ${code}. It expires in 5 minutes.`,
+    `AdisyonEx doğrulama kodunuz: ${code}. 5 dakika içinde geçerliliğini yitirecektir.`,
   );
 
   return {

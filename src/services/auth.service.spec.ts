@@ -90,7 +90,7 @@ describe("requestOtp", () => {
     );
     expect(sendSms).toHaveBeenCalledWith(
       PHONE,
-      expect.stringContaining("verification code"),
+      expect.stringContaining("doğrulama kodunuz"),
     );
   });
 

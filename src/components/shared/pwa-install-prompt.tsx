@@ -22,7 +22,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaInstallPrompt({
-  appName = "Elitale Restro",
+  appName = "AdisyonEx",
   logoUrl,
   faviconUrl,
 }: {

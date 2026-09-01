@@ -27,7 +27,7 @@ const round2 = (n: number): number =>
 export function TableBillModal({
   table,
   orders,
-  restaurantName = "Elitale Restoran",
+  restaurantName = "Restoran",
   restaurantTagline,
   open,
   onOpenChange,

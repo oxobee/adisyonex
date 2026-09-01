@@ -12,12 +12,12 @@ export interface SystemSettingsDTO {
 }
 
 const DEFAULT_SETTINGS: SystemSettingsDTO = {
-  systemName: "Elitale Restro",
+  systemName: "AdisyonEx",
   systemTagline: "Gelişmiş Restoran & QR Menü Yönetim Sistemi",
   logoUrl: null,
   faviconUrl: null,
   ogImageUrl: null,
-  metaTitle: "Elitale Restro | Restoran ve QR Menü Otomasyonu",
+  metaTitle: "AdisyonEx | Restoran ve QR Menü Otomasyonu",
   metaDescription: "Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.",
   metaKeywords: "restoran otomasyonu, adisyon sistemi, qr menü, pos kasa",
 };

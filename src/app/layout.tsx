@@ -39,7 +39,7 @@ import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSystemSettings().catch(() => null);
-  const name = settings?.systemName || "Elitale Restro";
+  const name = settings?.systemName || "AdisyonEx";
   const title = settings?.metaTitle || name;
   const description =
     settings?.metaDescription ||

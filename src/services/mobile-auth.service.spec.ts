@@ -188,7 +188,7 @@ describe("requestMobileOtp", () => {
     );
     expect(sendSms).toHaveBeenCalledWith(
       PHONE,
-      expect.stringContaining("code"),
+      expect.stringContaining("kodunuz"),
     );
   });
 

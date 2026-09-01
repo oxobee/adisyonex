@@ -152,7 +152,7 @@ export function OrdersBoard({
   sales,
   tables = [],
   menu,
-  restaurantName = "Elitale Restoran",
+  restaurantName = "Restoran",
   restaurantTagline,
 }: {
   readonly open: readonly OrderDTO[];
