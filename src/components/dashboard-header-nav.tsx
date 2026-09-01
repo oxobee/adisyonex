@@ -186,8 +186,8 @@ export function DashboardHeaderNav({
   return (
     <>
       {/* 1. TOP SUB-HEADER BAR (Desktop & Tablet): En üst ince menü barı */}
-      <div className="hidden lg:flex h-8 w-full items-center justify-between border-b border-border/60 bg-muted/40 px-4 lg:px-6 text-[11px] font-semibold text-muted-foreground select-none">
-        {/* Left: Süper Admin | Personel Girişi | Hesabım */}
+      <div className="hidden lg:flex h-7 w-full items-center justify-between border-b border-border/60 bg-muted/30 px-4 lg:px-6 text-[11px] font-semibold text-muted-foreground select-none">
+        {/* Left: Süper Admin | Personel Girişi */}
         <div className="flex items-center gap-2.5">
           {isAdmin && (
             <>
@@ -199,35 +199,21 @@ export function DashboardHeaderNav({
                 <ShieldCheckIcon className="size-3.5" />
                 <span>Süper Admin</span>
               </Link>
-              <span className="text-border/80">|</span>
+              {restaurantUsername && <span className="text-border/80">|</span>}
             </>
           )}
 
           {restaurantUsername && (
-            <>
-              <a
-                href={`/${restaurantUsername}/personals`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
-              >
-                <ExternalLinkIcon className="size-3" />
-                <span>Personel Girişi</span>
-              </a>
-              <span className="text-border/80">|</span>
-            </>
+            <a
+              href={`/${restaurantUsername}/personals`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+            >
+              <ExternalLinkIcon className="size-3" />
+              <span>Personel Girişi</span>
+            </a>
           )}
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsProfileOpen(true);
-            }}
-            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
-          >
-            <UserIcon className="size-3" />
-            <span>Hesabım</span>
-          </button>
         </div>
 
         {/* Right: Live Connection Dot (Sistem aktif yazısı gizlendi) */}
@@ -245,7 +231,7 @@ export function DashboardHeaderNav({
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((p) => !p)}
-              className="flex size-9 items-center justify-center rounded-2xl border border-border/80 bg-muted/50 text-foreground hover:bg-muted xl:hidden transition-all active:scale-95 cursor-pointer"
+              className="flex size-9 items-center justify-center rounded-lg border border-border/80 bg-muted/50 text-foreground hover:bg-muted xl:hidden transition-all active:scale-95 cursor-pointer"
               aria-label="Menüyü Aç"
             >
               <MenuIcon className="size-5" />
@@ -258,7 +244,7 @@ export function DashboardHeaderNav({
               className="flex items-center gap-2.5 group select-none cursor-pointer"
             >
               {systemSettings?.faviconUrl || systemSettings?.logoUrl ? (
-                <div className="relative size-9 shrink-0 overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-0.5 group-hover:scale-105 transition-transform">
+                <div className="relative size-9 shrink-0 overflow-hidden rounded-lg border border-primary/20 bg-primary/5 p-0.5 group-hover:scale-105 transition-transform">
                   <Image
                     src={systemSettings.faviconUrl || systemSettings.logoUrl || ""}
                     alt="Logo"
@@ -268,7 +254,7 @@ export function DashboardHeaderNav({
                   />
                 </div>
               ) : (
-                <div className="flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
                   <UtensilsCrossedIcon className="size-5" />
                 </div>
               )}
@@ -284,7 +270,7 @@ export function DashboardHeaderNav({
             </Link>
           </div>
 
-          {/* 2. Middle: Navigation items in button/squircle style (Image-inspired layout) */}
+          {/* 2. Middle: Navigation items in crisp slightly rounded button style */}
           <nav className="hidden xl:flex items-center gap-1.5 flex-1 justify-center max-w-5xl">
             {NAV_ITEMS.map((item) => {
               const active = isActiveRoute(pathname, item.url);
@@ -294,50 +280,44 @@ export function DashboardHeaderNav({
                   href={item.url}
                   prefetch={true}
                   className={cn(
-                    "group relative flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-bold transition-all duration-200 select-none cursor-pointer border",
+                    "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all duration-150 select-none cursor-pointer border",
                     active
-                      ? "bg-card text-foreground border-primary/50 shadow-md shadow-primary/10 scale-[1.03] ring-1 ring-primary/20"
-                      : "bg-muted/30 border-transparent text-muted-foreground hover:bg-card hover:text-foreground hover:border-border hover:shadow-xs active:scale-95",
+                      ? "bg-primary/10 text-primary border-primary ring-1 ring-primary/25 shadow-xs font-black scale-[1.02]"
+                      : "bg-background/60 border-border/60 text-muted-foreground hover:bg-card hover:text-foreground hover:border-border hover:shadow-xs hover:-translate-y-0.5 active:scale-95",
                   )}
                 >
-                  {/* Colorful Rounded Icon Box */}
+                  {/* Themed Icon Box */}
                   <div
                     className={cn(
-                      "flex size-7 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110 shadow-2xs",
-                      item.iconBg,
-                      item.iconColor,
-                      active && "scale-105 shadow-xs",
+                      "flex size-6.5 items-center justify-center rounded-md transition-all duration-150 shadow-2xs",
+                      active
+                        ? "bg-primary text-primary-foreground font-black shadow-xs scale-105"
+                        : cn(item.iconBg, item.iconColor, "group-hover:scale-105"),
                     )}
                   >
                     {item.icon}
                   </div>
 
                   <span className="tracking-tight whitespace-nowrap">{item.title}</span>
-
-                  {/* Active Bottom Indicator Pill */}
-                  {active && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-5 rounded-full bg-primary animate-in zoom-in-75 duration-200" />
-                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* 3. Right: ONLY Profile Photo Avatar with Popover */}
+          {/* 3. Right: Rectangular Profile Photo Avatar (Çok hafif yuvarlatılmış dikdörtgen) */}
           <div className="flex items-center gap-3 shrink-0">
             <div ref={profileRef} className="relative">
-              {/* Profile Avatar Button ONLY */}
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((p) => !p)}
                 className={cn(
-                  "relative flex size-10 shrink-0 items-center justify-center rounded-2xl border-2 border-primary/30 ring-2 ring-primary/15 bg-gradient-to-br from-primary/20 via-amber-500/10 to-primary/10 text-primary shadow-xs hover:scale-105 hover:ring-primary/40 active:scale-95 transition-all duration-200 cursor-pointer select-none outline-none",
-                  isProfileOpen && "ring-primary/60 border-primary scale-105 shadow-md",
+                  "relative flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 ring-1 ring-primary/15 bg-gradient-to-br from-primary/20 via-amber-500/10 to-primary/10 text-primary shadow-xs hover:border-primary hover:ring-primary/40 hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer select-none outline-none overflow-hidden",
+                  isProfileOpen && "ring-2 ring-primary border-primary scale-105 shadow-md",
                 )}
                 aria-label="Profil Menüsü"
               >
-                <Avatar className="size-full rounded-2xl">
-                  <AvatarFallback className="rounded-2xl text-xs font-black text-primary bg-transparent">
+                <Avatar className="size-full rounded-lg">
+                  <AvatarFallback className="rounded-lg text-xs font-black text-primary bg-transparent">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -345,12 +325,12 @@ export function DashboardHeaderNav({
 
               {/* Categorized Dropdown Menu */}
               {isProfileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-76 sm:w-84 z-50 overflow-hidden rounded-3xl border border-border/80 bg-card p-3 text-card-foreground shadow-2xl backdrop-blur-2xl ring-1 ring-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="absolute right-0 top-full mt-2 w-76 sm:w-84 z-50 overflow-hidden rounded-2xl border border-border/80 bg-card p-3 text-card-foreground shadow-2xl backdrop-blur-2xl ring-1 ring-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
                   {/* Top Profile Header with X Close Button */}
                   <div className="flex items-center justify-between p-2 pb-3 border-b border-border/60">
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar className="size-10 shrink-0 rounded-2xl border border-primary/30 ring-2 ring-primary/20 bg-primary/10 text-primary shadow-xs">
-                        <AvatarFallback className="rounded-2xl text-sm font-black text-primary">
+                      <Avatar className="size-10 shrink-0 rounded-lg border border-primary/30 ring-1 ring-primary/20 bg-primary/10 text-primary shadow-xs">
+                        <AvatarFallback className="rounded-lg text-sm font-black text-primary">
                           {initials}
                         </AvatarFallback>
                       </Avatar>
@@ -367,7 +347,7 @@ export function DashboardHeaderNav({
                     <button
                       type="button"
                       onClick={() => setIsProfileOpen(false)}
-                      className="flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                      className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                       aria-label="Kapat"
                     >
                       <XIcon className="size-4" />
