@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRightLeftIcon,
+  ArrowUpDownIcon,
   BellRingIcon,
   CheckCircle2Icon,
+  CheckIcon,
   CreditCardIcon,
   FilterIcon,
   GridIcon,
@@ -165,6 +167,10 @@ export function OrdersBoard({
   const [viewMode, setViewMode] = useState<ViewMode>("TABLE_GRID");
   const [selectedSection, setSelectedSection] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortMode, setSortMode] = useState<
+    "NAME_ASC" | "NAME_DESC" | "OCCUPIED_FIRST" | "EMPTY_FIRST"
+  >("NAME_ASC");
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 
   // Spotlight State
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -294,9 +300,9 @@ export function OrdersBoard({
     onError: (err) => toast.error(err || "İptal işlemi başarısız."),
   });
 
-  // Filtered Tables
+  // Filtered & Sorted Tables
   const filteredTables = useMemo(() => {
-    return tables.filter((t) => {
+    const list = tables.filter((t) => {
       if (!t.isActive) return false;
       if (selectedSection !== "ALL" && t.section !== selectedSection) return false;
       if (searchQuery.trim()) {
@@ -308,7 +314,22 @@ export function OrdersBoard({
       }
       return true;
     });
-  }, [tables, selectedSection, searchQuery]);
+
+    return list.sort((a, b) => {
+      if (sortMode === "OCCUPIED_FIRST" || sortMode === "EMPTY_FIRST") {
+        const aOcc = (ordersByTableId.get(a.id) ?? []).length > 0;
+        const bOcc = (ordersByTableId.get(b.id) ?? []).length > 0;
+        if (aOcc !== bOcc) {
+          return sortMode === "OCCUPIED_FIRST" ? (bOcc ? 1 : -1) : (aOcc ? 1 : -1);
+        }
+      }
+      if (sortMode === "NAME_DESC") {
+        return b.label.localeCompare(a.label, "tr", { numeric: true, sensitivity: "base" });
+      }
+      // Default: Natural numeric comparison (e.g. Masa 1, Masa 2 ... Masa 15)
+      return a.label.localeCompare(b.label, "tr", { numeric: true, sensitivity: "base" });
+    });
+  }, [tables, selectedSection, searchQuery, sortMode, ordersByTableId]);
 
   // Calculate Table Stats
   const tableStats = useMemo(() => {
@@ -606,15 +627,104 @@ export function OrdersBoard({
             </div>
           </div>
 
-          {/* Search Bar for Tables */}
-          <div className="relative max-w-sm">
-            <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Masa adı veya salon ile ara…"
-              className="h-10 rounded-xl pl-9 text-xs"
-            />
+          {/* Search Bar & Subtle Sorting Filter */}
+          <div className="flex items-center gap-2 max-w-md w-full">
+            <div className="relative flex-1">
+              <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Masa adı veya salon ile ara…"
+                className="h-10 rounded-xl pl-9 text-xs"
+              />
+            </div>
+
+            {/* Discreet Sort Filter Icon Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsSortMenuOpen((prev) => !prev)}
+                className={cn(
+                  "flex size-10 items-center justify-center rounded-xl border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-2xs cursor-pointer",
+                  sortMode !== "NAME_ASC" && "border-primary/50 text-primary bg-primary/10",
+                )}
+                title="Sıralama Seçenekleri"
+                aria-label="Masaları Sırala"
+              >
+                <ArrowUpDownIcon className="size-4" />
+              </button>
+
+              {isSortMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1.5 w-52 z-30 overflow-hidden rounded-2xl border border-border bg-popover/95 p-1 text-popover-foreground shadow-xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150"
+                  onMouseLeave={() => setIsSortMenuOpen(false)}
+                >
+                  <p className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-muted-foreground border-b border-border/50">
+                    Masa Sıralama
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortMode("NAME_ASC");
+                      setIsSortMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
+                      sortMode === "NAME_ASC" && "text-primary font-black bg-primary/10",
+                    )}
+                  >
+                    <span>Masa Numarası (1 → 9)</span>
+                    {sortMode === "NAME_ASC" && <CheckIcon className="size-3.5 text-primary" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortMode("NAME_DESC");
+                      setIsSortMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
+                      sortMode === "NAME_DESC" && "text-primary font-black bg-primary/10",
+                    )}
+                  >
+                    <span>Masa Numarası (9 → 1)</span>
+                    {sortMode === "NAME_DESC" && <CheckIcon className="size-3.5 text-primary" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortMode("OCCUPIED_FIRST");
+                      setIsSortMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
+                      sortMode === "OCCUPIED_FIRST" && "text-primary font-black bg-primary/10",
+                    )}
+                  >
+                    <span>Önce Dolu Masalar</span>
+                    {sortMode === "OCCUPIED_FIRST" && <CheckIcon className="size-3.5 text-primary" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortMode("EMPTY_FIRST");
+                      setIsSortMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
+                      sortMode === "EMPTY_FIRST" && "text-primary font-black bg-primary/10",
+                    )}
+                  >
+                    <span>Önce Boş Masalar</span>
+                    {sortMode === "EMPTY_FIRST" && <CheckIcon className="size-3.5 text-primary" />}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* TABLE GRID */}

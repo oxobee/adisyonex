@@ -336,8 +336,8 @@ export function DashboardHeaderNav({
                 type="button"
                 onClick={() => setIsProfileOpen((p) => !p)}
                 className={cn(
-                  "relative flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 ring-1 ring-primary/15 bg-muted/40 shadow-xs hover:border-primary hover:ring-primary/40 hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer select-none outline-none overflow-hidden p-0.5",
-                  isProfileOpen && "ring-2 ring-primary border-primary scale-105 shadow-md",
+                  "relative flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-background/80 shadow-2xs hover:border-foreground/40 hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer select-none outline-none overflow-hidden p-0.5",
+                  isProfileOpen && "border-foreground/50 ring-1 ring-foreground/20 scale-105 shadow-md",
                 )}
                 aria-label="Profil Menüsü"
               >
@@ -357,7 +357,7 @@ export function DashboardHeaderNav({
                   {/* Top Profile Header with X Close Button */}
                   <div className="flex items-center justify-between p-2 pb-3 border-b border-border/60">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative size-11 shrink-0 rounded-lg border border-primary/30 ring-1 ring-primary/20 overflow-hidden bg-muted/40 shadow-xs">
+                      <div className="relative size-11 shrink-0 rounded-lg border border-border/70 overflow-hidden bg-muted/40 shadow-xs">
                         <Image
                           src="/default-avatar.png"
                           alt={user.name}
