@@ -27,17 +27,29 @@ beforeAll(() => {
 beforeEach(() => store.clear());
 
 describe("staff session", () => {
-  it("round-trips a signed session", async () => {
+  it("round-trips a signed session for all staff roles", async () => {
     await createStaffSession({
       staffId: "st1",
       restaurantId: "res_1",
-      role: "WAITER",
+      role: "CASHIER",
     });
 
     expect(await getStaffSession()).toEqual({
       staffId: "st1",
       restaurantId: "res_1",
-      role: "WAITER",
+      role: "CASHIER",
+    });
+
+    await createStaffSession({
+      staffId: "st2",
+      restaurantId: "res_1",
+      role: "OTHER",
+    });
+
+    expect(await getStaffSession()).toEqual({
+      staffId: "st2",
+      restaurantId: "res_1",
+      role: "OTHER",
     });
   });
 

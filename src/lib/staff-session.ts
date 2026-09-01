@@ -45,6 +45,17 @@ export const createStaffSession = async (
   });
 };
 
+const VALID_STAFF_ROLES: readonly string[] = [
+  "WAITER",
+  "KITCHEN",
+  "MANAGEMENT",
+  "CASHIER",
+  "OTHER",
+];
+
+const isStaffRole = (v: unknown): v is StaffRole =>
+  typeof v === "string" && VALID_STAFF_ROLES.includes(v);
+
 /** Read + verify the staff session cookie, returning its payload or null. */
 export const getStaffSession = async (): Promise<StaffSessionPayload | null> => {
   const store = await cookies();
@@ -58,7 +69,7 @@ export const getStaffSession = async (): Promise<StaffSessionPayload | null> => 
     if (
       typeof sub === "string" &&
       typeof restaurantId === "string" &&
-      (role === "WAITER" || role === "KITCHEN")
+      isStaffRole(role)
     ) {
       return { staffId: sub, restaurantId, role };
     }

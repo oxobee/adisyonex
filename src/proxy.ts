@@ -111,7 +111,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  const authenticated = hasSession(request);
+  const authenticated = hasSession(request) || hasStaffSession(request);
 
   // Keep signed-in managers out of the auth pages.
   if (authenticated && matchesRoute(pathname, AUTH_ROUTES)) {
