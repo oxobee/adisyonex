@@ -52,7 +52,7 @@ describe("getStaffContextOrNull", () => {
     });
   });
 
-  it("locks out a deactivated / deleted / role-changed staff member instantly", async () => {
+  it("locks out a deactivated or deleted staff member instantly", async () => {
     vi.mocked(getStaffSession).mockResolvedValue(session);
 
     vi.mocked(findStaffById).mockResolvedValueOnce(
@@ -62,11 +62,6 @@ describe("getStaffContextOrNull", () => {
 
     vi.mocked(findStaffById).mockResolvedValueOnce(
       makeStaff({ deletedAt: new Date() }),
-    );
-    expect(await getStaffContextOrNull()).toBeNull();
-
-    vi.mocked(findStaffById).mockResolvedValueOnce(
-      makeStaff({ role: "MANAGEMENT" }),
     );
     expect(await getStaffContextOrNull()).toBeNull();
   });

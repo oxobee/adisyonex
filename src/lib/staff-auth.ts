@@ -30,7 +30,6 @@ export const getStaffContextOrNull = cache(
     !staff ||
     staff.deletedAt ||
     staff.status !== "ACTIVE" ||
-    (staff.role !== "WAITER" && staff.role !== "KITCHEN") ||
     staff.restaurantId !== session.restaurantId
   ) {
     return null;

@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 const ROLE_LABELS: Record<string, string> = {
   WAITER: "Garson",
   KITCHEN: "Mutfak",
@@ -20,11 +23,25 @@ const ROLE_LABELS: Record<string, string> = {
   STAFF: "Personel",
 };
 
+const SCREEN_NAV: Record<string, { label: string; icon: string }> = {
+  "/dashboard/pos": { label: "POS / Kasa", icon: "💳" },
+  "/dashboard/orders": { label: "Anlık Durum", icon: "📋" },
+  "/dashboard/kitchen": { label: "Mutfak Ekranı", icon: "🍳" },
+  "/dashboard/tables": { label: "Masalar", icon: "🪑" },
+  "/dashboard/menu": { label: "Menü", icon: "📖" },
+  "/dashboard/customers": { label: "Müşteriler", icon: "🎁" },
+  "/dashboard/inventory": { label: "Stok & Envanter", icon: "📦" },
+  "/dashboard/staff": { label: "Personel", icon: "👥" },
+  "/dashboard": { label: "Yönetim Paneli", icon: "📊" },
+  "/dashboard/settings": { label: "Ayarlar", icon: "⚙️" },
+};
+
 export interface StaffHeaderInfo {
   readonly name: string;
   readonly role: string;
   readonly employeeCode?: string;
   readonly photoUrl?: string | null;
+  readonly allowedRoutes?: readonly string[] | null;
 }
 
 export function SiteHeader({
@@ -38,6 +55,7 @@ export function SiteHeader({
   readonly isStaff?: boolean;
   readonly restaurantUsername?: string | null;
 }) {
+  const pathname = usePathname();
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
 
   // STAFF HEADER: Fixed top bar with staff name and "Ekranı Kilitle" button
@@ -50,11 +68,15 @@ export function SiteHeader({
         .slice(0, 2)
         .toUpperCase() || "?";
 
+    const allowed = staffContext.allowedRoutes && staffContext.allowedRoutes.length > 0
+      ? staffContext.allowedRoutes
+      : null;
+
     return (
       <>
-        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 sm:px-6 shadow-xs">
-          {/* Left: Staff Profile (replaces Adisyon & POS) */}
-          <div className="flex items-center gap-3 min-w-0">
+        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur-md px-3 sm:px-6 shadow-xs gap-2">
+          {/* Left: Staff Profile */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="size-9 shrink-0 overflow-hidden rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-center font-bold text-xs text-primary shadow-xs">
               {staffContext.photoUrl ? (
                 <Image
@@ -69,7 +91,7 @@ export function SiteHeader({
               )}
             </div>
 
-            <div className="min-w-0 flex items-center gap-2">
+            <div className="min-w-0 flex items-center gap-1.5 sm:gap-2">
               <span className="truncate text-sm sm:text-base font-black text-foreground">
                 {staffContext.name}
               </span>
@@ -79,7 +101,31 @@ export function SiteHeader({
             </div>
           </div>
 
-          {/* Right: "Ekranı Kilitle" Lock Button (replaces Sistem Aktif) */}
+          {/* Center: Allowed Screens Navigation (if staff has multiple permitted screens) */}
+          {allowed && allowed.length > 1 && (
+            <nav className="no-scrollbar flex items-center gap-1.5 overflow-x-auto py-1">
+              {allowed.map((route) => {
+                const nav = SCREEN_NAV[route] ?? { label: route.replace("/dashboard/", ""), icon: "📄" };
+                const isActive = pathname === route || pathname.startsWith(`${route}/`);
+                return (
+                  <Link
+                    key={route}
+                    href={route}
+                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-xs scale-102"
+                        : "bg-muted/70 text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span>{nav.icon}</span>
+                    <span className="hidden md:inline">{nav.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
+
+          {/* Right: "Ekranı Kilitle" Lock Button */}
           <div className="flex items-center gap-2 shrink-0">
             <Button
               type="button"

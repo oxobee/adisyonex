@@ -85,6 +85,7 @@ export default async function DashboardLayout({
               name: staffCtx.name,
               role: staffCtx.role,
               employeeCode: staffCtx.employeeCode,
+              allowedRoutes: staffCtx.allowedRoutes,
             }}
             restaurantUsername={share?.username ?? null}
           />
