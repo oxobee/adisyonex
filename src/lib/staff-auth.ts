@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getStaffSession } from "@/lib/staff-session";
 import { findStaffById } from "@/repositories/staff.repository";
 import type { StaffRole } from "@/types/staff";
@@ -16,8 +17,10 @@ export interface StaffContext {
  * Resolve the signed-in staff member, re-checking the DB row on every call so a
  * deactivated / deleted / role-changed staff member is locked out immediately.
  * Also enforces that the session's restaurant still matches the staff record.
+ * Memoized per-request using React cache() for maximum performance.
  */
-export const getStaffContextOrNull = async (): Promise<StaffContext | null> => {
+export const getStaffContextOrNull = cache(
+  async (): Promise<StaffContext | null> => {
   const session = await getStaffSession();
   if (!session) {
     return null;
@@ -41,4 +44,4 @@ export const getStaffContextOrNull = async (): Promise<StaffContext | null> => {
     jobTitle: staff.jobTitle ?? null,
     allowedRoutes: (staff.allowedRoutes as string[] | null) ?? null,
   };
-};
+});

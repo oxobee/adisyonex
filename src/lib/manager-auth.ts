@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { findFirstRestaurantByOwner } from "@/repositories/restaurant.repository";
 import { getCurrentUserId } from "./auth-helpers";
 import { getStaffContextOrNull } from "./staff-auth";
@@ -10,9 +11,9 @@ export interface ManagerContext {
 /**
  * Resolve the active restaurant context.
  * Checks the signed-in manager session first, then falls back to staff session.
- * This allows all staff devices to run dashboard screens & actions concurrently!
+ * Memoized per-request using React cache() for maximum performance.
  */
-export const getManagerContextOrNull =
+export const getManagerContextOrNull = cache(
   async (): Promise<ManagerContext | null> => {
     const userId = await getCurrentUserId();
     if (userId) {
@@ -26,4 +27,5 @@ export const getManagerContextOrNull =
       return { userId: staff.staffId, restaurantId: staff.restaurantId };
     }
     return null;
-  };
+  },
+);
