@@ -76,39 +76,62 @@ export default async function DashboardLayout({
           }}
         />
       )}
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar
-          variant="inset"
-          user={{
-            name: staffCtx?.name || user?.name || "Manager",
-            contact: staffCtx?.jobTitle || user?.phone || user?.email || "",
-            role: staffCtx ? "STAFF" : user?.role,
-          }}
-          license={licenseInfo ? serializeForClient(licenseInfo) : null}
-          systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
-          allowedRoutes={staffCtx?.allowedRoutes ?? null}
-          restaurantUsername={share?.username ?? null}
-        />
-        <SidebarInset>
-          <SiteHeader staffLoginUsername={share?.username ?? null} />
-          {children}
-        </SidebarInset>
-
-        {/* License Expired Blur Overlay Modal */}
-        {licenseInfo && licenseInfo.isExpired && (
-          <LicenseExpiredModal
-            licenseInfo={serializeForClient(licenseInfo)}
-            isStaff={!!staffCtx}
+      {staffCtx ? (
+        <div className="flex min-h-screen w-full flex-col bg-background">
+          <SiteHeader
+            isStaff={true}
+            staffContext={{
+              name: staffCtx.name,
+              role: staffCtx.role,
+              employeeCode: staffCtx.employeeCode,
+            }}
+            restaurantUsername={share?.username ?? null}
           />
-        )}
-      </SidebarProvider>
+          <main className="flex-1 w-full">{children}</main>
+
+          {/* License Expired Blur Overlay Modal */}
+          {licenseInfo && licenseInfo.isExpired && (
+            <LicenseExpiredModal
+              licenseInfo={serializeForClient(licenseInfo)}
+              isStaff={true}
+            />
+          )}
+        </div>
+      ) : (
+        <SidebarProvider
+          style={
+            {
+              "--sidebar-width": "calc(var(--spacing) * 72)",
+              "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+          }
+        >
+          <AppSidebar
+            variant="inset"
+            user={{
+              name: user?.name || "Manager",
+              contact: user?.phone || user?.email || "",
+              role: user?.role,
+            }}
+            license={licenseInfo ? serializeForClient(licenseInfo) : null}
+            systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
+            allowedRoutes={null}
+            restaurantUsername={share?.username ?? null}
+          />
+          <SidebarInset>
+            <SiteHeader staffLoginUsername={share?.username ?? null} />
+            {children}
+          </SidebarInset>
+
+          {/* License Expired Blur Overlay Modal */}
+          {licenseInfo && licenseInfo.isExpired && (
+            <LicenseExpiredModal
+              licenseInfo={serializeForClient(licenseInfo)}
+              isStaff={false}
+            />
+          )}
+        </SidebarProvider>
+      )}
     </>
   )
 }

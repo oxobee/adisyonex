@@ -1,15 +1,109 @@
-import { ExternalLinkIcon } from "lucide-react"
+"use client";
 
-import { ConnectionStatus } from "@/components/shared/connection-status"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useState } from "react";
+import Image from "next/image";
+import { ExternalLinkIcon, LockIcon, LogOutIcon } from "lucide-react";
+
+import { ConnectionStatus } from "@/components/shared/connection-status";
+import { StaffLockModal } from "@/components/staff/staff-lock-modal";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+
+const ROLE_LABELS: Record<string, string> = {
+  WAITER: "Garson",
+  KITCHEN: "Mutfak",
+  MANAGEMENT: "Yönetici",
+  ADMIN: "Yönetici",
+  STAFF: "Personel",
+};
+
+export interface StaffHeaderInfo {
+  readonly name: string;
+  readonly role: string;
+  readonly employeeCode?: string;
+  readonly photoUrl?: string | null;
+}
 
 export function SiteHeader({
   staffLoginUsername,
+  staffContext,
+  isStaff = false,
+  restaurantUsername,
 }: {
-  readonly staffLoginUsername?: string | null
+  readonly staffLoginUsername?: string | null;
+  readonly staffContext?: StaffHeaderInfo | null;
+  readonly isStaff?: boolean;
+  readonly restaurantUsername?: string | null;
 }) {
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+
+  // STAFF HEADER: Fixed top bar with staff name and "Ekranı Kilitle" button
+  if (isStaff && staffContext) {
+    const initials =
+      staffContext.name
+        .split(" ")
+        .map((p) => p[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "?";
+
+    return (
+      <>
+        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 sm:px-6 shadow-xs">
+          {/* Left: Staff Profile (replaces Adisyon & POS) */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-9 shrink-0 overflow-hidden rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-center font-bold text-xs text-primary shadow-xs">
+              {staffContext.photoUrl ? (
+                <Image
+                  src={staffContext.photoUrl}
+                  alt={staffContext.name}
+                  width={36}
+                  height={36}
+                  className="size-full object-cover"
+                />
+              ) : (
+                initials
+              )}
+            </div>
+
+            <div className="min-w-0 flex items-center gap-2">
+              <span className="truncate text-sm sm:text-base font-black text-foreground">
+                {staffContext.name}
+              </span>
+              <span className="shrink-0 rounded-lg bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[11px] font-extrabold uppercase">
+                {ROLE_LABELS[staffContext.role] ?? staffContext.role}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: "Ekranı Kilitle" Lock Button (replaces Sistem Aktif) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsLockModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border-primary/30 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary font-bold text-xs sm:text-sm h-9 px-3 sm:px-4 transition-all active:scale-95 shadow-xs cursor-pointer"
+            >
+              <LockIcon className="size-3.5 sm:size-4" />
+              <span>Ekranı Kilitle</span>
+            </Button>
+          </div>
+        </header>
+
+        {/* Lock Modal */}
+        <StaffLockModal
+          isOpen={isLockModalOpen}
+          onClose={() => setIsLockModalOpen(false)}
+          staff={staffContext}
+          restaurantUsername={restaurantUsername}
+        />
+      </>
+    );
+  }
+
+  // MANAGER / ADMIN HEADER: Regular sidebar header with ConnectionStatus
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center justify-between gap-2 px-4 lg:gap-3 lg:px-6">
@@ -33,7 +127,7 @@ export function SiteHeader({
               className="hidden sm:inline-flex rounded-xl"
               render={
                 <a
-                  href="/personelgiris"
+                  href={`/${staffLoginUsername}/personals`}
                   target="_blank"
                   rel="noopener noreferrer"
                 />
@@ -46,5 +140,5 @@ export function SiteHeader({
         </div>
       </div>
     </header>
-  )
+  );
 }

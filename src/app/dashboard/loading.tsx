@@ -21,15 +21,13 @@ export default function DashboardLoading() {
         </div>
       </div>
 
-      {/* Centered Lottie Animated Loader */}
+      {/* Centered Lottie Animated Loader - Transparent seamless floating without box */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="flex flex-col items-center justify-center rounded-3xl bg-card/85 p-6 sm:p-8 shadow-2xl border border-primary/20 backdrop-blur-xl animate-in zoom-in-95 duration-200">
-          <LottieLoader
-            size="md"
-            text="Yükleniyor…"
-            className="p-0"
-          />
-        </div>
+        <LottieLoader
+          size="md"
+          text="Yükleniyor…"
+          className="p-0"
+        />
       </div>
     </div>
   );

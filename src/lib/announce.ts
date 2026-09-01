@@ -8,19 +8,22 @@ export interface SpeakableOrder {
 }
 
 /**
- * Pick the best available Hindi voice for announcements: an exact `hi-IN`
- * voice when present, else any `hi-*` voice, else `null` (caller falls back to
- * the browser default with `lang = "hi-IN"`).
+ * Pick the best available Turkish voice for announcements: an exact `tr-TR`
+ * voice when present, else any `tr-*` voice, else `null` (caller falls back to
+ * the browser default with `lang = "tr-TR"`).
  */
-export const pickHindiVoice = (
+export const pickTurkishVoice = (
   voices: readonly SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice | null => {
-  const hindi = voices.filter((v) => v.lang?.toLowerCase().startsWith("hi"));
-  if (hindi.length === 0) {
+  const turkish = voices.filter((v) => v.lang?.toLowerCase().startsWith("tr"));
+  if (turkish.length === 0) {
     return null;
   }
-  return hindi.find((v) => v.lang.toLowerCase() === "hi-in") ?? hindi[0];
+  return turkish.find((v) => v.lang.toLowerCase() === "tr-tr") ?? turkish[0];
 };
+
+/** Alias for backward compatibility */
+export const pickHindiVoice = pickTurkishVoice;
 
 /** Ids present in `current` that are not already in `seen`. */
 export const newIds = (
@@ -28,23 +31,23 @@ export const newIds = (
   current: readonly string[],
 ): string[] => current.filter((id) => !seen.has(id));
 
-/** Kitchen alert for a fresh ticket — e.g. "Naya order, T1". */
+/** Kitchen alert for a fresh ticket — e.g. "Yeni sipariş, Masa 1". */
 export const newOrderPhrase = (o: SpeakableOrder): string =>
   o.orderType === "DINE_IN" && o.tableLabel
-    ? `Naya order, ${o.tableLabel}`
-    : `Naya ${o.orderType === "DELIVERY" ? "delivery" : "takeaway"} order`;
+    ? `Yeni sipariş, ${o.tableLabel}`
+    : `Yeni ${o.orderType === "DELIVERY" ? "paket servis" : "gel-al"} siparişi`;
 
-/** Alert for a customer-placed self-order — e.g. "Naya self order, T1". */
+/** Alert for a customer-placed self-order — e.g. "Masa 1 için yeni sipariş". */
 export const selfOrderAlertPhrase = (o: SpeakableOrder): string =>
   o.orderType === "DINE_IN" && o.tableLabel
-    ? `Naya self order, ${o.tableLabel}`
-    : "Naya self order";
+    ? `Masa ${o.tableLabel} için yeni sipariş`
+    : "Yeni müşteri siparişi";
 
-/** Waiter alert for a ready order — e.g. "T1 ka order taiyar hai". */
+/** Waiter alert for a ready order — e.g. "Masa 1 siparişi hazır". */
 export const orderReadyPhrase = (o: SpeakableOrder): string =>
   o.orderType === "DINE_IN" && o.tableLabel
-    ? `${o.tableLabel} ka order taiyar hai`
-    : `Takeaway number ${o.orderNumber} taiyar hai`;
+    ? `${o.tableLabel} siparişi hazır`
+    : `${o.orderNumber} numaralı sipariş hazır`;
 
 /** Per-order snapshot for alert detection: id + count of active self-order lines. */
 export interface OrderAlertSignature {
@@ -68,8 +71,7 @@ export const alertSignatureMap = (
 /**
  * Diff the previous snapshot against the current one and return which orders
  * warrant a voice alert: any brand-new order id, plus already-seen orders whose
- * self-order line count grew (a guest adding items to their table). Staff-only
- * additions to an existing order stay silent.
+ * self-order line count grew (a guest adding items to their table).
  */
 export const newOrderAlerts = (
   prev: ReadonlyMap<string, number>,
