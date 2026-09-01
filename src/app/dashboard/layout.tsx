@@ -1,6 +1,5 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { DashboardHeaderNav } from "@/components/dashboard-header-nav"
 import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { redirect } from "next/navigation"
 import { getCurrentUserId } from "@/lib/auth-helpers"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
@@ -76,7 +75,9 @@ export default async function DashboardLayout({
           }}
         />
       )}
+
       {staffCtx ? (
+        /* Staff Mode: Full width with dedicated staff header (Name + Ekranı Kilitle) */
         <div className="flex min-h-screen w-full flex-col bg-background">
           <SiteHeader
             isStaff={true}
@@ -98,16 +99,9 @@ export default async function DashboardLayout({
           )}
         </div>
       ) : (
-        <SidebarProvider
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 72)",
-              "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-          }
-        >
-          <AppSidebar
-            variant="inset"
+        /* Manager / Admin Mode: Sleek Top Header Navigation Bar without side menu */
+        <div className="flex min-h-screen w-full flex-col bg-background">
+          <DashboardHeaderNav
             user={{
               name: user?.name || "Manager",
               contact: user?.phone || user?.email || "",
@@ -115,13 +109,9 @@ export default async function DashboardLayout({
             }}
             license={licenseInfo ? serializeForClient(licenseInfo) : null}
             systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
-            allowedRoutes={null}
             restaurantUsername={share?.username ?? null}
           />
-          <SidebarInset>
-            <SiteHeader staffLoginUsername={share?.username ?? null} />
-            {children}
-          </SidebarInset>
+          <main className="flex-1 w-full">{children}</main>
 
           {/* License Expired Blur Overlay Modal */}
           {licenseInfo && licenseInfo.isExpired && (
@@ -130,7 +120,7 @@ export default async function DashboardLayout({
               isStaff={false}
             />
           )}
-        </SidebarProvider>
+        </div>
       )}
     </>
   )
