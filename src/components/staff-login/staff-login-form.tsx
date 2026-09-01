@@ -21,7 +21,17 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const ROLE_LABEL: Record<string, string> = {
   WAITER: "Garson / Servis",
   KITCHEN: "Mutfak / Aşçı",
+  MANAGEMENT: "Yönetici / Kasa",
   ADMIN: "Yönetici",
+  STAFF: "Personel",
+};
+
+const ROLE_ICON: Record<string, string> = {
+  WAITER: "🍽️",
+  KITCHEN: "🍳",
+  MANAGEMENT: "👑",
+  ADMIN: "👑",
+  STAFF: "👤",
 };
 
 const initials = (name: string) =>
@@ -45,19 +55,18 @@ function Avatar({
 }) {
   return (
     <span
-      className={`ring-border bg-muted flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold ring-1 ${className}`}
-    >
-      {photoUrl ? (
-        <Image
-          src={photoUrl}
-          alt=""
-          width={64}
-          height={64}
-          className="size-full object-cover"
-        />
-      ) : (
-        initials(name)
+      className={cn(
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/70 bg-muted/40 font-bold shadow-2xs",
+        className,
       )}
+    >
+      <Image
+        src={photoUrl || "/default-avatar.png"}
+        alt={name}
+        width={72}
+        height={72}
+        className="size-full object-cover"
+      />
     </span>
   );
 }
@@ -75,9 +84,49 @@ export function StaffLoginForm({
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<StaffLoginOption | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [pin, setPin] = useState("");
   const [shakeError, setShakeError] = useState(false);
   const submitRef = useRef(false);
+
+  // Group and filter staff
+  const categories = [
+    { id: "ALL", label: "Tümü", icon: "👥", count: staff.length },
+    {
+      id: "WAITER",
+      label: "Garson & Servis",
+      icon: "🍽️",
+      count: staff.filter((s) => s.role === "WAITER").length,
+    },
+    {
+      id: "KITCHEN",
+      label: "Mutfak & Aşçı",
+      icon: "🍳",
+      count: staff.filter((s) => s.role === "KITCHEN").length,
+    },
+    {
+      id: "MANAGEMENT",
+      label: "Yönetici & Kasa",
+      icon: "👑",
+      count: staff.filter((s) => s.role === "MANAGEMENT").length,
+    },
+  ].filter((c) => c.id === "ALL" || c.count > 0);
+
+  const filteredStaff = staff.filter((s) => {
+    if (selectedCategory !== "ALL" && s.role !== selectedCategory) {
+      return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        s.name.toLowerCase().includes(q) ||
+        (s.jobTitle && s.jobTitle.toLowerCase().includes(q)) ||
+        (ROLE_LABEL[s.role] && ROLE_LABEL[s.role].toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
 
   const login = useServerAction(staffLoginAction, {
     onSuccess: (result) => {
@@ -132,24 +181,65 @@ export function StaffLoginForm({
     setPin("");
   };
 
-  // Step 1 — pick who you are.
+  // Step 1 — pick who you are (Categorized)
   if (!selected) {
     return (
-      <div className="flex w-full max-w-sm flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="flex w-full max-w-md flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Brand Header */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/80 bg-muted shadow-md">
+        <div className="flex flex-col items-center gap-2.5 text-center">
+          <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/80 bg-muted shadow-md">
             {logoUrl ? (
-              <Image src={logoUrl} alt="" width={64} height={64} className="size-full object-cover" />
+              <Image src={logoUrl} alt="" width={56} height={56} className="size-full object-cover" />
             ) : (
-              <UtensilsCrossedIcon className="text-muted-foreground size-8" />
+              <UtensilsCrossedIcon className="text-muted-foreground size-7" />
             )}
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-foreground">{restaurantName}</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Personel Girişi · İsminize dokunun</p>
+            <p className="text-muted-foreground text-xs mt-0.5">Personel Girişi · İsminize dokunun</p>
           </div>
         </div>
+
+        {/* Category Tabs & Quick Search */}
+        {staff.length > 0 && (
+          <div className="flex flex-col gap-2.5">
+            {/* Category Chips */}
+            {categories.length > 2 && (
+              <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={cn(
+                      "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all select-none cursor-pointer",
+                      selectedCategory === cat.id
+                        ? "border-primary bg-primary text-primary-foreground shadow-xs scale-102"
+                        : "border-border/70 bg-card text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                    <span className="rounded-full bg-muted px-1.5 py-0.2 text-[10px]">
+                      {cat.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Search */}
+            {staff.length > 4 && (
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Personel adı ile ara…"
+                className="h-9 w-full rounded-xl border border-border/80 bg-card px-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              />
+            )}
+          </div>
+        )}
 
         {staff.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border/80 p-8 text-center">
@@ -158,26 +248,33 @@ export function StaffLoginForm({
             </p>
             <p className="text-xs text-muted-foreground">Lütfen yöneticinize başvurun.</p>
           </div>
+        ) : filteredStaff.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border/80 p-6 text-center">
+            <p className="text-muted-foreground text-xs">Aradığınız kriterde personel bulunamadı.</p>
+          </div>
         ) : (
-          <ul className="flex max-h-[65svh] flex-col gap-2 overflow-y-auto pr-1">
-            {staff.map((option) => (
+          <ul className="flex max-h-[60svh] flex-col gap-2 overflow-y-auto pr-1">
+            {filteredStaff.map((option) => (
               <li key={option.employeeCode} className="animate-in fade-in slide-in-from-left-2 duration-200">
                 <button
                   type="button"
                   onClick={() => pick(option)}
-                  className="group flex w-full items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-xs hover:border-primary/40 hover:shadow-md active:scale-[0.98] transition-all duration-150 cursor-pointer"
+                  className="group flex w-full items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3 text-left shadow-xs hover:border-primary/40 hover:shadow-md active:scale-[0.98] transition-all duration-150 cursor-pointer"
                 >
-                  <Avatar name={option.name} photoUrl={option.photoUrl} className="size-12 text-sm" />
+                  <Avatar name={option.name} photoUrl={option.photoUrl} className="size-11 text-sm" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-bold text-foreground text-sm">
-                      {option.name}
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate font-bold text-foreground text-sm">
+                        {option.name}
+                      </span>
+                      <span className="text-xs shrink-0">{ROLE_ICON[option.role] ?? "👤"}</span>
                     </span>
-                    <span className="text-muted-foreground block text-xs mt-0.5">
-                      {ROLE_LABEL[option.role] ?? option.role}
+                    <span className="text-muted-foreground block text-xs mt-0.5 truncate">
+                      {option.jobTitle || ROLE_LABEL[option.role] || option.role}
                     </span>
                   </span>
                   <span className="shrink-0 rounded-xl bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 text-xs font-black transition-all group-hover:bg-primary group-hover:text-primary-foreground">
-                    Seç
+                    Giriş Yap
                   </span>
                 </button>
               </li>

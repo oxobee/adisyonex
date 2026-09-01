@@ -26,11 +26,11 @@ export interface StaffLoginRestaurant {
   readonly logoUrl: string | null;
 }
 
-/** A selectable staff member on the login screen — never exposes the PIN hash. */
 export interface StaffLoginOption {
   readonly employeeCode: string;
   readonly name: string;
   readonly role: StaffRole;
+  readonly jobTitle?: string | null;
   readonly photoUrl: string | null;
 }
 
@@ -50,27 +50,25 @@ export const getStaffLoginRestaurant = async (
   };
 };
 
-/** Active waiter/kitchen staff who can sign in, for the login picker. */
+/** Active staff who can sign in, for the login picker. */
 export const listLoginStaff = async (
   restaurantId: string,
 ): Promise<StaffLoginOption[]> => {
   const staff = await findStaffByRestaurant(restaurantId);
   return staff
-    .filter(
-      (s) =>
-        s.status === "ACTIVE" && (s.role === "WAITER" || s.role === "KITCHEN"),
-    )
+    .filter((s) => s.status === "ACTIVE" && !s.deletedAt)
     .map((s) => ({
       employeeCode: s.employeeCode,
       name: s.name,
       role: s.role,
+      jobTitle: s.jobTitle,
       photoUrl: s.photoUrl,
     }));
 };
 
 /**
- * Verify a staff member's Employee ID + PIN for a restaurant. Only ACTIVE
- * waiter/kitchen staff may sign in. Failures are generic (`STAFF_LOGIN_INVALID`)
+ * Verify a staff member's Employee ID + PIN for a restaurant.
+ * All ACTIVE staff with PIN may sign in. Failures are generic (`STAFF_LOGIN_INVALID`)
  * to avoid enumeration; a locked account throws `STAFF_LOGIN_LOCKED`.
  */
 export const verifyStaffLogin = async (
@@ -80,9 +78,6 @@ export const verifyStaffLogin = async (
 ): Promise<StaffLoginResult> => {
   const staff = await findStaffByEmployeeCode(restaurantId, employeeCode);
   if (!staff || staff.deletedAt || staff.status !== "ACTIVE") {
-    throw new Error(STAFF_LOGIN_INVALID);
-  }
-  if (staff.role !== "WAITER" && staff.role !== "KITCHEN") {
     throw new Error(STAFF_LOGIN_INVALID);
   }
   if (staff.loginLockedUntil && staff.loginLockedUntil.getTime() > Date.now()) {

@@ -71,33 +71,36 @@ describe("verifyStaffLogin", () => {
     expect(result.role).toBe("KITCHEN");
   });
 
-  it("rejects unknown / management / non-active / deleted with a generic error", async () => {
-    vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(null);
-    await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
-      STAFF_LOGIN_INVALID,
-    );
+    it("allows a management staff member", async () => {
+      vi.mocked(findStaffByEmployeeCode).mockResolvedValue(
+        makeStaff({ role: "MANAGEMENT" }),
+      );
 
-    vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(
-      makeStaff({ role: "MANAGEMENT" }),
-    );
-    await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
-      STAFF_LOGIN_INVALID,
-    );
+      const result = await verifyStaffLogin("res_1", "E1", "1234");
 
-    vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(
-      makeStaff({ status: "ON_LEAVE" }),
-    );
-    await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
-      STAFF_LOGIN_INVALID,
-    );
+      expect(result.role).toBe("MANAGEMENT");
+    });
 
-    vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(
-      makeStaff({ deletedAt: new Date() }),
-    );
-    await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
-      STAFF_LOGIN_INVALID,
-    );
-  });
+    it("rejects unknown / non-active / deleted with a generic error", async () => {
+      vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(null);
+      await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
+        STAFF_LOGIN_INVALID,
+      );
+
+      vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(
+        makeStaff({ status: "ON_LEAVE" }),
+      );
+      await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
+        STAFF_LOGIN_INVALID,
+      );
+
+      vi.mocked(findStaffByEmployeeCode).mockResolvedValueOnce(
+        makeStaff({ deletedAt: new Date() }),
+      );
+      await expect(verifyStaffLogin("res_1", "E1", "1234")).rejects.toThrow(
+        STAFF_LOGIN_INVALID,
+      );
+    });
 
   it("increments attempts on a wrong pin", async () => {
     vi.mocked(findStaffByEmployeeCode).mockResolvedValue(
@@ -176,7 +179,7 @@ describe("getStaffLoginRestaurant", () => {
 describe("listLoginStaff", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns only active waiter/kitchen staff without the pin hash", async () => {
+  it("returns all active staff without the pin hash", async () => {
     vi.mocked(findStaffByRestaurant).mockResolvedValue([
       makeStaff({ employeeCode: "E1", name: "Asha", role: "WAITER" }),
       makeStaff({ employeeCode: "E2", name: "Vikram", role: "KITCHEN" }),
@@ -187,8 +190,9 @@ describe("listLoginStaff", () => {
     const options = await listLoginStaff("res_1");
 
     expect(options).toEqual([
-      { employeeCode: "E1", name: "Asha", role: "WAITER", photoUrl: null },
-      { employeeCode: "E2", name: "Vikram", role: "KITCHEN", photoUrl: null },
+      { employeeCode: "E1", name: "Asha", role: "WAITER", photoUrl: null, jobTitle: undefined },
+      { employeeCode: "E2", name: "Vikram", role: "KITCHEN", photoUrl: null, jobTitle: undefined },
+      { employeeCode: "E3", name: "Boss", role: "MANAGEMENT", photoUrl: null, jobTitle: undefined },
     ]);
     expect(options[0]).not.toHaveProperty("pinHash");
   });
