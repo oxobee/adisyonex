@@ -140,7 +140,7 @@ export interface Theme2QsrViewProps {
   readonly onUpdateQuantity: (key: string, qty: number) => void;
   readonly onRemoveLine: (key: string) => void;
   readonly onClearCart: () => void;
-  readonly onPlaceOrder: () => Promise<void>;
+  readonly onPlaceOrder: () => Promise<boolean | void>;
   readonly onRequestBill: () => Promise<void>;
   readonly myOrders: readonly GuestOrderSummaryDTO[];
   readonly busy?: boolean;
@@ -2112,8 +2112,10 @@ export function Theme2QsrView({
               disabled={busy || cartItems.length === 0}
               onClick={async () => {
                 try {
-                  await onPlaceOrder();
-                  setOrderSummarySheetOpen(false);
+                  const res = await onPlaceOrder();
+                  if (res !== false) {
+                    setOrderSummarySheetOpen(false);
+                  }
                 } catch {
                   // Keep open on error
                 }

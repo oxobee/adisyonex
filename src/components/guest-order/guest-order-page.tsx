@@ -295,8 +295,11 @@ export function GuestOrderPage({
     }
   }, [username]);
 
-  const submitOrder = () => {
-    if (itemCount === 0) return;
+  const [isOrderSubmitting, setIsOrderSubmitting] = useState(false);
+
+  const submitOrder = async (): Promise<boolean> => {
+    if (itemCount === 0 || isOrderSubmitting) return false;
+    setIsOrderSubmitting(true);
     let activeCustId = currentCustomer?.id ?? null;
     if (!activeCustId) {
       try {
@@ -310,13 +313,34 @@ export function GuestOrderPage({
       }
     }
 
-    place.execute({
-      username,
-      tableId,
-      idempotencyKey: idempotencyKey.current,
-      customerId: activeCustId,
-      items: items(),
-    });
+    try {
+      const res = await guestPlaceOrderAction({
+        username,
+        tableId,
+        idempotencyKey: idempotencyKey.current,
+        customerId: activeCustId,
+        items: items(),
+      });
+
+      if (res.success) {
+        setReviewOpen(false);
+        cart.clear();
+        clearGuestSession(storageKey);
+        idempotencyKey.current = uuid();
+        setPlaced(false);
+        void refreshOrders();
+        toast.success("Siparişiniz başarıyla mutfağa iletildi!");
+        return true;
+      } else {
+        toast.error(res.error || "Sipariş oluşturulurken bir hata oluştu");
+        return false;
+      }
+    } catch {
+      toast.error("Sipariş oluşturulamadı. Lütfen tekrar deneyin.");
+      return false;
+    } finally {
+      setIsOrderSubmitting(false);
+    }
   };
 
   const onQuickAdd = (item: MenuItemDTO) => {
@@ -327,7 +351,7 @@ export function GuestOrderPage({
     cart.quickAdd(item);
   };
 
-  const busy = place.isPending;
+  const busy = isOrderSubmitting || place.isPending;
 
 
   if (qrMenuTheme === "QSR_FASTFOOD") {
@@ -379,7 +403,7 @@ export function GuestOrderPage({
         onRemoveLine={cart.removeLine}
         onClearCart={cart.clear}
         onPlaceOrder={async () => {
-          submitOrder();
+          return await submitOrder();
         }}
         onRequestBill={async () => {
           await requestBill.execute({ username, tableId });

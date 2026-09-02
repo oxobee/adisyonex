@@ -163,8 +163,11 @@ export const getCustomerProfile = async (
     })),
   }));
 
-  const totalSpent = Number(raw.totalSpent);
-  const orderCount = raw.orderCount || orderDtos.length;
+  const ordersTotal = raw.orders
+    .filter((o) => o.status !== "VOID")
+    .reduce((sum, o) => sum + Number(o.grandTotal || 0), 0);
+  const totalSpent = Math.max(Number(raw.totalSpent || 0), ordersTotal);
+  const orderCount = Math.max(raw.orderCount || 0, orderDtos.length);
   const averageOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
 
   return {

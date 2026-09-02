@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import {
   ArrowLeftIcon,
@@ -167,8 +167,41 @@ export function CustomerLoyaltyPanel({
       // Ignore JSON parse errors
     }
   }, [activeOrders?.length, sessionKey, loadProfile]);
-
   const liveOrders = (activeOrders ?? []).filter((o) => o.status !== "VOID");
+
+  // Computed true total spent across all past profile orders and live table orders
+  const computedTotalSpent = useMemo(() => {
+    let sum = 0;
+    if (profile?.orders) {
+      for (const ord of profile.orders) {
+        if (ord.status !== "VOID") {
+          sum += ord.grandTotal || 0;
+        }
+      }
+    }
+    if (liveOrders) {
+      const profileIds = new Set(profile?.orders?.map((o) => o.id) || []);
+      for (const ord of liveOrders) {
+        if (ord.status !== "VOID" && !profileIds.has(ord.id)) {
+          sum += ord.total || 0;
+        }
+      }
+    }
+    return Math.max(sum, profile?.stats.totalSpent || 0);
+  }, [profile, liveOrders]);
+
+  const computedOrderCount = useMemo(() => {
+    const profileIds = new Set(profile?.orders?.map((o) => o.id) || []);
+    let count = profile?.orders?.length || profile?.stats.orderCount || 0;
+    if (liveOrders) {
+      for (const ord of liveOrders) {
+        if (!profileIds.has(ord.id)) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }, [profile, liveOrders]);
 
   // Handle SMS OTP Sending (Simulation)
   const handleSendOtp = (e: React.FormEvent) => {
@@ -597,25 +630,18 @@ export function CustomerLoyaltyPanel({
           </div>
 
           {/* Sadakat İstatistik Rozetleri */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white rounded-2xl p-3 border border-zinc-200/70 text-center shadow-2xs">
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="bg-white rounded-2xl p-3.5 border border-zinc-200/70 text-center shadow-2xs">
               <span className="text-[10px] font-bold text-zinc-400 block">Sipariş Sayısı</span>
               <span className="text-base font-black text-zinc-900 tabular-nums block mt-0.5" style={{ color: primaryColor }}>
-                {profile.stats.orderCount} kez
+                {computedOrderCount} kez
               </span>
             </div>
 
-            <div className="bg-white rounded-2xl p-3 border border-zinc-200/70 text-center shadow-2xs">
+            <div className="bg-white rounded-2xl p-3.5 border border-zinc-200/70 text-center shadow-2xs">
               <span className="text-[10px] font-bold text-zinc-400 block">Toplam Harcama</span>
               <span className="text-sm font-black text-zinc-900 tabular-nums block mt-0.5">
-                {formatCurrency(profile.stats.totalSpent)}
-              </span>
-            </div>
-
-            <div className="bg-white rounded-2xl p-3 border border-zinc-200/70 text-center shadow-2xs">
-              <span className="text-[10px] font-bold text-zinc-400 block">Ort. Sipariş</span>
-              <span className="text-sm font-black text-zinc-900 tabular-nums block mt-0.5">
-                {formatCurrency(profile.stats.averageOrderValue)}
+                {formatCurrency(computedTotalSpent)}
               </span>
             </div>
           </div>
@@ -707,9 +733,19 @@ export function CustomerLoyaltyPanel({
                         </span>
                       </div>
 
-                      <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[9px] font-black px-2 py-0.5">
-                        {ord.status === "VOID" ? "İptal Edildi" : "Tamamlandı"}
-                      </Badge>
+                      {ord.status === "OPEN" ? (
+                        <Badge className="bg-red-500/15 text-red-700 border-red-500/30 text-[9px] font-black px-2 py-0.5 animate-pulse">
+                          🔴 Açık Sipariş
+                        </Badge>
+                      ) : ord.status === "VOID" ? (
+                        <Badge className="bg-zinc-100 text-zinc-600 border-zinc-200 text-[9px] font-black px-2 py-0.5">
+                          İptal Edildi
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[9px] font-black px-2 py-0.5">
+                          ✅ Tamamlandı
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="divide-y divide-zinc-100/80">
