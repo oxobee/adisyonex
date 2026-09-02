@@ -6,10 +6,13 @@ import {
   CakeIcon,
   CalendarIcon,
   CheckCircle2Icon,
+  GiftIcon,
   MinusIcon,
   PhoneIcon,
   PlusIcon,
+  ReceiptIcon,
   ShoppingBagIcon,
+  SparklesIcon,
   Trash2Icon,
   UserIcon,
   UtensilsCrossedIcon,
@@ -24,7 +27,7 @@ import {
   guestRequestBillAction,
 } from "@/actions/guest-order.actions";
 import { ItemConfigDialog } from "@/components/pos/item-config-dialog";
-import { linePrice, toBillLine } from "@/components/pos/types";
+import { linePrice, toBillLine, type CartLine } from "@/components/pos/types";
 import { useOrderCart } from "@/components/pos/use-order-cart";
 import { Button } from "@/components/ui/button";
 import {
@@ -204,6 +207,32 @@ export function GuestOrderPage({
   );
   const itemCount = cart.cart.reduce((s, l) => s + l.quantity, 0);
 
+  // Group cart items by category for Tema 1 receipt view
+  const categorizedCartTema1 = useMemo(() => {
+    const catNameMap = new Map<string, string>();
+    for (const cat of menu.categories) {
+      catNameMap.set(cat.id, cat.name);
+    }
+    const itemToCategoryMap = new Map<string, string>();
+    for (const item of menu.items) {
+      itemToCategoryMap.set(item.id, catNameMap.get(item.categoryId) || "Diğer Lezzetler");
+    }
+
+    const groups: { categoryName: string; lines: CartLine[] }[] = [];
+    const groupMap = new Map<string, CartLine[]>();
+
+    for (const line of cart.cart) {
+      const catName = itemToCategoryMap.get(line.menuItemId) || "Diğer Lezzetler";
+      if (!groupMap.has(catName)) {
+        groupMap.set(catName, []);
+        groups.push({ categoryName: catName, lines: groupMap.get(catName)! });
+      }
+      groupMap.get(catName)!.push(line);
+    }
+
+    return groups;
+  }, [cart.cart, menu.categories, menu.items]);
+
   const items = () =>
     cart.cart.map((l) => ({
       menuItemId: l.menuItemId,
@@ -305,21 +334,25 @@ export function GuestOrderPage({
     return (
       <div className="mx-auto flex min-h-svh w-full max-w-md flex-col items-center justify-center p-5 text-center">
         <div className="flex flex-col items-center gap-4 w-full animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex size-20 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10">
-            <CheckCircle2Icon className="size-10 stroke-[2.5]" />
+          <div
+            className="size-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto"
+            style={{ backgroundColor: qrPrimaryColor || "var(--primary)" }}
+          >
+            <CheckCircle2Icon className="size-8 stroke-[2.5]" />
           </div>
 
-          <h1 className="text-2xl font-black tracking-tight text-foreground">
-            Siparişiniz Alındı!
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+            Siparişiniz Başarıyla Alındı!
           </h1>
 
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-            <span className="font-bold text-foreground">Masa No : {tableLabel}</span> için verdiğiniz sipariş mutfağa iletildi. Hazırlandığında servis personeli masanıza getirecektir.
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <span className="font-bold text-foreground">Masa No : {tableLabel}</span> için verdiğiniz sipariş mutfağa iletildi. Şeflerimiz özenle hazırlıyor.
           </p>
 
           <div className="mt-2 flex w-full max-w-xs flex-col gap-2.5">
             <Button
-              className="h-12 w-full rounded-2xl font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20 text-sm cursor-pointer"
+              className="h-12 w-full rounded-2xl font-black text-white shadow-md text-sm cursor-pointer active:scale-95 transition-transform"
+              style={{ backgroundColor: qrPrimaryColor || "var(--primary)" }}
               onClick={() => {
                 setPlaced(false);
                 setProfileSheetOpen(true);
@@ -329,7 +362,7 @@ export function GuestOrderPage({
             </Button>
             <Button
               variant="outline"
-              className="h-12 w-full rounded-2xl font-bold border-border/80 text-sm hover:bg-muted"
+              className="h-12 w-full rounded-2xl font-bold border-border/80 text-sm hover:bg-muted cursor-pointer"
               onClick={() => {
                 cart.clear();
                 clearGuestSession(storageKey);
@@ -337,49 +370,45 @@ export function GuestOrderPage({
                 setPlaced(false);
               }}
             >
-              Daha Fazla Sipariş Ver
+              Menüye Dön & Siparişe Devam Et
             </Button>
           </div>
 
-          {/* CUTE & ANIMATED BIRTHDAY / SPECIAL CAMPAIGNS CARD */}
+          {/* PROFESSIONAL LOYALTY & CAMPAIGNS CARD (NO BOUNCING EMOJIS) */}
           {!registeredSuccess ? (
-            <div className="relative mt-6 flex w-full flex-col items-center overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-orange-500/5 to-card p-6 text-center shadow-lg backdrop-blur-md">
-              {/* Subtle background glow */}
-              <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-amber-500/20 blur-2xl" />
-              <div className="pointer-events-none absolute -bottom-10 -left-10 size-32 rounded-full bg-orange-500/20 blur-2xl" />
-
-              {/* Floating Cake Badge with Glow */}
-              <div className="relative mb-3 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400/25 to-orange-500/25 text-3xl shadow-md ring-4 ring-amber-500/10">
-                <span>🎂</span>
-                <span className="absolute -top-1 -right-1 text-sm">✨</span>
+            <div className="relative mt-6 flex w-full flex-col items-center overflow-hidden rounded-3xl border border-zinc-200/90 bg-card p-6 text-center shadow-md">
+              <div
+                className="size-12 rounded-2xl flex items-center justify-center text-white shadow-sm mb-3"
+                style={{ backgroundColor: qrPrimaryColor || "var(--primary)" }}
+              >
+                <GiftIcon className="size-6 stroke-[2.2]" />
               </div>
 
-              <h2 className="text-lg font-black tracking-tight text-foreground">
-                Doğum Gününüze Özel Kampanyalar!
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 font-extrabold text-[10px] uppercase tracking-wider mb-1">
+                <SparklesIcon className="size-3 text-amber-600" />
+                <span>Sadakat Kulübü</span>
+              </span>
+
+              <h2 className="text-base font-black tracking-tight text-foreground">
+                Doğum Gününüze Özel Ayrıcalıklar!
               </h2>
 
-              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed max-w-xs">
-                Doğum günlerinize özel sürpriz indirim ve kampanyalardan anında faydalanmak için numaranızı kaydedin!
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed max-w-xs">
+                Doğum gününüzde ve sonraki ziyaretlerinizde sürpriz indirimlerden anında faydalanmak için numaranızı kaydedin.
               </p>
 
-              {/* Shimmer Animated Button */}
               <button
                 type="button"
                 onClick={() => setCustomerDrawerOpen(true)}
-                className="group relative mt-5 flex h-13 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-[length:200%_auto] text-base font-black text-white shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer"
+                className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl font-black text-sm text-white shadow-md active:scale-95 transition-transform cursor-pointer"
+                style={{ backgroundColor: qrPrimaryColor || "var(--primary)" }}
               >
-                {/* Continuous Shimmer Streak */}
-                <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_2.2s_infinite] bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-
-                <span className="relative flex items-center gap-2 drop-shadow-xs">
-                  <span className="text-lg group-hover:rotate-12 transition-transform">🎁</span>
-                  <span>Numaramı Kaydet</span>
-                </span>
+                <span>Kulübe Katıl & Bilgilerimi Kaydet</span>
               </button>
             </div>
           ) : (
             <div className="mt-6 flex w-full flex-col items-center rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center shadow-xs">
-              <span className="text-3xl mb-1.5">🎉</span>
+              <CheckCircle2Icon className="size-8 text-emerald-600 mb-1.5" />
               <p className="text-base font-black text-emerald-700 dark:text-emerald-300">
                 Kaydınız Başarıyla Alındı!
               </p>
@@ -395,8 +424,11 @@ export function GuestOrderPage({
           <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto px-6 py-6 border-t border-border/80">
             <div className="mx-auto max-w-sm flex flex-col gap-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-3xl mb-2 shadow-inner">
-                  🎂
+                <div
+                  className="flex size-12 items-center justify-center rounded-2xl text-white mb-2 shadow-sm"
+                  style={{ backgroundColor: qrPrimaryColor || "var(--primary)" }}
+                >
+                  <GiftIcon className="size-6 stroke-[2.2]" />
                 </div>
                 <SheetTitle className="text-xl font-black text-foreground">
                   Fırsatlardan Yararlanın
@@ -750,12 +782,15 @@ export function GuestOrderPage({
         />
       ) : null}
 
-      {/* Review sheet (Sipariş Özeti) */}
+      {/* Review sheet (Sipariş Özeti - Fiş Stili) */}
       {reviewOpen ? (
         <Dialog open onOpenChange={setReviewOpen}>
-          <DialogContent className="max-h-[90vh] w-[94vw] sm:max-w-md overflow-x-hidden overflow-y-auto rounded-3xl p-4 sm:p-5">
-            <DialogHeader className="flex flex-row items-center justify-between border-b pb-3">
-              <DialogTitle className="text-lg font-black text-foreground">Sipariş Özeti</DialogTitle>
+          <DialogContent className="max-h-[90vh] w-[94vw] sm:max-w-md overflow-x-hidden overflow-y-auto rounded-3xl p-4 sm:p-5 space-y-3">
+            <DialogHeader className="flex flex-row items-center justify-between border-b pb-2.5">
+              <DialogTitle className="text-base font-black text-foreground flex items-center gap-2">
+                <ReceiptIcon className="size-4.5 text-primary" />
+                <span>Sipariş Onayı</span>
+              </DialogTitle>
             </DialogHeader>
 
             {cart.cart.length === 0 ? (
@@ -763,92 +798,130 @@ export function GuestOrderPage({
                 Sepetiniz henüz boş.
               </p>
             ) : (
-              <div className="flex flex-col divide-y divide-border/60 overflow-x-hidden">
-                {cart.cart.map((l) => (
-                  <div key={l.key} className="flex flex-col gap-2 py-3.5 first:pt-1">
-                    {/* Item title and line total */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-foreground leading-snug break-words">
-                          {l.name}
-                        </p>
-                        {l.variantName ? (
-                          <p className="text-xs font-semibold text-primary mt-0.5">
-                            {l.variantName}
-                          </p>
-                        ) : null}
-                      </div>
-                      <span className="text-sm font-black text-foreground tabular-nums shrink-0 whitespace-nowrap">
-                        {linePrice(l).toFixed(0)} ₺
-                      </span>
-                    </div>
+              <div className="rounded-2xl bg-muted/30 border border-border/80 p-3.5 space-y-3">
+                {/* Receipt Header */}
+                <div className="text-center space-y-0.5 border-b border-dashed border-border/80 pb-2">
+                  <h4 className="font-black text-sm uppercase tracking-wider text-foreground">
+                    {restaurantName}
+                  </h4>
+                  <div className="flex items-center justify-center gap-2 text-[11px] text-muted-foreground font-medium">
+                    <span className="font-bold text-foreground">🍽️ Masa: {tableLabel}</span>
+                    <span>•</span>
+                    <span>{new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                </div>
 
-                    {/* Selected Options / Modifiers as wrapping badge tags */}
-                    {l.modifiers.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 mt-0.5">
-                        {l.modifiers.map((m, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground leading-tight max-w-full break-words"
-                          >
-                            {m.name}
-                          </span>
+                {/* Categorized Order Items */}
+                <div className="max-h-60 overflow-y-auto divide-y divide-border/60 pr-1 space-y-2">
+                  {categorizedCartTema1.map((catGroup, cIdx) => (
+                    <div key={cIdx} className="pt-2.5 first:pt-0 space-y-2">
+                      {/* Category Header */}
+                      <div className="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1">
+                        <span>▪</span>
+                        <span>{catGroup.categoryName}</span>
+                      </div>
+
+                      {/* Items in this category */}
+                      <div className="space-y-2">
+                        {catGroup.lines.map((l) => (
+                          <div key={l.key} className="space-y-1 bg-background/60 p-2 rounded-xl border border-border/40">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-foreground leading-snug">
+                                  {l.name}
+                                </p>
+                                {l.variantName && (
+                                  <p className="text-[11px] font-semibold text-primary">
+                                    ↳ {l.variantName}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-xs font-mono font-black text-foreground tabular-nums shrink-0">
+                                {linePrice(l).toFixed(0)} ₺
+                              </span>
+                            </div>
+
+                            {/* Modifiers */}
+                            {l.modifiers.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {l.modifiers.map((m, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                                  >
+                                    + {m.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {l.lineNote && (
+                              <p className="text-[10px] text-muted-foreground italic">
+                                &ldquo;{l.lineNote}&rdquo;
+                              </p>
+                            )}
+
+                            {/* Quantity Selector and Remove Button */}
+                            <div className="flex items-center justify-between gap-2 pt-1">
+                              <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shrink-0">
+                                <button
+                                  type="button"
+                                  className="flex size-6 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all cursor-pointer"
+                                  onClick={() => cart.changeQty(l.key, -1)}
+                                >
+                                  <MinusIcon className="size-3 stroke-[2.5]" />
+                                </button>
+                                <span className="w-6 text-center text-xs font-bold tabular-nums">
+                                  {l.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="flex size-6 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all cursor-pointer"
+                                  onClick={() => cart.changeQty(l.key, 1)}
+                                >
+                                  <PlusIcon className="size-3 stroke-[2.5]" />
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-destructive flex size-6 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
+                                onClick={() => cart.removeLine(l.key)}
+                                title="Ürünü Çıkar"
+                              >
+                                <Trash2Icon className="size-3.5" />
+                              </button>
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    ) : null}
-
-                    {l.lineNote ? (
-                      <p className="text-[11px] text-muted-foreground italic break-words mt-0.5">
-                        Not: {l.lineNote}
-                      </p>
-                    ) : null}
-
-                    {/* Quantity Selector and Remove Button */}
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shrink-0">
-                        <button
-                          type="button"
-                          className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
-                          onClick={() => cart.changeQty(l.key, -1)}
-                        >
-                          <MinusIcon className="size-3.5 stroke-[2.5]" />
-                        </button>
-                        <span className="w-7 text-center text-xs font-bold tabular-nums">
-                          {l.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          className="flex size-7 items-center justify-center rounded-md hover:bg-card active:scale-90 text-foreground transition-all"
-                          onClick={() => cart.changeQty(l.key, 1)}
-                        >
-                          <PlusIcon className="size-3.5 stroke-[2.5]" />
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="text-muted-foreground hover:text-destructive flex size-7 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
-                        onClick={() => cart.removeLine(l.key)}
-                        title="Ürünü Çıkar"
-                      >
-                        <Trash2Icon className="size-4" />
-                      </button>
                     </div>
+                  ))}
+                </div>
+
+                {/* Receipt Summary */}
+                <div className="border-t border-dashed border-border/80 pt-2 space-y-1 text-xs">
+                  <div className="flex justify-between text-muted-foreground text-[11px]">
+                    <span>Toplam Kalem</span>
+                    <span>{itemCount} Adet</span>
                   </div>
-                ))}
+                  <div className="flex justify-between text-muted-foreground text-[11px]">
+                    <span>KDV</span>
+                    <span>Dahil</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/80 pt-2 font-black text-sm">
+                    <span className="text-foreground">Toplam Tutar</span>
+                    <span className="text-base font-mono font-black text-primary tabular-nums">
+                      {bill.grandTotal.toFixed(2)} ₺
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 
-            <div className="flex items-center justify-between border-t border-dashed pt-4 mt-2">
-              <span className="text-base font-bold text-foreground">Toplam Tutar</span>
-              <span className="text-xl font-black text-foreground tabular-nums whitespace-nowrap">
-                {bill.grandTotal.toFixed(2)} ₺
-              </span>
-            </div>
-
-            <DialogFooter className="pt-2">
+            <DialogFooter className="pt-1">
               <Button
-                className="h-13 w-full rounded-2xl font-black bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-base tracking-wide whitespace-nowrap transition-transform active:scale-[0.98] cursor-pointer"
+                className="h-12 w-full rounded-2xl font-black bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm tracking-wide whitespace-nowrap transition-transform active:scale-[0.98] cursor-pointer"
                 disabled={itemCount === 0 || busy}
                 onClick={submitOrder}
               >

@@ -17,6 +17,7 @@ import {
   PlusIcon,
   RotateCcwIcon,
   SearchIcon,
+  ReceiptIcon,
   ShoppingBagIcon,
   SlidersHorizontalIcon,
   SparklesIcon,
@@ -50,7 +51,7 @@ import type {
 } from "@/services/restaurant-settings.service";
 import type { DietaryType, MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
-import type { CartLine } from "@/components/pos/types";
+import { linePrice, type CartLine } from "@/components/pos/types";
 import { CustomerLoyaltyPanel } from "@/components/guest-order/customer-loyalty-panel";
 import type { CustomerDTO } from "@/services/customer.service";
 
@@ -204,6 +205,32 @@ export function Theme2QsrView({
       icon,
     }));
   }, [menu.items]);
+
+  // Group cart items by category for receipt view
+  const categorizedCart = useMemo(() => {
+    const catNameMap = new Map<string, string>();
+    for (const cat of menu.categories) {
+      catNameMap.set(cat.id, cat.name);
+    }
+    const itemToCategoryMap = new Map<string, string>();
+    for (const item of menu.items) {
+      itemToCategoryMap.set(item.id, catNameMap.get(item.categoryId) || "Diğer Lezzetler");
+    }
+
+    const groups: { categoryName: string; lines: CartLine[] }[] = [];
+    const groupMap = new Map<string, CartLine[]>();
+
+    for (const line of cartItems) {
+      const catName = itemToCategoryMap.get(line.menuItemId) || "Diğer Lezzetler";
+      if (!groupMap.has(catName)) {
+        groupMap.set(catName, []);
+        groups.push({ categoryName: catName, lines: groupMap.get(catName)! });
+      }
+      groupMap.get(catName)!.push(line);
+    }
+
+    return groups;
+  }, [cartItems, menu.categories, menu.items]);
 
   // Active filter count
   const activeFilterCount = useMemo(() => {
@@ -1788,113 +1815,151 @@ export function Theme2QsrView({
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-sm rounded-3xl p-5 space-y-4">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-zinc-900">Sipariş Onayı</DialogTitle>
+            <DialogTitle className="text-base font-black text-zinc-900 flex items-center gap-2">
+              <ReceiptIcon className="size-4.5 text-primary" style={{ color: primaryColor }} />
+              <span>Sipariş Onayı</span>
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 text-xs">
-            {/* Table Address Card */}
-            <div className="p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-1">
-              <span className="font-bold text-zinc-400 text-[10px] uppercase">Masa Bilgisi</span>
-              <h4 className="font-black text-sm text-zinc-900">{tableLabel}</h4>
-              <p className="text-zinc-500">{restaurantName}</p>
-            </div>
-
-            {/* Payment Method Selector */}
-            <div className="space-y-2">
-              <span className="font-bold text-zinc-400 text-[10px] uppercase">Ödeme Şekli</span>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("WAITER")}
-                  className={cn(
-                    "p-2.5 rounded-2xl border text-center font-bold text-[11px] transition-all cursor-pointer",
-                    paymentMethod === "WAITER" ? "border-2 bg-primary/10 text-primary font-black" : "border-zinc-200 bg-white text-zinc-700",
-                  )}
-                  style={{
-                    borderColor: paymentMethod === "WAITER" ? primaryColor : undefined,
-                    color: paymentMethod === "WAITER" ? primaryColor : undefined,
-                  }}
-                >
-                  🛎️ Garsona Öde
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("CARD")}
-                  className={cn(
-                    "p-2.5 rounded-2xl border text-center font-bold text-[11px] transition-all cursor-pointer",
-                    paymentMethod === "CARD" ? "border-2 bg-primary/10 text-primary font-black" : "border-zinc-200 bg-white text-zinc-700",
-                  )}
-                  style={{
-                    borderColor: paymentMethod === "CARD" ? primaryColor : undefined,
-                    color: paymentMethod === "CARD" ? primaryColor : undefined,
-                  }}
-                >
-                  💳 Kredi Kartı
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("CASH")}
-                  className={cn(
-                    "p-2.5 rounded-2xl border text-center font-bold text-[11px] transition-all cursor-pointer",
-                    paymentMethod === "CASH" ? "border-2 bg-primary/10 text-primary font-black" : "border-zinc-200 bg-white text-zinc-700",
-                  )}
-                  style={{
-                    borderColor: paymentMethod === "CASH" ? primaryColor : undefined,
-                    color: paymentMethod === "CASH" ? primaryColor : undefined,
-                  }}
-                >
-                  💵 Nakit
-                </button>
+          {/* Categorized Receipt / Bill Style Card */}
+          <div className="rounded-2xl bg-zinc-50 border border-zinc-200/90 p-4 font-mono text-xs shadow-2xs space-y-3">
+            {/* Receipt Header */}
+            <div className="text-center space-y-0.5 border-b border-dashed border-zinc-300 pb-2.5">
+              <h4 className="font-black text-sm uppercase tracking-wider text-zinc-900 font-sans">
+                {restaurantName}
+              </h4>
+              <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-500 font-medium font-sans">
+                <span className="font-bold text-zinc-800">🍽️ Masa: {tableLabel}</span>
+                <span>•</span>
+                <span>{new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
             </div>
 
-            {/* Total Recap */}
-            <div className="p-3 rounded-2xl bg-zinc-100 flex justify-between items-center font-black text-sm">
-              <span>Toplam Ödeme:</span>
-              <span style={{ color: primaryColor }}>{formatCurrency(cartGrandTotal)}</span>
+            {/* Categorized Order Items */}
+            <div className="max-h-56 overflow-y-auto divide-y divide-zinc-200/60 pr-1 space-y-2">
+              {categorizedCart.map((catGroup, cIdx) => (
+                <div key={cIdx} className="pt-2 first:pt-0 space-y-1.5">
+                  {/* Category Header */}
+                  <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500 font-sans flex items-center gap-1">
+                    <span style={{ color: primaryColor }}>▪</span>
+                    <span>{catGroup.categoryName}</span>
+                  </div>
+
+                  {/* Items in this category */}
+                  <div className="space-y-1 pl-1">
+                    {catGroup.lines.map((line) => (
+                      <div key={line.key} className="space-y-0.5">
+                        <div className="flex items-start justify-between gap-2 text-xs">
+                          <span className="font-bold text-zinc-900 font-sans flex-1 min-w-0">
+                            <span style={{ color: primaryColor }} className="font-black mr-1">
+                              {line.quantity}×
+                            </span>
+                            {line.name}
+                          </span>
+                          <span className="font-mono font-bold text-zinc-900 tabular-nums shrink-0">
+                            {formatCurrency(linePrice(line))}
+                          </span>
+                        </div>
+
+                        {line.variantName && (
+                          <div className="text-[10px] text-zinc-500 font-sans pl-4">
+                            ↳ Varyant: {line.variantName}
+                          </div>
+                        )}
+
+                        {line.modifiers.length > 0 && (
+                          <div className="text-[10px] text-zinc-400 font-sans pl-4">
+                            + {line.modifiers.map((m) => m.name).join(", ")}
+                          </div>
+                        )}
+
+                        {line.lineNote && (
+                          <div className="text-[10px] text-zinc-500 italic font-sans pl-4">
+                            &ldquo;{line.lineNote}&rdquo;
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <Button
-              size="lg"
-              disabled={busy}
-              onClick={handleFinalCheckout}
-              className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
-              style={{ backgroundColor: primaryColor }}
-            >
-              {busy ? "İletiliyor…" : "Siparişi Mutfağa İlet ✓"}
-            </Button>
+            {/* Receipt Summary & Total */}
+            <div className="border-t border-dashed border-zinc-300 pt-2.5 space-y-1 font-sans">
+              <div className="flex justify-between text-[11px] text-zinc-500 font-medium">
+                <span>Toplam Kalem</span>
+                <span>{cartItemCount} Adet</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-zinc-500 font-medium">
+                <span>KDV</span>
+                <span>Dahil</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-zinc-200 font-black text-sm">
+                <span className="text-zinc-900">Toplam Tutar</span>
+                <span className="text-base tabular-nums font-mono font-black" style={{ color: primaryColor }}>
+                  {formatCurrency(cartGrandTotal)}
+                </span>
+              </div>
+            </div>
           </div>
+
+          <Button
+            size="lg"
+            disabled={busy}
+            onClick={handleFinalCheckout}
+            className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {busy ? "İletiliyor…" : "Sipariş Oluştur"}
+          </Button>
         </DialogContent>
       </Dialog>
 
       {/* ============================================================ */}
-      {/* 7. ORDER CELEBRATION MODAL (Görseldeki Order Done Ekranı)    */}
+      {/* 7. ORDER CELEBRATION MODAL (Modern & Profesyonel Onay)        */}
       {/* ============================================================ */}
       <Dialog open={orderSuccessOpen} onOpenChange={setOrderSuccessOpen}>
         <DialogContent className="max-w-xs rounded-3xl p-6 text-center space-y-4">
           <div className="flex flex-col items-center gap-3">
-            {/* Animated Heart Eyes Emoji */}
-            <div className="size-20 rounded-full flex items-center justify-center text-5xl bg-amber-500/10 shadow-inner animate-bounce duration-700">
-              😍
+            {/* Professional Checkmark Icon (No bouncing emoji) */}
+            <div
+              className="size-16 rounded-2xl flex items-center justify-center text-white shadow-md"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <CheckCircle2Icon className="size-8 stroke-[2.5]" />
             </div>
 
             <DialogTitle className="text-lg font-black text-zinc-900 leading-tight">
-              Tebrikler! 🎉
+              Siparişiniz Alındı!
             </DialogTitle>
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Siparişiniz başarıyla alındı ve mutfağa iletildi.
+              <span className="font-bold text-zinc-800">{tableLabel}</span> için verdiğiniz sipariş mutfağa iletildi. Şeflerimiz özenle hazırlamaya başladı.
             </p>
 
-            <Button
-              className="w-full h-11 rounded-2xl font-black text-xs text-white shadow-md cursor-pointer mt-2"
-              style={{ backgroundColor: primaryColor }}
-              onClick={() => {
-                setOrderSuccessOpen(false);
-                setActiveTab("profile");
-              }}
-            >
-              Harika, Menüye Dön
-            </Button>
+            <div className="w-full flex flex-col gap-2 pt-2">
+              <Button
+                className="w-full h-11 rounded-2xl font-black text-xs text-white shadow-md cursor-pointer"
+                style={{ backgroundColor: primaryColor }}
+                onClick={() => {
+                  setOrderSuccessOpen(false);
+                  setActiveTab("profile");
+                }}
+              >
+                Siparişimi Takip Et ⏱️
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full h-11 rounded-2xl font-bold text-xs border-zinc-200 text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                onClick={() => {
+                  setOrderSuccessOpen(false);
+                  setActiveTab("home");
+                }}
+              >
+                Menüye Dön
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
