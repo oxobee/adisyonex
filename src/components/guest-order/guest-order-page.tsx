@@ -166,9 +166,13 @@ export function GuestOrderPage({
   }, [persistSession]);
 
   const refreshOrders = async () => {
-    const res = await guestMyOrdersAction({ username, tableId });
-    if (res.success && res.data) {
-      setMyOrders(res.data);
+    try {
+      const res = await guestMyOrdersAction({ username, tableId });
+      if (res?.success && res.data) {
+        setMyOrders(res.data);
+      }
+    } catch {
+      // Ignore background poll errors during deployments
     }
   };
 
