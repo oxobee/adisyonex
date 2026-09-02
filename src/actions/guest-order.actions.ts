@@ -6,6 +6,7 @@ import {
   destroyGuestSession,
   getGuestSession,
 } from "@/lib/guest-session";
+import { getOrCreateDeviceId } from "@/lib/table-device-lock";
 import {
   guestPlaceOrderSchema,
   guestRequestOtpSchema,
@@ -51,11 +52,13 @@ export const guestPlaceOrderAction = withValidation(
   async (data): Promise<OrderDTO> => {
     const target = await resolveGuestOrderTarget(data.username, data.tableId);
     const session = await getGuestSession();
+    const deviceId = await getOrCreateDeviceId();
     return placeGuestOrder(
       {
         restaurantId: target.restaurantId,
         tableId: target.tableId,
         phone: session?.phone ?? "",
+        deviceId,
       },
       data,
     );

@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { GuestOrderPage } from "@/components/guest-order/guest-order-page";
+import { TableOccupiedView } from "@/components/guest-order/table-occupied-view";
 import { getGuestSession } from "@/lib/guest-session";
+import { getOrCreateDeviceId } from "@/lib/table-device-lock";
 import { maskPhone } from "@/lib/format";
 import {
   getGuestOrders,
@@ -27,7 +29,8 @@ export default async function OrderPage({
   const { username } = await params;
   const { table, previewTheme } = await searchParams;
 
-  const result = await loadGuestOrderPage(username, table);
+  const deviceId = await getOrCreateDeviceId();
+  const result = await loadGuestOrderPage(username, table, deviceId);
 
   if (result.status === "not_found") {
     notFound();
@@ -45,6 +48,18 @@ export default async function OrderPage({
       <GuestNotice
         title={result.restaurantName}
         message="Masa bilgisi bulunamadı. Lütfen masanızdaki QR kodu tekrar okutun veya garsonunuza danışın."
+      />
+    );
+  }
+  if (result.status === "table_occupied") {
+    return (
+      <TableOccupiedView
+        restaurantName={result.restaurantName}
+        logoUrl={result.logoUrl}
+        tableLabel={result.tableLabel}
+        username={result.username}
+        primaryColor={result.primaryColor}
+        emptyTables={result.emptyTables}
       />
     );
   }

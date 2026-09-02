@@ -172,7 +172,12 @@ export function CustomerLoyaltyPanel({
       // Ignore JSON parse errors
     }
   }, [activeOrders?.length, sessionKey, loadProfile]);
-  const liveOrders = (activeOrders ?? []).filter((o) => o.status !== "VOID");
+  const liveOrders = (activeOrders ?? []).filter(
+    (o) =>
+      o.status !== "VOID" &&
+      Array.isArray(o.lines) &&
+      o.lines.some((l) => l.state !== "VOID"),
+  );
 
   // Computed true total spent across all past profile orders and live table orders
   const computedTotalSpent = useMemo(() => {

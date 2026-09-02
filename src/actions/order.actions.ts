@@ -24,6 +24,7 @@ import {
 } from "@/services/order.service";
 import { advanceLineStates, findOrdersByRestaurant } from "@/repositories/order.repository";
 import { settle, settleTable } from "@/services/settlement.service";
+import { success, failure, type ActionResult } from "@/types";
 
 export const createOrderAction = withManagerValidation(
   createOrderSchema,
@@ -115,3 +116,23 @@ export const deliverTableOrdersAction = withManagerValidation(
     }
   },
 );
+
+/** Deliver specific order lines (e.g. selected packaged goods). */
+export const deliverOrderLinesAction = async (data: {
+  lineIds: string[];
+}): Promise<ActionResult<{ success: boolean; count: number }>> => {
+  try {
+    if (!data.lineIds || data.lineIds.length === 0) {
+      return success({ success: true, count: 0 });
+    }
+    const res = await prisma.orderItem.updateMany({
+      where: { id: { in: data.lineIds } },
+      data: { state: "SERVED" },
+    });
+    return success({ success: true, count: res.count });
+  } catch (error) {
+    return failure<{ success: boolean; count: number }>(
+      error instanceof Error ? error.message : "Teslim işlemi başarısız.",
+    );
+  }
+};

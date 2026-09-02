@@ -1,6 +1,7 @@
 import type { GuestPlaceOrderInput } from "@/lib/validators/guest-order";
 import { prisma } from "@/lib/prisma";
 import { deriveKitchenStatus } from "@/lib/kitchen";
+import { checkTableDeviceLock } from "@/lib/table-device-lock";
 import {
   findOrdersForGuest,
   type OrderWithRelations,
@@ -62,6 +63,7 @@ export interface GuestOrderActor {
   readonly restaurantId: string;
   readonly tableId: string;
   readonly phone: string;
+  readonly deviceId?: string;
 }
 
 /**
@@ -75,7 +77,7 @@ export const placeGuestOrder = async (
 ): Promise<OrderDTO> => {
   const ctx: OrderContext = {
     restaurantId: actor.restaurantId,
-    userId: null,
+    userId: actor.deviceId ?? null,
     staffId: null,
     source: "SELF_ORDER",
   };
@@ -83,6 +85,12 @@ export const placeGuestOrder = async (
   const open = await listOrders(actor.restaurantId, ["OPEN"]);
   const existing = open.find((o) => o.tableId === actor.tableId);
   if (existing) {
+    if (actor.deviceId && !existing.placedById) {
+      await prisma.order.update({
+        where: { id: existing.id },
+        data: { placedById: actor.deviceId },
+      });
+    }
     await addItems(ctx, { orderId: existing.id, items: input.items });
     return fireOrder(ctx, existing.id);
   }
@@ -116,11 +124,27 @@ export interface GuestOrderPageData {
   readonly qrHomeSections?: readonly object[] | null;
 }
 
+export interface EmptyTableDTO {
+  readonly id: string;
+  readonly label: string;
+  readonly section: string | null;
+  readonly seats: number | null;
+}
+
 export type GuestOrderPageResult =
   | { readonly status: "ok"; readonly data: GuestOrderPageData }
   | { readonly status: "not_found" }
   | { readonly status: "disabled"; readonly restaurantName: string }
-  | { readonly status: "invalid_table"; readonly restaurantName: string };
+  | { readonly status: "invalid_table"; readonly restaurantName: string }
+  | {
+      readonly status: "table_occupied";
+      readonly restaurantName: string;
+      readonly logoUrl: string | null;
+      readonly tableLabel: string;
+      readonly username: string;
+      readonly primaryColor: string;
+      readonly emptyTables: readonly EmptyTableDTO[];
+    };
 
 /**
  * Load everything the public `/order/[username]` page needs, returning a
@@ -130,6 +154,7 @@ export type GuestOrderPageResult =
 export const loadGuestOrderPage = async (
   username: string,
   tableId: string | undefined,
+  deviceId?: string,
 ): Promise<GuestOrderPageResult> => {
   const restaurant = await findRestaurantByUsername(username);
   if (!restaurant || restaurant.deletedAt || !restaurant.isActive) {
@@ -157,6 +182,41 @@ export const loadGuestOrderPage = async (
       return { status: "invalid_table", restaurantName: restaurant.name };
     }
   }
+
+  // Device Lock Check: If the table is active and occupied by another device
+  if (tableId !== "preview" && deviceId) {
+    const lockCheck = await checkTableDeviceLock(
+      restaurant.id,
+      table.id,
+      deviceId,
+    );
+    if (lockCheck.isLocked) {
+      const openOrders = await listOrders(restaurant.id, ["OPEN"]);
+      const occupiedTableIds = new Set(
+        openOrders.map((o) => o.tableId).filter(Boolean),
+      );
+      const allTables = await findTablesByRestaurant(restaurant.id);
+      const emptyTables: EmptyTableDTO[] = allTables
+        .filter((t) => t.isActive && !t.deletedAt && !occupiedTableIds.has(t.id))
+        .map((t) => ({
+          id: t.id,
+          label: t.label,
+          section: t.section,
+          seats: t.seats,
+        }));
+
+      return {
+        status: "table_occupied",
+        restaurantName: restaurant.name,
+        logoUrl: restaurant.logoUrl,
+        tableLabel: lockCheck.tableLabel || table.label,
+        username: restaurant.username ?? username,
+        primaryColor: restaurant.qrPrimaryColor || "#FF5500",
+        emptyTables,
+      };
+    }
+  }
+
   const menu = await getMenu(restaurant.id);
   return {
     status: "ok",
@@ -237,7 +297,9 @@ export const getGuestOrders = async (
     tableId,
     GUEST_ORDER_LIMIT,
   );
-  return orders.map(toGuestSummary);
+  return orders
+    .map(toGuestSummary)
+    .filter((o) => o.lines.length > 0);
 };
 
 export const requestBillForTable = async (

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useTransition, useMemo, useCallback } from "react";
+import { useEffect, useRef, useTransition, useMemo, useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { LogOutIcon, PlusIcon } from "lucide-react";
+import { LogOutIcon, PlusIcon, PackageCheckIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { PackagedDeliveryDialog } from "./packaged-delivery-dialog";
 import { markPickedUpAction } from "@/actions/kitchen.actions";
 import { staffLogoutAction } from "@/actions/staff-auth.actions";
 import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
@@ -62,6 +63,7 @@ export function WaiterHome({
   const router = useRouter();
   const { supported, enabled, toggle, announce } = useAnnouncer();
   const [pending, startTransition] = useTransition();
+  const [selectedPackagedOrder, setSelectedPackagedOrder] = useState<OrderDTO | null>(null);
   const readyRef = useRef<ReadonlySet<string> | null>(null);
   const pickup = useServerAction(markPickedUpAction, {
     refresh: true,
@@ -236,22 +238,55 @@ export function WaiterHome({
                     {orderRunningTotal(order).toFixed(0)} ₺
                   </span>
                 </Link>
-                {isReady(order) ? (
-                  <div className="border-t p-2">
-                    <Button
-                      className="h-11 w-full text-base"
-                      disabled={pickup.isPending}
-                      onClick={() => pickup.execute({ orderId: order.id })}
-                    >
-                      Teslim Al
-                    </Button>
-                  </div>
-                ) : null}
+                {(() => {
+                  const hasUnservedPackaged = order.lines.some(
+                    (l) =>
+                      l.itemType === "PACKAGED_GOODS" &&
+                      l.state !== "SERVED" &&
+                      l.state !== "VOID",
+                  );
+                  const ready = isReady(order);
+                  if (!hasUnservedPackaged && !ready) return null;
+
+                  return (
+                    <div className="border-t p-2 flex flex-col gap-1.5 bg-muted/20">
+                      {hasUnservedPackaged ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-10 w-full text-xs font-bold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/40 hover:bg-emerald-100 flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedPackagedOrder(order);
+                          }}
+                        >
+                          <PackageCheckIcon className="size-4 text-emerald-600" />
+                          <span>Paketli Ürünleri Teslim Et</span>
+                        </Button>
+                      ) : null}
+                      {ready ? (
+                        <Button
+                          className="h-11 w-full text-base font-bold"
+                          disabled={pickup.isPending}
+                          onClick={() => pickup.execute({ orderId: order.id })}
+                        >
+                          Teslim Al
+                        </Button>
+                      ) : null}
+                    </div>
+                  );
+                })()}
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      <PackagedDeliveryDialog
+        order={selectedPackagedOrder}
+        open={Boolean(selectedPackagedOrder)}
+        onOpenChange={(open) => !open && setSelectedPackagedOrder(null)}
+      />
     </div>
   );
 }

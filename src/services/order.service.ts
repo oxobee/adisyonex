@@ -63,6 +63,7 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
   customerPhone: o.customerPhone,
   customerAddress: o.customerAddress,
   note: o.note,
+  placedById: o.placedById,
   subtotal: num(o.subtotal),
   taxTotal: num(o.taxTotal),
   discountTotal: num(o.discountTotal),

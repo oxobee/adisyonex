@@ -103,7 +103,7 @@ describe("guestPlaceOrderAction", () => {
 
     expect(result.success).toBe(true);
     expect(placeGuestOrder).toHaveBeenCalledWith(
-      { restaurantId: "res_1", tableId: "t1", phone: PHONE },
+      expect.objectContaining({ restaurantId: "res_1", tableId: "t1", phone: PHONE }),
       expect.objectContaining({ idempotencyKey: "abcd1234" }),
     );
   });
@@ -116,7 +116,7 @@ describe("guestPlaceOrderAction", () => {
 
     expect(result.success).toBe(true);
     expect(placeGuestOrder).toHaveBeenCalledWith(
-      { restaurantId: "res_1", tableId: "t1", phone: "" },
+      expect.objectContaining({ restaurantId: "res_1", tableId: "t1", phone: "" }),
       expect.objectContaining({ idempotencyKey: "abcd1234" }),
     );
   });
