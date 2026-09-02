@@ -92,6 +92,7 @@ export const placeGuestOrder = async (
     tableId: actor.tableId,
     idempotencyKey: input.idempotencyKey,
     customerPhone: actor.phone,
+    customerId: input.customerId ?? undefined,
     note: input.note,
     items: input.items,
   });

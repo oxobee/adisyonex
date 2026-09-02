@@ -8,6 +8,7 @@ export interface CustomerWriteData {
   birthDate?: Date | null;
   notes?: string | null;
   source?: string;
+  kvkkConsent?: boolean;
 }
 
 export const upsertCustomer = async (data: CustomerWriteData): Promise<Customer> => {
@@ -38,6 +39,8 @@ export const upsertCustomer = async (data: CustomerWriteData): Promise<Customer>
       birthYear,
       notes: data.notes ?? null,
       source: data.source ?? "QR_MENU",
+      kvkkConsent: data.kvkkConsent ?? true,
+      kvkkAcceptedAt: data.kvkkConsent ? new Date() : null,
     },
     update: {
       name: data.name,
@@ -46,7 +49,64 @@ export const upsertCustomer = async (data: CustomerWriteData): Promise<Customer>
       birthMonth: birthMonth !== null ? birthMonth : undefined,
       birthYear: birthYear !== null ? birthYear : undefined,
       notes: data.notes !== undefined ? data.notes : undefined,
+      kvkkConsent: data.kvkkConsent !== undefined ? data.kvkkConsent : undefined,
+      kvkkAcceptedAt: data.kvkkConsent ? new Date() : undefined,
       deletedAt: null,
+    },
+  });
+};
+
+export const findCustomerById = async (
+  restaurantId: string,
+  id: string,
+): Promise<Customer | null> => {
+  return prisma.customer.findFirst({
+    where: { id, restaurantId, deletedAt: null },
+  });
+};
+
+export const findCustomerByPhone = async (
+  restaurantId: string,
+  phone: string,
+): Promise<Customer | null> => {
+  return prisma.customer.findFirst({
+    where: { restaurantId, phone, deletedAt: null },
+  });
+};
+
+export const findCustomerWithOrders = async (
+  restaurantId: string,
+  identifier: { id?: string; phone?: string },
+) => {
+  return prisma.customer.findFirst({
+    where: {
+      restaurantId,
+      deletedAt: null,
+      ...(identifier.id ? { id: identifier.id } : {}),
+      ...(identifier.phone ? { phone: identifier.phone } : {}),
+    },
+    include: {
+      orders: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        include: {
+          items: true,
+          table: true,
+        },
+      },
+    },
+  });
+};
+
+export const incrementCustomerStats = async (
+  customerId: string,
+  spendDelta: number,
+) => {
+  return prisma.customer.update({
+    where: { id: customerId },
+    data: {
+      orderCount: { increment: 1 },
+      totalSpent: { increment: spendDelta },
     },
   });
 };

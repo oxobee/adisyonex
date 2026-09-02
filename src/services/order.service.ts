@@ -25,6 +25,7 @@ import {
   depleteForLines,
   restoreForLines,
 } from "@/services/stock-depletion.service";
+import { incrementCustomerStats } from "@/repositories/customer.repository";
 import { resolveTableForOrder } from "@/services/table.service";
 import type { MenuDTO } from "@/types/menu";
 import type { OrderDTO } from "@/types/order";
@@ -219,8 +220,14 @@ export const createOrder = async (
     note: input.note ?? null,
     placedById: ctx.userId,
     placedByStaffId: ctx.staffId ?? null,
+    customerId: input.customerId ?? null,
     items,
   });
+
+  if (input.customerId) {
+    await incrementCustomerStats(input.customerId, Number(order.grandTotal)).catch(() => undefined);
+  }
+
   await depleteForLines(
     ctx,
     input.items.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),

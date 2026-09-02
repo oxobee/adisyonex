@@ -51,6 +51,8 @@ import type {
 import type { DietaryType, MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 import type { CartLine } from "@/components/pos/types";
+import { CustomerLoyaltyPanel } from "@/components/guest-order/customer-loyalty-panel";
+import type { CustomerDTO } from "@/services/customer.service";
 
 const DIET_BADGES: Record<string, { label: string; icon: string }> = {
   VEG: { label: "Vejetaryen", icon: "🌱" },
@@ -111,6 +113,7 @@ export interface CustomModifierItem {
 }
 
 export interface Theme2QsrViewProps {
+  readonly username?: string;
   readonly restaurantName: string;
   readonly logoUrl?: string | null;
   readonly tableLabel: string;
@@ -140,9 +143,11 @@ export interface Theme2QsrViewProps {
   readonly onRequestBill: () => Promise<void>;
   readonly myOrders: readonly GuestOrderSummaryDTO[];
   readonly busy?: boolean;
+  readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
 }
 
 export function Theme2QsrView({
+  username = "",
   restaurantName,
   logoUrl,
   tableLabel,
@@ -166,6 +171,7 @@ export function Theme2QsrView({
   onRequestBill,
   myOrders,
   busy,
+  onCustomerIdentified,
 }: Theme2QsrViewProps) {
   // Navigation Tabs: 'home' | 'categories' | 'cart' | 'profile'
   const [activeTab, setActiveTab] = useState<"home" | "categories" | "cart" | "profile">("home");
@@ -1475,7 +1481,7 @@ export function Theme2QsrView({
       )}
 
       {/* ============================================================ */}
-      {/* 4. PROFILE / ORDERS SCREEN                                   */}
+      {/* 4. PROFILE / LOYALTY SCREEN                                  */}
       {/* ============================================================ */}
       {activeTab === "profile" && (
         <div className="p-4 space-y-4 animate-in fade-in-50 duration-200">
@@ -1487,58 +1493,20 @@ export function Theme2QsrView({
             >
               <ArrowLeftIcon className="size-4" />
             </button>
-            <h2 className="text-base font-black text-zinc-900">Masa Durumu & Hesap</h2>
+            <h2 className="text-base font-black text-zinc-900">Müşteri Profili & Masa</h2>
             <div className="size-8" />
           </div>
 
-          <div className="bg-white rounded-3xl p-5 border border-zinc-200/80 shadow-xs space-y-4 text-center">
-            <div className="size-16 mx-auto rounded-3xl flex items-center justify-center text-3xl shadow-inner" style={{ backgroundColor: secondaryColor }}>
-              🍽️
-            </div>
-            <div>
-              <h3 className="font-black text-lg text-zinc-900">{tableLabel}</h3>
-              <p className="text-xs text-zinc-500">{restaurantName}</p>
-            </div>
-
-            <div className="pt-2 border-t flex flex-col gap-2.5">
-              <Button
-                variant="outline"
-                onClick={onRequestBill}
-                className="rounded-2xl font-black text-xs h-11 border-zinc-300 cursor-pointer"
-              >
-                Garson Çağır / Hesap İste 🛎️
-              </Button>
-            </div>
-          </div>
-
-          {/* Past / Live Orders List */}
-          {myOrders.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-black text-zinc-900 uppercase tracking-wider">Verilen Siparişler ({myOrders.length})</h3>
-              {myOrders.map((ord) => (
-                <div key={ord.id} className="bg-white rounded-3xl p-4 border border-zinc-200/80 shadow-xs space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-zinc-400">#{ord.id.slice(-6)}</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 font-black text-[10px]">
-                      {ord.status}
-                    </span>
-                  </div>
-                  <div className="divide-y divide-zinc-100">
-                    {ord.lines.map((l, idx) => (
-                      <div key={idx} className="py-1 flex justify-between">
-                        <span>{l.quantity}x {l.name} {l.variantName ? `(${l.variantName})` : ""}</span>
-                        <span className="font-bold text-zinc-400 text-[10px]">{l.state}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t pt-1.5 flex justify-between font-black text-sm text-zinc-900">
-                    <span>Toplam</span>
-                    <span style={{ color: primaryColor }}>{formatCurrency(ord.total)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <CustomerLoyaltyPanel
+            username={username}
+            restaurantName={restaurantName}
+            logoUrl={logoUrl}
+            tableLabel={tableLabel}
+            primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
+            onRequestBill={onRequestBill}
+            onCustomerIdentified={onCustomerIdentified}
+          />
         </div>
       )}
 
@@ -1999,7 +1967,7 @@ export function Theme2QsrView({
             style={{ color: activeTab === "profile" ? primaryColor : undefined }}
           >
             <UserIcon className="size-5" />
-            <span className="text-[10px]">Masa</span>
+            <span className="text-[10px]">Profil</span>
           </button>
 
         </div>

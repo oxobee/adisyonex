@@ -28,6 +28,7 @@ export const createOrderSchema = z.object({
   customerName: z.string().trim().max(120).optional(),
   customerPhone: z.string().trim().max(20).optional(),
   customerAddress: z.string().trim().max(300).optional(),
+  customerId: idSchema.optional(),
   note: z.string().trim().max(300).optional(),
   idempotencyKey: z.string().trim().min(8).max(100),
   items: z.array(cartLineSchema).min(1, "Add at least one item"),

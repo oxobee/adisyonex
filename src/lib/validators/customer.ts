@@ -23,8 +23,16 @@ export const registerCustomerSchema = z.object({
   name: nameSchema,
   phone: flexiblePhoneSchema,
   birthDate: z.string().optional().nullable(),
+  kvkkConsent: z.boolean().default(true),
 });
 export type RegisterCustomerInput = z.infer<typeof registerCustomerSchema>;
+
+export const customerProfileQuerySchema = z.object({
+  username: z.string().min(1),
+  customerId: z.string().optional(),
+  phone: z.string().optional(),
+});
+export type CustomerProfileQuery = z.infer<typeof customerProfileQuerySchema>;
 
 export const customerListQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),

@@ -53,6 +53,7 @@ export interface CreateOrderData {
   note: string | null;
   placedById: string | null;
   placedByStaffId: string | null;
+  customerId?: string | null;
   items: OrderLineWriteData[];
 }
 
@@ -97,6 +98,7 @@ export const createOrder = (
       orderType: data.orderType,
       tableLabel: data.tableLabel,
       ...(data.tableId ? { table: { connect: { id: data.tableId } } } : {}),
+      ...(data.customerId ? { customer: { connect: { id: data.customerId } } } : {}),
       customerName: data.customerName,
       customerPhone: data.customerPhone,
       customerAddress: data.customerAddress,

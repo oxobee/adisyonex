@@ -501,6 +501,9 @@ model Order {
   settledAt  DateTime?
   deletedAt  DateTime?
 
+  customerId   String?
+  customer     Customer?    @relation(fields: [customerId], references: [id])
+
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
   table      DiningTable? @relation(fields: [tableId], references: [id])
   items      OrderItem[]
@@ -509,6 +512,7 @@ model Order {
   @@unique([restaurantId, orderNumber])
   @@index([restaurantId, status])
   @@index([tableId])
+  @@index([customerId])
 }
 
 /// One line on an order — fully snapshotted from the menu at add time.
@@ -754,11 +758,14 @@ model Customer {
   source       String?   @default("QR_MENU")
   orderCount   Int       @default(0)
   totalSpent   Decimal   @default(0) @db.Decimal(10, 2)
+  kvkkConsent  Boolean   @default(true)
+  kvkkAcceptedAt DateTime? @default(now())
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  orders     Order[]
 
   @@unique([restaurantId, phone])
   @@index([restaurantId])

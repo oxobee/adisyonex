@@ -6,9 +6,12 @@ import { z } from "zod";
 import { withManagerValidation, withValidation } from "@/actions/helpers";
 import {
   customerListQuerySchema,
+  customerProfileQuerySchema,
   registerCustomerSchema,
 } from "@/lib/validators/customer";
 import {
+  getCustomerDetailForAdmin,
+  getCustomerProfile,
   listCustomers,
   registerCustomer,
   removeCustomer,
@@ -18,6 +21,23 @@ export const registerCustomerAction = withValidation(
   registerCustomerSchema,
   async (data) => {
     return registerCustomer(data);
+  },
+);
+
+export const getCustomerProfileAction = withValidation(
+  customerProfileQuerySchema,
+  async (query) => {
+    return getCustomerProfile(query.username, {
+      customerId: query.customerId,
+      phone: query.phone,
+    });
+  },
+);
+
+export const getAdminCustomerDetailAction = withManagerValidation(
+  z.object({ customerId: z.string().min(1) }),
+  async (data, ctx) => {
+    return getCustomerDetailForAdmin(ctx.restaurantId, data.customerId);
   },
 );
 

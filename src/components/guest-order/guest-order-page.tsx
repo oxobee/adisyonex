@@ -40,6 +40,7 @@ import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -61,6 +62,8 @@ import type { GuestOrderSummaryDTO } from "@/types/order";
 import { MenuBrowser } from "../waiter/menu-browser";
 import { newLineKey } from "../pos/types";
 import { Theme2QsrView } from "./theme2-qsr-view";
+import { CustomerLoyaltyPanel } from "./customer-loyalty-panel";
+import type { CustomerDTO } from "@/services/customer.service";
 
 const orderStatus = (
   o: GuestOrderSummaryDTO,
@@ -126,11 +129,13 @@ export function GuestOrderPage({
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [requestBillConfirmOpen, setRequestBillConfirmOpen] = useState(false);
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [registeredSuccess, setRegisteredSuccess] = useState(false);
   const [myOrders, setMyOrders] = useState<readonly GuestOrderSummaryDTO[]>(initialOrders);
   const [placed, setPlaced] = useState(false);
+  const [currentCustomer, setCurrentCustomer] = useState<CustomerDTO | null>(null);
 
   // Customer Loyalty Registration State
   const [customerName, setCustomerName] = useState("");
@@ -469,6 +474,7 @@ export function GuestOrderPage({
   if (qrMenuTheme === "QSR_FASTFOOD") {
     return (
       <Theme2QsrView
+        username={username}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
         tableLabel={tableLabel}
@@ -521,6 +527,7 @@ export function GuestOrderPage({
         }}
         myOrders={myOrders}
         busy={busy}
+        onCustomerIdentified={(c) => setCurrentCustomer(c)}
       />
     );
   }
@@ -603,16 +610,32 @@ export function GuestOrderPage({
             </div>
           </div>
 
-          {myOrders.length > 0 ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-xl border-primary/30 bg-card/80 text-xs font-bold text-primary shadow-xs hover:bg-primary/10 shrink-0"
-              onClick={() => setOrdersOpen(true)}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setProfileSheetOpen(true)}
+              className={cn(
+                "flex items-center gap-1.5 h-8 px-3 rounded-xl border text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-95",
+                qrMenuTheme === "ELEGANT_DARK"
+                  ? "border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25"
+                  : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20",
+              )}
             >
-              Siparişlerim ({myOrders.length})
-            </Button>
-          ) : null}
+              <UserIcon className="size-3.5" />
+              <span>Profilim</span>
+            </button>
+
+            {myOrders.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-xl border-primary/30 bg-card/80 text-xs font-bold text-primary shadow-xs hover:bg-primary/10 shrink-0"
+                onClick={() => setOrdersOpen(true)}
+              >
+                Siparişlerim ({myOrders.length})
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -913,6 +936,48 @@ export function GuestOrderPage({
           </DialogContent>
         </Dialog>
       ) : null}
+
+      {/* CUSTOMER LOYALTY & PROFILE SHEET (TEMA 1 & GENEL) */}
+      <Sheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[92vh] rounded-t-3xl p-0 overflow-hidden flex flex-col bg-white"
+        >
+          <SheetHeader className="p-4 pb-3 border-b text-left bg-zinc-50 flex flex-row items-center justify-between space-y-0">
+            <div>
+              <SheetTitle className="text-base font-black text-zinc-900 flex items-center gap-2">
+                <UserIcon className="size-4.5 text-primary" />
+                <span>Müşteri Profili & Masa</span>
+              </SheetTitle>
+              <SheetDescription className="text-xs text-zinc-400 font-medium">
+                Masa servisleri, sadakat kulübü ve sipariş geçmişiniz
+              </SheetDescription>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProfileSheetOpen(false)}
+              className="p-1 text-zinc-400 hover:text-zinc-600 rounded-full cursor-pointer"
+            >
+              <span className="text-lg leading-none">✕</span>
+            </button>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            <CustomerLoyaltyPanel
+              username={username}
+              restaurantName={restaurantName}
+              logoUrl={logoUrl}
+              tableLabel={tableLabel}
+              primaryColor={qrPrimaryColor || "#FF5500"}
+              secondaryColor={qrSecondaryColor || "#FFF7ED"}
+              onRequestBill={async () => {
+                await requestBill.execute({ username, tableId });
+              }}
+              onCustomerIdentified={(c) => setCurrentCustomer(c)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
