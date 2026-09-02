@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { withManagerValidation } from "@/actions/helpers";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import {
@@ -192,5 +193,12 @@ export const clearGeolocationAction = async (): Promise<ActionResult<void>> =>
 
 export const updateQrMenuThemeAction = async (
   theme: string,
-): Promise<ActionResult<void>> =>
-  runOwned((restaurantId) => updateQrMenuTheme(restaurantId, theme));
+): Promise<ActionResult<void>> => {
+  const res = await runOwned((restaurantId) => updateQrMenuTheme(restaurantId, theme));
+  if (res.success) {
+    revalidatePath("/dashboard/menu-design");
+    revalidatePath("/order/[username]", "page");
+    revalidatePath("/", "layout");
+  }
+  return res;
+};

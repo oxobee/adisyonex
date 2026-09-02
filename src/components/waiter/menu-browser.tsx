@@ -576,6 +576,58 @@ export function MenuBrowser({
             const hasOptions =
               item.variants.length > 0 || item.modifierGroups.length > 0;
 
+            if (qrMenuTheme === "QSR_FASTFOOD") {
+              return (
+                <div
+                  key={item.id}
+                  style={{ animationDelay: `${Math.min(index * 35, 350)}ms` }}
+                  onClick={() => {
+                    if (hasOptions) onOpenDetail(item);
+                    else onQuickAdd(item);
+                  }}
+                  className={cn(
+                    "group relative flex flex-col justify-between items-center text-center rounded-3xl border border-zinc-200/80 bg-white p-3.5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-red-500/40 active:scale-[0.97] cursor-pointer animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both",
+                    !item.available && "opacity-60",
+                  )}
+                >
+                  {/* Food Photo Container */}
+                  <div className="relative size-24 sm:size-28 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                    {photo ? (
+                      <Image
+                        src={photo.url}
+                        alt={item.name}
+                        fill
+                        className="object-contain object-center"
+                        sizes="(max-width: 640px) 50vw, 200px"
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="text-4xl">🍔</span>
+                    )}
+                  </div>
+
+                  {/* Title & Desc */}
+                  <div className="mt-2 flex flex-col items-center gap-1 w-full">
+                    <h3 className="font-black text-zinc-900 text-xs sm:text-sm line-clamp-2 leading-tight group-hover:text-red-600 transition-colors">
+                      {item.name}
+                    </h3>
+                    {item.shortDescription ? (
+                      <p className="text-zinc-500 text-[10px] line-clamp-1">
+                        {item.shortDescription}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {/* Price Capsule (R$ / ₺ Style) */}
+                  <div className="mt-2.5 w-full flex items-center justify-center">
+                    <div className="bg-zinc-100 group-hover:bg-amber-100 text-zinc-900 group-hover:text-amber-950 font-black text-xs px-3.5 py-1 rounded-full tabular-nums transition-colors shadow-2xs">
+                      {formatCurrency(item.price)}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={item.id}

@@ -449,6 +449,7 @@ export function GuestOrderPage({
     <div className={cn(
       "mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32 transition-colors",
       qrMenuTheme === "ELEGANT_DARK" && "bg-zinc-950 text-zinc-100",
+      qrMenuTheme === "QSR_FASTFOOD" && "bg-[#f8f8f9] text-zinc-900",
     )}>
       {/* Lively & Themed Top Banner with Square Logo */}
       <div
@@ -456,11 +457,13 @@ export function GuestOrderPage({
           "relative mb-4 overflow-hidden rounded-3xl border p-4 shadow-sm backdrop-blur-md transition-all",
           qrMenuTheme === "ELEGANT_DARK"
             ? "border-amber-500/30 bg-zinc-900/90 text-zinc-100 shadow-amber-500/5"
-            : qrMenuTheme === "VISUAL_GRID"
-              ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-card to-card"
-              : qrMenuTheme === "MINIMAL_LIST"
-                ? "border-border/80 bg-card"
-                : "border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card",
+            : qrMenuTheme === "QSR_FASTFOOD"
+              ? "border-zinc-200/80 bg-white text-zinc-900 shadow-xs"
+              : qrMenuTheme === "VISUAL_GRID"
+                ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-card to-card"
+                : qrMenuTheme === "MINIMAL_LIST"
+                  ? "border-border/80 bg-card"
+                  : "border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card",
         )}
       >
         <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-primary/10 blur-xl" />
@@ -471,7 +474,7 @@ export function GuestOrderPage({
               <div
                 className={cn(
                   "relative size-12 shrink-0 aspect-square overflow-hidden rounded-2xl border p-0.5 shadow-md",
-                  qrMenuTheme === "ELEGANT_DARK" ? "border-amber-500/40 bg-zinc-900" : "border-primary/20 bg-card",
+                  qrMenuTheme === "ELEGANT_DARK" ? "border-amber-500/40 bg-zinc-900" : qrMenuTheme === "QSR_FASTFOOD" ? "border-red-500/30 bg-white shadow-xs" : "border-primary/20 bg-card",
                 )}
               >
                 <Image
@@ -489,7 +492,9 @@ export function GuestOrderPage({
                   "flex size-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md",
                   qrMenuTheme === "ELEGANT_DARK"
                     ? "bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100"
-                    : "bg-gradient-to-br from-amber-500 to-primary",
+                    : qrMenuTheme === "QSR_FASTFOOD"
+                      ? "bg-gradient-to-br from-red-600 to-amber-500 text-white shadow-red-500/20"
+                      : "bg-gradient-to-br from-amber-500 to-primary",
                 )}
               >
                 <UtensilsCrossedIcon className="size-6 stroke-[2.2]" />
@@ -507,7 +512,9 @@ export function GuestOrderPage({
                     "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold shadow-2xs",
                     qrMenuTheme === "ELEGANT_DARK"
                       ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
-                      : "border-primary/30 bg-primary/15 text-primary",
+                      : qrMenuTheme === "QSR_FASTFOOD"
+                        ? "border-red-500/30 bg-red-500/10 text-red-600 font-extrabold"
+                        : "border-primary/30 bg-primary/15 text-primary",
                   )}
                 >
                   <span>🍽️</span>
