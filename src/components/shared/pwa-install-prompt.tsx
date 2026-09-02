@@ -37,12 +37,19 @@ export function PwaInstallPrompt({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // 0. If user previously installed, never show again
+    // 0. Register service worker immediately regardless of installation state
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .catch((err) => console.log("SW registration notice:", err));
+    }
+
+    // 1. If user previously installed, never show modal again
     if (localStorage.getItem("pwa_installed") === "true") {
       return;
     }
 
-    // 1. Check if already installed / running as standalone PWA
+    // 2. Check if already running as standalone PWA
     const checkStandalone = () => {
       const isStandaloneMode =
         window.matchMedia("(display-mode: standalone)").matches ||
@@ -58,13 +65,6 @@ export function PwaInstallPrompt({
 
     if (checkStandalone()) {
       return;
-    }
-
-    // 2. Register service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .catch((err) => console.log("SW registration notice:", err));
     }
 
     // 3. Listen for appinstalled event (browser signals successful install)
