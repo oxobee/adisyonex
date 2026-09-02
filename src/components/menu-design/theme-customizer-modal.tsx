@@ -17,6 +17,7 @@ import {
   SmartphoneIcon,
   SparklesIcon,
   Trash2Icon,
+  TypeIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -93,7 +94,14 @@ export function ThemeCustomizerModal({
         ],
   );
 
-  const [activeTab, setActiveTab] = useState<"colors" | "sliders">("colors");
+  const [greetingTitle, setGreetingTitle] = useState(
+    initialCustomization.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
+  );
+  const [greetingSubtitle, setGreetingSubtitle] = useState(
+    initialCustomization.qrGreetingSubtitle || "Hoş Geldiniz 👋",
+  );
+
+  const [activeTab, setActiveTab] = useState<"colors" | "sliders" | "texts">("colors");
   const [saving, setSaving] = useState(false);
 
   // Sliders Management Handlers
@@ -139,11 +147,13 @@ export function ThemeCustomizerModal({
         qrSecondaryColor: secondaryColor,
         qrSlidersEnabled: slidersEnabled,
         qrSliders: sliders,
+        qrGreetingTitle: greetingTitle,
+        qrGreetingSubtitle: greetingSubtitle,
       });
 
       if (res.success) {
         toast.success("Tema özelleştirmeleri başarıyla kaydedildi!", {
-          description: "Renkler ve slider ayarları QR menüye uygulandı.",
+          description: "Renkler, başlıklar ve slider ayarları QR menüye uygulandı.",
         });
         if (onSaved) onSaved();
         onOpenChange(false);
@@ -189,15 +199,19 @@ export function ThemeCustomizerModal({
           {/* Left Controls Column (7 Cols) */}
           <div className="lg:col-span-7 overflow-y-auto p-5 sm:p-6 border-r border-border/80 space-y-6">
             
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "colors" | "sliders")} className="w-full">
-              <TabsList className="grid grid-cols-2 w-full p-1 bg-muted/80 rounded-2xl">
-                <TabsTrigger value="colors" className="rounded-xl font-black text-xs gap-2 py-2">
-                  <PaletteIcon className="size-4" />
-                  <span>Renkler & Palet</span>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "colors" | "sliders" | "texts")} className="w-full">
+              <TabsList className="grid grid-cols-3 w-full p-1 bg-muted/80 rounded-2xl">
+                <TabsTrigger value="colors" className="rounded-xl font-black text-xs gap-1.5 py-2">
+                  <PaletteIcon className="size-3.5" />
+                  <span>Renkler</span>
                 </TabsTrigger>
-                <TabsTrigger value="sliders" className="rounded-xl font-black text-xs gap-2 py-2">
-                  <ImageIcon className="size-4" />
-                  <span>Slider & Kampanyalar ({sliders.filter((s) => s.isActive).length})</span>
+                <TabsTrigger value="sliders" className="rounded-xl font-black text-xs gap-1.5 py-2">
+                  <ImageIcon className="size-3.5" />
+                  <span>Slider ({sliders.filter((s) => s.isActive).length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="texts" className="rounded-xl font-black text-xs gap-1.5 py-2">
+                  <TypeIcon className="size-3.5" />
+                  <span>Başlık & Metin</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -454,6 +468,98 @@ export function ThemeCustomizerModal({
                 </div>
 
               </TabsContent>
+
+              {/* TAB 3: TEXTS & GREETINGS */}
+              <TabsContent value="texts" className="space-y-6 pt-4">
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl border bg-card space-y-3 shadow-xs">
+                    <div>
+                      <Label className="text-xs font-black text-foreground">
+                        Ana Karşılama Başlığı (Slider Üstü)
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                        Ana sayfada slider ve menülerin hemen üzerinde yer alan büyük karşılama başlığıdır.
+                      </p>
+                    </div>
+
+                    <Input
+                      type="text"
+                      value={greetingTitle}
+                      onChange={(e) => setGreetingTitle(e.target.value)}
+                      placeholder="Bugün Ne Yemek İstersiniz?"
+                      className="h-10 text-sm font-bold rounded-xl"
+                    />
+
+                    {/* Quick Suggestion Chips */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                        Hızlı Örnekler (Tıklayıp Seçin):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          "Bugün Ne Yemek İstersiniz?",
+                          "Acıktınız mı? Hemen Keşfedin 🔥",
+                          "Günün Enfes Lezzetleri 🍽️",
+                          "Canınız Ne Çekti? 🍕🍔",
+                          "What meal Do You Want?",
+                        ].map((sug) => (
+                          <button
+                            key={sug}
+                            type="button"
+                            onClick={() => setGreetingTitle(sug)}
+                            className="px-2.5 py-1 rounded-lg bg-muted text-[11px] font-bold text-foreground hover:bg-muted/80 border border-border/60 transition-all cursor-pointer"
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl border bg-card space-y-3 shadow-xs">
+                    <div>
+                      <Label className="text-xs font-black text-foreground">
+                        Karşılama Alt Başlığı / Selamlama
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                        Başlığın üzerinde küçük puntolarla beliren selamlama metnidir.
+                      </p>
+                    </div>
+
+                    <Input
+                      type="text"
+                      value={greetingSubtitle}
+                      onChange={(e) => setGreetingSubtitle(e.target.value)}
+                      placeholder="Hoş Geldiniz 👋"
+                      className="h-10 text-sm font-bold rounded-xl"
+                    />
+
+                    {/* Quick Suggestion Chips */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                        Hızlı Örnekler:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          "Hoş Geldiniz 👋",
+                          "Taze & Sıcak Lezzetler 🔥",
+                          "Günün Özel Menüsü",
+                          "Masaya Özel Servis ✨",
+                        ].map((sug) => (
+                          <button
+                            key={sug}
+                            type="button"
+                            onClick={() => setGreetingSubtitle(sug)}
+                            className="px-2.5 py-1 rounded-lg bg-muted text-[11px] font-bold text-foreground hover:bg-muted/80 border border-border/60 transition-all cursor-pointer"
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
 
           </div>
@@ -504,8 +610,8 @@ export function ThemeCustomizerModal({
 
                   {/* Greeting */}
                   <div>
-                    <span className="text-[8px] font-bold text-zinc-400 block">Hoş Geldiniz 👋</span>
-                    <h3 className="text-[11px] font-black text-zinc-900 leading-tight">Ne yemek istersiniz?</h3>
+                    <span className="text-[8px] font-bold text-zinc-400 block">{greetingSubtitle || "Hoş Geldiniz 👋"}</span>
+                    <h3 className="text-[11px] font-black text-zinc-900 leading-tight">{greetingTitle || "Bugün Ne Yemek İstersiniz?"}</h3>
                   </div>
 
                   {/* Hero Slider Banner */}

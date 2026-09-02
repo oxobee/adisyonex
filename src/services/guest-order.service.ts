@@ -110,6 +110,8 @@ export interface GuestOrderPageData {
   readonly qrSecondaryColor?: string | null;
   readonly qrSlidersEnabled?: boolean | null;
   readonly qrSliders?: readonly object[] | null;
+  readonly qrGreetingTitle?: string | null;
+  readonly qrGreetingSubtitle?: string | null;
 }
 
 export type GuestOrderPageResult =
@@ -169,6 +171,8 @@ export const loadGuestOrderPage = async (
       qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
       qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
       qrSliders: (restaurant.qrSliders as readonly object[]) ?? null,
+      qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
+      qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
     },
   };
 };

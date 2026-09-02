@@ -82,6 +82,8 @@ export default async function OrderPage({
         qrSecondaryColor={data.qrSecondaryColor || "#FFF7ED"}
         qrSlidersEnabled={data.qrSlidersEnabled ?? true}
         qrSliders={data.qrSliders as never}
+        qrGreetingTitle={data.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?"}
+        qrGreetingSubtitle={data.qrGreetingSubtitle || "Hoş Geldiniz 👋"}
       />
     </main>
   );

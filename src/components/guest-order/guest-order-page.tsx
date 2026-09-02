@@ -99,6 +99,8 @@ export function GuestOrderPage({
   qrSecondaryColor = "#FFF7ED",
   qrSlidersEnabled = true,
   qrSliders,
+  qrGreetingTitle = "Bugün Ne Yemek İstersiniz?",
+  qrGreetingSubtitle = "Hoş Geldiniz 👋",
 }: {
   readonly username: string;
   readonly tableId: string;
@@ -115,6 +117,8 @@ export function GuestOrderPage({
   readonly qrSecondaryColor?: string;
   readonly qrSlidersEnabled?: boolean;
   readonly qrSliders?: readonly QrSliderItem[] | null;
+  readonly qrGreetingTitle?: string | null;
+  readonly qrGreetingSubtitle?: string | null;
 }) {
   const cart = useOrderCart();
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
@@ -467,6 +471,8 @@ export function GuestOrderPage({
         secondaryColor={qrSecondaryColor}
         slidersEnabled={qrSlidersEnabled}
         sliders={qrSliders}
+        greetingTitle={qrGreetingTitle}
+        greetingSubtitle={qrGreetingSubtitle}
         cartItems={cart.cart}
         cartItemCount={itemCount}
         cartGrandTotal={bill.grandTotal}

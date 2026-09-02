@@ -6,6 +6,7 @@ import {
   ArrowLeftIcon,
   BellIcon,
   CheckCircle2Icon,
+  CheckIcon,
   ChevronRightIcon,
   ClockIcon,
   FlameIcon,
@@ -57,6 +58,8 @@ export interface Theme2QsrViewProps {
   readonly secondaryColor?: string;
   readonly slidersEnabled?: boolean;
   readonly sliders?: readonly QrSliderItem[] | null;
+  readonly greetingTitle?: string | null;
+  readonly greetingSubtitle?: string | null;
   readonly cartItems: readonly CartLine[];
   readonly cartItemCount: number;
   readonly cartGrandTotal: number;
@@ -86,6 +89,8 @@ export function Theme2QsrView({
   secondaryColor = "#FFF7ED",
   slidersEnabled = true,
   sliders,
+  greetingTitle = "Bugün Ne Yemek İstersiniz?",
+  greetingSubtitle = "Hoş Geldiniz 👋",
   cartItems,
   cartItemCount,
   cartGrandTotal,
@@ -296,7 +301,7 @@ export function Theme2QsrView({
             <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
             <input
               type="text"
-              placeholder="Search dishes, drinks..."
+              placeholder="Ürün veya lezzet ara..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-11 bg-white border border-zinc-200/90 rounded-2xl pl-10 pr-10 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 outline-none shadow-xs focus:ring-2 focus:ring-primary/20 transition-all"
@@ -314,9 +319,9 @@ export function Theme2QsrView({
 
           {/* Greeting Typography */}
           <div className="pt-1">
-            <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight leading-tight">
-              What meal <br />
-              <span style={{ color: primaryColor }}>Do You Want?</span>
+            <span className="text-xs font-bold text-zinc-400 block">{greetingSubtitle || "Hoş Geldiniz 👋"}</span>
+            <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight leading-tight mt-0.5">
+              {greetingTitle || "Bugün Ne Yemek İstersiniz?"}
             </h2>
           </div>
 
@@ -338,10 +343,10 @@ export function Theme2QsrView({
                     Fırsat
                   </span>
                   <h3 className="text-base sm:text-lg font-black leading-tight">
-                    {activeSliders[activeSlideIndex]?.title || "Our Best Seller! 🔥"}
+                    {activeSliders[activeSlideIndex]?.title || "Günün Lezzeti! 🔥"}
                   </h3>
                   <p className="text-[11px] text-white/90 line-clamp-2 leading-relaxed font-medium">
-                    {activeSliders[activeSlideIndex]?.subtitle || "Loved by thousands, now it's your turn!"}
+                    {activeSliders[activeSlideIndex]?.subtitle || "Şefin özel tarifiyle hazırlandı, hemen deneyin!"}
                   </p>
                   <button
                     type="button"
@@ -350,7 +355,7 @@ export function Theme2QsrView({
                     }}
                     className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-zinc-950 font-black text-xs shadow-md active:scale-95 transition-transform cursor-pointer"
                   >
-                    <span>{activeSliders[activeSlideIndex]?.buttonText || "Order now"}</span>
+                    <span>{activeSliders[activeSlideIndex]?.buttonText || "Sipariş Ver"}</span>
                     <ChevronRightIcon className="size-3" />
                   </button>
                 </div>
@@ -395,14 +400,14 @@ export function Theme2QsrView({
           {/* Categories Horizontal Chips Row (Görseldeki Yuvarlak İkonlu Kategori Şeridi) */}
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-zinc-900">Categories</h3>
+              <h3 className="text-sm font-black text-zinc-900">Kategoriler</h3>
               <button
                 type="button"
                 onClick={() => setActiveTab("categories")}
                 className="text-xs font-bold transition-colors cursor-pointer"
                 style={{ color: primaryColor }}
               >
-                See more
+                Tümünü Gör
               </button>
             </div>
 
@@ -430,7 +435,7 @@ export function Theme2QsrView({
                   ⭐
                 </div>
                 <span className={cn("text-[11px] font-bold text-zinc-700 truncate max-w-[64px]")}>
-                  All
+                  Tümü
                 </span>
               </button>
 
@@ -470,8 +475,8 @@ export function Theme2QsrView({
           {/* Popular Meals Section (Görseldeki Kart Tasarımı) */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-zinc-900">Popular Meals</h3>
-              <span className="text-xs font-bold text-zinc-400">{items.length} dishes</span>
+              <h3 className="text-sm font-black text-zinc-900">Popüler Lezzetler</h3>
+              <span className="text-xs font-bold text-zinc-400">{items.length} çeşit</span>
             </div>
 
             <div className="space-y-3">
@@ -525,7 +530,7 @@ export function Theme2QsrView({
                         <span>•</span>
                         <span className="flex items-center gap-0.5 text-orange-500">
                           <FlameIcon className="size-3 text-orange-500" />
-                          <span>{item.calories || 450} Cal</span>
+                          <span>{item.calories || 450} Kalori</span>
                         </span>
                       </div>
 
@@ -548,7 +553,7 @@ export function Theme2QsrView({
                           style={{ backgroundColor: primaryColor }}
                         >
                           <PlusIcon className="size-3 stroke-[3]" />
-                          <span>Add</span>
+                          <span>Ekle</span>
                         </button>
                       </div>
                     </div>
@@ -575,7 +580,7 @@ export function Theme2QsrView({
             >
               <ArrowLeftIcon className="size-4" />
             </button>
-            <h2 className="text-base font-black text-zinc-900">Categories</h2>
+            <h2 className="text-base font-black text-zinc-900">Kategoriler</h2>
             <div className="size-8" />
           </div>
 
@@ -601,7 +606,7 @@ export function Theme2QsrView({
                       {c.name}
                     </h4>
                     <span className="text-[10px] font-bold text-zinc-400 block mt-0.5">
-                      {count} items
+                      {count} çeşit
                     </span>
                   </div>
 
@@ -632,13 +637,13 @@ export function Theme2QsrView({
             >
               <ArrowLeftIcon className="size-4" />
             </button>
-            <h2 className="text-base font-black text-zinc-900">My Cart ({cartItemCount})</h2>
+            <h2 className="text-base font-black text-zinc-900">Sepetim ({cartItemCount})</h2>
             <button
               type="button"
               onClick={onClearCart}
               className="text-xs font-bold text-red-500 hover:underline cursor-pointer"
             >
-              Temizle
+              Sepeti Boşalt
             </button>
           </div>
 
@@ -768,7 +773,7 @@ export function Theme2QsrView({
                 className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
                 style={{ backgroundColor: primaryColor }}
               >
-                Proceed To Checkout →
+                Siparişi Onayla →
               </Button>
             </div>
           )}
@@ -805,7 +810,7 @@ export function Theme2QsrView({
               <Button
                 variant="outline"
                 onClick={onRequestBill}
-                className="rounded-2xl font-black text-xs h-11 border-zinc-300"
+                className="rounded-2xl font-black text-xs h-11 border-zinc-300 cursor-pointer"
               >
                 Garson Çağır / Hesap İste 🛎️
               </Button>
@@ -918,7 +923,7 @@ export function Theme2QsrView({
                 <div className="flex items-center gap-2 pt-1">
                   <span className="px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 font-bold text-xs flex items-center gap-1">
                     <FlameIcon className="size-3.5" />
-                    <span>{detailItem.calories || 580} Cal</span>
+                    <span>{detailItem.calories || 580} Kalori</span>
                   </span>
                   <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-xs flex items-center gap-1">
                     <StarIcon className="size-3.5 fill-amber-500" />
@@ -926,14 +931,14 @@ export function Theme2QsrView({
                   </span>
                   <span className="px-3 py-1 rounded-full bg-zinc-100 text-zinc-600 font-bold text-xs flex items-center gap-1">
                     <ClockIcon className="size-3.5" />
-                    <span>15-25 Min</span>
+                    <span>15-25 Dk</span>
                   </span>
                 </div>
 
                 {/* Description */}
                 {(detailItem.longDescription || detailItem.shortDescription) && (
                   <div className="space-y-1">
-                    <h4 className="text-xs font-black text-zinc-900">Description</h4>
+                    <h4 className="text-xs font-black text-zinc-900">Ürün Açıklaması</h4>
                     <p className="text-xs text-zinc-500 leading-relaxed font-medium">
                       {detailItem.longDescription || detailItem.shortDescription}
                     </p>
@@ -943,7 +948,7 @@ export function Theme2QsrView({
                 {/* Variants Selection (if any) */}
                 {detailItem.variants.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs font-black text-zinc-900">Porsiyon / Boyut</h4>
+                    <h4 className="text-xs font-black text-zinc-900">Porsiyon / Boyut Seçimi</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {detailItem.variants.map((v) => (
                         <button
@@ -969,59 +974,135 @@ export function Theme2QsrView({
                   </div>
                 )}
 
-                {/* Modifiers & Extra Options (Görseldeki Additional options) */}
+                {/* Categorized Modifiers & Extra Options (Kategorize Edilmiş Seçenekler) */}
                 {detailItem.modifierGroups.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-zinc-900">Additional options:</h4>
-                    <div className="space-y-2">
-                      {detailItem.modifierGroups.flatMap((g) =>
-                        g.modifiers.map((opt) => {
-                          const isChecked = selectedModifiers.includes(opt.id);
-                          return (
-                            <button
-                              key={opt.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedModifiers((prev) =>
-                                  isChecked ? prev.filter((id) => id !== opt.id) : [...prev, opt.id],
-                                );
-                              }}
-                              className={cn(
-                                "w-full p-3 rounded-2xl border flex items-center justify-between text-xs font-bold transition-all cursor-pointer",
-                                isChecked
-                                  ? "border-2 bg-muted/40 shadow-xs"
-                                  : "border-zinc-200/80 bg-white text-zinc-700 hover:bg-zinc-50",
-                              )}
-                              style={{
-                                borderColor: isChecked ? primaryColor : undefined,
-                              }}
-                            >
-                              <span>{opt.name}</span>
-                              <div className="flex items-center gap-1.5 font-black">
-                                <span className="tabular-nums font-mono">
-                                  {opt.priceDelta && Number(opt.priceDelta) > 0
-                                    ? `+${formatCurrency(Number(opt.priceDelta))}`
-                                    : "Ücretsiz"}
-                                </span>
-                                {isChecked && <CheckCircle2Icon className="size-4" style={{ color: primaryColor }} />}
-                              </div>
-                            </button>
-                          );
-                        }),
-                      )}
+                  <div className="space-y-4 pt-1">
+                    <div className="border-t pt-3">
+                      <h4 className="text-xs font-black text-zinc-900 uppercase tracking-wider">
+                        Ekstra Malzeme & Seçenekler
+                      </h4>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">
+                        Ürününüzü dilediğiniz gibi özelleştirin
+                      </p>
                     </div>
+
+                    {detailItem.modifierGroups.map((group) => {
+                      const isSingleChoice = group.maxSelect === 1;
+                      const isRequired = group.isRequired || group.minSelect > 0;
+                      const selectedInGroup = group.modifiers.filter((opt) => selectedModifiers.includes(opt.id));
+
+                      return (
+                        <div key={group.id} className="p-3.5 rounded-3xl bg-zinc-50 border border-zinc-200/80 space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <span className="font-black text-xs text-zinc-900 block">{group.name}</span>
+                              <span className="text-[10px] font-bold text-zinc-400 block">
+                                {isSingleChoice ? "1 seçim yapın" : group.maxSelect > 1 ? `En fazla ${group.maxSelect} adet seçin` : "İsteğe bağlı"}
+                              </span>
+                            </div>
+                            {isRequired ? (
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-black text-[9px]">
+                                Zorunlu
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-zinc-200/60 text-zinc-600 font-bold text-[9px]">
+                                İsteğe Bağlı
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {group.modifiers.map((opt) => {
+                              const isChecked = selectedModifiers.includes(opt.id);
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSingleChoice) {
+                                      const otherIdsInGroup = group.modifiers.map((m) => m.id);
+                                      setSelectedModifiers((prev) => [
+                                        ...prev.filter((id) => !otherIdsInGroup.includes(id)),
+                                        ...(isChecked ? [] : [opt.id]),
+                                      ]);
+                                    } else {
+                                      if (isChecked) {
+                                        setSelectedModifiers((prev) => prev.filter((id) => id !== opt.id));
+                                      } else {
+                                        if (group.maxSelect > 0 && selectedInGroup.length >= group.maxSelect) {
+                                          toast.info(`Bu gruptan en fazla ${group.maxSelect} adet seçebilirsiniz.`);
+                                          return;
+                                        }
+                                        setSelectedModifiers((prev) => [...prev, opt.id]);
+                                      }
+                                    }
+                                  }}
+                                  className={cn(
+                                    "w-full p-2.5 rounded-2xl border flex items-center justify-between text-xs font-bold transition-all cursor-pointer",
+                                    isChecked
+                                      ? "border-2 bg-white shadow-xs text-zinc-900"
+                                      : "border-zinc-200 bg-white/70 text-zinc-700 hover:bg-white",
+                                  )}
+                                  style={{
+                                    borderColor: isChecked ? primaryColor : undefined,
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={cn(
+                                        "size-4 rounded-md flex items-center justify-center border transition-all",
+                                        isSingleChoice ? "rounded-full" : "rounded-md",
+                                        isChecked ? "text-white" : "border-zinc-300 bg-zinc-50",
+                                      )}
+                                      style={{
+                                        backgroundColor: isChecked ? primaryColor : undefined,
+                                        borderColor: isChecked ? primaryColor : undefined,
+                                      }}
+                                    >
+                                      {isChecked && <CheckIcon className="size-3 stroke-[3]" />}
+                                    </div>
+                                    <span>{opt.name}</span>
+                                  </div>
+
+                                  <span className="tabular-nums font-mono font-black text-[11px]" style={{ color: isChecked ? primaryColor : undefined }}>
+                                    {opt.priceDelta && Number(opt.priceDelta) > 0
+                                      ? `+${formatCurrency(Number(opt.priceDelta))}`
+                                      : "Ücretsiz"}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Sticky Footer Action */}
               <div className="p-4 border-t bg-white sticky bottom-0 flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 block">Total price:</span>
-                  <span className="font-black text-lg text-zinc-900 tabular-nums">
-                    {formatCurrency(detailItem.price * detailQty)}
-                  </span>
-                </div>
+                {(() => {
+                  const selVariant = detailItem.variants.find((v) => v.id === selectedVariantId);
+                  const base = selVariant ? selVariant.price : detailItem.price;
+                  const modsDelta = detailItem.modifierGroups.reduce((acc, g) => {
+                    return (
+                      acc +
+                      g.modifiers
+                        .filter((m) => selectedModifiers.includes(m.id))
+                        .reduce((sum, m) => sum + Number(m.priceDelta || 0), 0)
+                    );
+                  }, 0);
+                  const unitTotal = base + modsDelta;
+                  return (
+                    <div>
+                      <span className="text-[10px] font-bold text-zinc-400 block">Toplam Tutar:</span>
+                      <span className="font-black text-lg text-zinc-900 tabular-nums">
+                        {formatCurrency(unitTotal * detailQty)}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 <Button
                   size="lg"
@@ -1030,7 +1111,7 @@ export function Theme2QsrView({
                   style={{ backgroundColor: primaryColor }}
                 >
                   <ShoppingBagIcon className="size-4 stroke-[2.5]" />
-                  <span>Add to cart</span>
+                  <span>Sepete Ekle 🛍️</span>
                 </Button>
               </div>
             </>
@@ -1044,7 +1125,7 @@ export function Theme2QsrView({
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-sm rounded-3xl p-5 space-y-4">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-zinc-900">Checkout / Sipariş Onayı</DialogTitle>
+            <DialogTitle className="text-base font-black text-zinc-900">Sipariş Onayı</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3 text-xs">
@@ -1057,7 +1138,7 @@ export function Theme2QsrView({
 
             {/* Payment Method Selector */}
             <div className="space-y-2">
-              <span className="font-bold text-zinc-400 text-[10px] uppercase">Ödeme Yöntemi</span>
+              <span className="font-bold text-zinc-400 text-[10px] uppercase">Ödeme Şekli</span>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -1117,7 +1198,7 @@ export function Theme2QsrView({
               className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
               style={{ backgroundColor: primaryColor }}
             >
-              {busy ? "İletiliyor…" : "Confirmation ✓"}
+              {busy ? "İletiliyor…" : "Siparişi Mutfağa İlet ✓"}
             </Button>
           </div>
         </DialogContent>
@@ -1135,10 +1216,10 @@ export function Theme2QsrView({
             </div>
 
             <DialogTitle className="text-lg font-black text-zinc-900 leading-tight">
-              Congratulations!
+              Tebrikler! 🎉
             </DialogTitle>
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Your order has been confirmed successfully and sent to the kitchen.
+              Siparişiniz başarıyla alındı ve mutfağa iletildi.
             </p>
 
             <Button
@@ -1149,7 +1230,7 @@ export function Theme2QsrView({
                 setActiveTab("profile");
               }}
             >
-              OK
+              Harika, Menüye Dön
             </Button>
           </div>
         </DialogContent>
@@ -1172,7 +1253,7 @@ export function Theme2QsrView({
             style={{ color: activeTab === "home" ? primaryColor : undefined }}
           >
             <HomeIcon className="size-5" />
-            <span className="text-[10px]">Home</span>
+            <span className="text-[10px]">Ana Sayfa</span>
           </button>
 
           {/* Categories Tab */}
@@ -1186,7 +1267,7 @@ export function Theme2QsrView({
             style={{ color: activeTab === "categories" ? primaryColor : undefined }}
           >
             <LayoutGridIcon className="size-5" />
-            <span className="text-[10px]">Categories</span>
+            <span className="text-[10px]">Kategoriler</span>
           </button>
 
           {/* Cart Tab with Badge */}
@@ -1210,7 +1291,7 @@ export function Theme2QsrView({
                 </span>
               )}
             </div>
-            <span className="text-[10px]">My Cart</span>
+            <span className="text-[10px]">Sepetim</span>
           </button>
 
           {/* Profile / Masa Tab */}

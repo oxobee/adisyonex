@@ -335,6 +335,8 @@ export interface QrThemeCustomizationDTO {
   readonly qrSecondaryColor: string;
   readonly qrSlidersEnabled: boolean;
   readonly qrSliders: readonly QrSliderItem[];
+  readonly qrGreetingTitle?: string;
+  readonly qrGreetingSubtitle?: string;
 }
 
 export const DEFAULT_QR_SLIDERS: readonly QrSliderItem[] = [
@@ -378,6 +380,8 @@ export const getQrThemeCustomization = async (
     qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
     qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
     qrSliders: sliders,
+    qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
+    qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
   };
 };
 
@@ -390,5 +394,7 @@ export const updateQrThemeCustomization = async (
     ...(data.qrSecondaryColor ? { qrSecondaryColor: data.qrSecondaryColor } : {}),
     ...(typeof data.qrSlidersEnabled === "boolean" ? { qrSlidersEnabled: data.qrSlidersEnabled } : {}),
     ...(data.qrSliders ? { qrSliders: data.qrSliders as unknown as object } : {}),
+    ...(data.qrGreetingTitle !== undefined ? { qrGreetingTitle: data.qrGreetingTitle } : {}),
+    ...(data.qrGreetingSubtitle !== undefined ? { qrGreetingSubtitle: data.qrGreetingSubtitle } : {}),
   });
 };
