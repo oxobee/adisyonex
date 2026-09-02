@@ -105,6 +105,33 @@ export function CustomerLoyaltyPanel({
   const [reviewComment, setReviewComment] = useState("");
   const [socialModalOpen, setSocialModalOpen] = useState(false);
 
+  // Favorites management (Tap to delete with confirmation)
+  const [selectedFavToDelete, setSelectedFavToDelete] = useState<string | null>(null);
+  const [confirmDeleteFav, setConfirmDeleteFav] = useState<string | null>(null);
+  const [removedFavNames, setRemovedFavNames] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem(`adisyoon_removed_favs_${username}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleRemoveFavorite = (favName: string) => {
+    const updated = [...removedFavNames, favName];
+    setRemovedFavNames(updated);
+    try {
+      localStorage.setItem(
+        `adisyoon_removed_favs_${username}`,
+        JSON.stringify(updated),
+      );
+    } catch {}
+    setConfirmDeleteFav(null);
+    setSelectedFavToDelete(null);
+    toast.success(`${favName} en çok sevilenlerden kaldırıldı.`);
+  };
+
   // Load saved session on mount
   const loadProfile = useCallback(
     async (customerId?: string, savedPhone?: string) => {
@@ -407,44 +434,10 @@ export function CustomerLoyaltyPanel({
                     </div>
                   </div>
 
-                  {/* Visual Status Step Indicator */}
-                  <div className="grid grid-cols-3 gap-1.5 py-1 text-center text-[10px] font-bold">
-                    <div
-                      className={cn(
-                        "py-1.5 rounded-xl border transition-colors",
-                        isWaiting || isPreparing || isReady || isDelivered
-                          ? "bg-red-50 border-red-200 text-red-700 font-black"
-                          : "bg-zinc-50 border-zinc-200 text-zinc-400",
-                      )}
-                    >
-                      1. Alındı 📥
-                    </div>
-                    <div
-                      className={cn(
-                        "py-1.5 rounded-xl border transition-colors",
-                        isPreparing || isReady || isDelivered
-                          ? "bg-red-100 border-red-300 text-red-800 font-black"
-                          : "bg-zinc-50 border-zinc-200 text-zinc-400",
-                      )}
-                    >
-                      2. Hazırlanıyor 🍳
-                    </div>
-                    <div
-                      className={cn(
-                        "py-1.5 rounded-xl border transition-colors",
-                        isDelivered || isReady
-                          ? "bg-red-600 text-white font-black border-red-600 shadow-xs"
-                          : "bg-zinc-50 border-zinc-200 text-zinc-400",
-                      )}
-                    >
-                      3. Masada 🍽️
-                    </div>
-                  </div>
-
                   {/* Order Line Items */}
-                  <div className="divide-y divide-zinc-100 text-xs">
+                  <div className="divide-y divide-zinc-100 text-xs pt-1">
                     {ord.lines.map((line, idx) => (
-                      <div key={idx} className="py-1.5 flex items-center justify-between">
+                      <div key={idx} className="py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span
                             className="font-black tabular-nums"
@@ -460,14 +453,14 @@ export function CustomerLoyaltyPanel({
                           )}
                         </div>
                         {line.state === "SERVED" ? (
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                             Servis Edildi
                           </span>
-                        ) : line.state === "PREPARING" ? (
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">
-                            Hazırlanıyor
+                        ) : (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md animate-pulse">
+                            Bekleniyor
                           </span>
-                        ) : null}
+                        )}
                       </div>
                     ))}
                   </div>
@@ -639,23 +632,53 @@ export function CustomerLoyaltyPanel({
               </div>
 
               <div className="flex flex-wrap gap-1.5">
-                {profile.favoriteItems.map((fav, i) => (
-                  <div
-                    key={i}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold"
-                    style={{
-                      backgroundColor: secondaryColor,
-                      borderColor: `${primaryColor}30`,
-                      color: "#18181b",
-                    }}
-                  >
-                    <span>⭐</span>
-                    <span>{fav.name}</span>
-                    <span className="text-[10px] font-black opacity-70">
-                      ({fav.count}×)
-                    </span>
-                  </div>
-                ))}
+                {profile.favoriteItems
+                  .filter((fav) => !removedFavNames.includes(fav.name))
+                  .map((fav, i) => {
+                    const isSelected = selectedFavToDelete === fav.name;
+                    return (
+                      <div
+                        key={i}
+                        onClick={() =>
+                          setSelectedFavToDelete(isSelected ? null : fav.name)
+                        }
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer select-none",
+                          isSelected
+                            ? "bg-red-50 border-red-500 text-red-600 shadow-xs"
+                            : "bg-zinc-50 border-zinc-200 text-zinc-800 hover:bg-zinc-100",
+                        )}
+                        style={
+                          !isSelected
+                            ? {
+                                backgroundColor: secondaryColor,
+                                borderColor: `${primaryColor}30`,
+                              }
+                            : undefined
+                        }
+                      >
+                        <span>{isSelected ? "❤️" : "⭐"}</span>
+                        <span>{fav.name}</span>
+                        <span className="text-[10px] font-black opacity-70">
+                          ({fav.count}×)
+                        </span>
+
+                        {isSelected && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDeleteFav(fav.name);
+                            }}
+                            className="size-4.5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-black hover:bg-red-700 active:scale-90 ml-0.5"
+                            title="Kaldır"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
@@ -684,19 +707,8 @@ export function CustomerLoyaltyPanel({
                         </span>
                       </div>
 
-                      <Badge
-                        className={cn(
-                          "text-[9px] font-black px-2 py-0.5",
-                          ord.status === "COMPLETED" || ord.status === "SETTLED"
-                            ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
-                            : "bg-amber-500/15 text-amber-700 border-amber-500/30",
-                        )}
-                      >
-                        {ord.status === "OPEN"
-                          ? "Hazırlanıyor"
-                          : ord.status === "COMPLETED"
-                            ? "Tamamlandı"
-                            : ord.status}
+                      <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[9px] font-black px-2 py-0.5">
+                        {ord.status === "VOID" ? "İptal Edildi" : "Tamamlandı"}
                       </Badge>
                     </div>
 
@@ -1126,59 +1138,180 @@ export function CustomerLoyaltyPanel({
         </DialogContent>
       </Dialog>
 
-      {/* ============================================================ */}
-      {/* 7. HESAP İSTE MODAL (NAKİT / KART SEÇİMİ)                    */}
-      {/* ============================================================ */}
-      <Dialog open={billModalOpen} onOpenChange={setBillModalOpen}>
-        <DialogContent className="max-w-xs rounded-3xl p-6 text-center space-y-4">
-          <div className="size-16 mx-auto rounded-3xl flex items-center justify-center text-3xl shadow-inner" style={{ backgroundColor: secondaryColor }}>
-            🧾
+      {/* FAVORITE ITEM DELETE CONFIRMATION MODAL */}
+      <Dialog
+        open={Boolean(confirmDeleteFav)}
+        onOpenChange={(open) => !open && setConfirmDeleteFav(null)}
+      >
+        <DialogContent className="max-w-xs rounded-3xl p-5 text-center space-y-3 border border-zinc-200 shadow-2xl">
+          <div className="size-14 mx-auto rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-2xl shadow-inner">
+            🗑️
           </div>
-          <DialogTitle className="text-base font-black text-zinc-900">Hesap İste</DialogTitle>
+          <DialogTitle className="text-base font-black text-zinc-900">
+            Favorilerden Kaldırılsın mı?
+          </DialogTitle>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            <strong className="text-zinc-900">{tableLabel}</strong> masası için hesap talebinizi ve ödeme tercihinizi seçin:
+            <strong className="text-zinc-900">&ldquo;{confirmDeleteFav}&rdquo;</strong> ürününü en çok sevilen lezzetlerinizden kaldırmak istiyor musunuz?
           </p>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setBillType("CARD")}
-              className={cn(
-                "p-3 rounded-2xl border text-xs font-black transition-all cursor-pointer",
-                billType === "CARD"
-                  ? "border-2 bg-white text-zinc-900 shadow-sm"
-                  : "border-zinc-200 bg-zinc-50 text-zinc-600",
-              )}
-              style={{ borderColor: billType === "CARD" ? primaryColor : undefined }}
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDeleteFav(null);
+                setSelectedFavToDelete(null);
+              }}
+              className="h-10 rounded-2xl font-bold text-xs cursor-pointer"
             >
-              💳 Kredi Kartı
-            </button>
+              Vazgeç
+            </Button>
+            <Button
+              onClick={() => confirmDeleteFav && handleRemoveFavorite(confirmDeleteFav)}
+              className="h-10 rounded-2xl font-black text-xs text-white bg-red-600 hover:bg-red-700 shadow-md cursor-pointer active:scale-95"
+            >
+              Sil
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-            <button
-              type="button"
-              onClick={() => setBillType("CASH")}
-              className={cn(
-                "p-3 rounded-2xl border text-xs font-black transition-all cursor-pointer",
-                billType === "CASH"
-                  ? "border-2 bg-white text-zinc-900 shadow-sm"
-                  : "border-zinc-200 bg-zinc-50 text-zinc-600",
-              )}
-              style={{ borderColor: billType === "CASH" ? primaryColor : undefined }}
+      {/* ============================================================ */}
+      {/* 7. HESAP İSTE MODAL (ŞIK, GÜZEL VE TEMAYLA UYUMLU TASARIM)   */}
+      {/* ============================================================ */}
+      <Dialog open={billModalOpen} onOpenChange={setBillModalOpen}>
+        <DialogContent className="max-w-sm rounded-[32px] p-6 text-center space-y-4 border border-zinc-200/90 shadow-2xl bg-white overflow-hidden">
+          {/* Header Icon with glowing ambient aura */}
+          <div className="relative mx-auto size-16">
+            <div
+              className="absolute inset-0 rounded-3xl blur-md opacity-30 animate-pulse"
+              style={{ backgroundColor: primaryColor }}
+            />
+            <div
+              className="relative size-16 rounded-3xl flex items-center justify-center text-3xl shadow-sm border border-zinc-100"
+              style={{ backgroundColor: secondaryColor }}
             >
-              💵 Nakit
-            </button>
+              🧾
+            </div>
           </div>
 
-          <div className="flex gap-2 w-full pt-1">
-            <Button variant="outline" onClick={() => setBillModalOpen(false)} className="flex-1 rounded-2xl font-bold text-xs">
+          <div>
+            <DialogTitle className="text-lg font-black tracking-tight text-zinc-900">
+              Hesap İste
+            </DialogTitle>
+            <p className="text-xs text-zinc-400 font-medium mt-0.5">
+              <span className="font-bold text-zinc-800">{tableLabel}</span> Masası
+            </p>
+          </div>
+
+          {/* Active Bill Amount Card */}
+          {liveOrders.reduce((sum, o) => sum + o.total, 0) > 0 && (
+            <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex items-center justify-between">
+              <div className="text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                  Ödenecek Tutar
+                </span>
+                <span className="text-xs text-zinc-500 font-medium">Toplam Masanız</span>
+              </div>
+              <span className="text-xl font-black tabular-nums tracking-tight text-zinc-900">
+                {formatCurrency(liveOrders.reduce((sum, o) => sum + o.total, 0))}
+              </span>
+            </div>
+          )}
+
+          {/* Payment Selection Radio Cards */}
+          <div className="space-y-2 text-left">
+            <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block px-1">
+              Ödeme Tercihiniz
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setBillType("CARD")}
+                className={cn(
+                  "p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative group flex flex-col justify-between h-24",
+                  billType === "CARD"
+                    ? "border-2 shadow-sm bg-white"
+                    : "border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 text-zinc-600",
+                )}
+                style={{
+                  borderColor: billType === "CARD" ? primaryColor : undefined,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">💳</span>
+                  {billType === "CARD" && (
+                    <span
+                      className="size-2.5 rounded-full ring-4"
+                      style={{
+                        backgroundColor: primaryColor,
+                        // @ts-ignore
+                        "--tw-ring-color": `${primaryColor}30`,
+                      }}
+                    />
+                  )}
+                </div>
+                <div>
+                  <h6 className="font-black text-xs text-zinc-900 leading-tight">
+                    Kredi Kartı
+                  </h6>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">
+                    POS Cihazı ile
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBillType("CASH")}
+                className={cn(
+                  "p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative group flex flex-col justify-between h-24",
+                  billType === "CASH"
+                    ? "border-2 shadow-sm bg-white"
+                    : "border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 text-zinc-600",
+                )}
+                style={{
+                  borderColor: billType === "CASH" ? primaryColor : undefined,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">💵</span>
+                  {billType === "CASH" && (
+                    <span
+                      className="size-2.5 rounded-full ring-4"
+                      style={{
+                        backgroundColor: primaryColor,
+                        // @ts-ignore
+                        "--tw-ring-color": `${primaryColor}30`,
+                      }}
+                    />
+                  )}
+                </div>
+                <div>
+                  <h6 className="font-black text-xs text-zinc-900 leading-tight">
+                    Nakit
+                  </h6>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">
+                    Nakit ödeme
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2.5 w-full pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setBillModalOpen(false)}
+              className="flex-1 h-12 rounded-2xl font-bold text-xs border-zinc-200 cursor-pointer"
+            >
               Vazgeç
             </Button>
             <Button
               onClick={handleRequestBillConfirm}
-              className="flex-1 rounded-2xl font-black text-xs text-white"
+              className="flex-1 h-12 rounded-2xl font-black text-xs text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
               style={{ backgroundColor: primaryColor }}
             >
-              Talebi Gönder
+              Hesap İste ➔
             </Button>
           </div>
         </DialogContent>

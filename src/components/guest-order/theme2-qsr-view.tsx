@@ -316,7 +316,7 @@ export function Theme2QsrView({
       setDetailItem(item);
     } else {
       onQuickAdd(item);
-      toast.success(`${item.name} sepete eklendi!`);
+      toast.success(`${item.name} siparişe eklendi!`);
     }
   };
 
@@ -445,8 +445,8 @@ export function Theme2QsrView({
       notes: itemNote.trim() || undefined,
     });
 
-    toast.success(`${detailItem.name} sepete eklendi!`, {
-      description: `${detailQty} adet sepetinize ilave edildi.`,
+    toast.success(`${detailItem.name} siparişe eklendi!`, {
+      description: `${detailQty} adet siparişinize ilave edildi.`,
     });
     setDetailItem(null);
   };
@@ -1797,7 +1797,7 @@ export function Theme2QsrView({
                   style={{ backgroundColor: primaryColor }}
                 >
                   <ShoppingBagIcon className="size-4 stroke-[2.5]" />
-                  <span>Sepete Ekle 🛍️</span>
+                  <span>Siparişe Ekle 🛍️</span>
                 </Button>
               </div>
             </>
@@ -1964,7 +1964,7 @@ export function Theme2QsrView({
       {/* 8. FLOATING CART BAR (ALT MENÜ ÜSTÜNDEKİ SİPARİŞ ÖZETİ ÇUBUĞU) */}
       {/* ============================================================ */}
       {cartItemCount > 0 && activeTab !== "profile" && (
-        <div className="fixed inset-x-0 bottom-[82px] z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] animate-in slide-in-from-bottom-3 duration-300">
+        <div className="fixed inset-x-0 bottom-[98px] z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] animate-in slide-in-from-bottom-3 duration-300">
           <div className="mx-auto flex w-full max-w-md items-center justify-between rounded-3xl bg-zinc-950 p-2.5 sm:p-3 shadow-2xl border border-zinc-800/90 text-white pointer-events-auto">
             {/* Left: Bag Icon with Count Badge & Amount */}
             <div className="flex items-center gap-3">
@@ -2111,13 +2111,17 @@ export function Theme2QsrView({
               size="lg"
               disabled={busy || cartItems.length === 0}
               onClick={async () => {
-                setOrderSummarySheetOpen(false);
-                await onPlaceOrder();
+                try {
+                  await onPlaceOrder();
+                  setOrderSummarySheetOpen(false);
+                } catch {
+                  // Keep open on error
+                }
               }}
               className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
               style={{ backgroundColor: primaryColor }}
             >
-              {busy ? "İletiliyor…" : "Sipariş Oluştur"}
+              {busy ? "Sipariş Oluşturuluyor…" : "Sipariş Oluştur"}
             </Button>
           </div>
         </SheetContent>

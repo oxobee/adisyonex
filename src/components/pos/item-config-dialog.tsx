@@ -402,7 +402,7 @@ export function ItemConfigDialog({
                 : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20",
             )}
           >
-            {unmetGroup ? "Seçim Yapınız" : `Sepete Ekle · ${formatCurrency(lineTotal)}`}
+            {unmetGroup ? "Seçim Yapınız" : `Siparişe Ekle · ${formatCurrency(lineTotal)}`}
           </Button>
         </div>
       </SheetContent>
