@@ -320,6 +320,21 @@ export const updateQrMenuTheme = async (
   await updateRestaurant(restaurantId, { qrMenuTheme: theme });
 };
 
+export type QrSectionDisplayStyle = "list" | "grid" | "slider";
+export type QrSectionType = "category" | "custom";
+
+export interface QrHomeSection {
+  readonly id: string;
+  readonly type: QrSectionType;
+  readonly title: string;
+  readonly subtitle?: string;
+  readonly categoryId?: string;
+  readonly itemIds?: readonly string[];
+  readonly displayStyle: QrSectionDisplayStyle;
+  readonly isActive: boolean;
+  readonly sortOrder: number;
+}
+
 export interface QrSliderItem {
   readonly id: string;
   readonly title: string;
@@ -337,6 +352,7 @@ export interface QrThemeCustomizationDTO {
   readonly qrSliders: readonly QrSliderItem[];
   readonly qrGreetingTitle?: string;
   readonly qrGreetingSubtitle?: string;
+  readonly qrHomeSections?: readonly QrHomeSection[];
 }
 
 export const DEFAULT_QR_SLIDERS: readonly QrSliderItem[] = [
@@ -375,6 +391,11 @@ export const getQrThemeCustomization = async (
     sliders = [...DEFAULT_QR_SLIDERS];
   }
 
+  let homeSections: QrHomeSection[] = [];
+  if (Array.isArray(restaurant.qrHomeSections) && (restaurant.qrHomeSections as unknown[]).length > 0) {
+    homeSections = restaurant.qrHomeSections as unknown as QrHomeSection[];
+  }
+
   return {
     qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
     qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
@@ -382,6 +403,7 @@ export const getQrThemeCustomization = async (
     qrSliders: sliders,
     qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
     qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
+    qrHomeSections: homeSections,
   };
 };
 
@@ -396,5 +418,7 @@ export const updateQrThemeCustomization = async (
     ...(data.qrSliders ? { qrSliders: data.qrSliders as unknown as object } : {}),
     ...(data.qrGreetingTitle !== undefined ? { qrGreetingTitle: data.qrGreetingTitle } : {}),
     ...(data.qrGreetingSubtitle !== undefined ? { qrGreetingSubtitle: data.qrGreetingSubtitle } : {}),
+    ...(data.qrHomeSections !== undefined ? { qrHomeSections: data.qrHomeSections as unknown as object } : {}),
   });
 };
+

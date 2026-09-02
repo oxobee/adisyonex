@@ -112,6 +112,7 @@ export interface GuestOrderPageData {
   readonly qrSliders?: readonly object[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
+  readonly qrHomeSections?: readonly object[] | null;
 }
 
 export type GuestOrderPageResult =
@@ -173,6 +174,7 @@ export const loadGuestOrderPage = async (
       qrSliders: (restaurant.qrSliders as readonly object[]) ?? null,
       qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
       qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
+      qrHomeSections: (restaurant.qrHomeSections as readonly object[]) ?? null,
     },
   };
 };

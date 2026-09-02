@@ -54,7 +54,7 @@ import {
 import { uuid } from "@/lib/uuid";
 import { cn } from "@/lib/utils";
 import { computeBill } from "@/services/billing";
-import type { QrSliderItem } from "@/services/restaurant-settings.service";
+import type { QrHomeSection, QrSliderItem } from "@/services/restaurant-settings.service";
 import type { MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 
@@ -101,6 +101,7 @@ export function GuestOrderPage({
   qrSliders,
   qrGreetingTitle = "Bugün Ne Yemek İstersiniz?",
   qrGreetingSubtitle = "Hoş Geldiniz 👋",
+  qrHomeSections,
 }: {
   readonly username: string;
   readonly tableId: string;
@@ -119,6 +120,7 @@ export function GuestOrderPage({
   readonly qrSliders?: readonly QrSliderItem[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
+  readonly qrHomeSections?: readonly QrHomeSection[] | null;
 }) {
   const cart = useOrderCart();
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
@@ -473,6 +475,7 @@ export function GuestOrderPage({
         sliders={qrSliders}
         greetingTitle={qrGreetingTitle}
         greetingSubtitle={qrGreetingSubtitle}
+        homeSections={qrHomeSections}
         cartItems={cart.cart}
         cartItemCount={itemCount}
         cartGrandTotal={bill.grandTotal}

@@ -198,6 +198,7 @@ model Restaurant {
   qrSliders          Json?
   qrGreetingTitle    String?            @default("Bugün Ne Yemek İstersiniz?")
   qrGreetingSubtitle String?            @default("Hoş Geldiniz 👋")
+  qrHomeSections     Json?
 
   // Custom note printed at the foot of the invoice/bill (owner-editable).
   invoiceFooterNote String?

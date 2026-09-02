@@ -135,3 +135,16 @@ export const removeGalleryImage = async (
   await deleteObject(image.storageKey);
   await deleteRestaurantImage(imageId);
 };
+
+/** Upload a theme slider banner image and return its public URL. */
+export const uploadSliderImage = async (
+  restaurantId: string,
+  file: UploadFile,
+): Promise<string> => {
+  validate(file);
+  const optimised = await optimise(file.buffer, 1200, 800, "inside");
+  const key = `restaurants/${restaurantId}/sliders/${randomUUID()}.webp`;
+  await putObject(key, optimised, "image/webp");
+  return publicUrl(key);
+};
+

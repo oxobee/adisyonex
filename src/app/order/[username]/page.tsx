@@ -84,6 +84,7 @@ export default async function OrderPage({
         qrSliders={data.qrSliders as never}
         qrGreetingTitle={data.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?"}
         qrGreetingSubtitle={data.qrGreetingSubtitle || "Hoş Geldiniz 👋"}
+        qrHomeSections={data.qrHomeSections as never}
       />
     </main>
   );

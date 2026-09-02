@@ -21,6 +21,7 @@ import {
   removeLogo,
   uploadCover,
   uploadLogo,
+  uploadSliderImage,
   type UploadFile,
 } from "@/services/restaurant-image.service";
 import {
@@ -158,6 +159,10 @@ export const uploadCoverAction = async (
 export const uploadGalleryImageAction = async (
   formData: FormData,
 ): Promise<ActionResult<void>> => runFileUpload(formData, addGalleryImage);
+
+export const uploadSliderImageAction = async (
+  formData: FormData,
+): Promise<ActionResult<string>> => runFileUpload(formData, uploadSliderImage);
 
 export const uploadVideoAction = async (
   formData: FormData,
