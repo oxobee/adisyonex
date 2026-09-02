@@ -341,12 +341,13 @@ export function DashboardHeaderNav({
                 )}
                 aria-label="Profil Menüsü"
               >
-                <div className="relative size-full rounded-md overflow-hidden">
+                <div className="relative size-full rounded-md overflow-hidden bg-muted/30">
                   <Image
                     src="/default-avatar.png"
                     alt={user.name}
                     fill
                     className="object-cover"
+                    unoptimized
                   />
                 </div>
               </button>
@@ -363,6 +364,7 @@ export function DashboardHeaderNav({
                           alt={user.name}
                           fill
                           className="object-cover"
+                          unoptimized
                         />
                       </div>
                       <div className="min-w-0 flex-1">

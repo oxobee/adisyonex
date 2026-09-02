@@ -146,6 +146,8 @@ const playBillAlertSound = () => {
   } catch {}
 };
 
+import { getCachedSnapshot, setCachedSnapshot } from "@/lib/offline-sync";
+
 export function OrdersBoard({
   open,
   completed,
@@ -164,6 +166,13 @@ export function OrdersBoard({
   readonly restaurantTagline?: string | null;
 }) {
   const router = useRouter();
+  const [openOrders, setOpenOrders] = useState<readonly OrderDTO[]>(() => {
+    return open.length > 0 ? open : (getCachedSnapshot<OrderDTO[]>("open_orders") || []);
+  });
+  const [completedOrders, setCompletedOrders] = useState<readonly OrderDTO[]>(() => {
+    return completed.length > 0 ? completed : (getCachedSnapshot<OrderDTO[]>("completed_orders") || []);
+  });
+
   const [viewMode, setViewMode] = useState<ViewMode>("TABLE_GRID");
   const [selectedSection, setSelectedSection] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,6 +180,39 @@ export function OrdersBoard({
     "NAME_ASC" | "NAME_DESC" | "OCCUPIED_FIRST" | "EMPTY_FIRST"
   >("NAME_ASC");
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+
+  // Sync server props and cache snapshots to device storage
+  useEffect(() => {
+    if (open && open.length >= 0) {
+      setOpenOrders(open);
+      setCachedSnapshot("open_orders", open);
+    }
+    if (completed && completed.length >= 0) {
+      setCompletedOrders(completed);
+      setCachedSnapshot("completed_orders", completed);
+    }
+    if (tables && tables.length > 0) {
+      setCachedSnapshot("tables", tables);
+    }
+    if (menu) {
+      setCachedSnapshot("menu", menu);
+    }
+  }, [open, completed, tables, menu]);
+
+  // Listen for optimistic offline mutations (instant UI reaction)
+  useEffect(() => {
+    const handleOrdersUpdated = () => {
+      const cachedOpen = getCachedSnapshot<OrderDTO[]>("open_orders");
+      const cachedCompleted = getCachedSnapshot<OrderDTO[]>("completed_orders");
+      if (cachedOpen) setOpenOrders(cachedOpen);
+      if (cachedCompleted) setCompletedOrders(cachedCompleted);
+    };
+
+    window.addEventListener("adisyonex:orders-updated", handleOrdersUpdated);
+    return () => {
+      window.removeEventListener("adisyonex:orders-updated", handleOrdersUpdated);
+    };
+  }, []);
 
   // Spotlight State
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -205,11 +247,11 @@ export function OrdersBoard({
   const prevBillRequestsRef = useRef<Set<string>>(new Set());
 
   // Group open orders by tableId / tableLabel
-  const groups = useMemo(() => groupByTable(open), [open]);
+  const groups = useMemo(() => groupByTable(openOrders), [openOrders]);
 
   const ordersByTableId = useMemo(() => {
     const map = new Map<string, OrderDTO[]>();
-    for (const order of open) {
+    for (const order of openOrders) {
       if (order.tableId) {
         const bucket = map.get(order.tableId);
         if (bucket) bucket.push(order);
@@ -217,7 +259,7 @@ export function OrdersBoard({
       }
     }
     return map;
-  }, [open]);
+  }, [openOrders]);
 
   // Extract unique Salon / Sections from tables
   const sections = useMemo(() => {
@@ -249,7 +291,7 @@ export function OrdersBoard({
     const alerts = newOrderAlerts(prevMapRef.current, sigs);
     prevMapRef.current = nextMap;
     for (const a of alerts) {
-      const order = open.find((o) => o.id === a.id);
+      const order = openOrders.find((o) => o.id === a.id);
       if (!order) continue;
       const phrase =
         a.isSelfOrder
@@ -257,12 +299,12 @@ export function OrdersBoard({
           : newOrderPhrase(order);
       announce(phrase, "beep");
     }
-  }, [open, announce]);
+  }, [openOrders, announce]);
 
   // Active bill requests
   const activeBillRequests = useMemo(
-    () => open.filter((o) => o.billRequestedAt !== null),
-    [open],
+    () => openOrders.filter((o) => o.billRequestedAt !== null),
+    [openOrders],
   );
 
   useEffect(() => {
@@ -515,7 +557,7 @@ export function OrdersBoard({
             >
               <ReceiptIcon className="size-3.5 text-muted-foreground" />
               <span className="hidden sm:inline">Kapanan Adisyonlar</span>
-              <span className="text-[11px] font-bold tabular-nums text-foreground/80">({completed.length})</span>
+              <span className="text-[11px] font-bold tabular-nums text-foreground/80">({completedOrders.length})</span>
             </Button>
           )}
         </div>
@@ -778,7 +820,7 @@ export function OrdersBoard({
       {/* ---------------------------------------------------- */}
       {viewMode === "ORDER_LIST" && (
         <div className="flex flex-col gap-4">
-          {open.length === 0 ? (
+          {openOrders.length === 0 ? (
             <p className="text-muted-foreground text-sm py-12 text-center">
               Açık adisyon bulunmuyor.
             </p>
@@ -844,13 +886,13 @@ export function OrdersBoard({
             <Stat label="İptaller" value={String(sales.voids)} />
           </div>
 
-          {completed.length === 0 ? (
+          {completedOrders.length === 0 ? (
             <p className="text-muted-foreground text-sm py-12 text-center">
               Bugün tamamlanmış sipariş bulunmuyor.
             </p>
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {completed.map((order) => (
+              {completedOrders.map((order) => (
                 <OrderCard key={order.id} order={order} tab="COMPLETED" />
               ))}
             </ul>

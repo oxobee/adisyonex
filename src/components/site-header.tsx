@@ -85,6 +85,7 @@ export function SiteHeader({
                   width={36}
                   height={36}
                   className="size-full object-cover"
+                  unoptimized
                 />
               ) : (
                 initials
