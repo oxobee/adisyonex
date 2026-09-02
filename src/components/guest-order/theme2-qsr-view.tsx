@@ -117,6 +117,7 @@ export interface Theme2QsrViewProps {
   readonly username?: string;
   readonly restaurantName: string;
   readonly logoUrl?: string | null;
+  readonly tableId?: string;
   readonly tableLabel: string;
   readonly menu: MenuDTO;
   readonly primaryColor?: string;
@@ -142,6 +143,7 @@ export interface Theme2QsrViewProps {
   readonly onClearCart: () => void;
   readonly onPlaceOrder: () => Promise<boolean | void>;
   readonly onRequestBill: () => Promise<void>;
+  readonly onCallWaiter?: () => Promise<void>;
   readonly myOrders: readonly GuestOrderSummaryDTO[];
   readonly busy?: boolean;
   readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
@@ -151,6 +153,7 @@ export function Theme2QsrView({
   username = "",
   restaurantName,
   logoUrl,
+  tableId,
   tableLabel,
   menu,
   primaryColor = "#FF5500",
@@ -170,6 +173,7 @@ export function Theme2QsrView({
   onClearCart,
   onPlaceOrder,
   onRequestBill,
+  onCallWaiter,
   myOrders,
   busy,
   onCustomerIdentified,
@@ -1524,11 +1528,13 @@ export function Theme2QsrView({
             username={username}
             restaurantName={restaurantName}
             logoUrl={logoUrl}
+            tableId={tableId}
             tableLabel={tableLabel}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             activeOrders={myOrders}
             onRequestBill={onRequestBill}
+            onCallWaiter={onCallWaiter}
             onCustomerIdentified={onCustomerIdentified}
           />
         </div>

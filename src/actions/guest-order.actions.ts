@@ -63,7 +63,11 @@ export const guestPlaceOrderAction = withValidation(
 );
 
 import { z } from "zod";
-import { requestBillForTable } from "@/services/guest-order.service";
+import {
+  requestBillForTable,
+  callWaiterForTable,
+  dismissWaiterCall,
+} from "@/services/guest-order.service";
 
 /** The guest's table orders with live kitchen & bill status. */
 export const guestMyOrdersAction = async (targetParam?: {
@@ -110,6 +114,33 @@ export const guestRequestBillAction = withValidation(
     return { success: true };
   },
 );
+
+/** Call a waiter for the table from the QR menu. */
+export const guestCallWaiterAction = withValidation(
+  z.object({
+    username: z.string().min(1),
+    tableId: z.string().min(1),
+  }),
+  async (data) => {
+    const target = await resolveGuestOrderTarget(data.username, data.tableId);
+    await callWaiterForTable(target.restaurantId, target.tableId, target.tableLabel);
+    return { success: true };
+  },
+);
+
+/** Dismiss a waiter call alert for an order. */
+export const dismissWaiterCallAction = async (
+  data: { orderId: string },
+): Promise<ActionResult<{ success: boolean }>> => {
+  try {
+    const res = await dismissWaiterCall(data.orderId);
+    return success(res);
+  } catch (error) {
+    return failure<{ success: boolean }>(
+      error instanceof Error ? error.message : "Çağrı kapatılamadı",
+    );
+  }
+};
 
 /** Log the guest out by clearing their session cookie. */
 export const guestLogoutAction = async (): Promise<void> => {

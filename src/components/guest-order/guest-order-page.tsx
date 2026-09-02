@@ -25,6 +25,7 @@ import {
   guestMyOrdersAction,
   guestPlaceOrderAction,
   guestRequestBillAction,
+  guestCallWaiterAction,
 } from "@/actions/guest-order.actions";
 import { ItemConfigDialog } from "@/components/pos/item-config-dialog";
 import { linePrice, toBillLine, type CartLine } from "@/components/pos/types";
@@ -407,6 +408,10 @@ export function GuestOrderPage({
         }}
         onRequestBill={async () => {
           await requestBill.execute({ username, tableId });
+        }}
+        tableId={tableId}
+        onCallWaiter={async () => {
+          await guestCallWaiterAction({ username, tableId });
         }}
         myOrders={myOrders}
         busy={busy}
@@ -891,12 +896,16 @@ export function GuestOrderPage({
               username={username}
               restaurantName={restaurantName}
               logoUrl={logoUrl}
+              tableId={tableId}
               tableLabel={tableLabel}
               primaryColor={qrPrimaryColor || "#FF5500"}
               secondaryColor={qrSecondaryColor || "#FFF7ED"}
               activeOrders={myOrders}
               onRequestBill={async () => {
                 await requestBill.execute({ username, tableId });
+              }}
+              onCallWaiter={async () => {
+                await guestCallWaiterAction({ username, tableId });
               }}
               onCustomerIdentified={(c) => setCurrentCustomer(c)}
             />

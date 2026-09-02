@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef, useTransition, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { markPickedUpAction } from "@/actions/kitchen.actions";
 import { staffLogoutAction } from "@/actions/staff-auth.actions";
+import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
 import { orderRunningTotal } from "@/components/pos/types";
 import { KitchenStatusBadge } from "@/components/shared/kitchen-status-badge";
 import { SelfOrderBadge } from "@/components/shared/self-order-badge";
@@ -18,6 +19,7 @@ import { useAnnouncer } from "@/hooks/use-announcer";
 import { useServerAction } from "@/hooks/use-server-action";
 import { newIds, orderReadyPhrase } from "@/lib/announce";
 import { deriveKitchenStatus } from "@/lib/kitchen";
+import { cn } from "@/lib/utils";
 import type { OrderDTO } from "@/types/order";
 
 const minutesAgo = (iso: string): string => {
@@ -69,11 +71,48 @@ export function WaiterHome({
     onError: (m) => toast.error(toMessage(m)),
   });
 
-  // Auto-refresh so kitchen status (Preparing / Ready) stays current hands-free.
+  // Auto-refresh so kitchen status (Preparing / Ready) and waiter calls stay current hands-free.
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), 10000);
+    const id = setInterval(() => router.refresh(), 5000);
     return () => clearInterval(id);
   }, [router]);
+
+  // Active waiter calls
+  const activeWaiterCalls = useMemo(
+    () => openOrders.filter((o) => o.note?.includes("GARSON")),
+    [openOrders],
+  );
+  const prevWaiterCallsRef = useRef<Set<string>>(new Set());
+
+  const handleDismissWaiterCall = useCallback(
+    async (orderId: string) => {
+      try {
+        await dismissWaiterCallAction({ orderId });
+        toast.success("Garson çağrısı kapatıldı ✓");
+        router.refresh();
+      } catch {
+        toast.error("Çağrı kapatılamadı.");
+      }
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    const currentIds = new Set(activeWaiterCalls.map((o) => o.id));
+    const isNew = activeWaiterCalls.some((o) => !prevWaiterCallsRef.current.has(o.id));
+    if (isNew && activeWaiterCalls.length > 0) {
+      const latest = activeWaiterCalls[activeWaiterCalls.length - 1];
+      announce(`Masa ${latest.tableLabel ?? latest.orderNumber} garson çağırıyor.`, "beep");
+      toast.error(`🛎️ Masa ${latest.tableLabel ?? `#${latest.orderNumber}`} Garson Çağırdı!`, {
+        duration: 10000,
+        action: {
+          label: "Çağrıyı Kapat",
+          onClick: () => handleDismissWaiterCall(latest.id),
+        },
+      });
+    }
+    prevWaiterCallsRef.current = currentIds;
+  }, [activeWaiterCalls, announce, handleDismissWaiterCall]);
 
   useEffect(() => {
     const ready = openOrders.filter(isReady);
@@ -121,6 +160,36 @@ export function WaiterHome({
         Yeni Sipariş
       </Button>
 
+      {/* 🛎️ CANLI GARSON ÇAĞRILARI BİLDİRİM KARTI */}
+      {activeWaiterCalls.length > 0 && (
+        <div className="flex flex-col gap-2 animate-in fade-in-50 duration-300">
+          {activeWaiterCalls.map((call) => (
+            <div
+              key={call.id}
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xl ring-2 ring-red-400/50 animate-pulse"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-2xl animate-bounce shrink-0">🛎️</span>
+                <div className="min-w-0">
+                  <h4 className="font-black text-sm tracking-tight truncate">
+                    {call.tableLabel ? `${call.tableLabel} Masası` : `Sipariş #${call.orderNumber}`}
+                  </h4>
+                  <p className="text-[11px] opacity-95 font-semibold">Müşteri Garson Çağırdı!</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => handleDismissWaiterCall(call.id)}
+                className="h-8 rounded-xl font-black text-xs bg-white text-red-600 hover:bg-zinc-100 shadow-md cursor-pointer shrink-0 ml-2"
+              >
+                Çağrıyı Kapat
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <h2 className="text-muted-foreground text-sm font-medium">
           Açık Siparişler {openOrders.length > 0 ? `(${openOrders.length})` : ""}
@@ -134,7 +203,11 @@ export function WaiterHome({
             {openOrders.map((order) => (
               <li
                 key={order.id}
-                className="overflow-hidden rounded-xl border"
+                className={cn(
+                  "overflow-hidden rounded-xl border transition-all",
+                  order.note?.includes("GARSON") &&
+                    "border-red-500 bg-red-500/10 ring-2 ring-red-500/40 animate-pulse",
+                )}
               >
                 <Link
                   href={`/u/${username}/order/${order.id}`}
@@ -149,6 +222,11 @@ export function WaiterHome({
                         states={order.lines.map((l) => l.state)}
                       />
                       {hasSelfOrder(order) ? <SelfOrderBadge /> : null}
+                      {order.note?.includes("GARSON") ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2 py-0.5 text-[10px] font-black animate-bounce">
+                          🛎️ Garson Çağrıldı
+                        </span>
+                      ) : null}
                     </span>
                     <span className="text-muted-foreground text-sm">
                       {itemCount(order)} ürün · {minutesAgo(order.createdAt)}

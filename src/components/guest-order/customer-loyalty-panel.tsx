@@ -46,6 +46,7 @@ import {
   getCustomerProfileAction,
   registerCustomerAction,
 } from "@/actions/customer.actions";
+import { guestCallWaiterAction } from "@/actions/guest-order.actions";
 import type { CustomerDTO, CustomerProfileDTO } from "@/services/customer.service";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 
@@ -53,11 +54,13 @@ export interface CustomerLoyaltyPanelProps {
   readonly username: string;
   readonly restaurantName: string;
   readonly logoUrl?: string | null;
+  readonly tableId?: string;
   readonly tableLabel: string;
   readonly primaryColor?: string;
   readonly secondaryColor?: string;
   readonly activeOrders?: readonly GuestOrderSummaryDTO[];
   readonly onRequestBill?: () => Promise<void> | void;
+  readonly onCallWaiter?: () => Promise<void> | void;
   readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
 }
 
@@ -67,11 +70,13 @@ export function CustomerLoyaltyPanel({
   username,
   restaurantName,
   logoUrl,
+  tableId,
   tableLabel,
   primaryColor = "#FF5500",
   secondaryColor = "#FFF7ED",
   activeOrders = [],
   onRequestBill,
+  onCallWaiter,
   onCustomerIdentified,
 }: CustomerLoyaltyPanelProps) {
   // Session storage key for persistent customer login
@@ -310,11 +315,25 @@ export function CustomerLoyaltyPanel({
     toast.info("Oturum kapatıldı.");
   };
 
-  const handleCallWaiter = () => {
+  const [isCallingWaiter, setIsCallingWaiter] = useState(false);
+
+  const handleCallWaiter = async () => {
+    setIsCallingWaiter(true);
     setWaiterCallModalOpen(false);
-    toast.success("Garson Çağrıldı! 🛎️", {
-      description: `${tableLabel} masası için servis personeli yönlendirildi.`,
-    });
+    try {
+      if (onCallWaiter) {
+        await onCallWaiter();
+      } else if (tableId) {
+        await guestCallWaiterAction({ username, tableId });
+      }
+      toast.success("Garson Çağrıldı! 🛎️", {
+        description: `${tableLabel} masası için servis personeli yönlendirildi.`,
+      });
+    } catch {
+      toast.error("Garson çağrılırken bir hata oluştu.");
+    } finally {
+      setIsCallingWaiter(false);
+    }
   };
 
   const handleRequestBillConfirm = async () => {

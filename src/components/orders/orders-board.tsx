@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -58,6 +58,7 @@ import {
   newOrderPhrase,
   selfOrderAlertPhrase,
 } from "@/lib/announce";
+import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
 import { formatCurrency, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MenuDTO } from "@/types/menu";
@@ -330,6 +331,62 @@ export function OrdersBoard({
     }
     prevBillRequestsRef.current = currentBillIds;
   }, [activeBillRequests, announce]);
+
+  // Auto-refresh orders board hands-free
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [router]);
+
+  // Active waiter calls
+  const activeWaiterCalls = useMemo(
+    () => openOrders.filter((o) => o.note?.includes("GARSON")),
+    [openOrders],
+  );
+  const prevWaiterCallsRef = useRef<Set<string>>(new Set());
+
+  const handleDismissWaiterCall = useCallback(
+    async (orderId: string) => {
+      try {
+        await dismissWaiterCallAction({ orderId });
+        toast.success("Garson çağrısı kapatıldı ✓");
+        router.refresh();
+      } catch {
+        toast.error("Çağrı kapatılamadı.");
+      }
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    const currentCallIds = new Set(activeWaiterCalls.map((o) => o.id));
+    const isNewCall = activeWaiterCalls.some(
+      (o) => !prevWaiterCallsRef.current.has(o.id),
+    );
+
+    if (isNewCall && activeWaiterCalls.length > 0) {
+      playBillAlertSound();
+      const latestCall = activeWaiterCalls[activeWaiterCalls.length - 1];
+      announce(
+        `Masa ${latestCall.tableLabel ?? latestCall.orderNumber} garson çağırıyor.`,
+        "beep",
+      );
+      toast.error(
+        `🛎️ ${latestCall.tableLabel ?? `#${latestCall.orderNumber}`} Masası Garson Çağırdı!`,
+        {
+          description: "Müşteri masaya servis personeli talep etti.",
+          duration: 10000,
+          action: {
+            label: "Çağrıyı Kapat",
+            onClick: () => handleDismissWaiterCall(latestCall.id),
+          },
+        },
+      );
+    }
+    prevWaiterCallsRef.current = currentCallIds;
+  }, [activeWaiterCalls, announce, handleDismissWaiterCall]);
 
   // Server action for voiding an order
   const voidAction = useServerAction(voidOrderAction, {
@@ -787,6 +844,8 @@ export function OrdersBoard({
                   tableOrders.reduce((sum, o) => sum + orderRunningTotal(o), 0),
                 );
                 const hasBill = tableOrders.some((o) => o.billRequestedAt !== null);
+                const waiterCallOrder = tableOrders.find((o) => o.note?.includes("GARSON"));
+                const hasWaiterCall = Boolean(waiterCallOrder);
                 const firstOrderAt =
                   tableOrders.length > 0 ? tableOrders[0].createdAt : null;
 
@@ -801,6 +860,12 @@ export function OrdersBoard({
                       orders={tableOrders}
                       firstOrderAt={firstOrderAt}
                       hasBillRequest={hasBill}
+                      hasWaiterCall={hasWaiterCall}
+                      onDismissWaiterCall={
+                        waiterCallOrder
+                          ? () => handleDismissWaiterCall(waiterCallOrder.id)
+                          : undefined
+                      }
                       isSelected={false}
                       onClick={() => {
                         setSelectedTableId(table.id);
@@ -1078,12 +1143,16 @@ function OrderCard({
   const lineCount = activeCount(order.lines);
   const isGuest = order.lines.some((l) => l.source === "SELF_ORDER");
   const hasBillRequest = order.billRequestedAt !== null;
+  const hasWaiterCall = order.note?.includes("GARSON");
 
   return (
     <li
       className={cn(
         "rounded-2xl border p-4 transition-all duration-300 bg-card shadow-xs",
-        hasBillRequest &&
+        hasWaiterCall &&
+          "border-2 border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20 ring-2 ring-red-500/40 animate-pulse",
+        !hasWaiterCall &&
+          hasBillRequest &&
           "border-2 border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/20 ring-2 ring-amber-500/40 animate-pulse",
       )}
     >
@@ -1112,7 +1181,11 @@ function OrderCard({
 
         <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2 text-xs">
           <KitchenStatusBadge states={order.lines.map((l) => l.state)} />
-          {hasBillRequest ? (
+          {hasWaiterCall ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2 py-0.5 text-[10px] font-black animate-bounce shadow-xs">
+              <span>🛎️</span> Garson Çağrıldı
+            </span>
+          ) : hasBillRequest ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-black px-2 py-0.5 text-[10px] font-black animate-pulse">
               <span>🧾</span> Hesap İstendi
             </span>

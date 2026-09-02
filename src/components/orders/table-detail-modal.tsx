@@ -22,6 +22,7 @@ import {
   advanceOrderStateAction,
   deliverTableOrdersAction,
 } from "@/actions/order.actions";
+import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -202,6 +203,28 @@ export function TableDetailModal({
                         <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-bold">
                           💼 Garson / POS
                         </span>
+                      )}
+                      {order.note?.includes("GARSON") && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="rounded-full bg-red-600 text-white font-black px-2 py-0.5 text-[10px] animate-bounce shadow-xs">
+                            🛎️ Garson Çağrıldı
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await dismissWaiterCallAction({ orderId: order.id });
+                                toast.success("Garson çağrısı kapatıldı ✓");
+                                router.refresh();
+                              } catch {
+                                toast.error("Çağrı kapatılamadı.");
+                              }
+                            }}
+                            className="text-[10px] underline font-bold text-red-600 hover:text-red-700 cursor-pointer"
+                          >
+                            Çağrıyı Kapat
+                          </button>
+                        </div>
                       )}
                       {order.billRequestedAt && (
                         <span className="rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 text-[10px] animate-pulse">

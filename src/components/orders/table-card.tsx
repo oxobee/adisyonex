@@ -28,6 +28,8 @@ export interface TableCardProps {
   orders: readonly OrderDTO[];
   firstOrderAt: string | null;
   hasBillRequest: boolean;
+  hasWaiterCall?: boolean;
+  onDismissWaiterCall?: () => void;
   isSelected?: boolean;
   onClick: () => void;
   onDeliver?: () => void;
@@ -54,6 +56,8 @@ export function TableCard({
   orders,
   firstOrderAt,
   hasBillRequest,
+  hasWaiterCall,
+  onDismissWaiterCall,
   isSelected,
   onClick,
   onDeliver,
@@ -153,6 +157,9 @@ export function TableCard({
         // New Order Animated Dashed Border (Active until all items delivered):
         hasNewOrderAlert &&
           "border-2 border-dashed border-amber-300 ring-4 ring-amber-400 ring-offset-2 ring-offset-background animate-pulse shadow-xl shadow-amber-500/40",
+        // Waiter Call Alarm Animation:
+        hasWaiterCall &&
+          "ring-4 ring-red-500 ring-offset-2 ring-offset-background animate-pulse shadow-2xl shadow-red-500/50",
         // Bill Request Alarm Animation:
         hasBillRequest &&
           "ring-4 ring-amber-400 ring-offset-2 ring-offset-background animate-pulse shadow-xl shadow-amber-500/40",
@@ -197,7 +204,25 @@ export function TableCard({
         </div>
 
         {/* Dynamic Status Badges */}
-        {hasBillRequest ? (
+        {hasWaiterCall ? (
+          <div className="inline-flex items-center gap-1 rounded-full bg-white text-red-600 px-2.5 py-0.5 text-[10px] font-black animate-bounce shadow-md">
+            <BellRingIcon className="size-3" />
+            <span>GARSON ÇAĞRILDI</span>
+            {onDismissWaiterCall && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDismissWaiterCall();
+                }}
+                className="size-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold hover:bg-red-700 ml-0.5"
+                title="Çağrıyı Kapat"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ) : hasBillRequest ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-black animate-bounce shadow-md">
             <BellRingIcon className="size-3" />
             <span>HESAP İSTENDİ</span>

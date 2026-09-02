@@ -272,3 +272,89 @@ export const requestBillForTable = async (
 
   return { success: true };
 };
+
+export const callWaiterForTable = async (
+  restaurantId: string,
+  tableId: string,
+  tableLabel?: string,
+): Promise<{ success: boolean }> => {
+  const existing = await prisma.order.findFirst({
+    where: {
+      restaurantId,
+      tableId,
+      status: "OPEN",
+      deletedAt: null,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const waiterTag = "[GARSON_CAGIRILDI]";
+
+  if (existing) {
+    const currentNote = existing.note || "";
+    if (!currentNote.includes(waiterTag)) {
+      const updatedNote = currentNote
+        ? `${waiterTag} ${currentNote}`
+        : `${waiterTag} Müşteri masaya servis personeli çağırdı.`;
+      await prisma.order.update({
+        where: { id: existing.id },
+        data: { note: updatedNote },
+      });
+    }
+  } else {
+    // Create an initial open order for the table to signal the waiter call
+    const maxOrder = await prisma.order.aggregate({
+      where: { restaurantId },
+      _max: { orderNumber: true },
+    });
+    const orderNumber = (maxOrder._max.orderNumber ?? 0) + 1;
+
+    await prisma.order.create({
+      data: {
+        restaurantId,
+        orderNumber,
+        idempotencyKey: `waiter_call_${tableId}_${Date.now()}`,
+        orderType: "DINE_IN",
+        tableId,
+        tableLabel: tableLabel || null,
+        note: `${waiterTag} Müşteri masaya servis personeli çağırdı.`,
+        items: { create: [] },
+      },
+    });
+  }
+
+  return { success: true };
+};
+
+export const dismissWaiterCall = async (
+  orderId: string,
+): Promise<{ success: boolean }> => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+  if (!order) return { success: false };
+
+  // If the order has no items (created only to signal waiter call), void it
+  if (order.items.length === 0) {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "VOID", voidReason: "Garson çağrısı tamamlandı" },
+    });
+    return { success: true };
+  }
+
+  // Otherwise, strip the waiter tag from note
+  const updatedNote = (order.note || "")
+    .replace("[GARSON_CAGIRILDI]", "")
+    .replace("GARSON_CAGIRILDI", "")
+    .replace("[GARSON ÇAĞIRILDI]", "")
+    .trim();
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { note: updatedNote || null },
+  });
+
+  return { success: true };
+};
