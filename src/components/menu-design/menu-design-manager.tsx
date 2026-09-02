@@ -311,7 +311,7 @@ export function MenuDesignManager({
                       className="w-full rounded-xl text-xs font-bold gap-1.5 border-dashed border-primary/40 text-primary hover:bg-primary/10 hover:border-primary cursor-pointer"
                     >
                       <PaletteIcon className="size-3.5" />
-                      <span>Temayı Düzenle (Renk & Slider)</span>
+                      <span>Temayı Düzenle</span>
                     </Button>
                   </div>
                 </div>

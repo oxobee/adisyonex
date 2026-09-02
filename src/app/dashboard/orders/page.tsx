@@ -25,11 +25,18 @@ export default async function OrdersPage() {
   }
 
   const [open, completed, sales, tables, menu, profile] = await Promise.all([
-    listOrders(ctx.restaurantId, ["OPEN"]),
-    listOrders(ctx.restaurantId, ["COMPLETED"]),
-    getTodaySales(ctx.restaurantId),
-    getTables(ctx.restaurantId),
-    getMenu(ctx.restaurantId),
+    listOrders(ctx.restaurantId, ["OPEN"]).catch(() => []),
+    listOrders(ctx.restaurantId, ["COMPLETED"]).catch(() => []),
+    getTodaySales(ctx.restaurantId).catch(() => ({
+      orders: 0,
+      gross: 0,
+      tax: 0,
+      discount: 0,
+      voids: 0,
+      byMode: [],
+    })),
+    getTables(ctx.restaurantId).catch(() => []),
+    getMenu(ctx.restaurantId).catch(() => ({ categories: [], items: [] })),
     getRestaurantProfile(ctx.restaurantId).catch(() => null),
   ]);
 

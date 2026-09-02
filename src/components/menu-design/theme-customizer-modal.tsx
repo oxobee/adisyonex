@@ -379,6 +379,8 @@ export function ThemeCustomizerModal({
     return menu.items.filter((it) => it.name.toLowerCase().includes(q));
   }, [menu, productSearchQuery]);
 
+  const isTheme1 = themeId === "MODERN";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[96vw] sm:max-w-6xl h-[92vh] p-0 overflow-hidden flex flex-col rounded-3xl border-2 border-border shadow-2xl">
@@ -399,8 +401,9 @@ export function ThemeCustomizerModal({
                 </span>
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Renkler, slider afişleri, karşılama başlıkları ve ana sayfa
-                kategori listeleme düzenini özelleştirin.
+                {isTheme1
+                  ? "Tema 01'in marka renklerini ve ana aksanlarını özelleştirin."
+                  : "Renkler, slider afişleri, karşılama başlıkları ve ana sayfa kategori listeleme düzenini özelleştirin."}
               </DialogDescription>
             </div>
           </div>
@@ -419,7 +422,12 @@ export function ThemeCustomizerModal({
               }
               className="w-full"
             >
-              <TabsList className="grid grid-cols-4 w-full p-1 bg-muted/80 rounded-2xl">
+              <TabsList
+                className={cn(
+                  "grid w-full p-1 bg-muted/80 rounded-2xl",
+                  isTheme1 ? "grid-cols-1" : "grid-cols-4",
+                )}
+              >
                 <TabsTrigger
                   value="colors"
                   className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
@@ -427,32 +435,37 @@ export function ThemeCustomizerModal({
                   <PaletteIcon className="size-3.5" />
                   <span>Renkler</span>
                 </TabsTrigger>
-                <TabsTrigger
-                  value="sliders"
-                  className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
-                >
-                  <ImageIcon className="size-3.5" />
-                  <span>
-                    Slider (
-                    {sliders.filter((s) => s.isActive).length})
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="texts"
-                  className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
-                >
-                  <TypeIcon className="size-3.5" />
-                  <span>Başlıklar</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="sections"
-                  className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
-                >
-                  <LayoutGridIcon className="size-3.5" />
-                  <span>
-                    Sayfa Düzeni ({homeSections.length})
-                  </span>
-                </TabsTrigger>
+
+                {!isTheme1 && (
+                  <>
+                    <TabsTrigger
+                      value="sliders"
+                      className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
+                    >
+                      <ImageIcon className="size-3.5" />
+                      <span>
+                        Slider (
+                        {sliders.filter((s) => s.isActive).length})
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="texts"
+                      className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
+                    >
+                      <TypeIcon className="size-3.5" />
+                      <span>Başlıklar</span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="sections"
+                      className="rounded-xl font-black text-[11px] sm:text-xs gap-1 py-2"
+                    >
+                      <LayoutGridIcon className="size-3.5" />
+                      <span>
+                        Sayfa Düzeni ({homeSections.length})
+                      </span>
+                    </TabsTrigger>
+                  </>
+                )}
               </TabsList>
 
               {/* TAB 1: COLORS */}
@@ -1224,150 +1237,210 @@ export function ThemeCustomizerModal({
                     </div>
                   </div>
 
-                  {/* Greeting */}
-                  <div>
-                    <span className="text-[8px] font-bold text-zinc-400 block">
-                      {greetingSubtitle || "Hoş Geldiniz 👋"}
-                    </span>
-                    <h3 className="text-[11px] font-black text-zinc-900 leading-tight">
-                      {greetingTitle || "Bugün Ne Yemek İstersiniz?"}
-                    </h3>
-                  </div>
-
-                  {/* Hero Slider Banner */}
-                  {slidersEnabled &&
-                    sliders.filter((s) => s.isActive).length > 0 && (
-                      <div
-                        className="relative rounded-2xl p-2.5 text-white overflow-hidden shadow-sm flex items-center justify-between gap-2"
-                        style={{ backgroundColor: primaryColor }}
-                      >
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <h4 className="text-[10px] font-black leading-tight truncate">
-                            {sliders.find((s) => s.isActive)?.title ||
-                              "Günün Fırsatı! 🔥"}
-                          </h4>
-                          <p className="text-[8px] text-white/80 line-clamp-1">
-                            {sliders.find((s) => s.isActive)?.subtitle ||
-                              "Şimdi indirimde!"}
-                          </p>
-                          <span className="inline-block px-2 py-0.5 rounded-full bg-white text-zinc-950 font-black text-[8px] shadow-2xs mt-1">
-                            {sliders.find((s) => s.isActive)?.buttonText ||
-                              "Sipariş Ver"}
-                          </span>
-                        </div>
-                        {sliders.find((s) => s.isActive)?.imageUrl ? (
-                          <div className="relative size-12 rounded-xl overflow-hidden bg-white/20 shrink-0">
-                            <Image
-                              src={
-                                sliders.find((s) => s.isActive)!.imageUrl!
-                              }
-                              alt="Slide"
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </div>
-                        ) : (
-                          <div className="size-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
-                            🍔
-                          </div>
-                        )}
+                  {isTheme1 ? (
+                    /* TEMA 01 MINI PREVIEW (Orijinal Tasarım - Slider Yok) */
+                    <div className="space-y-2.5 pt-1">
+                      {/* Category Pills */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+                        <span
+                          className="px-2.5 py-1 rounded-xl text-white font-black text-[9px] shadow-2xs shrink-0"
+                          style={{ backgroundColor: primaryColor }}
+                        >
+                          Tümü
+                        </span>
+                        <span className="px-2.5 py-1 rounded-xl bg-white text-zinc-600 border border-zinc-200 font-bold text-[9px] shrink-0">
+                          Ana Yemekler
+                        </span>
+                        <span className="px-2.5 py-1 rounded-xl bg-white text-zinc-600 border border-zinc-200 font-bold text-[9px] shrink-0">
+                          İçecekler
+                        </span>
                       </div>
-                    )}
 
-                  {/* Render Live Sections in Preview */}
-                  <div className="space-y-3 pt-1">
-                    {homeSections
-                      .filter((s) => s.isActive)
-                      .slice(0, 3)
-                      .map((sec) => {
-                        return (
-                          <div key={sec.id} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-black text-zinc-900">
-                                {sec.title}
-                              </span>
-                              <span className="text-[8px] font-bold text-zinc-400">
-                                {sec.displayStyle === "slider"
-                                  ? "Kaydır →"
-                                  : "Tümü"}
+                      {/* Items List */}
+                      <div className="space-y-1.5">
+                        {[
+                          { name: "Özel Hamburger Menü", price: "240 ₺", icon: "🍔" },
+                          { name: "Taş Fırın Pizza", price: "280 ₺", icon: "🍕" },
+                          { name: "Çıtır Tavuk Sepeti", price: "190 ₺", icon: "🍗" },
+                        ].map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-white rounded-2xl p-2 shadow-2xs border border-zinc-150 flex items-center justify-between gap-2"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="size-8 rounded-xl bg-zinc-50 flex items-center justify-center text-sm shrink-0">
+                                {item.icon}
+                              </div>
+                              <div className="min-w-0">
+                                <h5 className="text-[9px] font-black text-zinc-900 truncate">
+                                  {item.name}
+                                </h5>
+                                <span
+                                  className="text-[8px] font-bold block"
+                                  style={{ color: primaryColor }}
+                                >
+                                  {item.price}
+                                </span>
+                              </div>
+                            </div>
+                            <span
+                              className="size-5 rounded-lg flex items-center justify-center text-white text-[10px] font-black shrink-0"
+                              style={{ backgroundColor: primaryColor }}
+                            >
+                              +
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    /* TEMA 02 MINI PREVIEW (Fast-Food, Slider & Bölümler) */
+                    <>
+                      {/* Greeting */}
+                      <div>
+                        <span className="text-[8px] font-bold text-zinc-400 block">
+                          {greetingSubtitle || "Hoş Geldiniz 👋"}
+                        </span>
+                        <h3 className="text-[11px] font-black text-zinc-900 leading-tight">
+                          {greetingTitle || "Bugün Ne Yemek İstersiniz?"}
+                        </h3>
+                      </div>
+
+                      {/* Hero Slider Banner */}
+                      {slidersEnabled &&
+                        sliders.filter((s) => s.isActive).length > 0 && (
+                          <div
+                            className="relative rounded-2xl p-2.5 text-white overflow-hidden shadow-sm flex items-center justify-between gap-2"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <h4 className="text-[10px] font-black leading-tight truncate">
+                                {sliders.find((s) => s.isActive)?.title ||
+                                  "Günün Fırsatı! 🔥"}
+                              </h4>
+                              <p className="text-[8px] text-white/80 line-clamp-1">
+                                {sliders.find((s) => s.isActive)?.subtitle ||
+                                  "Şimdi indirimde!"}
+                              </p>
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-white text-zinc-950 font-black text-[8px] shadow-2xs mt-1">
+                                {sliders.find((s) => s.isActive)?.buttonText ||
+                                  "Sipariş Ver"}
                               </span>
                             </div>
-
-                            {/* Section Items based on display style */}
-                            {sec.displayStyle === "slider" ? (
-                              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                                {[1, 2, 3].map((k) => (
-                                  <div
-                                    key={k}
-                                    className="w-24 shrink-0 bg-white rounded-xl p-1.5 shadow-2xs border border-zinc-150 text-center space-y-0.5"
-                                  >
-                                    <div className="size-8 mx-auto rounded-lg bg-zinc-50 flex items-center justify-center text-base">
-                                      🍔
-                                    </div>
-                                    <span className="text-[8px] font-black text-zinc-900 block truncate">
-                                      Lezzet {k}
-                                    </span>
-                                    <span
-                                      className="text-[7px] font-bold block tabular-nums"
-                                      style={{ color: primaryColor }}
-                                    >
-                                      180 ₺
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : sec.displayStyle === "grid" ? (
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {[1, 2].map((k) => (
-                                  <div
-                                    key={k}
-                                    className="bg-white rounded-xl p-1.5 shadow-2xs border border-zinc-150 flex flex-col items-center text-center gap-0.5"
-                                  >
-                                    <div className="size-10 rounded-lg bg-zinc-50 flex items-center justify-center text-lg">
-                                      🍕
-                                    </div>
-                                    <span className="text-[8px] font-black text-zinc-900 truncate w-full">
-                                      Ürün {k}
-                                    </span>
-                                    <span
-                                      className="text-[7px] font-bold tabular-nums"
-                                      style={{ color: primaryColor }}
-                                    >
-                                      220 ₺
-                                    </span>
-                                  </div>
-                                ))}
+                            {sliders.find((s) => s.isActive)?.imageUrl ? (
+                              <div className="relative size-12 rounded-xl overflow-hidden bg-white/20 shrink-0">
+                                <Image
+                                  src={
+                                    sliders.find((s) => s.isActive)!.imageUrl!
+                                  }
+                                  alt="Slide"
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
                               </div>
                             ) : (
-                              <div className="space-y-1">
-                                {[1, 2].map((k) => (
-                                  <div
-                                    key={k}
-                                    className="bg-white rounded-xl p-1.5 shadow-2xs border border-zinc-150 flex items-center gap-2"
-                                  >
-                                    <div className="size-8 rounded-lg bg-zinc-50 flex items-center justify-center text-base shrink-0">
-                                      🍔
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <span className="text-[8px] font-black text-zinc-900 block truncate">
-                                        Menü Ürünü {k}
-                                      </span>
-                                      <span
-                                        className="text-[7px] font-bold tabular-nums block"
-                                        style={{ color: primaryColor }}
-                                      >
-                                        190 ₺
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
+                              <div className="size-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+                                🍔
                               </div>
                             )}
                           </div>
-                        );
-                      })}
-                  </div>
+                        )}
+
+                      {/* Render Live Sections in Preview */}
+                      <div className="space-y-3 pt-1">
+                        {homeSections
+                          .filter((s) => s.isActive)
+                          .slice(0, 3)
+                          .map((sec) => {
+                            return (
+                              <div key={sec.id} className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-black text-zinc-900">
+                                    {sec.title}
+                                  </span>
+                                  <span className="text-[8px] font-bold text-zinc-400">
+                                    {sec.displayStyle === "slider"
+                                      ? "Kaydır →"
+                                      : "Tümü"}
+                                  </span>
+                                </div>
+
+                                {sec.displayStyle === "slider" ? (
+                                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                                    {[1, 2, 3].map((k) => (
+                                      <div
+                                        key={k}
+                                        className="w-24 shrink-0 bg-white rounded-xl p-1.5 shadow-2xs border border-zinc-150 text-center space-y-0.5"
+                                      >
+                                        <div className="size-8 mx-auto rounded-lg bg-zinc-50 flex items-center justify-center text-base">
+                                          🍔
+                                        </div>
+                                        <span className="text-[8px] font-black text-zinc-900 block truncate">
+                                          Lezzet {k}
+                                        </span>
+                                        <span
+                                          className="text-[7px] font-bold block tabular-nums"
+                                          style={{ color: primaryColor }}
+                                        >
+                                          180 ₺
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : sec.displayStyle === "grid" ? (
+                                  <div className="grid grid-cols-2 gap-1.5">
+                                    {[1, 2].map((k) => (
+                                      <div
+                                        key={k}
+                                        className="bg-white rounded-xl p-1.5 shadow-2xs border border-zinc-150 flex flex-col items-center text-center gap-0.5"
+                                      >
+                                        <div className="size-10 rounded-lg bg-zinc-50 flex items-center justify-center text-lg">
+                                          🍕
+                                        </div>
+                                        <span className="text-[8px] font-black text-zinc-900 truncate w-full">
+                                          Ürün {k}
+                                        </span>
+                                        <span
+                                          className="text-[7px] font-bold tabular-nums"
+                                          style={{ color: primaryColor }}
+                                        >
+                                          220 ₺
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {[1, 2].map((k) => (
+                                      <div
+                                        key={k}
+                                        className="bg-white rounded-xl p-1.5 shadow-2xs border border-zinc-150 flex items-center gap-2"
+                                      >
+                                        <div className="size-8 rounded-lg bg-zinc-50 flex items-center justify-center text-base shrink-0">
+                                          🍔
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <span className="text-[8px] font-black text-zinc-900 block truncate">
+                                            Menü Ürünü {k}
+                                          </span>
+                                          <span
+                                            className="text-[7px] font-bold tabular-nums block"
+                                            style={{ color: primaryColor }}
+                                          >
+                                            190 ₺
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Floating Bottom Nav Bar */}

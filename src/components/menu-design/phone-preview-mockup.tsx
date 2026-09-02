@@ -89,7 +89,9 @@ export function PhonePreviewMockup({
               {isLoading && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
                   <div className="size-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                  <span className="text-[11px] font-bold text-muted-foreground">Canlı Menü Yükleniyor...</span>
+                  <span className="text-[11px] font-bold text-muted-foreground">
+                    Canlı Menü Yükleniyor...
+                  </span>
                 </div>
               )}
               <iframe
@@ -97,13 +99,15 @@ export function PhonePreviewMockup({
                 ref={iframeRef}
                 src={previewUrl}
                 title="Canlı QR Menü Önizlemesi"
-                className="w-full h-full border-0 overflow-y-auto"
+                className="w-[116%] h-[116%] origin-top-left scale-[0.862] border-0"
                 onLoad={() => setIsLoading(false)}
               />
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-2">
-              <p className="text-xs text-muted-foreground">Restoran bağlantısı yükleniyor...</p>
+              <p className="text-xs text-muted-foreground">
+                Restoran bağlantısı yükleniyor...
+              </p>
             </div>
           )}
         </div>
