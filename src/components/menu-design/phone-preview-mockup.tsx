@@ -4,13 +4,15 @@ import React, { useState } from "react";
 import Image from "next/image";
 import {
   BatteryChargingIcon,
+  CheckCircle2Icon,
+  ChevronRightIcon,
   PlusIcon,
   SearchIcon,
   ShoppingBagIcon,
   SparklesIcon,
+  StarIcon,
   UtensilsCrossedIcon,
   WifiIcon,
-  StarIcon,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -29,51 +31,53 @@ export function PhonePreviewMockup({
   restaurantName,
   logoUrl,
   menu,
-  tableLabel = "Masa 4",
+  tableLabel = "Masa 1",
 }: PhonePreviewProps) {
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const categories = menu?.categories || [
-    { id: "c1", name: "Popüler Lezzetler" },
-    { id: "c2", name: "Ana Yemekler" },
-    { id: "c3", name: "Burger & Dürüm" },
-    { id: "c4", name: "Tatlılar & İçecekler" },
-  ];
+  const categories = menu?.categories && menu.categories.length > 0
+    ? menu.categories
+    : [
+        { id: "c1", name: "Destaques (Öne Çıkanlar)" },
+        { id: "c2", name: "Sorvetes (Dondurmalar)" },
+        { id: "c3", name: "Sanduíches (Burgerler)" },
+        { id: "c4", name: "Combos & Menüler" },
+      ];
 
   const items = menu?.items && menu.items.length > 0
     ? menu.items
     : [
         {
           id: "demo-1",
-          name: "Özel Soslu Dana Burger",
-          categoryId: "c1",
-          price: 280,
-          shortDescription: "Karamelize soğan, cheddar peyniri ve çıtır patates ile",
+          name: "Sorvete McFlurry",
+          categoryId: "c2",
+          price: 120,
+          shortDescription: "Kakaolu çıtır parçacıklar ve krema",
           images: [],
         },
         {
           id: "demo-2",
-          name: "Izgara Tavuk Salata",
-          categoryId: "c1",
-          price: 210,
-          shortDescription: "Taze yeşillikler, parmesan ve ballı hardal sos",
+          name: "Big Mac Burger",
+          categoryId: "c3",
+          price: 280,
+          shortDescription: "Çift dana köfte, cheddar ve özel sos",
           images: [],
         },
         {
           id: "demo-3",
-          name: "Fırınlanmış San Sebastian",
+          name: "Combo Menü 1",
           categoryId: "c4",
-          price: 160,
-          shortDescription: "Sıcak Belçika çikolatası eşliğinde",
+          price: 380,
+          shortDescription: "Burger + Çıtır Patates + Soğuk İçecek",
           images: [],
         },
         {
           id: "demo-4",
-          name: "Ev Yapımı Limonata",
-          categoryId: "c4",
-          price: 85,
-          shortDescription: "Taze nane ve zencefil aromalı",
+          name: "Çıtır Tavuk Sandviç",
+          categoryId: "c3",
+          price: 240,
+          shortDescription: "Marul, mayonez ve susamlı ekmek",
           images: [],
         },
       ];
@@ -85,7 +89,7 @@ export function PhonePreviewMockup({
   });
 
   return (
-    <div className="relative mx-auto w-[320px] sm:w-[340px] h-[640px] rounded-[48px] bg-zinc-950 p-3 shadow-2xl border-4 border-zinc-800 ring-1 ring-zinc-700/50 select-none flex flex-col justify-between">
+    <div className="relative mx-auto w-[320px] sm:w-[340px] h-[650px] rounded-[48px] bg-zinc-950 p-3 shadow-2xl border-4 border-zinc-800 ring-1 ring-zinc-700/50 select-none flex flex-col justify-between">
       {/* Smartphone Dynamic Island / Speaker Notch */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-5 bg-zinc-900 rounded-full z-40 flex items-center justify-between px-3 border border-zinc-800/80 shadow-inner">
         <div className="size-2 rounded-full bg-zinc-800" />
@@ -93,10 +97,16 @@ export function PhonePreviewMockup({
       </div>
 
       {/* Screen Inner Viewport */}
-      <div className="relative size-full rounded-[38px] overflow-hidden bg-background flex flex-col justify-between text-foreground">
+      <div className={cn(
+        "relative size-full rounded-[38px] overflow-hidden flex flex-col justify-between text-foreground transition-colors",
+        theme === "QSR_FASTFOOD" ? "bg-[#f8f8f9]" : theme === "ELEGANT_DARK" ? "bg-zinc-950 text-zinc-100" : "bg-background",
+      )}>
         
         {/* Status Bar */}
-        <div className="shrink-0 h-9 pt-1.5 px-6 flex items-center justify-between text-[11px] font-bold text-foreground/80 z-30">
+        <div className={cn(
+          "shrink-0 h-9 pt-1.5 px-6 flex items-center justify-between text-[11px] font-bold z-30",
+          theme === "ELEGANT_DARK" ? "text-zinc-400" : "text-zinc-800",
+        )}>
           <span>14:30</span>
           <div className="flex items-center gap-1.5">
             <WifiIcon className="size-3" />
@@ -105,12 +115,106 @@ export function PhonePreviewMockup({
         </div>
 
         {/* Scrollable Theme Content */}
-        <div className="flex-1 overflow-y-auto px-3 pb-16 space-y-3 scrollbar-none">
+        <div className="flex-1 overflow-y-auto px-3 pb-20 space-y-3 scrollbar-none">
           
-          {/* THEME 1: MODERN (Default AdisyonEx Cards) */}
+          {/* ============================================================ */}
+          {/* THEME 2: QSR_FASTFOOD (McDonald's / Fast-Food Self Order Stili) */}
+          {/* ============================================================ */}
+          {theme === "QSR_FASTFOOD" && (
+            <div className="space-y-3 pt-0.5 animate-in fade-in-50 duration-300">
+              
+              {/* Top Clean White Header with Brand Logo and Search Input */}
+              <div className="bg-white rounded-2xl p-2.5 shadow-xs border border-zinc-100 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="size-8 rounded-xl overflow-hidden bg-amber-500/10 flex items-center justify-center font-black text-xs text-amber-600 shrink-0 border border-amber-500/20">
+                    {logoUrl ? (
+                      <Image src={logoUrl} alt={restaurantName} width={32} height={32} className="size-full object-contain" unoptimized />
+                    ) : (
+                      <span>🍔</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-black text-zinc-900 truncate tracking-tight">{restaurantName}</h3>
+                    <span className="text-[9px] font-bold text-zinc-400 block -mt-0.5">Masa: {tableLabel}</span>
+                  </div>
+                </div>
+
+                <div className="relative w-28">
+                  <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 size-2.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    placeholder="Ara..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-zinc-100 border-none rounded-lg pl-6 pr-2 py-1 text-[10px] text-zinc-800 placeholder:text-zinc-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Red Category Capsule Tabs (Exact McDonald's Style) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("ALL")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-black whitespace-nowrap transition-all shadow-xs",
+                    activeCategory === "ALL"
+                      ? "bg-red-600 text-white shadow-red-500/20"
+                      : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50",
+                  )}
+                >
+                  Tümü
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setActiveCategory(c.id)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-black whitespace-nowrap transition-all shadow-xs",
+                      activeCategory === c.id
+                        ? "bg-red-600 text-white shadow-red-500/20"
+                        : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50",
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* 2-Column Clean Food Grid (Centered cards with price pills) */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {filteredItems.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-2xl p-2.5 shadow-xs border border-zinc-150/80 hover:border-red-500/30 flex flex-col items-center justify-between text-center gap-1.5 transition-all group"
+                  >
+                    {/* Food Photo Container */}
+                    <div className="relative size-20 rounded-xl overflow-hidden bg-zinc-50 flex items-center justify-center text-3xl group-hover:scale-105 transition-transform">
+                      {idx % 4 === 0 ? "🍦" : idx % 4 === 1 ? "🍔" : idx % 4 === 2 ? "🍟" : "🥤"}
+                    </div>
+
+                    {/* Food Title */}
+                    <h4 className="text-[11px] font-black text-zinc-900 line-clamp-2 leading-tight">
+                      {item.name}
+                    </h4>
+
+                    {/* Price Capsule (R$ / ₺ Style) */}
+                    <div className="bg-zinc-100 group-hover:bg-amber-100 text-zinc-900 group-hover:text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full tabular-nums transition-colors">
+                      {formatCurrency(item.price)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* THEME 1: MODERN (AdisyonEx Standart) */}
+          {/* ============================================================ */}
           {theme === "MODERN" && (
             <div className="space-y-3 pt-1 animate-in fade-in-50 duration-300">
-              {/* Header Card */}
               <div className="p-3.5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/20 shadow-xs flex items-center gap-3">
                 <div className="size-11 rounded-xl overflow-hidden bg-primary/20 flex items-center justify-center text-primary font-black shadow-xs shrink-0 border border-primary/30">
                   {logoUrl ? (
@@ -126,18 +230,6 @@ export function PhonePreviewMockup({
                     <span>Canlı QR Menü · {tableLabel}</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Ürün veya lezzet ara..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-muted/60 border border-border/80 rounded-xl pl-8 pr-3 py-1.5 text-[11px] font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-                />
               </div>
 
               {/* Category Pills */}
@@ -199,10 +291,11 @@ export function PhonePreviewMockup({
             </div>
           )}
 
-          {/* THEME 2: ELEGANT DARK (Lüks & Gece / Fine Dining Slate) */}
+          {/* ============================================================ */}
+          {/* THEME 3: ELEGANT DARK (Lüks Koyu / Fine Dining Slate) */}
+          {/* ============================================================ */}
           {theme === "ELEGANT_DARK" && (
             <div className="space-y-3 pt-1 animate-in fade-in-50 duration-300 bg-zinc-950 -mx-3 -mt-3 p-3 min-h-full text-zinc-100">
-              {/* Luxury Header */}
               <div className="text-center py-3 border-b border-amber-500/20">
                 <div className="size-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-serif font-black mb-1.5 shadow-sm">
                   {logoUrl ? (
@@ -215,7 +308,6 @@ export function PhonePreviewMockup({
                 <p className="text-[9px] text-zinc-400 tracking-wider font-mono uppercase mt-0.5">Özel Gurme Menü · {tableLabel}</p>
               </div>
 
-              {/* Dark Gold Category Filter */}
               <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-1">
                 {categories.slice(0, 3).map((c) => (
                   <button
@@ -234,7 +326,6 @@ export function PhonePreviewMockup({
                 ))}
               </div>
 
-              {/* Luxury Items */}
               <div className="space-y-2">
                 {filteredItems.map((item) => (
                   <div
@@ -263,10 +354,11 @@ export function PhonePreviewMockup({
             </div>
           )}
 
-          {/* THEME 3: MINIMAL LIST (Kafe & Bistro Hızlı Liste) */}
+          {/* ============================================================ */}
+          {/* THEME 4: MINIMAL_LIST (Kafe & Bistro Hızlı Liste) */}
+          {/* ============================================================ */}
           {theme === "MINIMAL_LIST" && (
             <div className="space-y-2.5 pt-1 animate-in fade-in-50 duration-300">
-              {/* Minimal Clean Header */}
               <div className="border-b pb-2 flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-black text-foreground">{restaurantName}</h3>
@@ -277,7 +369,6 @@ export function PhonePreviewMockup({
                 </span>
               </div>
 
-              {/* Clean Row List Items */}
               <div className="divide-y divide-border/60">
                 {filteredItems.map((item) => (
                   <div key={item.id} className="py-2 flex items-center justify-between gap-2">
@@ -302,61 +393,39 @@ export function PhonePreviewMockup({
             </div>
           )}
 
-          {/* THEME 4: VISUAL GRID (Büyük Görsel Izgara / Fast Food & Tatlı) */}
-          {theme === "VISUAL_GRID" && (
-            <div className="space-y-2.5 pt-1 animate-in fade-in-50 duration-300">
-              {/* Vibrant Header */}
-              <div className="p-2.5 rounded-xl bg-orange-500 text-white shadow-sm flex items-center justify-between">
-                <div>
-                  <h3 className="text-xs font-black">{restaurantName}</h3>
-                  <p className="text-[9px] opacity-90">İştah Açıcı Lezzetler</p>
-                </div>
-                <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">{tableLabel}</span>
-              </div>
-
-              {/* 2-Column Grid */}
-              <div className="grid grid-cols-2 gap-2">
-                {filteredItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-xl border border-border/80 bg-card p-2 flex flex-col justify-between shadow-2xs gap-1.5"
-                  >
-                    <div className="h-14 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 text-xl font-bold">
-                      🍔
-                    </div>
-                    <div>
-                      <h4 className="text-[10px] font-extrabold text-foreground truncate">{item.name}</h4>
-                      <span className="text-[10px] font-black text-orange-600 dark:text-orange-400 tabular-nums">
-                        {formatCurrency(item.price)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full py-1 rounded-lg bg-orange-600 text-white text-[9px] font-bold text-center active:scale-95"
-                    >
-                      Ekle +
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
         </div>
 
-        {/* Floating Bottom Cart Bar */}
-        <div className="absolute bottom-2 left-2 right-2 p-2 rounded-2xl bg-zinc-900 text-white shadow-xl flex items-center justify-between z-30 border border-zinc-800">
-          <div className="flex items-center gap-2">
-            <div className="size-6 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-black">
-              2
+        {/* ============================================================ */}
+        {/* Floating Cart Button */}
+        {/* In QSR_FASTFOOD theme: Golden Yellow Floating Cart Bubble    */}
+        {/* ============================================================ */}
+        {theme === "QSR_FASTFOOD" ? (
+          <div className="absolute bottom-4 right-4 z-30">
+            <button
+              type="button"
+              className="relative flex items-center justify-center size-12 rounded-full bg-[#FFBC0D] text-black shadow-xl hover:scale-105 active:scale-95 transition-transform cursor-pointer border-2 border-amber-300/80"
+              aria-label="Sepet"
+            >
+              <ShoppingBagIcon className="size-5 stroke-[2.5]" />
+              <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-black shadow-md border-2 border-white">
+                3
+              </span>
+            </button>
+          </div>
+        ) : (
+          <div className="absolute bottom-2 left-2 right-2 p-2 rounded-2xl bg-zinc-900 text-white shadow-xl flex items-center justify-between z-30 border border-zinc-800">
+            <div className="flex items-center gap-2">
+              <div className="size-6 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-black">
+                2
+              </div>
+              <span className="text-[11px] font-bold">Sepetiniz (2 Ürün)</span>
             </div>
-            <span className="text-[11px] font-bold">Sepetiniz (2 Ürün)</span>
+            <div className="flex items-center gap-1.5 font-black text-[11px] text-primary">
+              <span>490,00 ₺</span>
+              <ShoppingBagIcon className="size-3.5" />
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 font-black text-[11px] text-primary">
-            <span>490,00 ₺</span>
-            <ShoppingBagIcon className="size-3.5" />
-          </div>
-        </div>
+        )}
 
         {/* Bottom Home Indicator Bar */}
         <div className="h-4 pb-1 flex items-center justify-center">

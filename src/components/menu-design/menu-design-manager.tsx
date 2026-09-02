@@ -51,11 +51,27 @@ export const THEME_OPTIONS: readonly ThemeOption[] = [
     bgPreview: "from-primary/20 via-background to-card",
   },
   {
+    id: "QSR_FASTFOOD",
+    name: "QSR & Fast Food (Self-Order)",
+    category: "Özel Şablon · Fast Food",
+    description: "Beyaz minimalist zemin, kırmızı kategori kapsülleri, ortalı 2'li ürün kartları ve sarı yüzen sepet butonu.",
+    badgeText: "⭐ Yeni · Görseldeki Tasarım",
+    badgeColor: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+    features: [
+      "Kırmızı kapsüllü yatay kategori kaydırma",
+      "2 sütunlu beyaz ortalı ürün kartları",
+      "R$ / ₺ gri fiyat kapsülleri",
+      "Sarı yuvarlak yüzen sepet butonu",
+    ],
+    accentColor: "bg-red-600",
+    bgPreview: "from-red-500/20 via-background to-amber-500/10",
+  },
+  {
     id: "ELEGANT_DARK",
     name: "Lüks Koyu (Fine Dining)",
     category: "Prestij & Akşam",
     description: "Koyu kömür zemin, altın sarısı tipografi ve zarif çizgilerle gurme restoranlar için tasarlandı.",
-    badgeText: "Yeni · Lüks Ambiyans",
+    badgeText: "Lüks Ambiyans",
     badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
     features: [
       "Koyu lüks gece modu arayüzü",
@@ -82,28 +98,14 @@ export const THEME_OPTIONS: readonly ThemeOption[] = [
     accentColor: "bg-slate-700",
     bgPreview: "from-slate-500/15 via-background to-muted",
   },
-  {
-    id: "VISUAL_GRID",
-    name: "Görsel Izgara (Fast Food & Tatlı)",
-    category: "Görsel Odaklı",
-    description: "Büyük iştah açıcı ürün görselleri ve 2'li ızgara düzeniyle sipariş verme isteğini artıran tasarım.",
-    badgeText: "İştah Açıcı",
-    badgeColor: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30",
-    features: [
-      "2 sütunlu büyük ürün kartları",
-      "Görsel odaklı iştah açıcı yerleşim",
-      "Tek dokunuşla hızlı sepet ekleme",
-      "Burger, pizza ve tatlıcılar için mükemmel",
-    ],
-    accentColor: "bg-orange-500",
-    bgPreview: "from-orange-500/20 via-background to-card",
-  },
 ];
 
 export function MenuDesignManager({
   restaurantId,
   restaurantName,
   restaurantUsername,
+  previewTableId,
+  previewTableLabel = "Masa 1",
   logoUrl,
   menu,
   currentTheme = "MODERN",
@@ -111,6 +113,8 @@ export function MenuDesignManager({
   readonly restaurantId: string;
   readonly restaurantName: string;
   readonly restaurantUsername: string;
+  readonly previewTableId?: string;
+  readonly previewTableLabel?: string;
   readonly logoUrl?: string | null;
   readonly menu?: MenuDTO | null;
   readonly currentTheme?: string;
@@ -140,6 +144,10 @@ export function MenuDesignManager({
 
   const selectedThemeDetails = THEME_OPTIONS.find((t) => t.id === previewTheme) || THEME_OPTIONS[0];
 
+  const liveQrUrl = previewTableId
+    ? `/order/${restaurantUsername}?table=${previewTableId}`
+    : `/order/${restaurantUsername}`;
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Title */}
@@ -158,17 +166,17 @@ export function MenuDesignManager({
           </p>
         </div>
 
-        {/* Live QR Link Button */}
+        {/* Live QR Link Button (Opens Masa 1 Live Session) */}
         {restaurantUsername && (
           <Link
-            href={`/order/${restaurantUsername}?table=preview`}
+            href={liveQrUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-muted/80 hover:bg-muted border border-border text-xs font-bold text-foreground transition-all shadow-2xs hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
           >
-            <SmartphoneIcon className="size-4 text-primary" />
-            <span>Canlı QR Menüyü Aç</span>
-            <ExternalLinkIcon className="size-3.5 text-muted-foreground" />
+            <SmartphoneIcon className="size-4" />
+            <span>Canlı QR Menüyü Aç ({previewTableLabel})</span>
+            <ExternalLinkIcon className="size-3.5 opacity-80" />
           </Link>
         )}
       </div>
@@ -194,7 +202,7 @@ export function MenuDesignManager({
             restaurantName={restaurantName}
             logoUrl={logoUrl}
             menu={menu}
-            tableLabel="Masa 4"
+            tableLabel={previewTableLabel}
           />
 
           <p className="text-[11px] font-semibold text-muted-foreground text-center">

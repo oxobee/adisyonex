@@ -534,39 +534,55 @@ export function GuestOrderPage({
 
       {/* Floating Bottom Cart Pill */}
       {itemCount > 0 ? (
-        <div className="fixed inset-x-0 bottom-4 z-30 px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
-          <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-foreground text-background p-3.5 shadow-2xl backdrop-blur-xl pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300">
+        qrMenuTheme === "QSR_FASTFOOD" ? (
+          <div className="fixed bottom-5 right-5 z-40 animate-in zoom-in-75 duration-200">
             <button
               type="button"
-              className="flex min-w-0 flex-1 items-center gap-3 text-left transition-transform active:scale-95 cursor-pointer select-none"
+              className="relative flex items-center justify-center size-14 rounded-full bg-[#FFBC0D] text-zinc-950 shadow-2xl hover:scale-105 active:scale-95 transition-transform cursor-pointer border-2 border-amber-300 ring-4 ring-black/10"
               onClick={() => setReviewOpen(true)}
+              aria-label="Sepeti İncele"
             >
-              <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/15 text-background font-bold">
-                <ShoppingBagIcon className="size-5" />
-                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-black shadow-md">
-                  {itemCount}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="block text-[11px] font-medium text-background/70 truncate">
-                  Toplam ({itemCount} Ürün)
-                </span>
-                <span className="text-base font-black tracking-tight text-background tabular-nums whitespace-nowrap">
-                  {bill.grandTotal.toFixed(0)} ₺
-                </span>
-              </div>
+              <ShoppingBagIcon className="size-6 stroke-[2.5]" />
+              <span className="absolute -top-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-red-600 text-white text-xs font-black shadow-lg border-2 border-white">
+                {itemCount}
+              </span>
             </button>
-
-            <Button
-              size="lg"
-              className="h-11 shrink-0 rounded-xl px-4 sm:px-5 font-bold shadow-sm whitespace-nowrap transition-all active:scale-95 cursor-pointer bg-primary text-primary-foreground"
-              disabled={busy}
-              onClick={() => setReviewOpen(true)}
-            >
-              {busy ? "İletiliyor…" : "Sipariş Özeti →"}
-            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="fixed inset-x-0 bottom-4 z-30 px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
+            <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-foreground text-background p-3.5 shadow-2xl backdrop-blur-xl pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left transition-transform active:scale-95 cursor-pointer select-none"
+                onClick={() => setReviewOpen(true)}
+              >
+                <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/15 text-background font-bold">
+                  <ShoppingBagIcon className="size-5" />
+                  <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-black shadow-md">
+                    {itemCount}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-medium text-background/70 truncate">
+                    Toplam ({itemCount} Ürün)
+                  </span>
+                  <span className="text-base font-black tracking-tight text-background tabular-nums whitespace-nowrap">
+                    {bill.grandTotal.toFixed(0)} ₺
+                  </span>
+                </div>
+              </button>
+
+              <Button
+                size="lg"
+                className="h-11 shrink-0 rounded-xl px-4 sm:px-5 font-bold shadow-sm whitespace-nowrap transition-all active:scale-95 cursor-pointer bg-primary text-primary-foreground"
+                disabled={busy}
+                onClick={() => setReviewOpen(true)}
+              >
+                {busy ? "İletiliyor…" : "Sipariş Özeti →"}
+              </Button>
+            </div>
+          </div>
+        )
       ) : null}
 
       {configItem ? (
