@@ -33,6 +33,7 @@ import {
   ShieldCheckIcon,
   GiftIcon,
   LogInIcon,
+  PaletteIcon,
 } from "lucide-react"
 
 import type { LicenseInfoDTO } from "@/services/license.service"
@@ -52,6 +53,7 @@ const navGroups = [
     items: [
       { title: "Genel Bakış", url: "/dashboard", icon: <LayoutDashboardIcon /> },
       { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
+      { title: "Menü Tasarım", url: "/dashboard/menu-design", icon: <PaletteIcon /> },
       { title: "Masalar", url: "/dashboard/tables", icon: <ArmchairIcon /> },
       { title: "Personel", url: "/dashboard/staff", icon: <UsersIcon /> },
     ],

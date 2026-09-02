@@ -104,6 +104,7 @@ export interface GuestOrderPageData {
   readonly tableId: string;
   readonly tableLabel: string;
   readonly menu: MenuDTO;
+  readonly qrMenuTheme?: string | null;
 }
 
 export type GuestOrderPageResult =
@@ -148,6 +149,7 @@ export const loadGuestOrderPage = async (
       tableId: table.id,
       tableLabel: table.label,
       menu,
+      qrMenuTheme: restaurant.qrMenuTheme || "MODERN",
     },
   };
 };

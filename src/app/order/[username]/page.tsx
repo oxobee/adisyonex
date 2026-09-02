@@ -77,6 +77,7 @@ export default async function OrderPage({
         verifiedPhoneMasked={verifiedPhoneMasked}
         verifiedExpiresAt={verifiedExpiresAt}
         initialOrders={initialOrders}
+        qrMenuTheme={data.qrMenuTheme || "MODERN"}
       />
     </main>
   );

@@ -52,6 +52,7 @@ import {
   writeGuestSession,
 } from "@/lib/guest-cart-storage";
 import { uuid } from "@/lib/uuid";
+import { cn } from "@/lib/utils";
 import { computeBill } from "@/services/billing";
 import type { MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
@@ -90,6 +91,7 @@ export function GuestOrderPage({
   verifiedPhoneMasked,
   verifiedExpiresAt,
   initialOrders,
+  qrMenuTheme = "MODERN",
 }: {
   readonly username: string;
   readonly tableId: string;
@@ -101,6 +103,7 @@ export function GuestOrderPage({
   readonly verifiedPhoneMasked: string | null;
   readonly verifiedExpiresAt: number | null;
   readonly initialOrders: readonly GuestOrderSummaryDTO[];
+  readonly qrMenuTheme?: string;
 }) {
   const cart = useOrderCart();
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
@@ -443,25 +446,52 @@ export function GuestOrderPage({
   }
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32">
+    <div className={cn(
+      "mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32 transition-colors",
+      qrMenuTheme === "ELEGANT_DARK" && "bg-zinc-950 text-zinc-100",
+    )}>
       {/* Lively & Themed Top Banner with Square Logo */}
-      <div className="relative mb-4 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card p-4 shadow-sm backdrop-blur-md">
+      <div
+        className={cn(
+          "relative mb-4 overflow-hidden rounded-3xl border p-4 shadow-sm backdrop-blur-md transition-all",
+          qrMenuTheme === "ELEGANT_DARK"
+            ? "border-amber-500/30 bg-zinc-900/90 text-zinc-100 shadow-amber-500/5"
+            : qrMenuTheme === "VISUAL_GRID"
+              ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-card to-card"
+              : qrMenuTheme === "MINIMAL_LIST"
+                ? "border-border/80 bg-card"
+                : "border-primary/20 bg-gradient-to-br from-primary/10 via-amber-500/5 to-card",
+        )}
+      >
         <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-primary/10 blur-xl" />
 
         <div className="relative flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             {logoUrl ? (
-              <div className="relative size-12 shrink-0 aspect-square overflow-hidden rounded-2xl border border-primary/20 bg-card p-0.5 shadow-md shadow-primary/15">
+              <div
+                className={cn(
+                  "relative size-12 shrink-0 aspect-square overflow-hidden rounded-2xl border p-0.5 shadow-md",
+                  qrMenuTheme === "ELEGANT_DARK" ? "border-amber-500/40 bg-zinc-900" : "border-primary/20 bg-card",
+                )}
+              >
                 <Image
                   src={logoUrl}
                   alt={restaurantName}
                   fill
                   className="object-cover rounded-xl"
                   sizes="48px"
+                  unoptimized
                 />
               </div>
             ) : (
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-primary text-white shadow-md shadow-primary/20">
+              <div
+                className={cn(
+                  "flex size-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md",
+                  qrMenuTheme === "ELEGANT_DARK"
+                    ? "bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100"
+                    : "bg-gradient-to-br from-amber-500 to-primary",
+                )}
+              >
                 <UtensilsCrossedIcon className="size-6 stroke-[2.2]" />
               </div>
             )}
@@ -472,7 +502,14 @@ export function GuestOrderPage({
               </h1>
 
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary shadow-2xs">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold shadow-2xs",
+                    qrMenuTheme === "ELEGANT_DARK"
+                      ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+                      : "border-primary/30 bg-primary/15 text-primary",
+                  )}
+                >
                   <span>🍽️</span>
                   <span>Masa No : {tableLabel}</span>
                 </span>

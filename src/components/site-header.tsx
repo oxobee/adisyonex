@@ -29,6 +29,7 @@ const SCREEN_NAV: Record<string, { label: string; icon: string }> = {
   "/dashboard/kitchen": { label: "Mutfak Ekranı", icon: "🍳" },
   "/dashboard/tables": { label: "Masalar", icon: "🪑" },
   "/dashboard/menu": { label: "Menü", icon: "📖" },
+  "/dashboard/menu-design": { label: "Menü Tasarım", icon: "🎨" },
   "/dashboard/customers": { label: "Müşteriler", icon: "🎁" },
   "/dashboard/inventory": { label: "Stok & Envanter", icon: "📦" },
   "/dashboard/staff": { label: "Personel", icon: "👥" },

@@ -18,6 +18,7 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   MenuIcon,
+  PaletteIcon,
   ReceiptTextIcon,
   ShieldCheckIcon,
   SparklesIcon,
@@ -91,6 +92,13 @@ const NAV_ITEMS: readonly NavItemConfig[] = [
     icon: <BookOpenIcon className="size-4.5" />,
     iconBg: "bg-teal-500/15 group-hover:bg-teal-500/25",
     iconColor: "text-teal-600 dark:text-teal-400",
+  },
+  {
+    title: "Menü Tasarım",
+    url: "/dashboard/menu-design",
+    icon: <PaletteIcon className="size-4.5" />,
+    iconBg: "bg-indigo-500/15 group-hover:bg-indigo-500/25",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
   },
   {
     title: "Personel",

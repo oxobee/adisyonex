@@ -31,6 +31,7 @@ import {
   setSelfOrderEnabled,
   updateGeolocation,
   clearGeolocation,
+  updateQrMenuTheme,
 } from "@/services/restaurant-settings.service";
 import {
   addVideoLink,
@@ -188,3 +189,8 @@ export const removeCoverAction = async (): Promise<ActionResult<void>> =>
 
 export const clearGeolocationAction = async (): Promise<ActionResult<void>> =>
   runOwned(clearGeolocation);
+
+export const updateQrMenuThemeAction = async (
+  theme: string,
+): Promise<ActionResult<void>> =>
+  runOwned((restaurantId) => updateQrMenuTheme(restaurantId, theme));

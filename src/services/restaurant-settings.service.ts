@@ -300,3 +300,22 @@ export const regenerateUsername = async (
   await updateRestaurant(restaurantId, { username });
   return username;
 };
+
+/** Get the selected QR Menu design theme. */
+export const getQrMenuTheme = async (
+  restaurantId: string,
+): Promise<string> => {
+  const restaurant = await findRestaurantById(restaurantId);
+  if (!restaurant || restaurant.deletedAt) {
+    throw new Error(RESTAURANT_NOT_FOUND);
+  }
+  return restaurant.qrMenuTheme || "MODERN";
+};
+
+/** Update the selected QR Menu design theme. */
+export const updateQrMenuTheme = async (
+  restaurantId: string,
+  theme: string,
+): Promise<void> => {
+  await updateRestaurant(restaurantId, { qrMenuTheme: theme });
+};
