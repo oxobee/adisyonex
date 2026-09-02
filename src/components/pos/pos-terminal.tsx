@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency } from "@/lib/format";
+import { enqueueOfflineMutation, setCachedSnapshot } from "@/lib/offline-sync";
 import { uuid } from "@/lib/uuid";
 import { computeBill } from "@/services/billing";
 import type { MenuDTO, MenuItemDTO } from "@/types/menu";
@@ -74,6 +75,13 @@ export function PosTerminal({
   const [customerAddress, setCustomerAddress] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
+  const lastPayloadRef = useRef<any>(null);
+
+  // Automatically snapshot menu and tables to local device storage
+  useEffect(() => {
+    if (menu) setCachedSnapshot("menu", menu);
+    if (tables) setCachedSnapshot("tables", tables);
+  }, [menu, tables]);
 
   const bill = useMemo(() => computeBill(cart.map(toBillLine)), [cart]);
 
@@ -117,7 +125,17 @@ export function PosTerminal({
       });
       resetOrder();
     },
-    onError: (message) => toast.error(message),
+    onError: (message) => {
+      if (typeof navigator !== "undefined" && !navigator.onLine && lastPayloadRef.current) {
+        enqueueOfflineMutation("CREATE_ORDER", lastPayloadRef.current);
+        toast.success("Sipariş cihaza kaydedildi (Çevrimdışı)", {
+          description: "İnternet bağlantısı sağlandığında otomatik sunucuya aktarılacaktır.",
+        });
+        resetOrder();
+        return;
+      }
+      toast.error(message);
+    },
   });
 
   const phoneMissing = !phoneSkipped && customerPhone.trim().length === 0;
@@ -133,7 +151,7 @@ export function PosTerminal({
     if (!canSend) {
       return;
     }
-    createOrder.execute({
+    const payload = {
       orderType,
       idempotencyKey: uuid(),
       tableId: orderType === "DINE_IN" ? (tableId ?? undefined) : undefined,
@@ -152,7 +170,21 @@ export function PosTerminal({
         isComp: l.isComp,
         modifierIds: l.modifiers.map((m) => m.id),
       })),
-    });
+    };
+
+    lastPayloadRef.current = payload;
+
+    // Offline Resilience Gate
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      enqueueOfflineMutation("CREATE_ORDER", payload);
+      toast.success("Sipariş cihaza kaydedildi (Çevrimdışı)", {
+        description: "İnternet bağlantısı sağlandığında otomatik sunucuya aktarılacaktır.",
+      });
+      resetOrder();
+      return;
+    }
+
+    createOrder.execute(payload);
   };
 
   const phoneField = (

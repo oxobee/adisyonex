@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { addItemsAction, createOrderAction } from "@/actions/order.actions";
 import { ItemConfigDialog } from "@/components/pos/item-config-dialog";
 import { Button } from "@/components/ui/button";
+import { enqueueOfflineMutation } from "@/lib/offline-sync";
 import {
   Dialog,
   DialogContent,
@@ -166,6 +167,30 @@ export function TablePosModal({
       isComp: l.isComp,
       modifierIds: l.modifiers.map((m) => m.id),
     }));
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      if (primaryOrder) {
+        enqueueOfflineMutation("ADD_ITEMS", {
+          orderId: primaryOrder.id,
+          items: payloadItems,
+        });
+      } else {
+        enqueueOfflineMutation("CREATE_ORDER", {
+          orderType: "DINE_IN",
+          tableId: table.id,
+          tableLabel: table.label,
+          idempotencyKey: `pos-${table.id}-${Date.now()}`,
+          items: payloadItems,
+        });
+      }
+      toast.success("Masa işlemi cihaza kaydedildi (Çevrimdışı)", {
+        description: "İnternet bağlantısı sağlandığında otomatik sunucuya aktarılacaktır.",
+      });
+      cart.clear();
+      onOpenChange(false);
+      onAdded();
+      return;
+    }
 
     if (primaryOrder) {
       // Add items to existing table order

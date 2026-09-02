@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   ActivityIcon,
   CheckCircle2Icon,
+  HardDriveIcon,
   RefreshCwIcon,
   WifiIcon,
   WifiOffIcon,
 } from "lucide-react";
+import { useOfflineSync } from "@/lib/offline-sync";
 import { cn } from "@/lib/utils";
 
 export function ConnectionStatus({
@@ -17,15 +19,12 @@ export function ConnectionStatus({
   readonly showLabel?: boolean;
 } = {}) {
   const router = useRouter();
-  const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const { isOnline, isSyncing, pendingCount, syncNow } = useOfflineSync();
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
-    // Initial online state
     if (typeof window !== "undefined") {
-      setIsOnline(navigator.onLine);
       setLastSyncTime(
         new Date().toLocaleTimeString("tr-TR", {
           hour: "2-digit",
@@ -35,37 +34,8 @@ export function ConnectionStatus({
       );
     }
 
-    const handleOnline = () => {
-      setIsOnline(true);
-      startTransition(() => {
-        router.refresh();
-      });
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      startTransition(() => {
-        router.refresh();
-      });
-    };
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden && navigator.onLine) {
-        startTransition(() => {
-          router.refresh();
-        });
-      }
-    };
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // Continuous Real-Time Live Sync (every 3 seconds)
     const interval = setInterval(() => {
       if (!navigator.onLine || document.hidden) return;
-
-      setIsSyncing(true);
       startTransition(() => {
         router.refresh();
         setLastSyncTime(
@@ -75,27 +45,51 @@ export function ConnectionStatus({
             second: "2-digit",
           }),
         );
-        setTimeout(() => setIsSyncing(false), 500);
       });
-    }, 3000);
+    }, 4000);
 
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [router]);
 
   if (!isOnline) {
     return (
       <div
-        className="flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/15 px-2.5 py-1 text-xs font-black text-destructive shadow-sm animate-pulse"
-        title="İnternet bağlantısı kesildi. Lütfen ağınızı kontrol edin."
+        className={cn(
+          "flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold shadow-xs select-none",
+          showLabel ? "px-2.5 py-1 text-xs" : "p-1.5",
+        )}
+        title="İnternet bağlantısı yok. Sistem çevrimdışı lokal kayıt modunda çalışıyor."
       >
-        <WifiOffIcon className="size-3.5 shrink-0 animate-bounce" />
-        {showLabel && <span className="truncate">Bağlantı Yok</span>}
+        <WifiOffIcon className="size-3.5 shrink-0" />
+        {showLabel && (
+          <span className="truncate">
+            Çevrimdışı (Lokal Aktif{pendingCount > 0 ? ` · ${pendingCount} Bekleyen` : ""})
+          </span>
+        )}
       </div>
+    );
+  }
+
+  if (pendingCount > 0) {
+    return (
+      <button
+        type="button"
+        onClick={() => void syncNow()}
+        className={cn(
+          "flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-400 font-bold shadow-xs transition-all hover:bg-sky-500/25 cursor-pointer select-none",
+          showLabel ? "px-2.5 py-1 text-xs" : "p-1.5",
+        )}
+        title={`${pendingCount} bekleyen çevrimdışı işlem var. Sunucuyla eşitlemek için tıklayın.`}
+      >
+        <RefreshCwIcon
+          className={cn("size-3.5 shrink-0", isSyncing && "animate-spin")}
+        />
+        {showLabel && (
+          <span className="truncate">
+            {isSyncing ? "Eşitleniyor…" : `Eşitle (${pendingCount})`}
+          </span>
+        )}
+      </button>
     );
   }
 
@@ -105,7 +99,7 @@ export function ConnectionStatus({
         "flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-700 dark:text-emerald-400 shadow-2xs select-none",
         showLabel ? "px-3 py-1" : "p-1.5",
       )}
-      title={`Sistem Canlı ve Çevrimiçi · Son Güncelleme: ${lastSyncTime}`}
+      title={`Sistem Çevrimiçi · Son Senkronizasyon: ${lastSyncTime}`}
     >
       <span className="relative flex size-2 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
