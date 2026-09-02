@@ -237,12 +237,55 @@ export function GuestOrderPage({
     onError: (m) => toast.error(m || "Kayıt işlemi başarısız oldu"),
   });
 
+  // Restore logged in customer from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`adisyoon_customer_${username}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.id) {
+          setCurrentCustomer({
+            id: parsed.id,
+            name: parsed.name || "",
+            phone: parsed.phone || "",
+            birthDate: null,
+            birthDay: null,
+            birthMonth: null,
+            birthYear: null,
+            orderCount: 0,
+            totalSpent: 0,
+            source: "QR_MENU",
+            kvkkConsent: true,
+            kvkkAcceptedAt: null,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch {
+      // Ignore JSON errors
+    }
+  }, [username]);
+
   const submitOrder = () => {
     if (itemCount === 0) return;
+    let activeCustId = currentCustomer?.id ?? null;
+    if (!activeCustId) {
+      try {
+        const saved = localStorage.getItem(`adisyoon_customer_${username}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.id) activeCustId = parsed.id;
+        }
+      } catch {
+        // Ignore JSON errors
+      }
+    }
+
     place.execute({
       username,
       tableId,
       idempotencyKey: idempotencyKey.current,
+      customerId: activeCustId,
       items: items(),
     });
   };
@@ -276,13 +319,13 @@ export function GuestOrderPage({
 
           <div className="mt-2 flex w-full max-w-xs flex-col gap-2.5">
             <Button
-              className="h-12 w-full rounded-2xl font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20 text-sm"
+              className="h-12 w-full rounded-2xl font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20 text-sm cursor-pointer"
               onClick={() => {
                 setPlaced(false);
-                setOrdersOpen(true);
+                setProfileSheetOpen(true);
               }}
             >
-              Siparişlerimi Takip Et
+              Siparişimi Takip Et ⏱️
             </Button>
             <Button
               variant="outline"
@@ -970,6 +1013,7 @@ export function GuestOrderPage({
               tableLabel={tableLabel}
               primaryColor={qrPrimaryColor || "#FF5500"}
               secondaryColor={qrSecondaryColor || "#FFF7ED"}
+              activeOrders={myOrders}
               onRequestBill={async () => {
                 await requestBill.execute({ username, tableId });
               }}

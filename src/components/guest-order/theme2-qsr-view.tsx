@@ -1504,6 +1504,7 @@ export function Theme2QsrView({
             tableLabel={tableLabel}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
+            activeOrders={myOrders}
             onRequestBill={onRequestBill}
             onCustomerIdentified={onCustomerIdentified}
           />

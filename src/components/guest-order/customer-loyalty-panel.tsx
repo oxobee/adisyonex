@@ -47,6 +47,7 @@ import {
   registerCustomerAction,
 } from "@/actions/customer.actions";
 import type { CustomerDTO, CustomerProfileDTO } from "@/services/customer.service";
+import type { GuestOrderSummaryDTO } from "@/types/order";
 
 export interface CustomerLoyaltyPanelProps {
   readonly username: string;
@@ -55,6 +56,7 @@ export interface CustomerLoyaltyPanelProps {
   readonly tableLabel: string;
   readonly primaryColor?: string;
   readonly secondaryColor?: string;
+  readonly activeOrders?: readonly GuestOrderSummaryDTO[];
   readonly onRequestBill?: () => Promise<void> | void;
   readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
 }
@@ -68,6 +70,7 @@ export function CustomerLoyaltyPanel({
   tableLabel,
   primaryColor = "#FF5500",
   secondaryColor = "#FFF7ED",
+  activeOrders = [],
   onRequestBill,
   onCustomerIdentified,
 }: CustomerLoyaltyPanelProps) {
@@ -136,7 +139,9 @@ export function CustomerLoyaltyPanel({
     } catch {
       // Ignore JSON parse errors
     }
-  }, [sessionKey, loadProfile]);
+  }, [activeOrders?.length, sessionKey, loadProfile]);
+
+  const liveOrders = (activeOrders ?? []).filter((o) => o.status !== "VOID");
 
   // Handle SMS OTP Sending (Simulation)
   const handleSendOtp = (e: React.FormEvent) => {
@@ -320,7 +325,169 @@ export function CustomerLoyaltyPanel({
       </div>
 
       {/* ============================================================ */}
-      {/* 2. EN ÜSTTE DİKKAT ÇEKİCİ HIZLI HESAP OLUŞTUR / GİRİŞ ALANI */}
+      {/* 2. AÇIK SİPARİŞLERİM (ANLIK SİPARİŞ TAKİBİ: HAZIRLANIYOR)    */}
+      {/* ============================================================ */}
+      {liveOrders.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="relative flex size-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full size-2.5 bg-emerald-500" />
+              </span>
+              <span>Açık Siparişlerim ({liveOrders.length})</span>
+            </h4>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+              Canlı Takip Ediliyor 🟢
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {liveOrders.map((ord) => {
+              const isPreparing = ord.kitchenStatus === "PREPARING";
+              const isReady = ord.kitchenStatus === "READY";
+              const isWaiting = !isPreparing && !isReady;
+              const isSettledOrPaid = ord.status === "COMPLETED";
+
+              return (
+                <div
+                  key={ord.id}
+                  className="relative overflow-hidden bg-white rounded-3xl p-4 border-2 shadow-sm space-y-3 transition-all"
+                  style={{
+                    borderColor: isReady
+                      ? "#10B981"
+                      : isPreparing
+                        ? "#3B82F6"
+                        : `${primaryColor}60`,
+                  }}
+                >
+                  {/* Top Bar: Order Number & Live Status Badge */}
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-xs text-zinc-900">
+                        Sipariş #{ord.orderNumber || ord.id.slice(-6)}
+                      </span>
+                      <span className="text-[11px] text-zinc-400 font-medium">
+                        • {ord.tableLabel ?? tableLabel}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {isWaiting && (
+                        <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px] font-black animate-pulse">
+                          ⏳ Mutfakta Bekliyor
+                        </Badge>
+                      )}
+                      {isPreparing && (
+                        <Badge className="bg-blue-500/15 text-blue-700 border-blue-500/30 text-[10px] font-black animate-pulse">
+                          🍳 Hazırlanıyor
+                        </Badge>
+                      )}
+                      {isReady && (
+                        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] font-black">
+                          🍽️ Servise Hazır
+                        </Badge>
+                      )}
+                      {isSettledOrPaid && (
+                        <Badge className="bg-zinc-100 text-zinc-700 border-zinc-200 text-[10px] font-black">
+                          ✅ Ödendi
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Visual Status Step Indicator */}
+                  <div className="grid grid-cols-3 gap-1.5 py-1 text-center text-[10px] font-bold">
+                    <div
+                      className={cn(
+                        "py-1.5 rounded-xl border transition-colors",
+                        isWaiting || isPreparing || isReady
+                          ? "bg-amber-50 border-amber-300 text-amber-800 font-black"
+                          : "bg-zinc-50 border-zinc-200 text-zinc-400",
+                      )}
+                    >
+                      1. Alındı 📥
+                    </div>
+                    <div
+                      className={cn(
+                        "py-1.5 rounded-xl border transition-colors",
+                        isPreparing || isReady
+                          ? "bg-blue-50 border-blue-300 text-blue-800 font-black animate-pulse"
+                          : "bg-zinc-50 border-zinc-200 text-zinc-400",
+                      )}
+                    >
+                      2. Hazırlanıyor 🍳
+                    </div>
+                    <div
+                      className={cn(
+                        "py-1.5 rounded-xl border transition-colors",
+                        isReady
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-black"
+                          : "bg-zinc-50 border-zinc-200 text-zinc-400",
+                      )}
+                    >
+                      3. Masada 🍽️
+                    </div>
+                  </div>
+
+                  {/* Order Line Items */}
+                  <div className="divide-y divide-zinc-100 text-xs">
+                    {ord.lines.map((line, idx) => (
+                      <div key={idx} className="py-1.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="font-black tabular-nums"
+                            style={{ color: primaryColor }}
+                          >
+                            {line.quantity}×
+                          </span>
+                          <span className="font-semibold text-zinc-800">{line.name}</span>
+                          {line.variantName && (
+                            <span className="text-[10px] text-zinc-400">
+                              ({line.variantName})
+                            </span>
+                          )}
+                        </div>
+                        {line.state === "SERVED" ? (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                            Servis Edildi
+                          </span>
+                        ) : line.state === "PREPARING" ? (
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">
+                            Hazırlanıyor
+                          </span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total & Quick Bill Request */}
+                  <div className="border-t border-zinc-100 pt-2 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block font-medium">Toplam Tutar</span>
+                      <span className="font-black text-sm text-zinc-900 tabular-nums">
+                        {formatCurrency(ord.total)}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setBillModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-xl font-bold text-xs border text-zinc-700 hover:bg-zinc-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <span>🧾</span>
+                      <span>Hesap İste</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 3. EN ÜSTTE DİKKAT ÇEKİCİ HIZLI HESAP OLUŞTUR / GİRİŞ ALANI */}
       {/* ============================================================ */}
       {!profile ? (
         <div className="relative overflow-hidden rounded-3xl p-5 border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-white shadow-md space-y-3">

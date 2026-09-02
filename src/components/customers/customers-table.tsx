@@ -330,7 +330,7 @@ export function CustomersTable({
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-5xl max-h-[94vh] rounded-3xl p-0 overflow-hidden flex flex-col bg-card border shadow-2xl">
+        <DialogContent className="w-[96vw] sm:max-w-4xl md:max-w-5xl lg:max-w-6xl max-h-[94vh] rounded-3xl p-0 overflow-hidden flex flex-col gap-0 bg-card border shadow-2xl">
           <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5 min-w-0">
