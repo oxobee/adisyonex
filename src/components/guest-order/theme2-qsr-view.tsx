@@ -514,22 +514,31 @@ export function Theme2QsrView({
                 🍽️ {tableLabel}
               </span>
 
-              {myOrders.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("profile")}
-                  className="relative p-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs hover:bg-zinc-50 cursor-pointer"
-                  aria-label="Siparişlerim"
-                >
-                  <BellIcon className="size-4" />
-                  <span
-                    className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-white text-[9px] font-black"
-                    style={{ backgroundColor: primaryColor }}
+              {(() => {
+                const validCount = myOrders.filter(
+                  (o) =>
+                    o.status !== "VOID" &&
+                    Array.isArray(o.lines) &&
+                    o.lines.some((l) => l.state !== "VOID"),
+                ).length;
+                if (validCount === 0) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("profile")}
+                    className="relative p-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs hover:bg-zinc-50 cursor-pointer"
+                    aria-label="Siparişlerim"
                   >
-                    {myOrders.length}
-                  </span>
-                </button>
-              )}
+                    <BellIcon className="size-4" />
+                    <span
+                      className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-white text-[9px] font-black"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      {validCount}
+                    </span>
+                  </button>
+                );
+              })()}
             </div>
           </div>
 

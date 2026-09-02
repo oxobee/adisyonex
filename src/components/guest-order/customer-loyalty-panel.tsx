@@ -179,31 +179,38 @@ export function CustomerLoyaltyPanel({
       o.lines.some((l) => l.state !== "VOID"),
   );
 
+  const validProfileOrders = useMemo(() => {
+    return (profile?.orders || []).filter(
+      (o) =>
+        o.status !== "VOID" &&
+        Array.isArray(o.lines) &&
+        o.lines.some((l) => l.state !== "VOID"),
+    );
+  }, [profile?.orders]);
+
   // Computed true total spent across all past profile orders and live table orders
   const computedTotalSpent = useMemo(() => {
     let sum = 0;
-    if (profile?.orders) {
-      for (const ord of profile.orders) {
-        if (ord.status !== "VOID") {
-          sum += ord.grandTotal || 0;
-        }
+    if (validProfileOrders.length > 0) {
+      for (const ord of validProfileOrders) {
+        sum += ord.grandTotal || 0;
       }
     }
-    if (liveOrders) {
-      const profileIds = new Set(profile?.orders?.map((o) => o.id) || []);
+    if (liveOrders.length > 0) {
+      const profileIds = new Set(validProfileOrders.map((o) => o.id));
       for (const ord of liveOrders) {
-        if (ord.status !== "VOID" && !profileIds.has(ord.id)) {
+        if (!profileIds.has(ord.id)) {
           sum += ord.total || 0;
         }
       }
     }
     return Math.max(sum, profile?.stats.totalSpent || 0);
-  }, [profile, liveOrders]);
+  }, [profile, validProfileOrders, liveOrders]);
 
   const computedOrderCount = useMemo(() => {
-    const profileIds = new Set(profile?.orders?.map((o) => o.id) || []);
-    let count = profile?.orders?.length || profile?.stats.orderCount || 0;
-    if (liveOrders) {
+    const profileIds = new Set(validProfileOrders.map((o) => o.id));
+    let count = validProfileOrders.length || profile?.stats.orderCount || 0;
+    if (liveOrders.length > 0) {
       for (const ord of liveOrders) {
         if (!profileIds.has(ord.id)) {
           count++;
@@ -211,7 +218,7 @@ export function CustomerLoyaltyPanel({
       }
     }
     return count;
-  }, [profile, liveOrders]);
+  }, [profile, validProfileOrders, liveOrders]);
 
   // Handle SMS OTP Sending (Simulation)
   const handleSendOtp = (e: React.FormEvent) => {
@@ -734,15 +741,15 @@ export function CustomerLoyaltyPanel({
           )}
 
           {/* Geçmiş Siparişler (Kategorize ve Tarihsel) */}
-          {profile.orders.length > 0 && (
+          {validProfileOrders.length > 0 && (
             <div className="space-y-2.5">
               <h4 className="text-xs font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 px-1">
                 <ReceiptIcon className="size-3.5" style={{ color: primaryColor }} />
-                <span>Geçmiş Siparişlerim ({profile.orders.length})</span>
+                <span>Geçmiş Siparişlerim ({validProfileOrders.length})</span>
               </h4>
 
               <div className="space-y-2.5 max-h-72 overflow-y-auto pr-0.5 scrollbar-thin">
-                {profile.orders.map((ord) => (
+                {validProfileOrders.map((ord) => (
                   <div
                     key={ord.id}
                     className="bg-white rounded-3xl p-3.5 border border-zinc-200/80 shadow-xs space-y-2 text-xs"

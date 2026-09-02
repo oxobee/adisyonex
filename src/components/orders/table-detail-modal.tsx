@@ -22,6 +22,7 @@ import {
   advanceOrderStateAction,
   deliverTableOrdersAction,
 } from "@/actions/order.actions";
+import { PackagedDeliveryDialog } from "@/components/waiter/packaged-delivery-dialog";
 import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,7 @@ export function TableDetailModal({
 }) {
   const router = useRouter();
   const [loadingActionId, setLoadingActionId] = useState<string | null>(null);
+  const [packagedOrder, setPackagedOrder] = useState<OrderDTO | null>(null);
 
   const activeOrders = useMemo(
     () => orders.filter((o) => o.status !== "VOID"),
@@ -85,7 +87,7 @@ export function TableDetailModal({
       } else {
         toast.error(res.error || "İşlem gerçekleştirilemedi");
       }
-    } catch (e) {
+    } catch {
       toast.error("Bir hata oluştu");
     } finally {
       setLoadingActionId(null);
@@ -94,6 +96,10 @@ export function TableDetailModal({
 
   const handleDeliverTable = async () => {
     if (!table) return;
+    if (activeOrders.length > 0) {
+      setPackagedOrder(activeOrders[0]);
+      return;
+    }
     setLoadingActionId(`table-${table.id}`);
     try {
       const res = await deliverTableOrdersAction({ tableId: table.id });
@@ -103,7 +109,7 @@ export function TableDetailModal({
       } else {
         toast.error(res.error || "İşlem başarısız oldu");
       }
-    } catch (e) {
+    } catch {
       toast.error("Bir hata oluştu");
     } finally {
       setLoadingActionId(null);
@@ -497,6 +503,13 @@ export function TableDetailModal({
           )}
         </div>
       </DialogContent>
+
+      <PackagedDeliveryDialog
+        order={packagedOrder}
+        open={Boolean(packagedOrder)}
+        onOpenChange={(open) => !open && setPackagedOrder(null)}
+        onDelivered={() => router.refresh()}
+      />
     </Dialog>
   );
 }

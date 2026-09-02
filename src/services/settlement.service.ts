@@ -1,5 +1,6 @@
 import type { SettleInput, SettleTableInput } from "@/lib/validators/order";
 import { settleManyOrders, settleOrder } from "@/repositories/order.repository";
+import { clearTableDeviceLock } from "@/lib/table-device-lock";
 import { computeBill } from "@/services/billing";
 import {
   loadOwnedOrder,
@@ -50,6 +51,9 @@ export const settle = async (
       receivedById: ctx.userId,
     })),
   });
+  if (order.tableId) {
+    await clearTableDeviceLock(order.tableId).catch(() => undefined);
+  }
   return mapOrder(settled);
 };
 
@@ -150,5 +154,10 @@ export const settleTable = async (
   }));
 
   const settled = await settleManyOrders(ctx.restaurantId, settlements);
+  for (const ord of orders) {
+    if (ord.tableId) {
+      await clearTableDeviceLock(ord.tableId).catch(() => undefined);
+    }
+  }
   return settled.map(mapOrder);
 };

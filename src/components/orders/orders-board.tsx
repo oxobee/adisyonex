@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 
 import { deliverTableOrdersAction, voidOrderAction } from "@/actions/order.actions";
+import { PackagedDeliveryDialog } from "@/components/waiter/packaged-delivery-dialog";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
 import { TableBillModal } from "@/components/orders/table-bill-modal";
 import { TableCard, type TableStatus } from "@/components/orders/table-card";
@@ -242,6 +243,7 @@ export function OrdersBoard({
   } | null>(null);
   const [detailGroup, setDetailGroup] = useState<TableGroup | null>(null);
   const [voidConfirmTable, setVoidConfirmTable] = useState<TableDTO | null>(null);
+  const [selectedPackagedOrder, setSelectedPackagedOrder] = useState<OrderDTO | null>(null);
 
   const { supported, enabled, toggle, announce } = useAnnouncer();
   const prevMapRef = useRef<Map<string, number> | null>(null);
@@ -524,6 +526,11 @@ export function OrdersBoard({
   };
 
   const handleDeliverTable = async (tableId: string) => {
+    const tableOrder = openOrders.find((o) => o.tableId === tableId);
+    if (tableOrder) {
+      setSelectedPackagedOrder(tableOrder);
+      return;
+    }
     try {
       const res = await deliverTableOrdersAction({ tableId });
       if (res.success) {
@@ -533,7 +540,7 @@ export function OrdersBoard({
       } else {
         toast.error(res.error || "İşlem başarısız oldu");
       }
-    } catch (e) {
+    } catch {
       toast.error("Bir hata oluştu");
     }
   };
@@ -1118,6 +1125,13 @@ export function OrdersBoard({
           </DialogContent>
         </Dialog>
       ) : null}
+
+      <PackagedDeliveryDialog
+        order={selectedPackagedOrder}
+        open={Boolean(selectedPackagedOrder)}
+        onOpenChange={(open) => !open && setSelectedPackagedOrder(null)}
+        onDelivered={() => router.refresh()}
+      />
     </div>
   );
 }

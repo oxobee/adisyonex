@@ -152,6 +152,23 @@ export function GuestOrderPage({
   );
   const idempotencyKey = useRef<string>(uuid());
 
+  // Ensure device ID is permanently preserved on this physical device
+  useEffect(() => {
+    try {
+      const match = document.cookie.match(/(?:^|;\s*)adisyoon_device_id=([^;]*)/);
+      const cookieDeviceId = match ? match[1] : null;
+      const localDeviceId = localStorage.getItem("adisyoon_device_id");
+
+      if (cookieDeviceId && !localDeviceId) {
+        localStorage.setItem("adisyoon_device_id", cookieDeviceId);
+      } else if (localDeviceId && !cookieDeviceId) {
+        document.cookie = `adisyoon_device_id=${localDeviceId}; path=/; max-age=31536000; SameSite=Lax`;
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
   // Restore cart on mount
   useEffect(() => {
     const saved = readGuestSession(storageKey);

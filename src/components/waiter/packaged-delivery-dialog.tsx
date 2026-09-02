@@ -19,38 +19,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { OrderDTO } from "@/types/order";
+import type { OrderDTO, OrderLineDTO } from "@/types/order";
 import { cn } from "@/lib/utils";
+
+export const isPackagedOrBeverageLine = (l: OrderLineDTO): boolean => {
+  if (l.state === "SERVED" || l.state === "VOID") return false;
+  if (l.itemType === "PACKAGED_GOODS" || l.itemType === "OTHER") return true;
+  const name = (l.name || "").toLowerCase();
+  const keywords = [
+    "kutu", "şişe", "sise", "kola", "cola", "fanta", "sprite", "su", "soda",
+    "ayran", "bira", "red bull", "enerji", "ice tea", "fusetea", "fuse tea",
+    "cips", "meyve suyu", "şalgam", "salgam", "gazoz", "icetea", "meşrubat",
+    "mesrubat", "içecek", "icecek", "limonata", "çay", "cay", "kahve"
+  ];
+  return keywords.some((kw) => name.includes(kw));
+};
 
 interface PackagedDeliveryDialogProps {
   readonly order: OrderDTO | null;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
+  readonly onDelivered?: () => void;
 }
 
 export function PackagedDeliveryDialog({
   order,
   open,
   onOpenChange,
+  onDelivered,
 }: PackagedDeliveryDialogProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // Find all unserved packaged lines in the order
+  // Find all unserved packaged/beverage lines, or fall back to any unserved lines
   const packagedLines = useMemo(() => {
     if (!order) return [];
-    return order.lines.filter(
-      (l) =>
-        l.itemType === "PACKAGED_GOODS" &&
-        l.state !== "SERVED" &&
-        l.state !== "VOID",
+    const unserved = order.lines.filter(
+      (l) => l.state !== "SERVED" && l.state !== "VOID",
     );
+    const packaged = unserved.filter(isPackagedOrBeverageLine);
+    return packaged.length > 0 ? packaged : unserved;
   }, [order]);
 
   // Selected line IDs state (by default all selected for quick delivery)
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // When opened, sync initial selection with all unserved packaged lines
   const allIds = useMemo(() => packagedLines.map((l) => l.id), [packagedLines]);
   const isAllSelected =
     packagedLines.length > 0 && selectedIds.length === packagedLines.length;
@@ -86,9 +99,10 @@ export function PackagedDeliveryDialog({
       const res = await deliverOrderLinesAction({ lineIds: selectedIds });
       if (res.success) {
         toast.success(
-          `${selectedIds.length} adet paketli ürün teslim edildi ✓`,
+          `${selectedIds.length} adet ürün teslim edildi ✓`,
         );
         onOpenChange(false);
+        onDelivered?.();
         router.refresh();
       } else {
         toast.error(res.error || "Teslim işlemi başarısız.");
@@ -124,7 +138,7 @@ export function PackagedDeliveryDialog({
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {packagedLines.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
-              Teslim bekleyen paketli ürün bulunmuyor.
+              Teslim bekleyen ürün bulunmuyor.
             </div>
           ) : (
             packagedLines.map((line) => {

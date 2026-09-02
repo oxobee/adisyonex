@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { LogOutIcon, PlusIcon, PackageCheckIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { PackagedDeliveryDialog } from "./packaged-delivery-dialog";
+import { PackagedDeliveryDialog, isPackagedOrBeverageLine } from "./packaged-delivery-dialog";
 import { markPickedUpAction } from "@/actions/kitchen.actions";
 import { staffLogoutAction } from "@/actions/staff-auth.actions";
 import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
@@ -239,12 +239,7 @@ export function WaiterHome({
                   </span>
                 </Link>
                 {(() => {
-                  const hasUnservedPackaged = order.lines.some(
-                    (l) =>
-                      l.itemType === "PACKAGED_GOODS" &&
-                      l.state !== "SERVED" &&
-                      l.state !== "VOID",
-                  );
+                  const hasUnservedPackaged = order.lines.some(isPackagedOrBeverageLine);
                   const ready = isReady(order);
                   if (!hasUnservedPackaged && !ready) return null;
 

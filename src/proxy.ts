@@ -125,7 +125,20 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (pathname.startsWith("/order")) {
+    const existingId = request.cookies.get("adisyoon_device_id")?.value;
+    if (!existingId) {
+      response.cookies.set("adisyoon_device_id", crypto.randomUUID(), {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+        httpOnly: false,
+      });
+    }
+  }
+
+  return response;
 }
 
 // Run on pages + mobile API. Other `/api/*` routes are excluded from proxy.
