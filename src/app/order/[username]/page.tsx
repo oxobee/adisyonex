@@ -22,10 +22,10 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ table?: string }>;
+  searchParams: Promise<{ table?: string; previewTheme?: string }>;
 }) {
   const { username } = await params;
-  const { table } = await searchParams;
+  const { table, previewTheme } = await searchParams;
 
   const result = await loadGuestOrderPage(username, table);
 
@@ -77,7 +77,7 @@ export default async function OrderPage({
         verifiedPhoneMasked={verifiedPhoneMasked}
         verifiedExpiresAt={verifiedExpiresAt}
         initialOrders={initialOrders}
-        qrMenuTheme={data.qrMenuTheme || "MODERN"}
+        qrMenuTheme={previewTheme || data.qrMenuTheme || "MODERN"}
       />
     </main>
   );

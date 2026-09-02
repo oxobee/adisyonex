@@ -200,6 +200,8 @@ export function MenuDesignManager({
           <PhonePreviewMockup
             theme={previewTheme}
             restaurantName={restaurantName}
+            restaurantUsername={restaurantUsername}
+            previewTableId={previewTableId}
             logoUrl={logoUrl}
             menu={menu}
             tableLabel={previewTableLabel}

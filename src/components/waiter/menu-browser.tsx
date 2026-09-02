@@ -82,14 +82,18 @@ export function MenuBrowser({
   menu,
   onQuickAdd,
   onOpenDetail,
+  qrMenuTheme = "MODERN",
 }: {
   menu: MenuDTO;
   onQuickAdd: (item: MenuItemDTO) => void;
   onOpenDetail: (item: MenuItemDTO) => void;
+  qrMenuTheme?: string;
 }) {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">(
+    qrMenuTheme === "QSR_FASTFOOD" || qrMenuTheme === "VISUAL_GRID" ? "grid" : "list",
+  );
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   // Detailed Filter States
@@ -322,15 +326,24 @@ export function MenuBrowser({
             type="button"
             onClick={() => setCategoryId(null)}
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 select-none active:scale-95 cursor-pointer",
-              categoryId === null
-                ? "border-primary bg-primary text-primary-foreground shadow-sm scale-[1.02]"
-                : "border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",
+              "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold transition-all duration-200 select-none active:scale-95 cursor-pointer",
+              qrMenuTheme === "QSR_FASTFOOD"
+                ? categoryId === null
+                  ? "border-red-600 bg-red-600 text-white shadow-sm shadow-red-500/25 scale-[1.02]"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+                : categoryId === null
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm scale-[1.02]"
+                  : "border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",
             )}
           >
             <span>⭐</span>
             <span>Tümü</span>
-            <span className={cn("rounded-full px-1.5 py-0.2 text-[10px]", categoryId === null ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground")}>
+            <span className={cn(
+              "rounded-full px-1.5 py-0.2 text-[10px]",
+              qrMenuTheme === "QSR_FASTFOOD"
+                ? categoryId === null ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-600"
+                : categoryId === null ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+            )}>
               {menu.items.filter((i) => i.isActive).length}
             </span>
           </button>
@@ -345,10 +358,14 @@ export function MenuBrowser({
                 type="button"
                 onClick={() => setCategoryId(c.id)}
                 className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 select-none active:scale-95 cursor-pointer",
-                  isSelected
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm scale-[1.02]"
-                    : "border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",
+                  "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold transition-all duration-200 select-none active:scale-95 cursor-pointer",
+                  qrMenuTheme === "QSR_FASTFOOD"
+                    ? isSelected
+                      ? "border-red-600 bg-red-600 text-white shadow-sm shadow-red-500/25 scale-[1.02]"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+                    : isSelected
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm scale-[1.02]"
+                      : "border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",
                 )}
               >
                 <span>{emoji}</span>
@@ -356,9 +373,9 @@ export function MenuBrowser({
                 <span
                   className={cn(
                     "rounded-full px-1.5 py-0.2 text-[10px]",
-                    isSelected
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
+                    qrMenuTheme === "QSR_FASTFOOD"
+                      ? isSelected ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-600"
+                      : isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground",
                   )}
                 >
                   ({count})

@@ -530,7 +530,12 @@ export function GuestOrderPage({
         </div>
       </div>
 
-      <MenuBrowser menu={menu} onQuickAdd={onQuickAdd} onOpenDetail={setConfigItem} />
+      <MenuBrowser
+        menu={menu}
+        onQuickAdd={onQuickAdd}
+        onOpenDetail={setConfigItem}
+        qrMenuTheme={qrMenuTheme}
+      />
 
       {/* Floating Bottom Cart Pill */}
       {itemCount > 0 ? (

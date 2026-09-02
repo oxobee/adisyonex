@@ -6,6 +6,7 @@ import {
   type OrderWithRelations,
 } from "@/repositories/order.repository";
 import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
+import { findTablesByRestaurant } from "@/repositories/table.repository";
 import { computeBill } from "@/services/billing";
 import { getMenu } from "@/services/menu-item.service";
 import {
@@ -133,10 +134,20 @@ export const loadGuestOrderPage = async (
     return { status: "invalid_table", restaurantName: restaurant.name };
   }
   let table: { id: string; label: string };
-  try {
-    table = await resolveTableForOrder(restaurant.id, tableId);
-  } catch {
-    return { status: "invalid_table", restaurantName: restaurant.name };
+  if (tableId === "preview") {
+    const allTables = await findTablesByRestaurant(restaurant.id);
+    const firstTable = allTables.find((t) => t.isActive) || allTables[0];
+    if (firstTable) {
+      table = { id: firstTable.id, label: firstTable.label };
+    } else {
+      table = { id: "preview-table", label: "Masa 1" };
+    }
+  } else {
+    try {
+      table = await resolveTableForOrder(restaurant.id, tableId);
+    } catch {
+      return { status: "invalid_table", restaurantName: restaurant.name };
+    }
   }
   const menu = await getMenu(restaurant.id);
   return {
