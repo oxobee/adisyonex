@@ -54,10 +54,13 @@ import {
 import { uuid } from "@/lib/uuid";
 import { cn } from "@/lib/utils";
 import { computeBill } from "@/services/billing";
+import type { QrSliderItem } from "@/services/restaurant-settings.service";
 import type { MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 
 import { MenuBrowser } from "../waiter/menu-browser";
+import { newLineKey } from "../pos/types";
+import { Theme2QsrView } from "./theme2-qsr-view";
 
 const orderStatus = (
   o: GuestOrderSummaryDTO,
@@ -92,6 +95,10 @@ export function GuestOrderPage({
   verifiedExpiresAt,
   initialOrders,
   qrMenuTheme = "MODERN",
+  qrPrimaryColor = "#FF5500",
+  qrSecondaryColor = "#FFF7ED",
+  qrSlidersEnabled = true,
+  qrSliders,
 }: {
   readonly username: string;
   readonly tableId: string;
@@ -104,6 +111,10 @@ export function GuestOrderPage({
   readonly verifiedExpiresAt: number | null;
   readonly initialOrders: readonly GuestOrderSummaryDTO[];
   readonly qrMenuTheme?: string;
+  readonly qrPrimaryColor?: string;
+  readonly qrSecondaryColor?: string;
+  readonly qrSlidersEnabled?: boolean;
+  readonly qrSliders?: readonly QrSliderItem[] | null;
 }) {
   const cart = useOrderCart();
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
@@ -445,11 +456,66 @@ export function GuestOrderPage({
     );
   }
 
+  if (qrMenuTheme === "QSR_FASTFOOD") {
+    return (
+      <Theme2QsrView
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tableLabel={tableLabel}
+        menu={menu}
+        primaryColor={qrPrimaryColor}
+        secondaryColor={qrSecondaryColor}
+        slidersEnabled={qrSlidersEnabled}
+        sliders={qrSliders}
+        cartItems={cart.cart}
+        cartItemCount={itemCount}
+        cartGrandTotal={bill.grandTotal}
+        onQuickAdd={onQuickAdd}
+        onAddCustomLine={(line) => {
+          const variant = line.variantId ? line.item.variants.find((v) => v.id === line.variantId) : null;
+          cart.addLine({
+            key: newLineKey(),
+            menuItemId: line.item.id,
+            name: line.item.name,
+            variantId: variant?.id ?? null,
+            variantName: variant?.name ?? null,
+            unitPrice: variant ? variant.price : line.item.price,
+            taxRate: line.item.tax.rate,
+            taxInclusive: line.item.tax.inclusive,
+            modifiers: (line.modifierItems ?? []).map((m) => ({
+              id: m.optionId,
+              name: m.optionName,
+              priceDelta: m.price,
+            })),
+            quantity: line.quantity,
+            lineNote: line.notes ?? null,
+            isComp: false,
+          });
+        }}
+        onUpdateQuantity={(key, qty) => {
+          const existing = cart.cart.find((c) => c.key === key);
+          if (existing) {
+            cart.changeQty(key, qty - existing.quantity);
+          }
+        }}
+        onRemoveLine={cart.removeLine}
+        onClearCart={cart.clear}
+        onPlaceOrder={async () => {
+          submitOrder();
+        }}
+        onRequestBill={async () => {
+          await requestBill.execute({ username, tableId });
+        }}
+        myOrders={myOrders}
+        busy={busy}
+      />
+    );
+  }
+
   return (
     <div className={cn(
       "mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32 transition-colors",
       qrMenuTheme === "ELEGANT_DARK" && "bg-zinc-950 text-zinc-100",
-      qrMenuTheme === "QSR_FASTFOOD" && "bg-[#f8f8f9] text-zinc-900",
     )}>
       {/* Lively & Themed Top Banner with Square Logo */}
       <div

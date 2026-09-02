@@ -3,7 +3,7 @@ import { MenuDesignManager } from "@/components/menu-design/menu-design-manager"
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { findRestaurantById } from "@/repositories/restaurant.repository";
 import { getMenu } from "@/services/menu-item.service";
-import { getQrMenuTheme } from "@/services/restaurant-settings.service";
+import { getQrMenuTheme, getQrThemeCustomization } from "@/services/restaurant-settings.service";
 import { getTables } from "@/services/table.service";
 
 export default async function MenuDesignPage() {
@@ -12,11 +12,17 @@ export default async function MenuDesignPage() {
     redirect("/dashboard/orders");
   }
 
-  const [restaurant, menu, currentTheme, tables] = await Promise.all([
+  const [restaurant, menu, currentTheme, tables, customization] = await Promise.all([
     findRestaurantById(ctx.restaurantId),
     getMenu(ctx.restaurantId),
     getQrMenuTheme(ctx.restaurantId).catch(() => "MODERN"),
     getTables(ctx.restaurantId).catch(() => []),
+    getQrThemeCustomization(ctx.restaurantId).catch(() => ({
+      qrPrimaryColor: "#FF5500",
+      qrSecondaryColor: "#FFF7ED",
+      qrSlidersEnabled: true,
+      qrSliders: [],
+    })),
   ]);
 
   if (!restaurant || restaurant.deletedAt) {
@@ -42,6 +48,7 @@ export default async function MenuDesignPage() {
         logoUrl={restaurant.logoUrl}
         menu={menu}
         currentTheme={currentTheme}
+        initialCustomization={customization}
       />
     </div>
   );

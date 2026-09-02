@@ -319,3 +319,76 @@ export const updateQrMenuTheme = async (
 ): Promise<void> => {
   await updateRestaurant(restaurantId, { qrMenuTheme: theme });
 };
+
+export interface QrSliderItem {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle?: string;
+  readonly imageUrl?: string;
+  readonly buttonText?: string;
+  readonly isActive: boolean;
+  readonly sortOrder: number;
+}
+
+export interface QrThemeCustomizationDTO {
+  readonly qrPrimaryColor: string;
+  readonly qrSecondaryColor: string;
+  readonly qrSlidersEnabled: boolean;
+  readonly qrSliders: readonly QrSliderItem[];
+}
+
+export const DEFAULT_QR_SLIDERS: readonly QrSliderItem[] = [
+  {
+    id: "slide-1",
+    title: "Our Best Seller! 🔥",
+    subtitle: "Loved by thousands, now it's your turn!",
+    imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
+    buttonText: "Order now",
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    id: "slide-2",
+    title: "Özel Fırın Lezzetleri 🍕",
+    subtitle: "Taptaze çıtır hamur ve gerçek mozzarella",
+    imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80",
+    buttonText: "Menüyü Gör",
+    isActive: true,
+    sortOrder: 2,
+  },
+];
+
+export const getQrThemeCustomization = async (
+  restaurantId: string,
+): Promise<QrThemeCustomizationDTO> => {
+  const restaurant = await findRestaurantById(restaurantId);
+  if (!restaurant || restaurant.deletedAt) {
+    throw new Error(RESTAURANT_NOT_FOUND);
+  }
+
+  let sliders: QrSliderItem[] = [];
+  if (Array.isArray(restaurant.qrSliders) && (restaurant.qrSliders as unknown[]).length > 0) {
+    sliders = restaurant.qrSliders as unknown as QrSliderItem[];
+  } else {
+    sliders = [...DEFAULT_QR_SLIDERS];
+  }
+
+  return {
+    qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
+    qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
+    qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
+    qrSliders: sliders,
+  };
+};
+
+export const updateQrThemeCustomization = async (
+  restaurantId: string,
+  data: Partial<QrThemeCustomizationDTO>,
+): Promise<void> => {
+  await updateRestaurant(restaurantId, {
+    ...(data.qrPrimaryColor ? { qrPrimaryColor: data.qrPrimaryColor } : {}),
+    ...(data.qrSecondaryColor ? { qrSecondaryColor: data.qrSecondaryColor } : {}),
+    ...(typeof data.qrSlidersEnabled === "boolean" ? { qrSlidersEnabled: data.qrSlidersEnabled } : {}),
+    ...(data.qrSliders ? { qrSliders: data.qrSliders as unknown as object } : {}),
+  });
+};

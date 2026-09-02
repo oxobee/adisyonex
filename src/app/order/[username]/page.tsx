@@ -78,6 +78,10 @@ export default async function OrderPage({
         verifiedExpiresAt={verifiedExpiresAt}
         initialOrders={initialOrders}
         qrMenuTheme={previewTheme || data.qrMenuTheme || "MODERN"}
+        qrPrimaryColor={data.qrPrimaryColor || "#FF5500"}
+        qrSecondaryColor={data.qrSecondaryColor || "#FFF7ED"}
+        qrSlidersEnabled={data.qrSlidersEnabled ?? true}
+        qrSliders={data.qrSliders as never}
       />
     </main>
   );

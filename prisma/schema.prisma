@@ -192,6 +192,10 @@ model Restaurant {
   // Public guest self-ordering (`/order/[username]`); off until the owner opts in.
   selfOrderEnabled Boolean            @default(false)
   qrMenuTheme      String?            @default("MODERN")
+  qrPrimaryColor   String?            @default("#FF5500")
+  qrSecondaryColor String?            @default("#FFF7ED")
+  qrSlidersEnabled Boolean?           @default(true)
+  qrSliders        Json?
 
   // Custom note printed at the foot of the invoice/bill (owner-editable).
   invoiceFooterNote String?

@@ -106,6 +106,10 @@ export interface GuestOrderPageData {
   readonly tableLabel: string;
   readonly menu: MenuDTO;
   readonly qrMenuTheme?: string | null;
+  readonly qrPrimaryColor?: string | null;
+  readonly qrSecondaryColor?: string | null;
+  readonly qrSlidersEnabled?: boolean | null;
+  readonly qrSliders?: readonly object[] | null;
 }
 
 export type GuestOrderPageResult =
@@ -161,6 +165,10 @@ export const loadGuestOrderPage = async (
       tableLabel: table.label,
       menu,
       qrMenuTheme: restaurant.qrMenuTheme || "MODERN",
+      qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
+      qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
+      qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
+      qrSliders: (restaurant.qrSliders as readonly object[]) ?? null,
     },
   };
 };

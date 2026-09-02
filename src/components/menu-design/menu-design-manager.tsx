@@ -16,9 +16,11 @@ import {
 import { toast } from "sonner";
 import { updateQrMenuThemeAction } from "@/actions/settings.actions";
 import { PhonePreviewMockup } from "@/components/menu-design/phone-preview-mockup";
+import { ThemeCustomizerModal } from "@/components/menu-design/theme-customizer-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { QrThemeCustomizationDTO } from "@/services/restaurant-settings.service";
 import type { MenuDTO } from "@/types/menu";
 
 export interface ThemeOption {
@@ -77,6 +79,7 @@ export function MenuDesignManager({
   logoUrl,
   menu,
   currentTheme = "MODERN",
+  initialCustomization,
 }: {
   readonly restaurantId: string;
   readonly restaurantName: string;
@@ -86,10 +89,20 @@ export function MenuDesignManager({
   readonly logoUrl?: string | null;
   readonly menu?: MenuDTO | null;
   readonly currentTheme?: string;
+  readonly initialCustomization?: QrThemeCustomizationDTO;
 }) {
   const [activeTheme, setActiveTheme] = useState<string>(currentTheme || "MODERN");
   const [previewTheme, setPreviewTheme] = useState<string>(currentTheme || "MODERN");
   const [isSaving, setIsSaving] = useState(false);
+  const [customizerTheme, setCustomizerTheme] = useState<ThemeOption | null>(null);
+  const [customizationData, setCustomizationData] = useState<QrThemeCustomizationDTO>(
+    initialCustomization || {
+      qrPrimaryColor: "#FF5500",
+      qrSecondaryColor: "#FFF7ED",
+      qrSlidersEnabled: true,
+      qrSliders: [],
+    },
+  );
 
   const handleApplyTheme = async (themeId: string) => {
     setIsSaving(true);
@@ -246,45 +259,59 @@ export function MenuDesignManager({
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="pt-4 mt-4 border-t border-border/60 flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant={isBeingPreviewed ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => setPreviewTheme(theme.id)}
-                      className={cn(
-                        "flex-1 rounded-xl text-xs font-bold gap-1.5 cursor-pointer",
-                        isBeingPreviewed && "border-primary/40 bg-primary/10 text-primary font-black",
-                      )}
-                    >
-                      <EyeIcon className="size-3.5" />
-                      <span>{isBeingPreviewed ? "Önizleniyor" : "Telefonda Önizle"}</span>
-                    </Button>
+                  <div className="pt-4 mt-4 border-t border-border/60 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={isBeingPreviewed ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => setPreviewTheme(theme.id)}
+                        className={cn(
+                          "flex-1 rounded-xl text-xs font-bold gap-1.5 cursor-pointer",
+                          isBeingPreviewed && "border-primary/40 bg-primary/10 text-primary font-black",
+                        )}
+                      >
+                        <EyeIcon className="size-3.5" />
+                        <span>{isBeingPreviewed ? "Önizleniyor" : "Telefonda Önizle"}</span>
+                      </Button>
 
+                      <Button
+                        type="button"
+                        variant={isCurrentActive ? "outline" : "default"}
+                        size="sm"
+                        disabled={isSaving || isCurrentActive}
+                        onClick={() => handleApplyTheme(theme.id)}
+                        className={cn(
+                          "flex-1 rounded-xl text-xs font-bold gap-1.5 cursor-pointer",
+                          isCurrentActive
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 cursor-default opacity-100"
+                            : "font-black shadow-xs",
+                        )}
+                      >
+                        {isCurrentActive ? (
+                          <>
+                            <CheckCircle2Icon className="size-3.5" />
+                            <span>Seçili Tema</span>
+                          </>
+                        ) : (
+                          <>
+                            <ZapIcon className="size-3.5" />
+                            <span>Tasarımı Uygula</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Temayı Düzenle (Full-screen popup trigger) */}
                     <Button
                       type="button"
-                      variant={isCurrentActive ? "outline" : "default"}
+                      variant="outline"
                       size="sm"
-                      disabled={isSaving || isCurrentActive}
-                      onClick={() => handleApplyTheme(theme.id)}
-                      className={cn(
-                        "flex-1 rounded-xl text-xs font-bold gap-1.5 cursor-pointer",
-                        isCurrentActive
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 cursor-default opacity-100"
-                          : "font-black shadow-xs",
-                      )}
+                      onClick={() => setCustomizerTheme(theme)}
+                      className="w-full rounded-xl text-xs font-bold gap-1.5 border-dashed border-primary/40 text-primary hover:bg-primary/10 hover:border-primary cursor-pointer"
                     >
-                      {isCurrentActive ? (
-                        <>
-                          <CheckCircle2Icon className="size-3.5" />
-                          <span>Seçili Tema</span>
-                        </>
-                      ) : (
-                        <>
-                          <ZapIcon className="size-3.5" />
-                          <span>Tasarımı Uygula</span>
-                        </>
-                      )}
+                      <PaletteIcon className="size-3.5" />
+                      <span>Temayı Düzenle (Renk & Slider)</span>
                     </Button>
                   </div>
                 </div>
@@ -299,10 +326,28 @@ export function MenuDesignManager({
               Sistem yeni QR menü şablonları eklenmeye hazır modüler yapıda tasarlanmıştır. İlerleyen güncellemelerde eklenecek tüm yeni tasarımlar otomatik olarak bu panelde listelenecektir.
             </p>
           </div>
-
         </div>
 
       </div>
+
+      {/* Full-screen Theme Customizer Modal */}
+      {customizerTheme && (
+        <ThemeCustomizerModal
+          open={Boolean(customizerTheme)}
+          onOpenChange={(open) => !open && setCustomizerTheme(null)}
+          themeId={customizerTheme.id}
+          themeName={customizerTheme.name}
+          restaurantName={restaurantName}
+          logoUrl={logoUrl}
+          initialCustomization={customizationData}
+          menu={menu}
+          previewTableLabel={previewTableLabel}
+          onSaved={() => {
+            // refresh page
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

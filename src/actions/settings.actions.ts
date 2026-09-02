@@ -33,6 +33,8 @@ import {
   updateGeolocation,
   clearGeolocation,
   updateQrMenuTheme,
+  updateQrThemeCustomization,
+  type QrThemeCustomizationDTO,
 } from "@/services/restaurant-settings.service";
 import {
   addVideoLink,
@@ -195,6 +197,18 @@ export const updateQrMenuThemeAction = async (
   theme: string,
 ): Promise<ActionResult<void>> => {
   const res = await runOwned((restaurantId) => updateQrMenuTheme(restaurantId, theme));
+  if (res.success) {
+    revalidatePath("/dashboard/menu-design");
+    revalidatePath("/order/[username]", "page");
+    revalidatePath("/", "layout");
+  }
+  return res;
+};
+
+export const updateQrThemeCustomizationAction = async (
+  data: Partial<QrThemeCustomizationDTO>,
+): Promise<ActionResult<void>> => {
+  const res = await runOwned((restaurantId) => updateQrThemeCustomization(restaurantId, data));
   if (res.success) {
     revalidatePath("/dashboard/menu-design");
     revalidatePath("/order/[username]", "page");
