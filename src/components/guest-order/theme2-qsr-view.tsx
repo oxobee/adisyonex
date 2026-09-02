@@ -308,6 +308,17 @@ export function Theme2QsrView({
   const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
   const [itemNote, setItemNote] = useState("");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [orderSummarySheetOpen, setOrderSummarySheetOpen] = useState(false);
+
+  const handleItemAddClick = (item: MenuItemDTO, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (item.variants.length > 0 || item.modifierGroups.length > 0) {
+      setDetailItem(item);
+    } else {
+      onQuickAdd(item);
+      toast.success(`${item.name} sepete eklendi!`);
+    }
+  };
 
   // Checkout & Celebration State
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -938,11 +949,7 @@ export function Theme2QsrView({
 
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onQuickAdd(item);
-                                  toast.success(`${item.name} eklendi!`);
-                                }}
+                                onClick={(e) => handleItemAddClick(item, e)}
                                 className="size-7 rounded-full text-white font-black flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
                                 style={{ backgroundColor: primaryColor }}
                               >
@@ -1094,11 +1101,7 @@ export function Theme2QsrView({
 
                                   <button
                                     type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onQuickAdd(item);
-                                      toast.success(`${item.name} eklendi!`);
-                                    }}
+                                    onClick={(e) => handleItemAddClick(item, e)}
                                     className="px-3 py-1 rounded-full text-white font-black text-xs flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
                                     style={{ backgroundColor: primaryColor }}
                                   >
@@ -1186,17 +1189,14 @@ export function Theme2QsrView({
                                   {formatCurrency(item.price)}
                                 </span>
                                 <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onQuickAdd(item);
-                                    toast.success(`${item.name} eklendi!`);
-                                  }}
-                                  className="size-7 rounded-full text-white font-black flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
-                                  style={{ backgroundColor: primaryColor }}
-                                >
-                                  <PlusIcon className="size-3.5 stroke-[3]" />
-                                </button>
+                                   type="button"
+                                   onClick={(e) => handleItemAddClick(item, e)}
+                                   className="px-2.5 py-1 rounded-full text-white font-black text-[11px] flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
+                                   style={{ backgroundColor: primaryColor }}
+                                 >
+                                   <PlusIcon className="size-3 stroke-[3]" />
+                                   <span>Ekle</span>
+                                 </button>
                               </div>
                             </div>
                           );
@@ -1267,11 +1267,7 @@ export function Theme2QsrView({
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onQuickAdd(item);
-                                    toast.success(`${item.name} eklendi!`);
-                                  }}
+                                  onClick={(e) => handleItemAddClick(item, e)}
                                   className="px-2.5 py-1 rounded-full text-white font-black text-[11px] flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
                                   style={{ backgroundColor: primaryColor }}
                                 >
@@ -1965,7 +1961,170 @@ export function Theme2QsrView({
       </Dialog>
 
       {/* ============================================================ */}
-      {/* 8. FLOATING BOTTOM NAVIGATION BAR (Görseldeki Alt Çubuk)     */}
+      {/* 8. FLOATING CART BAR (ALT MENÜ ÜSTÜNDEKİ SİPARİŞ ÖZETİ ÇUBUĞU) */}
+      {/* ============================================================ */}
+      {cartItemCount > 0 && activeTab !== "profile" && (
+        <div className="fixed inset-x-0 bottom-[82px] z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] animate-in slide-in-from-bottom-3 duration-300">
+          <div className="mx-auto flex w-full max-w-md items-center justify-between rounded-3xl bg-zinc-950 p-2.5 sm:p-3 shadow-2xl border border-zinc-800/90 text-white pointer-events-auto">
+            {/* Left: Bag Icon with Count Badge & Amount */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex size-11 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-white shrink-0">
+                <ShoppingBagIcon className="size-5" />
+                <span
+                  className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full text-white text-[10px] font-black shadow-md ring-2 ring-zinc-950"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {cartItemCount}
+                </span>
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-[11px] font-medium text-zinc-400">
+                  Toplam ({cartItemCount} Ürün)
+                </span>
+                <span className="text-base font-black tracking-tight text-white tabular-nums">
+                  {formatCurrency(cartGrandTotal)}
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Sipariş Özeti Button */}
+            <button
+              type="button"
+              onClick={() => setOrderSummarySheetOpen(true)}
+              className="px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs text-white shadow-lg flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <span>Sipariş Özeti →</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 9. SİPARİŞ ÖZETİ BOTTOM SHEET (GÖRSELDEKİ POPUP ARAYÜZÜ)      */}
+      {/* ============================================================ */}
+      <Sheet open={orderSummarySheetOpen} onOpenChange={setOrderSummarySheetOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[88vh] rounded-t-[32px] p-0 overflow-hidden flex flex-col bg-white border-t border-zinc-200 shadow-2xl"
+        >
+          {/* Sheet Header */}
+          <SheetHeader className="p-4 pb-3 border-b flex flex-row items-center justify-between space-y-0 text-left">
+            <SheetTitle className="text-lg font-black text-zinc-900">
+              Sipariş Özeti
+            </SheetTitle>
+            <button
+              type="button"
+              onClick={() => setOrderSummarySheetOpen(false)}
+              className="size-8 rounded-full bg-zinc-100 text-zinc-500 hover:text-zinc-800 flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <XIcon className="size-4" />
+            </button>
+          </SheetHeader>
+
+          {/* Items List */}
+          <div className="flex-1 overflow-y-auto p-4 divide-y divide-zinc-100 space-y-3">
+            {cartItems.map((line) => (
+              <div key={line.key} className="pt-3 first:pt-0 space-y-2">
+                {/* Item Title & Line Total */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-black text-zinc-900 leading-snug">
+                      {line.name}
+                    </h4>
+                    {line.variantName && (
+                      <span className="inline-block text-[11px] font-bold text-zinc-500 mt-0.5">
+                        {line.variantName}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-black text-zinc-900 tabular-nums shrink-0">
+                    {formatCurrency(linePrice(line))}
+                  </span>
+                </div>
+
+                {/* Modifier Pills */}
+                {line.modifiers.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {line.modifiers.map((m) => (
+                      <span
+                        key={m.id}
+                        className="px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 text-[11px] font-semibold"
+                      >
+                        {m.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {line.lineNote && (
+                  <p className="text-[11px] text-zinc-400 italic">
+                    &ldquo;{line.lineNote}&rdquo;
+                  </p>
+                )}
+
+                {/* Stepper + Trash Button */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center rounded-xl border border-zinc-200 bg-white p-0.5 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => onUpdateQuantity(line.key, line.quantity - 1)}
+                      className="size-7 rounded-lg flex items-center justify-center text-zinc-600 hover:bg-zinc-100 active:scale-90 transition-all cursor-pointer"
+                    >
+                      <MinusIcon className="size-3.5 stroke-[2.5]" />
+                    </button>
+                    <span className="w-8 text-center text-xs font-black tabular-nums text-zinc-900">
+                      {line.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateQuantity(line.key, line.quantity + 1)}
+                      className="size-7 rounded-lg flex items-center justify-center text-zinc-600 hover:bg-zinc-100 active:scale-90 transition-all cursor-pointer"
+                    >
+                      <PlusIcon className="size-3.5 stroke-[2.5]" />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onRemoveLine(line.key)}
+                    className="size-8 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                    title="Ürünü Sil"
+                  >
+                    <Trash2Icon className="size-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Sheet Footer: Total + Sipariş Oluştur Button */}
+          <div className="p-4 border-t border-dashed border-zinc-200 bg-white space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-black text-zinc-800">Toplam Tutar</span>
+              <span className="text-lg font-black text-zinc-900 tabular-nums">
+                {formatCurrency(cartGrandTotal)}
+              </span>
+            </div>
+
+            <Button
+              size="lg"
+              disabled={busy || cartItems.length === 0}
+              onClick={async () => {
+                setOrderSummarySheetOpen(false);
+                await onPlaceOrder();
+              }}
+              className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {busy ? "İletiliyor…" : "Sipariş Oluştur"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ============================================================ */}
+      {/* 10. FLOATING BOTTOM NAVIGATION BAR (Ana Sayfa / Kat / Profil) */}
       {/* ============================================================ */}
       <div className="fixed inset-x-0 bottom-4 z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
         <div className="mx-auto flex w-full max-w-md items-center justify-around rounded-3xl bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl border border-zinc-200/90 pointer-events-auto">
@@ -1996,30 +2155,6 @@ export function Theme2QsrView({
           >
             <LayoutGridIcon className="size-5" />
             <span className="text-[10px]">Kategoriler</span>
-          </button>
-
-          {/* Cart Tab with Badge */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("cart")}
-            className={cn(
-              "relative flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all cursor-pointer",
-              activeTab === "cart" ? "font-black scale-105" : "text-zinc-400 font-bold hover:text-zinc-600",
-            )}
-            style={{ color: activeTab === "cart" ? primaryColor : undefined }}
-          >
-            <div className="relative">
-              <ShoppingBagIcon className="size-5" />
-              {cartItemCount > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-2 flex size-4 items-center justify-center rounded-full text-white text-[9px] font-black shadow-xs animate-pulse"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  {cartItemCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px]">Sepetim</span>
           </button>
 
           {/* Profile / Masa Tab */}

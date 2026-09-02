@@ -330,39 +330,45 @@ export function CustomerLoyaltyPanel({
       {liveOrders.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+            <h4 className="text-xs font-black text-red-600 uppercase tracking-wider flex items-center gap-1.5">
               <span className="relative flex size-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full size-2.5 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full size-2.5 bg-red-600" />
               </span>
               <span>Açık Siparişlerim ({liveOrders.length})</span>
             </h4>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-              Canlı Takip Ediliyor 🟢
+            <span className="text-[10px] font-bold text-red-700 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-full">
+              Canlı Takip Ediliyor 🔴
             </span>
           </div>
 
           <div className="space-y-3">
             {liveOrders.map((ord) => {
-              const isPreparing = ord.kitchenStatus === "PREPARING";
-              const isReady = ord.kitchenStatus === "READY";
-              const isWaiting = !isPreparing && !isReady;
+              const nonVoidLines = ord.lines.filter((l) => l.state !== "VOID");
+              const allServed =
+                nonVoidLines.length > 0 &&
+                nonVoidLines.every((l) => l.state === "SERVED");
+              const anyServed = nonVoidLines.some((l) => l.state === "SERVED");
+              const anyPrepared = nonVoidLines.some((l) => l.state === "PREPARED");
+              const anyPreparing = nonVoidLines.some((l) => l.state === "PREPARING");
+
+              // Accurate live kitchen & delivery status:
+              const isDelivered = allServed;
+              const isReady = !isDelivered && (ord.kitchenStatus === "READY" || anyPrepared);
+              const isPreparing =
+                !isDelivered &&
+                !isReady &&
+                (ord.kitchenStatus === "PREPARING" || anyPreparing || anyServed);
+              const isWaiting = !isDelivered && !isReady && !isPreparing;
               const isSettledOrPaid = ord.status === "COMPLETED";
 
               return (
                 <div
                   key={ord.id}
-                  className="relative overflow-hidden bg-white rounded-3xl p-4 border-2 shadow-sm space-y-3 transition-all"
-                  style={{
-                    borderColor: isReady
-                      ? "#10B981"
-                      : isPreparing
-                        ? "#3B82F6"
-                        : `${primaryColor}60`,
-                  }}
+                  className="relative overflow-hidden bg-white rounded-3xl p-4 border-2 border-red-500 shadow-md space-y-3 transition-all"
                 >
                   {/* Top Bar: Order Number & Live Status Badge */}
-                  <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-2.5">
+                  <div className="flex items-center justify-between gap-2 border-b border-red-100 pb-2.5">
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-black text-xs text-zinc-900">
                         Sipariş #{ord.orderNumber || ord.id.slice(-6)}
@@ -373,9 +379,14 @@ export function CustomerLoyaltyPanel({
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {isWaiting && (
-                        <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px] font-black animate-pulse">
-                          ⏳ Mutfakta Bekliyor
+                      {isDelivered && (
+                        <Badge className="bg-red-600 text-white border-red-600 text-[10px] font-black">
+                          🍽️ Masanıza Teslim Edildi
+                        </Badge>
+                      )}
+                      {isReady && !isDelivered && (
+                        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] font-black animate-pulse">
+                          🍽️ Servise Hazır
                         </Badge>
                       )}
                       {isPreparing && (
@@ -383,9 +394,9 @@ export function CustomerLoyaltyPanel({
                           🍳 Hazırlanıyor
                         </Badge>
                       )}
-                      {isReady && (
-                        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] font-black">
-                          🍽️ Servise Hazır
+                      {isWaiting && (
+                        <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px] font-black animate-pulse">
+                          ⏳ Mutfakta Bekliyor
                         </Badge>
                       )}
                       {isSettledOrPaid && (
@@ -401,8 +412,8 @@ export function CustomerLoyaltyPanel({
                     <div
                       className={cn(
                         "py-1.5 rounded-xl border transition-colors",
-                        isWaiting || isPreparing || isReady
-                          ? "bg-amber-50 border-amber-300 text-amber-800 font-black"
+                        isWaiting || isPreparing || isReady || isDelivered
+                          ? "bg-red-50 border-red-200 text-red-700 font-black"
                           : "bg-zinc-50 border-zinc-200 text-zinc-400",
                       )}
                     >
@@ -411,8 +422,8 @@ export function CustomerLoyaltyPanel({
                     <div
                       className={cn(
                         "py-1.5 rounded-xl border transition-colors",
-                        isPreparing || isReady
-                          ? "bg-blue-50 border-blue-300 text-blue-800 font-black animate-pulse"
+                        isPreparing || isReady || isDelivered
+                          ? "bg-red-100 border-red-300 text-red-800 font-black"
                           : "bg-zinc-50 border-zinc-200 text-zinc-400",
                       )}
                     >
@@ -421,8 +432,8 @@ export function CustomerLoyaltyPanel({
                     <div
                       className={cn(
                         "py-1.5 rounded-xl border transition-colors",
-                        isReady
-                          ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-black"
+                        isDelivered || isReady
+                          ? "bg-red-600 text-white font-black border-red-600 shadow-xs"
                           : "bg-zinc-50 border-zinc-200 text-zinc-400",
                       )}
                     >
@@ -720,42 +731,36 @@ export function CustomerLoyaltyPanel({
       {/* ============================================================ */}
       {/* 3. ANA İŞLEM BUTONLARI (GARSON, HESAP, DEĞERLENDİR, SOSYAL)  */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Garson Çağır Butonu */}
-        <button
-          type="button"
-          onClick={() => setWaiterCallModalOpen(true)}
-          className="bg-white rounded-3xl p-4 border border-zinc-200/80 hover:border-zinc-300 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center gap-2 cursor-pointer active:scale-95 group"
-        >
+      {/* Garson Çağır Butonu (Geniş / Tam Boy) */}
+      <button
+        type="button"
+        onClick={() => setWaiterCallModalOpen(true)}
+        className="w-full bg-white rounded-3xl p-4 border border-zinc-200/80 hover:border-zinc-300 shadow-xs hover:shadow-md transition-all flex items-center justify-between gap-4 cursor-pointer active:scale-95 group text-left"
+      >
+        <div className="flex items-center gap-3.5">
           <div
-            className="size-12 rounded-2xl flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform"
+            className="size-13 rounded-2xl flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform shrink-0"
             style={{ backgroundColor: secondaryColor }}
           >
             🛎️
           </div>
           <div>
-            <h5 className="font-black text-xs text-zinc-900">Garson Çağır</h5>
-            <span className="text-[10px] text-zinc-400 block mt-0.5">Masanıza personel çağırın</span>
+            <h5 className="font-black text-sm text-zinc-900">Garson Çağır</h5>
+            <span className="text-[11px] text-zinc-500 block mt-0.5">
+              Masanıza servis personeli yönlendirilsin
+            </span>
           </div>
-        </button>
-
-        {/* Hesap İste Butonu */}
-        <button
-          type="button"
-          onClick={() => setBillModalOpen(true)}
-          className="bg-white rounded-3xl p-4 border border-zinc-200/80 hover:border-zinc-300 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center gap-2 cursor-pointer active:scale-95 group"
+        </div>
+        <div
+          className="size-8 rounded-full flex items-center justify-center text-xs font-black transition-colors"
+          style={{ backgroundColor: secondaryColor, color: primaryColor }}
         >
-          <div
-            className="size-12 rounded-2xl flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform"
-            style={{ backgroundColor: secondaryColor }}
-          >
-            🧾
-          </div>
-          <div>
-            <h5 className="font-black text-xs text-zinc-900">Hesap İste</h5>
-            <span className="text-[10px] text-zinc-400 block mt-0.5">Nakit veya kart ile ödeme</span>
-          </div>
-        </button>
+          ➔
+        </div>
+      </button>
+
+      {/* İkili Butonlar: Değerlendir & Sosyal Medya */}
+      <div className="grid grid-cols-2 gap-2.5">
 
         {/* Bizi Değerlendir Butonu */}
         <button
