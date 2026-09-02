@@ -15,6 +15,7 @@ import {
   LayoutGridIcon,
   MinusIcon,
   PlusIcon,
+  RotateCcwIcon,
   SearchIcon,
   ShoppingBagIcon,
   SlidersHorizontalIcon,
@@ -33,6 +34,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -40,9 +48,59 @@ import type {
   QrHomeSection,
   QrSliderItem,
 } from "@/services/restaurant-settings.service";
-import type { MenuDTO, MenuItemDTO } from "@/types/menu";
+import type { DietaryType, MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 import type { CartLine } from "@/components/pos/types";
+
+const DIET_BADGES: Record<string, { label: string; icon: string }> = {
+  VEG: { label: "Vejetaryen", icon: "🌱" },
+  NON_VEG: { label: "Et / Tavuk", icon: "🥩" },
+  EGG: { label: "Yumurtalı", icon: "🥚" },
+};
+
+const CATEGORY_EMOJIS: Record<string, string> = {
+  burger: "🍔",
+  hamburger: "🍔",
+  pizza: "🍕",
+  pizzalar: "🍕",
+  makarna: "🍝",
+  salata: "🥗",
+  tatli: "🍰",
+  tatlı: "🍰",
+  tatlılar: "🍰",
+  icecek: "🥤",
+  içecek: "🥤",
+  içecekler: "🥤",
+  kahve: "☕",
+  kahveler: "☕",
+  corba: "🥣",
+  çorba: "🥣",
+  çorbalar: "🥣",
+  atistirmalik: "🍟",
+  atıştırmalık: "🍟",
+  kahvalti: "🍳",
+  kahvaltı: "🍳",
+  kebap: "🍢",
+  kebaplar: "🍢",
+  doner: "🥙",
+  döner: "🥙",
+  durum: "🌯",
+  dürüm: "🌯",
+  pide: "🥖",
+  lahmacun: "🫓",
+  tavuk: "🍗",
+  et: "🥩",
+  balik: "🐟",
+  balık: "🐟",
+};
+
+const getCategoryEmoji = (name: string): string => {
+  const normalized = name.toLowerCase().replace(/[^a-z0-9ğüşıöç]/g, "");
+  for (const [key, emoji] of Object.entries(CATEGORY_EMOJIS)) {
+    if (normalized.includes(key)) return emoji;
+  }
+  return "🍽️";
+};
 
 export interface CustomModifierItem {
   readonly groupId: string;
@@ -113,6 +171,102 @@ export function Theme2QsrView({
   const [activeTab, setActiveTab] = useState<"home" | "categories" | "cart" | "profile">("home");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Detailed Filter States (Diet, Allergens, Calories, Price Sort)
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [selectedDiet, setSelectedDiet] = useState<DietaryType | "ALL">("ALL");
+  const [excludedAllergens, setExcludedAllergens] = useState<string[]>([]);
+  const [maxCalories, setMaxCalories] = useState<number | null>(null);
+  const [priceSort, setPriceSort] = useState<"DEFAULT" | "ASC" | "DESC">("DEFAULT");
+
+  // Extract unique allergens from menu items
+  const availableAllergens = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of menu.items) {
+      if (item.allergens) {
+        for (const a of item.allergens) {
+          const key = a.name.trim().toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, a.icon || "⚠️");
+          }
+        }
+      }
+    }
+    return Array.from(map.entries()).map(([name, icon]) => ({
+      name,
+      displayName: name.charAt(0).toUpperCase() + name.slice(1),
+      icon,
+    }));
+  }, [menu.items]);
+
+  // Active filter count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedDiet !== "ALL") count++;
+    if (excludedAllergens.length > 0) count += excludedAllergens.length;
+    if (maxCalories !== null) count++;
+    if (priceSort !== "DEFAULT") count++;
+    return count;
+  }, [selectedDiet, excludedAllergens, maxCalories, priceSort]);
+
+  const resetFilters = () => {
+    setSelectedDiet("ALL");
+    setExcludedAllergens([]);
+    setMaxCalories(null);
+    setPriceSort("DEFAULT");
+  };
+
+  const toggleExcludedAllergen = (allergenName: string) => {
+    const key = allergenName.toLowerCase();
+    setExcludedAllergens((prev) =>
+      prev.includes(key) ? prev.filter((a) => a !== key) : [...prev, key],
+    );
+  };
+
+  // Reusable multi-criteria filter & sorter
+  const applyFilters = (rawItems: readonly MenuItemDTO[]): MenuItemDTO[] => {
+    let result = rawItems.filter((item) => {
+      if (!item.isActive) return false;
+
+      // Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = item.name.toLowerCase().includes(q);
+        const matchesDesc = item.shortDescription?.toLowerCase().includes(q) ?? false;
+        if (!matchesName && !matchesDesc) return false;
+      }
+
+      // Dietary filter
+      if (selectedDiet !== "ALL") {
+        if (item.dietaryType !== selectedDiet) return false;
+      }
+
+      // Allergen Exclusions
+      if (excludedAllergens.length > 0 && item.allergens) {
+        const itemAllergens = item.allergens.map((a) => a.name.toLowerCase());
+        const hasExcluded = excludedAllergens.some((excluded) =>
+          itemAllergens.includes(excluded),
+        );
+        if (hasExcluded) return false;
+      }
+
+      // Calorie filter
+      if (maxCalories !== null) {
+        if (item.calories && item.calories > maxCalories) return false;
+      }
+
+      return true;
+    });
+
+    // Sorting
+    if (priceSort === "ASC") {
+      result = [...result].sort((a, b) => a.price - b.price);
+    } else if (priceSort === "DESC") {
+      result = [...result].sort((a, b) => b.price - a.price);
+    }
+
+    return result;
+  };
 
   // Modals & Details State
   const [detailItem, setDetailItem] = useState<MenuItemDTO | null>(null);
@@ -331,26 +485,125 @@ export function Theme2QsrView({
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="Ürün veya lezzet ara..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 bg-white border border-zinc-200/90 rounded-2xl pl-10 pr-10 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 outline-none shadow-xs focus:ring-2 focus:ring-primary/20 transition-all"
-            />
-            {searchQuery && (
+          {/* Search Bar with Filter Trigger */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Ürün veya lezzet ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-11 bg-white border border-zinc-200/90 rounded-2xl pl-10 pr-10 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 outline-none shadow-xs focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Button with Active Badge */}
+            <button
+              type="button"
+              onClick={() => setFilterDrawerOpen(true)}
+              className={cn(
+                "relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-200/90 bg-white shadow-xs transition-all duration-200 active:scale-95 cursor-pointer",
+                activeFilterCount > 0
+                  ? "border-2 shadow-sm font-black"
+                  : "text-zinc-700 hover:bg-zinc-50",
+              )}
+              style={{
+                borderColor: activeFilterCount > 0 ? primaryColor : undefined,
+                color: activeFilterCount > 0 ? primaryColor : undefined,
+                backgroundColor: activeFilterCount > 0 ? secondaryColor : undefined,
+              }}
+              title="Filtreleme Seçenekleri"
+              aria-label="Filtreleme Seçenekleri"
+            >
+              <SlidersHorizontalIcon className="size-4.5" />
+              {activeFilterCount > 0 && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-xs"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Active Filter Tags Row (Quick Dismiss) */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 px-0.5 animate-in fade-in-50 duration-200">
+              <span className="text-[10px] font-bold text-zinc-400">
+                Filtreler:
+              </span>
+
+              {selectedDiet !== "ALL" && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDiet("ALL")}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border shadow-2xs transition-transform active:scale-95 cursor-pointer"
+                  style={{
+                    backgroundColor: secondaryColor,
+                    borderColor: `${primaryColor}40`,
+                    color: primaryColor,
+                  }}
+                >
+                  <span>{DIET_BADGES[selectedDiet]?.icon}</span>
+                  <span>{DIET_BADGES[selectedDiet]?.label}</span>
+                  <XIcon className="size-3 ml-0.5" />
+                </button>
+              )}
+
+              {excludedAllergens.map((alg) => (
+                <button
+                  key={alg}
+                  type="button"
+                  onClick={() => toggleExcludedAllergen(alg)}
+                  className="inline-flex items-center gap-1 rounded-full bg-red-500/10 border border-red-500/25 px-2.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400 hover:bg-red-500/20 cursor-pointer"
+                >
+                  <span>🚫 {alg} içermeyen</span>
+                  <XIcon className="size-3 ml-0.5" />
+                </button>
+              ))}
+
+              {maxCalories !== null && (
+                <button
+                  type="button"
+                  onClick={() => setMaxCalories(null)}
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 cursor-pointer"
+                >
+                  <span>🔥 ≤ {maxCalories} kcal</span>
+                  <XIcon className="size-3 ml-0.5" />
+                </button>
+              )}
+
+              {priceSort !== "DEFAULT" && (
+                <button
+                  type="button"
+                  onClick={() => setPriceSort("DEFAULT")}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 border border-zinc-200 px-2.5 py-0.5 text-[10px] font-bold text-zinc-700 cursor-pointer"
+                >
+                  <span>💳 {priceSort === "ASC" ? "En Ucuz" : "En Pahalı"}</span>
+                  <XIcon className="size-3 ml-0.5" />
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600"
+                onClick={resetFilters}
+                className="text-[10px] font-bold text-zinc-400 hover:text-zinc-700 underline underline-offset-2 ml-1 cursor-pointer"
               >
-                <XIcon className="size-3.5" />
+                Temizle
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Greeting Typography */}
           <div className="pt-1">
@@ -469,13 +722,17 @@ export function Theme2QsrView({
                 >
                   ⭐
                 </div>
-                <span className={cn("text-[11px] font-bold text-zinc-700 truncate max-w-[64px]")}>
+                <span className={cn(
+                  "text-[11px] truncate max-w-[64px]",
+                  selectedCategory === null ? "font-black text-zinc-950" : "font-bold text-zinc-700",
+                )}>
                   Tümü
                 </span>
               </button>
 
               {categories.map((c) => {
                 const isSelected = selectedCategory === c.id;
+                const emoji = getCategoryEmoji(c.name);
                 return (
                   <button
                     key={c.id}
@@ -496,9 +753,12 @@ export function Theme2QsrView({
                         color: isSelected ? "#ffffff" : undefined,
                       }}
                     >
-                      🍔
+                      {emoji}
                     </div>
-                    <span className="text-[11px] font-bold text-zinc-700 truncate max-w-[64px]">
+                    <span className={cn(
+                      "text-[11px] truncate max-w-[68px]",
+                      isSelected ? "font-black text-zinc-950" : "font-bold text-zinc-700",
+                    )}>
                       {c.name}
                     </span>
                   </button>
@@ -507,171 +767,71 @@ export function Theme2QsrView({
             </div>
           </div>
 
-          {/* Dynamic Customizable Home Sections (Liste, 2'li Kart Grid, Yatay Slider) */}
-          <div className="space-y-6 pt-1">
-            {resolvedHomeSections.map((sec) => {
-              // Find items for this section
-              let sectionItems: MenuItemDTO[] = [];
-              if (sec.type === "category") {
-                sectionItems = menu.items.filter(
-                  (it) => it.isActive && it.categoryId === sec.categoryId,
-                );
-              } else if (sec.type === "custom") {
-                const itemMap = new Map(menu.items.map((i) => [i.id, i]));
-                sectionItems = (sec.itemIds || [])
-                  .map((id) => itemMap.get(id))
-                  .filter((it): it is MenuItemDTO => Boolean(it && it.isActive));
-              }
-
-              // Apply search query filter if user is searching
-              if (searchQuery.trim()) {
-                const q = searchQuery.toLowerCase();
-                sectionItems = sectionItems.filter((it) =>
-                  it.name.toLowerCase().includes(q),
-                );
-              }
-
-              if (sectionItems.length === 0) return null;
+          {/* Main Content Area: Selected Category Products View OR Dynamic Home Sections */}
+          {selectedCategory ? (
+            /* ACTIVE SELECTED CATEGORY PRODUCTS VIEW */
+            (() => {
+              const currentCategory = categories.find((c) => c.id === selectedCategory);
+              const categoryItems = applyFilters(
+                menu.items.filter((it) => it.categoryId === selectedCategory),
+              );
 
               return (
-                <div key={sec.id} className="space-y-3">
-                  {/* Section Title & Subtitle Header */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm sm:text-base font-black text-zinc-900">
-                        {sec.title}
-                      </h3>
-                      {sec.subtitle && (
-                        <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
-                          {sec.subtitle}
-                        </p>
-                      )}
+                <div className="space-y-4 pt-1 animate-in fade-in duration-200">
+                  {/* Category Header Banner */}
+                  <div className="p-4 rounded-3xl bg-white border border-zinc-200/80 shadow-xs flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="size-11 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0"
+                        style={{ backgroundColor: secondaryColor }}
+                      >
+                        {getCategoryEmoji(currentCategory?.name || "")}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm sm:text-base font-black text-zinc-900 truncate">
+                          {currentCategory?.name || "Kategori"}
+                        </h3>
+                        <span className="text-[11px] font-bold text-zinc-400 block">
+                          {categoryItems.length} çeşit lezzet listeleniyor
+                        </span>
+                      </div>
                     </div>
 
-                    {sec.type === "category" ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(sec.categoryId || null);
-                          setActiveTab("categories");
-                        }}
-                        className="text-xs font-bold transition-colors cursor-pointer shrink-0"
-                        style={{ color: primaryColor }}
-                      >
-                        Tümünü Gör →
-                      </button>
-                    ) : (
-                      <span className="text-xs font-bold text-zinc-400 shrink-0">
-                        {sectionItems.length} çeşit
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory(null)}
+                      className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-all active:scale-95 cursor-pointer shrink-0"
+                    >
+                      ✕ Tümünü Gör
+                    </button>
                   </div>
 
-                  {/* 1. LIST STYLE (Görseldeki Yatay Satır Kartlar) */}
-                  {sec.displayStyle === "list" && (
-                    <div className="space-y-3">
-                      {sectionItems.map((item, idx) => {
-                        const photo =
-                          item.images.find((i) => i.isPrimary) ??
-                          item.images[0] ??
-                          null;
-                        const isFav = favorites[item.id] ?? false;
-
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={() => openMealDetails(item)}
-                            className="relative bg-white rounded-3xl p-3.5 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group active:scale-[0.99] animate-in fade-in slide-in-from-bottom-3 duration-300"
-                            style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
-                          >
-                            {/* Left Food Image */}
-                            <div className="relative size-20 sm:size-22 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              {photo ? (
-                                <Image
-                                  src={photo.url}
-                                  alt={item.name}
-                                  fill
-                                  className="object-cover"
-                                  sizes="90px"
-                                  unoptimized
-                                />
-                              ) : (
-                                <span className="text-3xl">🍔</span>
-                              )}
-                            </div>
-
-                            {/* Middle Info */}
-                            <div className="min-w-0 flex-1 space-y-1">
-                              <div className="flex items-start justify-between gap-1">
-                                <h4 className="font-black text-xs sm:text-sm text-zinc-900 truncate group-hover:text-primary transition-colors">
-                                  {item.name}
-                                </h4>
-                                <button
-                                  type="button"
-                                  onClick={(e) => toggleFavorite(item.id, e)}
-                                  className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
-                                >
-                                  <HeartIcon
-                                    className={cn(
-                                      "size-4",
-                                      isFav && "fill-red-500 text-red-500",
-                                    )}
-                                  />
-                                </button>
-                              </div>
-
-                              {item.shortDescription && (
-                                <p className="text-[10px] text-zinc-500 line-clamp-1">
-                                  {item.shortDescription}
-                                </p>
-                              )}
-
-                              {/* Stats & Price */}
-                              <div className="flex items-center gap-2 pt-1 text-[10px] font-bold text-zinc-500">
-                                <span className="flex items-center gap-0.5 text-amber-500">
-                                  <StarIcon className="size-3 fill-amber-500" />
-                                  <span>4.8</span>
-                                </span>
-                                <span>•</span>
-                                <span className="flex items-center gap-0.5 text-orange-500">
-                                  <FlameIcon className="size-3 text-orange-500" />
-                                  <span>{item.calories || 450} Kalori</span>
-                                </span>
-                              </div>
-
-                              <div className="flex items-center justify-between pt-1">
-                                <span
-                                  className="font-black text-xs sm:text-sm tabular-nums"
-                                  style={{ color: primaryColor }}
-                                >
-                                  {formatCurrency(item.price)}
-                                </span>
-
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onQuickAdd(item);
-                                    toast.success(`${item.name} eklendi!`);
-                                  }}
-                                  className="px-3 py-1 rounded-full text-white font-black text-xs flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
-                                  style={{ backgroundColor: primaryColor }}
-                                >
-                                  <PlusIcon className="size-3 stroke-[3]" />
-                                  <span>Ekle</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                  {/* Category Items Grid (2'li Izgara Kartlar) */}
+                  {categoryItems.length === 0 ? (
+                    <div className="text-center py-12 p-6 rounded-3xl bg-white border border-dashed border-zinc-300 space-y-3">
+                      <span className="text-4xl block">🔍</span>
+                      <h4 className="text-sm font-black text-zinc-800">
+                        Bu kategoride uygun ürün bulunamadı
+                      </h4>
+                      <p className="text-xs text-zinc-400 max-w-xs mx-auto">
+                        Arama veya filtreleme kriterlerinizi değiştirerek tekrar deneyebilirsiniz.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSearchQuery("");
+                          resetFilters();
+                        }}
+                        className="rounded-xl text-xs font-bold cursor-pointer"
+                      >
+                        Filtreleri Temizle
+                      </Button>
                     </div>
-                  )}
-
-                  {/* 2. GRID / KART STİLİ (2'li Izgara Dikey Kartlar) */}
-                  {sec.displayStyle === "grid" && (
+                  ) : (
                     <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
-                      {sectionItems.map((item, idx) => {
+                      {categoryItems.map((item, idx) => {
                         const photo =
                           item.images.find((i) => i.isPrimary) ??
                           item.images[0] ??
@@ -694,16 +854,17 @@ export function Theme2QsrView({
                                     alt={item.name}
                                     fill
                                     className="object-cover"
-                                    sizes="150px"
+                                    sizes="160px"
                                     unoptimized
                                   />
                                 ) : (
-                                  <span className="text-4xl">🍔</span>
+                                  <span className="text-4xl">{getCategoryEmoji(currentCategory?.name || "")}</span>
                                 )}
+
                                 <button
                                   type="button"
                                   onClick={(e) => toggleFavorite(item.id, e)}
-                                  className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
+                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 backdrop-blur-xs shadow-xs text-zinc-400 hover:text-red-500 transition-colors z-10"
                                 >
                                   <HeartIcon
                                     className={cn(
@@ -714,18 +875,19 @@ export function Theme2QsrView({
                                 </button>
                               </div>
 
-                              <h4 className="font-black text-xs text-zinc-900 truncate group-hover:text-primary transition-colors">
+                              <h4 className="font-black text-xs sm:text-sm text-zinc-900 truncate group-hover:text-primary transition-colors">
                                 {item.name}
                               </h4>
+
                               {item.shortDescription && (
-                                <p className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">
+                                <p className="text-[10px] text-zinc-500 line-clamp-1 mt-0.5">
                                   {item.shortDescription}
                                 </p>
                               )}
 
-                              <div className="flex items-center gap-1.5 pt-1 text-[9px] font-bold text-zinc-400">
+                              <div className="flex items-center gap-2 pt-1 text-[10px] font-bold text-zinc-400">
                                 <span className="flex items-center gap-0.5 text-amber-500">
-                                  <StarIcon className="size-2.5 fill-amber-500" />
+                                  <StarIcon className="size-3 fill-amber-500" />
                                   <span>4.8</span>
                                 </span>
                                 <span>•</span>
@@ -733,13 +895,14 @@ export function Theme2QsrView({
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-2.5 mt-1.5 border-t border-zinc-100">
+                            <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-zinc-100">
                               <span
                                 className="font-black text-xs sm:text-sm tabular-nums"
                                 style={{ color: primaryColor }}
                               >
                                 {formatCurrency(item.price)}
                               </span>
+
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -758,92 +921,341 @@ export function Theme2QsrView({
                       })}
                     </div>
                   )}
+                </div>
+              );
+            })()
+          ) : (
+            /* DYNAMIC HOME SECTIONS VIEW (WHEN "TÜMÜ" IS ACTIVE) */
+            <div className="space-y-6 pt-1">
+              {resolvedHomeSections.map((sec) => {
+                // Find items for this section
+                let rawSectionItems: MenuItemDTO[] = [];
+                if (sec.type === "category") {
+                  rawSectionItems = menu.items.filter(
+                    (it) => it.isActive && it.categoryId === sec.categoryId,
+                  );
+                } else if (sec.type === "custom") {
+                  const itemMap = new Map(menu.items.map((i) => [i.id, i]));
+                  rawSectionItems = (sec.itemIds || [])
+                    .map((id) => itemMap.get(id))
+                    .filter((it): it is MenuItemDTO => Boolean(it && it.isActive));
+                }
 
-                  {/* 3. SLIDER STİLİ (Yatay Kaydırmalı Kart Carousel) */}
-                  {sec.displayStyle === "slider" && (
-                    <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-0.5 scrollbar-none -mx-4 px-4">
-                      {sectionItems.map((item) => {
-                        const photo =
-                          item.images.find((i) => i.isPrimary) ??
-                          item.images[0] ??
-                          null;
-                        const isFav = favorites[item.id] ?? false;
+                // Apply multi-criteria filters & sorters
+                const sectionItems = applyFilters(rawSectionItems);
 
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={() => openMealDetails(item)}
-                            className="w-38 sm:w-44 shrink-0 bg-white rounded-3xl p-3 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group active:scale-[0.98]"
-                          >
-                            <div>
-                              {/* Top Photo */}
-                              <div className="relative w-full aspect-4/3 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
+                if (sectionItems.length === 0) return null;
+
+                return (
+                  <div key={sec.id} className="space-y-3">
+                    {/* Section Title & Subtitle Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm sm:text-base font-black text-zinc-900">
+                          {sec.title}
+                        </h3>
+                        {sec.subtitle && (
+                          <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
+                            {sec.subtitle}
+                          </p>
+                        )}
+                      </div>
+
+                      {sec.type === "category" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(sec.categoryId || null);
+                          }}
+                          className="text-xs font-bold transition-colors cursor-pointer shrink-0"
+                          style={{ color: primaryColor }}
+                        >
+                          Tümünü Gör →
+                        </button>
+                      ) : (
+                        <span className="text-xs font-bold text-zinc-400 shrink-0">
+                          {sectionItems.length} çeşit
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 1. LIST STYLE (Görseldeki Yatay Satır Kartlar) */}
+                    {sec.displayStyle === "list" && (
+                      <div className="space-y-3">
+                        {sectionItems.map((item, idx) => {
+                          const photo =
+                            item.images.find((i) => i.isPrimary) ??
+                            item.images[0] ??
+                            null;
+                          const isFav = favorites[item.id] ?? false;
+
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => openMealDetails(item)}
+                              className="relative bg-white rounded-3xl p-3.5 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group active:scale-[0.99] animate-in fade-in slide-in-from-bottom-3 duration-300"
+                              style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
+                            >
+                              {/* Left Food Image */}
+                              <div className="relative size-20 sm:size-22 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
                                 {photo ? (
                                   <Image
                                     src={photo.url}
                                     alt={item.name}
                                     fill
                                     className="object-cover"
-                                    sizes="140px"
+                                    sizes="90px"
                                     unoptimized
                                   />
                                 ) : (
-                                  <span className="text-3xl">🍕</span>
+                                  <span className="text-3xl">🍔</span>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => toggleFavorite(item.id, e)}
-                                  className="absolute top-1.5 right-1.5 size-6 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
-                                >
-                                  <HeartIcon
-                                    className={cn(
-                                      "size-3",
-                                      isFav && "fill-red-500 text-red-500",
-                                    )}
-                                  />
-                                </button>
                               </div>
 
-                              <h4 className="font-black text-xs text-zinc-900 truncate group-hover:text-primary transition-colors">
-                                {item.name}
-                              </h4>
-                              {item.shortDescription && (
-                                <p className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">
-                                  {item.shortDescription}
-                                </p>
-                              )}
-                            </div>
+                              {/* Middle Info */}
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex items-start justify-between gap-1">
+                                  <h4 className="font-black text-xs sm:text-sm text-zinc-900 truncate group-hover:text-primary transition-colors">
+                                    {item.name}
+                                  </h4>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite(item.id, e)}
+                                    className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <HeartIcon
+                                      className={cn(
+                                        "size-4",
+                                        isFav && "fill-red-500 text-red-500",
+                                      )}
+                                    />
+                                  </button>
+                                </div>
 
-                            <div className="flex items-center justify-between pt-2 mt-1 border-t border-zinc-100">
-                              <span
-                                className="font-black text-xs tabular-nums"
-                                style={{ color: primaryColor }}
-                              >
-                                {formatCurrency(item.price)}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onQuickAdd(item);
-                                  toast.success(`${item.name} eklendi!`);
-                                }}
-                                className="px-2.5 py-1 rounded-full text-white font-black text-[11px] flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
-                                style={{ backgroundColor: primaryColor }}
-                              >
-                                <PlusIcon className="size-3 stroke-[3]" />
-                                <span>Ekle</span>
-                              </button>
+                                {item.shortDescription && (
+                                  <p className="text-[10px] text-zinc-500 line-clamp-1">
+                                    {item.shortDescription}
+                                  </p>
+                                )}
+
+                                {/* Stats & Price */}
+                                <div className="flex items-center gap-2 pt-1 text-[10px] font-bold text-zinc-500">
+                                  <span className="flex items-center gap-0.5 text-amber-500">
+                                    <StarIcon className="size-3 fill-amber-500" />
+                                    <span>4.8</span>
+                                  </span>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-0.5 text-orange-500">
+                                    <FlameIcon className="size-3 text-orange-500" />
+                                    <span>{item.calories || 450} Kalori</span>
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1">
+                                  <span
+                                    className="font-black text-xs sm:text-sm tabular-nums"
+                                    style={{ color: primaryColor }}
+                                  >
+                                    {formatCurrency(item.price)}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onQuickAdd(item);
+                                      toast.success(`${item.name} eklendi!`);
+                                    }}
+                                    className="px-3 py-1 rounded-full text-white font-black text-xs flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
+                                    style={{ backgroundColor: primaryColor }}
+                                  >
+                                    <PlusIcon className="size-3 stroke-[3]" />
+                                    <span>Ekle</span>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* 2. GRID / KART STİLİ (2'li Izgara Dikey Kartlar) */}
+                    {sec.displayStyle === "grid" && (
+                      <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+                        {sectionItems.map((item, idx) => {
+                          const photo =
+                            item.images.find((i) => i.isPrimary) ??
+                            item.images[0] ??
+                            null;
+                          const isFav = favorites[item.id] ?? false;
+
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => openMealDetails(item)}
+                              className="relative bg-white rounded-3xl p-3 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group active:scale-[0.98] animate-in fade-in duration-200"
+                              style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
+                            >
+                              <div>
+                                {/* Top Food Image */}
+                                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
+                                  {photo ? (
+                                    <Image
+                                      src={photo.url}
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover"
+                                      sizes="150px"
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <span className="text-4xl">🍔</span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite(item.id, e)}
+                                    className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
+                                  >
+                                    <HeartIcon
+                                      className={cn(
+                                        "size-3.5",
+                                        isFav && "fill-red-500 text-red-500",
+                                      )}
+                                    />
+                                  </button>
+                                </div>
+
+                                <h4 className="font-black text-xs text-zinc-900 truncate group-hover:text-primary transition-colors">
+                                  {item.name}
+                                </h4>
+                                {item.shortDescription && (
+                                  <p className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">
+                                    {item.shortDescription}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center gap-1.5 pt-1 text-[9px] font-bold text-zinc-400">
+                                  <span className="flex items-center gap-0.5 text-amber-500">
+                                    <StarIcon className="size-2.5 fill-amber-500" />
+                                    <span>4.8</span>
+                                  </span>
+                                  <span>•</span>
+                                  <span>{item.calories || 450} kcal</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2.5 mt-1.5 border-t border-zinc-100">
+                                <span
+                                  className="font-black text-xs sm:text-sm tabular-nums"
+                                  style={{ color: primaryColor }}
+                                >
+                                  {formatCurrency(item.price)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onQuickAdd(item);
+                                    toast.success(`${item.name} eklendi!`);
+                                  }}
+                                  className="size-7 rounded-full text-white font-black flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+                                  style={{ backgroundColor: primaryColor }}
+                                >
+                                  <PlusIcon className="size-3.5 stroke-[3]" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* 3. SLIDER STİLİ (Yatay Kaydırmalı Kart Carousel) */}
+                    {sec.displayStyle === "slider" && (
+                      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-0.5 scrollbar-none -mx-4 px-4">
+                        {sectionItems.map((item) => {
+                          const photo =
+                            item.images.find((i) => i.isPrimary) ??
+                            item.images[0] ??
+                            null;
+                          const isFav = favorites[item.id] ?? false;
+
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => openMealDetails(item)}
+                              className="w-38 sm:w-44 shrink-0 bg-white rounded-3xl p-3 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group active:scale-[0.98]"
+                            >
+                              <div>
+                                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
+                                  {photo ? (
+                                    <Image
+                                      src={photo.url}
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover"
+                                      sizes="140px"
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <span className="text-4xl">🍔</span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite(item.id, e)}
+                                    className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
+                                  >
+                                    <HeartIcon
+                                      className={cn(
+                                        "size-3.5",
+                                        isFav && "fill-red-500 text-red-500",
+                                      )}
+                                    />
+                                  </button>
+                                </div>
+
+                                <h4 className="font-black text-xs text-zinc-900 truncate group-hover:text-primary transition-colors">
+                                  {item.name}
+                                </h4>
+                                <div className="flex items-center gap-1.5 pt-1 text-[9px] font-bold text-zinc-400">
+                                  <span className="text-amber-500">★ 4.8</span>
+                                  <span>•</span>
+                                  <span>{item.calories || 400} kcal</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-zinc-100">
+                                <span
+                                  className="font-black text-xs tabular-nums"
+                                  style={{ color: primaryColor }}
+                                >
+                                  {formatCurrency(item.price)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onQuickAdd(item);
+                                    toast.success(`${item.name} eklendi!`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-full text-white font-black text-[11px] flex items-center gap-1 shadow-xs active:scale-90 transition-transform cursor-pointer"
+                                  style={{ backgroundColor: primaryColor }}
+                                >
+                                  <PlusIcon className="size-3 stroke-[3]" />
+                                  <span>Ekle</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
         </div>
       )}
@@ -1592,6 +2004,228 @@ export function Theme2QsrView({
 
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* 8. DETAILED FILTER BOTTOM SHEET DRAWER                       */}
+      {/* ============================================================ */}
+      <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[85vh] rounded-t-3xl p-0 overflow-hidden flex flex-col bg-[#fafafa]"
+        >
+          {/* Drawer Header */}
+          <SheetHeader className="p-4 pb-3 border-b bg-white flex flex-row items-center justify-between space-y-0 text-left">
+            <div>
+              <SheetTitle className="text-base font-black text-zinc-900 flex items-center gap-2">
+                <SlidersHorizontalIcon className="size-4 text-primary" style={{ color: primaryColor }} />
+                <span>Filtreleme & Sıralama</span>
+              </SheetTitle>
+              <SheetDescription className="text-xs text-zinc-400 font-medium">
+                Beslenme tercihi, alerjen veya kaloriye göre filtreleyin
+              </SheetDescription>
+            </div>
+            {activeFilterCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="text-xs font-bold text-zinc-500 hover:text-zinc-900 h-8 px-2 cursor-pointer gap-1"
+              >
+                <RotateCcwIcon className="size-3" />
+                <span>Sıfırla</span>
+              </Button>
+            )}
+          </SheetHeader>
+
+          {/* Scrollable Filter Options Body */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+            {/* 1. Beslenme Tercihi */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-zinc-800 uppercase tracking-wider block">
+                Beslenme Tercihi
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDiet("ALL")}
+                  className={cn(
+                    "p-2.5 rounded-2xl border text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer",
+                    selectedDiet === "ALL"
+                      ? "border-2 shadow-xs bg-white text-zinc-900"
+                      : "border-zinc-200 bg-white/60 text-zinc-600 hover:bg-white",
+                  )}
+                  style={{
+                    borderColor: selectedDiet === "ALL" ? primaryColor : undefined,
+                  }}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>🍽️</span>
+                    <span>Tümü</span>
+                  </span>
+                  {selectedDiet === "ALL" && (
+                    <CheckIcon className="size-3.5 stroke-[3]" style={{ color: primaryColor }} />
+                  )}
+                </button>
+
+                {(["VEG", "NON_VEG", "EGG"] as const).map((diet) => {
+                  const isSelected = selectedDiet === diet;
+                  const badge = DIET_BADGES[diet];
+                  return (
+                    <button
+                      key={diet}
+                      type="button"
+                      onClick={() => setSelectedDiet(isSelected ? "ALL" : diet)}
+                      className={cn(
+                        "p-2.5 rounded-2xl border text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer",
+                        isSelected
+                          ? "border-2 shadow-xs bg-white text-zinc-900"
+                          : "border-zinc-200 bg-white/60 text-zinc-600 hover:bg-white",
+                      )}
+                      style={{
+                        borderColor: isSelected ? primaryColor : undefined,
+                      }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span>{badge.icon}</span>
+                        <span>{badge.label}</span>
+                      </span>
+                      {isSelected && (
+                        <CheckIcon className="size-3.5 stroke-[3]" style={{ color: primaryColor }} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Alerjen Dışlama */}
+            {availableAllergens.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-zinc-800 uppercase tracking-wider block">
+                    Alerjen İçermeyenler
+                  </label>
+                  <span className="text-[10px] text-zinc-400 font-medium">
+                    (Seçtikleriniz menüden gizlenir)
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableAllergens.map((alg) => {
+                    const isExcluded = excludedAllergens.includes(alg.name);
+                    return (
+                      <button
+                        key={alg.name}
+                        type="button"
+                        onClick={() => toggleExcludedAllergen(alg.name)}
+                        className={cn(
+                          "px-3 py-2 rounded-2xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95",
+                          isExcluded
+                            ? "bg-red-50 border-red-500 text-red-600 shadow-2xs font-black"
+                            : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50",
+                        )}
+                      >
+                        <span>{isExcluded ? "🚫" : alg.icon}</span>
+                        <span>{alg.displayName}</span>
+                        {isExcluded && <span className="text-[10px] font-bold">gizlendi</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Maksimum Kalori Sınırı */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-zinc-800 uppercase tracking-wider block">
+                Maksimum Kalori
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: "Tümü", value: null },
+                  { label: "≤ 300 kcal", value: 300 },
+                  { label: "≤ 500 kcal", value: 500 },
+                  { label: "≤ 750 kcal", value: 750 },
+                ].map((opt) => {
+                  const isSelected = maxCalories === opt.value;
+                  return (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setMaxCalories(opt.value)}
+                      className={cn(
+                        "py-2 px-1.5 rounded-2xl border text-center text-xs font-bold transition-all cursor-pointer",
+                        isSelected
+                          ? "border-2 shadow-xs bg-white text-zinc-900"
+                          : "border-zinc-200 bg-white/60 text-zinc-600 hover:bg-white",
+                      )}
+                      style={{
+                        borderColor: isSelected ? primaryColor : undefined,
+                        color: isSelected ? primaryColor : undefined,
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 4. Fiyat Sıralaması */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-zinc-800 uppercase tracking-wider block">
+                Fiyat Sıralaması
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "DEFAULT", label: "Varsayılan", icon: "✨" },
+                  { id: "ASC", label: "En Ucuz", icon: "📉" },
+                  { id: "DESC", label: "En Pahalı", icon: "📈" },
+                ].map((sort) => {
+                  const isSelected = priceSort === sort.id;
+                  return (
+                    <button
+                      key={sort.id}
+                      type="button"
+                      onClick={() => setPriceSort(sort.id as "DEFAULT" | "ASC" | "DESC")}
+                      className={cn(
+                        "py-2.5 px-2 rounded-2xl border text-center text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer",
+                        isSelected
+                          ? "border-2 shadow-xs bg-white text-zinc-900"
+                          : "border-zinc-200 bg-white/60 text-zinc-600 hover:bg-white",
+                      )}
+                      style={{
+                        borderColor: isSelected ? primaryColor : undefined,
+                        color: isSelected ? primaryColor : undefined,
+                      }}
+                    >
+                      <span className="text-base">{sort.icon}</span>
+                      <span>{sort.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Sticky Sheet Footer Action */}
+          <div className="p-4 border-t bg-white flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={resetFilters}
+              className="rounded-2xl font-black text-xs h-12 px-4 cursor-pointer"
+            >
+              Temizle
+            </Button>
+            <Button
+              onClick={() => setFilterDrawerOpen(false)}
+              className="flex-1 h-12 rounded-2xl font-black text-xs text-white shadow-md active:scale-95 transition-transform cursor-pointer"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {`Filtrelenmiş Ürünleri Gör (${applyFilters(menu.items).length})`}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );
