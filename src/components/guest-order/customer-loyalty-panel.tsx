@@ -3,17 +3,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
+  ArrowLeftIcon,
   CalendarIcon,
   ChevronRightIcon,
   HeartIcon,
+  KeyRoundIcon,
+  LogInIcon,
   LogOutIcon,
   PhoneIcon,
   ReceiptIcon,
   ShieldCheckIcon,
+  SmartphoneIcon,
   SparklesIcon,
   StarIcon,
   UserCheckIcon,
   UserIcon,
+  UserPlusIcon,
   UtensilsCrossedIcon,
   XIcon,
 } from "lucide-react";
@@ -72,7 +77,7 @@ export function CustomerLoyaltyPanel({
   // Customer Profile State
   const [profile, setProfile] = useState<CustomerProfileDTO | null>(null);
 
-  // Registration & Login Drawer State
+  // Registration Drawer State
   const [registerDrawerOpen, setRegisterDrawerOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -80,6 +85,13 @@ export function CustomerLoyaltyPanel({
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
   const [kvkkModalOpen, setKvkkModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Quick Login (SMS OTP Simulation) State
+  const [loginDrawerOpen, setLoginDrawerOpen] = useState(false);
+  const [loginStep, setLoginStep] = useState<"PHONE" | "OTP">("PHONE");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginOtp, setLoginOtp] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Interactive Quick Action Modals
   const [waiterCallModalOpen, setWaiterCallModalOpen] = useState(false);
@@ -126,8 +138,66 @@ export function CustomerLoyaltyPanel({
     }
   }, [sessionKey, loadProfile]);
 
-  // Handle registration & login
-  const handleRegisterOrLogin = async (e: React.FormEvent) => {
+  // Handle SMS OTP Sending (Simulation)
+  const handleSendOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginPhone.trim()) {
+      toast.error("Lütfen telefon numaranızı girin");
+      return;
+    }
+    setLoginStep("OTP");
+    toast.success("Doğrulama Kodu Gönderildi! 📲", {
+      description: "Simülasyon Modu: Herhangi bir 6 haneli kod girerek giriş yapabilirsiniz.",
+    });
+  };
+
+  // Handle SMS OTP Verification & Login
+  const handleVerifyOtpAndLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginOtp.trim()) {
+      toast.error("Lütfen doğrulama kodunu girin");
+      return;
+    }
+
+    setIsLoggingIn(true);
+    try {
+      const res = await getCustomerProfileAction({
+        username,
+        phone: loginPhone.trim(),
+      });
+
+      if (res.success && res.data) {
+        const cust = res.data.customer;
+        localStorage.setItem(
+          sessionKey,
+          JSON.stringify({ id: cust.id, phone: cust.phone, name: cust.name }),
+        );
+        toast.success(`Tekrar hoş geldiniz, ${cust.name}! 👋`, {
+          description: "Giriş başarılı, sadakat puanlarınız ve sipariş geçmişiniz yüklendi.",
+        });
+        setLoginDrawerOpen(false);
+        setLoginStep("PHONE");
+        setLoginOtp("");
+        await loadProfile(cust.id, cust.phone);
+      } else {
+        toast.info("Bu numarayla kayıtlı hesap bulunamadı.", {
+          description: "Lütfen adınızı girerek saniyeler içinde Hesap Oluşturun.",
+        });
+        setPhone(loginPhone.trim());
+        setLoginDrawerOpen(false);
+        setLoginStep("PHONE");
+        setLoginOtp("");
+        setRegisterDrawerOpen(true);
+      }
+    } catch {
+      toast.error("Giriş yapılırken bir hata oluştu.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // Handle Registration
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) {
       toast.error("Lütfen adınızı ve telefon numaranızı girin");
@@ -149,15 +219,18 @@ export function CustomerLoyaltyPanel({
       });
 
       if (res.success && res.data) {
-        const cust = res.data.customer;
-        localStorage.setItem(sessionKey, JSON.stringify({ id: cust.id, phone: cust.phone, name: cust.name }));
+        const cust = res.data;
+        localStorage.setItem(
+          sessionKey,
+          JSON.stringify({ id: cust.id, phone: cust.phone, name: cust.name }),
+        );
         toast.success(`Hoş geldiniz, ${cust.name}! 🎉`, {
           description: "Hesabınız başarıyla oluşturuldu ve oturum açıldı.",
         });
         setRegisterDrawerOpen(false);
         await loadProfile(cust.id, cust.phone);
       } else {
-        toast.error(res.error || "Giriş işlemi başarısız oldu.");
+        toast.error(res.error || "Kayıt işlemi gerçekleştirilemedi.");
       }
     } catch {
       toast.error("İşlem sırasında bir hata oluştu.");
@@ -274,18 +347,44 @@ export function CustomerLoyaltyPanel({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setRegisterDrawerOpen(true)}
-            className="w-full h-12 rounded-2xl font-black text-xs sm:text-sm text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            style={{
-              background: `linear-gradient(135deg, ${primaryColor}, #e04400)`,
-            }}
-          >
-            <UserCheckIcon className="size-4 stroke-[2.5]" />
-            <span>Hesap Oluştur veya Giriş Yap</span>
-            <ChevronRightIcon className="size-4 stroke-[3]" />
-          </button>
+          {/* Action Buttons: Hızlı Giriş Yap & Hesap Oluştur */}
+          <div className="space-y-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginStep("PHONE");
+                setLoginOtp("");
+                setLoginDrawerOpen(true);
+              }}
+              className="w-full h-11.5 rounded-2xl font-black text-xs sm:text-sm text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              style={{
+                backgroundColor: primaryColor,
+              }}
+            >
+              <LogInIcon className="size-4 stroke-[2.5]" />
+              <span>Hızlı Giriş Yap</span>
+              <ChevronRightIcon className="size-4 stroke-[3]" />
+            </button>
+
+            <div className="flex items-center gap-2 py-0.5">
+              <div className="h-px bg-zinc-200/80 flex-1" />
+              <span className="text-[11px] font-bold text-zinc-400">veya</span>
+              <div className="h-px bg-zinc-200/80 flex-1" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setRegisterDrawerOpen(true)}
+              className="w-full h-11 rounded-2xl font-black text-xs sm:text-sm border-2 shadow-2xs active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer bg-white"
+              style={{
+                borderColor: primaryColor,
+                color: primaryColor,
+              }}
+            >
+              <UserPlusIcon className="size-4 stroke-[2.5]" />
+              <span>Hesap Oluştur</span>
+            </button>
+          </div>
         </div>
       ) : (
         /* GİRİŞ YAPILMIŞSA: MÜŞTERİ PROFİLİ VE GEÇMİŞ SİPARİŞ ANALİTİĞİ */
@@ -529,7 +628,147 @@ export function CustomerLoyaltyPanel({
       </div>
 
       {/* ============================================================ */}
-      {/* 4. ALTTAN AÇILIR TAM EKRAN HESAP OLUŞTUR / GİRİŞ DRAWER'I     */}
+      {/* 4. ALTTAN AÇILIR HIZLI GİRİŞ YAP (SMS DOĞRULAMA SİMÜLASYONU)  */}
+      {/* ============================================================ */}
+      <Sheet open={loginDrawerOpen} onOpenChange={setLoginDrawerOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[92vh] rounded-t-3xl p-0 overflow-hidden flex flex-col bg-white"
+        >
+          <SheetHeader className="p-4 pb-3 border-b text-left bg-zinc-50 flex flex-row items-center justify-between space-y-0">
+            <div>
+              <SheetTitle className="text-base font-black text-zinc-900 flex items-center gap-2">
+                <LogInIcon className="size-4.5" style={{ color: primaryColor }} />
+                <span>Hızlı Giriş Yap</span>
+              </SheetTitle>
+              <SheetDescription className="text-xs text-zinc-400 font-medium">
+                {loginStep === "PHONE"
+                  ? "Telefon numaranız ile SMS doğrulama yaparak anında giriş yapın"
+                  : "Telefonunuza gönderilen 6 haneli doğrulama kodunu girin"}
+              </SheetDescription>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLoginDrawerOpen(false)}
+              className="p-1 text-zinc-400 hover:text-zinc-600 rounded-full cursor-pointer"
+            >
+              <XIcon className="size-5" />
+            </button>
+          </SheetHeader>
+
+          {loginStep === "PHONE" ? (
+            <form onSubmit={handleSendOtp} className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-zinc-800 flex items-center gap-1.5">
+                  <SmartphoneIcon className="size-3.5" style={{ color: primaryColor }} />
+                  <span>Telefon Numaranız</span>
+                </label>
+                <Input
+                  type="tel"
+                  value={loginPhone}
+                  onChange={(e) => setLoginPhone(e.target.value)}
+                  placeholder="05XX XXX XX XX"
+                  required
+                  autoFocus
+                  className="h-12 rounded-2xl text-xs font-bold border-zinc-200 bg-zinc-50/70"
+                />
+                <span className="text-[11px] text-zinc-400 block">
+                  Telefonunuza tek kullanımlık SMS doğrulama kodu gönderilecektir.
+                </span>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-2xl font-black text-xs sm:text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <KeyRoundIcon className="size-4 stroke-[2.5]" />
+                <span>Doğrulama Kodu Gönder</span>
+              </Button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginDrawerOpen(false);
+                    setRegisterDrawerOpen(true);
+                  }}
+                  className="text-xs font-bold text-zinc-500 hover:underline cursor-pointer"
+                >
+                  Hesabınız yok mu? <strong style={{ color: primaryColor }}>Hesap Oluşturun</strong>
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtpAndLogin} className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+                <div className="flex items-center gap-2">
+                  <PhoneIcon className="size-4" style={{ color: primaryColor }} />
+                  <span className="text-xs font-mono font-bold text-zinc-800">{loginPhone}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLoginStep("PHONE")}
+                  className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                  style={{ color: primaryColor }}
+                >
+                  Numarayı Değiştir
+                </button>
+              </div>
+
+              {/* Simulation Notification */}
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 text-xs flex items-start gap-2">
+                <SparklesIcon className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <strong>Simülasyon Modu:</strong> SMS altyapısı şu an simüle edilmektedir. İstediğiniz herhangi bir 6 haneli kodu girerek anında giriş yapabilirsiniz.
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-zinc-800 flex items-center gap-1.5">
+                  <KeyRoundIcon className="size-3.5" style={{ color: primaryColor }} />
+                  <span>6 Haneli Doğrulama Kodu</span>
+                </label>
+                <Input
+                  type="text"
+                  maxLength={6}
+                  value={loginOtp}
+                  onChange={(e) => setLoginOtp(e.target.value)}
+                  placeholder="• • • • • •"
+                  required
+                  autoFocus
+                  className="h-14 rounded-2xl text-center text-xl font-mono tracking-widest font-black border-zinc-200 bg-zinc-50/70"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full h-12 rounded-2xl font-black text-xs sm:text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <UserCheckIcon className="size-4 stroke-[2.5]" />
+                <span>{isLoggingIn ? "Giriş Yapılıyor…" : "Giriş Yap ve Hesabımı Aç"}</span>
+              </Button>
+
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.success("Yeni kod gönderildi! (Simülasyon)");
+                  }}
+                  className="text-xs font-bold text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                >
+                  Kod gelmedi mi? Tekrar Gönder
+                </button>
+              </div>
+            </form>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* ============================================================ */}
+      {/* 5. ALTTAN AÇILIR TAM EKRAN HESAP OLUŞTUR DRAWER'I            */}
       {/* ============================================================ */}
       <Sheet open={registerDrawerOpen} onOpenChange={setRegisterDrawerOpen}>
         <SheetContent
@@ -539,11 +778,11 @@ export function CustomerLoyaltyPanel({
           <SheetHeader className="p-4 pb-3 border-b text-left bg-zinc-50 flex flex-row items-center justify-between space-y-0">
             <div>
               <SheetTitle className="text-base font-black text-zinc-900 flex items-center gap-2">
-                <SparklesIcon className="size-4.5" style={{ color: primaryColor }} />
-                <span>Hesap Oluştur veya Giriş Yap</span>
+                <UserPlusIcon className="size-4.5" style={{ color: primaryColor }} />
+                <span>Hesap Oluştur</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-zinc-400 font-medium">
-                Telefon numaranızla tek tıkla kaydolun ve giriş yapın
+                Sadakat kulübüne katılarak sürpriz hediyeler ve puanlar kazanın
               </SheetDescription>
             </div>
             <button
@@ -555,7 +794,7 @@ export function CustomerLoyaltyPanel({
             </button>
           </SheetHeader>
 
-          <form onSubmit={handleRegisterOrLogin} className="flex-1 overflow-y-auto p-5 space-y-4">
+          <form onSubmit={handleRegister} className="flex-1 overflow-y-auto p-5 space-y-4">
             {/* Ad Soyad */}
             <div className="space-y-1.5">
               <label className="text-xs font-black text-zinc-800 flex items-center gap-1.5">
@@ -637,8 +876,22 @@ export function CustomerLoyaltyPanel({
               style={{ backgroundColor: primaryColor }}
             >
               <UserCheckIcon className="size-4 stroke-[2.5]" />
-              <span>{isSubmitting ? "Kaydediliyor…" : "Kaydol ve Giriş Yap"}</span>
+              <span>{isSubmitting ? "Kaydediliyor…" : "Hesap Oluştur ve Kaydol"}</span>
             </Button>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setRegisterDrawerOpen(false);
+                  setLoginStep("PHONE");
+                  setLoginDrawerOpen(true);
+                }}
+                className="text-xs font-bold text-zinc-500 hover:underline cursor-pointer"
+              >
+                Zaten hesabınız var mı? <strong style={{ color: primaryColor }}>Hızlı Giriş Yapın</strong>
+              </button>
+            </div>
           </form>
         </SheetContent>
       </Sheet>

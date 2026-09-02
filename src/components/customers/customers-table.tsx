@@ -330,7 +330,7 @@ export function CustomersTable({
           }
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[92vh] rounded-3xl p-0 overflow-hidden flex flex-col bg-card border shadow-2xl">
+        <DialogContent className="w-[95vw] max-w-5xl max-h-[94vh] rounded-3xl p-0 overflow-hidden flex flex-col bg-card border shadow-2xl">
           <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5 min-w-0">
@@ -464,7 +464,7 @@ export function CustomersTable({
                       <p className="text-[11px]">Müşteri QR menüden sipariş verdiğinde tüm detaylar burada listelenecektir.</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {detailProfile.orders.map((ord) => (
                         <div
                           key={ord.id}

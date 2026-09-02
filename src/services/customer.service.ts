@@ -65,7 +65,7 @@ export interface CustomerProfileDTO {
 
 export const registerCustomer = async (
   input: RegisterCustomerInput,
-): Promise<{ success: boolean; customer: CustomerDTO }> => {
+): Promise<CustomerDTO> => {
   const restaurant = await findRestaurantByUsername(input.username);
   if (!restaurant || restaurant.deletedAt) {
     throw new Error("RESTAURANT_NOT_FOUND");
@@ -104,7 +104,7 @@ export const registerCustomer = async (
     createdAt: saved.createdAt.toISOString(),
   };
 
-  return { success: true, customer: customerDto };
+  return customerDto;
 };
 
 export const getCustomerProfile = async (
