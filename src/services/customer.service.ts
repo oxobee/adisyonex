@@ -4,6 +4,7 @@ import {
   findCustomerWithOrders,
   createCustomerDiscount,
   findCustomerDiscounts,
+  getSettledCustomerStats,
   setCustomerDiscountActive,
   upsertCustomer,
 } from "@/repositories/customer.repository";
@@ -383,8 +384,10 @@ export const listCustomers = async (
   query: CustomerListQuery,
 ): Promise<Paginated<CustomerDTO>> => {
   const { items, total } = await findCustomersPaginated(restaurantId, query);
+  const stats = await getSettledCustomerStats(restaurantId, items.map((customer) => customer.id));
   return {
     items: items.map((c) => ({
+      ...(() => { const stat = stats.get(c.id); return { orderCount: stat?.orderCount ?? 0, totalSpent: stat?.totalSpent ?? 0 }; })(),
       id: c.id,
       name: c.name,
       phone: c.phone,
@@ -392,8 +395,6 @@ export const listCustomers = async (
       birthDay: c.birthDay,
       birthMonth: c.birthMonth,
       birthYear: c.birthYear,
-      orderCount: c.orderCount,
-      totalSpent: Number(c.totalSpent),
       source: c.source,
       kvkkConsent: c.kvkkConsent,
       kvkkAcceptedAt: c.kvkkAcceptedAt ? c.kvkkAcceptedAt.toISOString() : null,

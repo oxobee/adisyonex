@@ -227,6 +227,23 @@ export const findCustomersPaginated = async (
   return { items, total };
 };
 
+export const getSettledCustomerStats = async (
+  restaurantId: string,
+  customerIds: readonly string[],
+): Promise<Map<string, { orderCount: number; totalSpent: number }>> => {
+  if (customerIds.length === 0) return new Map();
+  const rows = await prisma.order.groupBy({
+    by: ["customerId"],
+    where: { restaurantId, customerId: { in: [...customerIds] }, status: "COMPLETED", deletedAt: null },
+    _count: { _all: true },
+    _sum: { grandTotal: true },
+  });
+  return new Map(rows.filter((row) => row.customerId).map((row) => [
+    row.customerId as string,
+    { orderCount: row._count._all, totalSpent: Number(row._sum.grandTotal ?? 0) },
+  ]));
+};
+
 export const deleteCustomer = async (
   restaurantId: string,
   id: string,

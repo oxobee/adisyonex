@@ -21,6 +21,11 @@ export default async function KotPage({
   }
 
   const lines = order.lines.filter((l) => l.state !== "VOID");
+  const groupedLines = [
+    { title: "Yemekler", lines: lines.filter((line) => line.itemType === "SERVED") },
+    { title: "Paketli Ürünler", lines: lines.filter((line) => line.itemType === "PACKAGED_GOODS") },
+    { title: "Diğer", lines: lines.filter((line) => !line.itemType || !["SERVED", "PACKAGED_GOODS"].includes(line.itemType)) },
+  ].filter((group) => group.lines.length > 0);
 
   const typeLabels: Record<string, string> = {
     DINE_IN: "Masa",
@@ -29,22 +34,27 @@ export default async function KotPage({
   };
 
   return (
-    <div className="mx-auto max-w-sm p-6 font-mono text-sm">
+    <div className="mx-auto w-full max-w-[80mm] p-4 font-mono text-[13px] leading-tight text-black print:max-w-none print:p-2">
       <div className="mb-4 flex items-center justify-between print:hidden">
         <span className="text-muted-foreground text-xs">Mutfak Fişi</span>
         <PrintButton label="Fişi Yazdır" />
       </div>
 
-      <div className="border-b border-dashed pb-2 text-center">
-        <p className="text-base font-bold">ADİSYON / KOT · #{order.orderNumber}</p>
+      <div className="border-b-2 border-black pb-3 text-center">
+        <p className="text-lg font-black tracking-wide">ADİSYON / KOT</p>
+        <p className="text-2xl font-black">#{order.orderNumber}</p>
         <p>{typeLabels[order.orderType] ?? order.orderType}</p>
         {order.tableLabel ? <p>Masa {order.tableLabel}</p> : null}
         {order.customerName ? <p>Müşteri: {order.customerName}</p> : null}
         <p className="text-xs">{formatDateTime(order.createdAt)}</p>
       </div>
 
-      <ul className="flex flex-col gap-2 py-3">
-        {lines.map((line) => (
+      <div className="py-3">
+        {groupedLines.map((group) => (
+          <section key={group.title} className="mb-3 last:mb-0">
+            <h2 className="border-b border-black pb-1 text-xs font-black uppercase tracking-widest">{group.title}</h2>
+            <ul className="flex flex-col gap-3 pt-2">
+            {group.lines.map((line) => (
           <li key={line.id}>
             <p className="font-bold">
               {line.quantity} × {line.name}
@@ -60,7 +70,10 @@ export default async function KotPage({
             ) : null}
           </li>
         ))}
-      </ul>
+            </ul>
+          </section>
+        ))}
+      </div>
 
       {order.note ? (
         <p className="border-t border-dashed pt-2 text-xs italic">
