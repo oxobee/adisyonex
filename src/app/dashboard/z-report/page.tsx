@@ -42,12 +42,30 @@ export default async function ZReportPage({
     }
   }
 
-  const { date, zId } = await searchParams;
+  try {
+    const resolvedParams = searchParams ? await searchParams : {};
+    const date = resolvedParams.date;
+    const zId = resolvedParams.zId;
 
-  const [report, history] = await Promise.all([
-    getZReportData(restaurantId, date, zId),
-    listHistoricalZReports(restaurantId),
-  ]);
+    const [report, history] = await Promise.all([
+      getZReportData(restaurantId, date, zId),
+      listHistoricalZReports(restaurantId),
+    ]);
 
-  return <ZReportView report={report} history={history} />;
+    return <ZReportView report={report} history={history} />;
+  } catch (error: any) {
+    console.error("Z-Report page error:", error);
+    return (
+      <div className="flex flex-col gap-6 p-4 lg:p-6">
+        <PageHeader
+          title="Z Raporu & Gün Sonu"
+          description="Veriler yüklenirken bir sorun oluştu."
+        />
+        <EmptyState
+          title="Rapor Yüklenemedi"
+          description={error?.message || "Lütfen sayfayı yenileyin veya yöneticinizle iletişime geçin."}
+        />
+      </div>
+    );
+  }
 }
