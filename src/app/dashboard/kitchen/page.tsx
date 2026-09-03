@@ -24,7 +24,7 @@ export default async function DashboardKitchenPage() {
   const tickets = await listKitchenTickets(restaurantId);
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[#090a0f] text-white">
+    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-gray-50/60 text-gray-900">
       <KitchenDisplay
         username={restaurant.username}
         restaurantName={restaurant.name}

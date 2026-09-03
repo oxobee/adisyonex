@@ -28,16 +28,16 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   const data = item.payload;
 
   return (
-    <div className="rounded-2xl border border-white/15 bg-zinc-950/95 p-3.5 shadow-2xl backdrop-blur-xl text-left animate-in fade-in zoom-in-95 duration-150">
-      <div className="flex items-center gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs font-bold text-zinc-300">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-lg text-left animate-in fade-in zoom-in-95 duration-150">
+      <div className="flex items-center gap-1.5 mb-1.5 border-b border-gray-100 pb-1.5">
+        <span className="size-2 rounded-full bg-emerald-500" />
+        <span className="text-xs font-semibold text-gray-700">
           {data.label}. Gün ({data.date})
         </span>
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="text-xs font-semibold text-zinc-400">Toplam Satış:</span>
-        <span className="text-sm font-black text-emerald-400 tabular-nums">
+        <span className="text-xs text-gray-500">Satış:</span>
+        <span className="text-sm font-bold text-gray-900 tabular-nums">
           {formatCurrency(Number(item.value))}
         </span>
       </div>
@@ -56,20 +56,20 @@ export function SalesTrendChart({
     <div className="flex flex-col w-full">
       {/* Üst Filtre Barı */}
       <div className="flex items-center justify-between gap-2 mb-4 px-1">
-        <div className="flex items-center gap-1 text-xs text-muted-foreground font-semibold">
-          <span>Bu ayın günlük satış grafiği</span>
-        </div>
+        <span className="text-xs text-gray-500 font-medium">
+          Bu ayın günlük satış grafiği
+        </span>
 
         {/* Görünüm Geçişi (Area vs Bar) */}
-        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/40 border border-border/50 text-xs">
+        <div className="flex items-center gap-1 p-0.5 rounded-lg bg-gray-100 border border-gray-200 text-xs">
           <button
             type="button"
             onClick={() => setChartType("area")}
             className={cn(
-              "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer select-none",
+              "px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer select-none",
               chartType === "area"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-white text-gray-900 shadow-2xs"
+                : "text-gray-500 hover:text-gray-900",
             )}
           >
             Eğri (Alan)
@@ -78,10 +78,10 @@ export function SalesTrendChart({
             type="button"
             onClick={() => setChartType("bar")}
             className={cn(
-              "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer select-none",
+              "px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer select-none",
               chartType === "bar"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-white text-gray-900 shadow-2xs"
+                : "text-gray-500 hover:text-gray-900",
             )}
           >
             Sütun
@@ -99,16 +99,15 @@ export function SalesTrendChart({
             >
               <defs>
                 <linearGradient id="salesAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.45} />
-                  <stop offset="60%" stopColor="#10b981" stopOpacity={0.12} />
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                  <stop offset="60%" stopColor="#10b981" stopOpacity={0.06} />
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="currentColor"
-                className="stroke-muted-foreground/15"
+                stroke="#f3f4f6"
               />
               <XAxis
                 dataKey="label"
@@ -117,31 +116,28 @@ export function SalesTrendChart({
                 tickMargin={8}
                 interval="preserveStartEnd"
                 minTickGap={16}
-                tick={{ fontSize: 11, fill: "currentColor" }}
-                className="text-muted-foreground"
+                tick={{ fontSize: 11, fill: "#6b7280" }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 tickFormatter={(val) => `₺${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
-                tick={{ fontSize: 10, fill: "currentColor" }}
-                className="text-muted-foreground"
+                tick={{ fontSize: 10, fill: "#6b7280" }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone"
                 dataKey="sales"
                 stroke="#10b981"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#salesAreaGrad)"
                 activeDot={{
-                  r: 6,
+                  r: 5,
                   fill: "#10b981",
                   stroke: "#ffffff",
                   strokeWidth: 2,
-                  className: "drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]",
                 }}
               />
             </AreaChart>
@@ -153,14 +149,13 @@ export function SalesTrendChart({
               <defs>
                 <linearGradient id="salesBarGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#059669" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#059669" stopOpacity={0.7} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="currentColor"
-                className="stroke-muted-foreground/15"
+                stroke="#f3f4f6"
               />
               <XAxis
                 dataKey="label"
@@ -169,22 +164,20 @@ export function SalesTrendChart({
                 tickMargin={8}
                 interval="preserveStartEnd"
                 minTickGap={16}
-                tick={{ fontSize: 11, fill: "currentColor" }}
-                className="text-muted-foreground"
+                tick={{ fontSize: 11, fill: "#6b7280" }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 tickFormatter={(val) => `₺${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
-                tick={{ fontSize: 10, fill: "currentColor" }}
-                className="text-muted-foreground"
+                tick={{ fontSize: 10, fill: "#6b7280" }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="sales"
                 fill="url(#salesBarGrad)"
-                radius={[6, 6, 0, 0]}
+                radius={[4, 4, 0, 0]}
                 maxBarSize={32}
               />
             </BarChart>

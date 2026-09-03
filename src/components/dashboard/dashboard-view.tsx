@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertCircleIcon,
@@ -8,16 +8,11 @@ import {
   ArrowDownRightIcon,
   ArrowUpRightIcon,
   BarChart3Icon,
-  CalendarIcon,
-  ChefHatIcon,
   ClockIcon,
   CreditCardIcon,
   DollarSignIcon,
-  EyeIcon,
   LayersIcon,
-  PackageIcon,
   ReceiptIcon,
-  ShoppingBagIcon,
   SparklesIcon,
   TrendingUpIcon,
   UsersIcon,
@@ -50,53 +45,48 @@ export function DashboardView({
 }) {
   const [activePeriod, setActivePeriod] = useState<"today" | "month">("today");
 
-  // Düne göre büyüme yüzdesi
   const todayDelta = deltaPct(data.today.sales, data.yesterdaySales);
-  // Geçen aya göre büyüme yüzdesi
   const monthDelta = deltaPct(data.month.sales, data.lastMonthSales);
-
-  // Toplam tahsil edilen ödeme
   const paymentsTotal = data.paymentMixToday.reduce((s, m) => s + m.amount, 0);
 
-  // Salon Doluluk Oranı (%)
   const occupancyPct =
     data.occupancy.total > 0
       ? Math.round((data.occupancy.occupied / data.occupancy.total) * 100)
       : 0;
 
   return (
-    <div className="flex flex-col gap-6 p-3.5 sm:p-5 lg:p-7 max-w-[1750px] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1750px] mx-auto w-full bg-gray-50/50 min-h-screen">
       <AutoRefresh />
 
       {/* 
         ========================================================================
-        ÜST BAŞLIK & CANLI ANALİZ DURUMU
+        UNTITLED UI APPLICATION HEADER
         ========================================================================
       */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-3xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-xs animate-in fade-in duration-300">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in duration-200">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex size-2 rounded-full bg-emerald-500 animate-ping" />
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
               Canlı Veri Senkronizasyonu Aktif
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground mt-1 flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 mt-1 flex items-center gap-2.5">
             <BarChart3Icon className="size-6 text-primary" />
             <span>Genel Bakış & İşletme Analitiği</span>
           </h1>
         </div>
 
-        {/* Dönem Seçici (Bugün vs Bu Ay) */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-muted/60 border border-border/50 self-start sm:self-auto">
+        {/* Untitled UI Segmented Control */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-gray-100 border border-gray-200/80 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setActivePeriod("today")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none active:scale-95",
+              "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none active:scale-95",
               activePeriod === "today"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-white text-gray-900 shadow-xs"
+                : "text-gray-500 hover:text-gray-900",
             )}
           >
             Bugün
@@ -105,10 +95,10 @@ export function DashboardView({
             type="button"
             onClick={() => setActivePeriod("month")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none active:scale-95",
+              "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none active:scale-95",
               activePeriod === "month"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-white text-gray-900 shadow-xs"
+                : "text-gray-500 hover:text-gray-900",
             )}
           >
             Bu Ay
@@ -118,28 +108,28 @@ export function DashboardView({
 
       {/* 
         ========================================================================
-        KRİTİK STOK BİLDİRİMİ (VARSA)
+        KRİTİK STOK BİLDİRİMİ
         ========================================================================
       */}
       {lowStock > 0 && (
         <Link
           href="/dashboard/inventory"
-          className="group flex items-center justify-between gap-3 p-4 rounded-3xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 text-amber-900 dark:text-amber-300 transition-all duration-150 shadow-xs active:scale-[0.99] animate-in fade-in slide-in-from-top-2"
+          className="group flex items-center justify-between gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100/80 text-amber-900 transition-all duration-150 shadow-xs active:scale-[0.99]"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
-              <AlertTriangleIcon className="size-5" />
+            <div className="p-2 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
+              <AlertTriangleIcon className="size-4.5" />
             </div>
             <div>
-              <span className="block text-sm font-black">
+              <span className="block text-sm font-bold">
                 {lowStock} adet stok kalemi kritik seviyede!
               </span>
-              <span className="block text-xs opacity-80">
+              <span className="block text-xs text-amber-700">
                 Tükenmek üzere olan ürünleri incelemek ve giriş yapmak için tıklayın.
               </span>
             </div>
           </div>
-          <span className="shrink-0 text-xs font-black underline group-hover:translate-x-0.5 transition-transform">
+          <span className="shrink-0 text-xs font-bold underline group-hover:translate-x-0.5 transition-transform">
             Stoğu İncele →
           </span>
         </Link>
@@ -147,64 +137,61 @@ export function DashboardView({
 
       {/* 
         ========================================================================
-        KATEGORİ 1: FİNANSAL ÖZET & TEMEL METRİKLER (KPIs)
-        Sıralı Elastik Giriş Animasyonu
+        KATEGORİ 1: UNTITLED UI METRIC CARDS (KPIs)
         ========================================================================
       */}
       <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <TrendingUpIcon className="size-3.5 text-primary" />
-            <span>Finansal Özet & Ana Göstergeler ({activePeriod === "today" ? "Bugün" : "Bu Ay"})</span>
-          </h2>
-        </div>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+          <TrendingUpIcon className="size-3.5 text-primary" />
+          <span>Finansal Özet & Temel Göstergeler ({activePeriod === "today" ? "Bugün" : "Bu Ay"})</span>
+        </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4 lg:gap-4.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
           {/* 1. Bugünkü / Aylık Ciro */}
           <div
-            className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card/90 to-muted/20 backdrop-blur-md shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all duration-200 animate-in fade-in zoom-in-95 fill-mode-both"
+            className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs hover:shadow-md hover:border-gray-300 transition-all duration-150 animate-in fade-in zoom-in-95 fill-mode-both"
             style={{ animationDelay: "20ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground">
+              <span className="text-xs font-medium text-gray-500">
                 {activePeriod === "today" ? "Bugünkü Ciro" : "Bu Ayki Toplam Ciro"}
               </span>
-              <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                <DollarSignIcon className="size-4.5 stroke-[2.5]" />
+              <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600">
+                <DollarSignIcon className="size-4" />
               </div>
             </div>
 
             <div className="my-2.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 tabular-nums">
                 {formatCurrency(activePeriod === "today" ? data.today.sales : data.month.sales)}
               </span>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
               {(activePeriod === "today" ? todayDelta : monthDelta) !== null ? (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 font-extrabold",
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border",
                     (activePeriod === "today" ? todayDelta : monthDelta)! >= 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-rose-600 dark:text-rose-400",
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-rose-50 text-rose-700 border-rose-200",
                   )}
                 >
                   {(activePeriod === "today" ? todayDelta : monthDelta)! >= 0 ? (
-                    <ArrowUpRightIcon className="size-3.5" />
+                    <ArrowUpRightIcon className="size-3" />
                   ) : (
-                    <ArrowDownRightIcon className="size-3.5" />
+                    <ArrowDownRightIcon className="size-3" />
                   )}
                   <span>%{Math.abs((activePeriod === "today" ? todayDelta : monthDelta)!)}</span>
-                  <span className="text-muted-foreground font-normal">
+                  <span className="font-normal opacity-80">
                     {activePeriod === "today" ? "düne göre" : "geçen aya göre"}
                   </span>
                 </span>
               ) : (
-                <span className="text-muted-foreground font-medium">Önceki dönem verisi yok</span>
+                <span className="text-gray-400">Önceki veri yok</span>
               )}
 
-              <span className="text-[11px] font-semibold text-muted-foreground">
+              <span className="text-xs text-gray-500 font-medium">
                 KDV: {formatCurrency(activePeriod === "today" ? data.today.tax : data.month.tax)}
               </span>
             </div>
@@ -212,30 +199,28 @@ export function DashboardView({
 
           {/* 2. Sipariş Hacmi & Sepet Ortalaması */}
           <div
-            className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card/90 to-muted/20 backdrop-blur-md shadow-sm hover:shadow-md hover:border-sky-500/40 transition-all duration-200 animate-in fade-in zoom-in-95 fill-mode-both"
+            className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs hover:shadow-md hover:border-gray-300 transition-all duration-150 animate-in fade-in zoom-in-95 fill-mode-both"
             style={{ animationDelay: "50ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground">
+              <span className="text-xs font-medium text-gray-500">
                 {activePeriod === "today" ? "Bugünkü Siparişler" : "Bu Ayki Siparişler"}
               </span>
-              <div className="p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400">
-                <ReceiptIcon className="size-4.5 stroke-[2.5]" />
+              <div className="p-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-600">
+                <ReceiptIcon className="size-4" />
               </div>
             </div>
 
             <div className="my-2.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 tabular-nums">
                 {activePeriod === "today" ? data.today.orders : data.month.orders}
               </span>
-              <span className="text-xs text-muted-foreground font-semibold ml-1.5">Adisyon</span>
+              <span className="text-xs text-gray-500 font-medium ml-1.5">Adisyon</span>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
-              <span className="text-muted-foreground">
-                Ortalama Adisyon (AOV):
-              </span>
-              <span className="font-extrabold text-foreground tabular-nums">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
+              <span className="text-gray-500">Ort. Adisyon (AOV):</span>
+              <span className="font-bold text-gray-900 tabular-nums">
                 {formatCurrency(activePeriod === "today" ? data.today.aov : data.month.aov)}
               </span>
             </div>
@@ -243,30 +228,30 @@ export function DashboardView({
 
           {/* 3. Açık Masalar & Bekleyen Ciro */}
           <div
-            className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card/90 to-muted/20 backdrop-blur-md shadow-sm hover:shadow-md hover:border-amber-500/40 transition-all duration-200 animate-in fade-in zoom-in-95 fill-mode-both"
+            className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs hover:shadow-md hover:border-gray-300 transition-all duration-150 animate-in fade-in zoom-in-95 fill-mode-both"
             style={{ animationDelay: "80ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground">
-                Şu An Masada (Açık Adisyonlar)
+              <span className="text-xs font-medium text-gray-500">
+                Şu An Masada (Açık Adisyon)
               </span>
-              <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-                <UtensilsIcon className="size-4.5 stroke-[2.5]" />
+              <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-600">
+                <UtensilsIcon className="size-4" />
               </div>
             </div>
 
             <div className="my-2.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 tabular-nums">
                 {formatCurrency(data.openNow.value)}
               </span>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
-              <span className="font-bold text-foreground">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
+              <span className="font-semibold text-gray-800">
                 {data.openNow.count} açık masa
               </span>
               {data.openNow.oldestMinutes !== null && (
-                <span className="text-amber-600 dark:text-amber-400 font-extrabold">
+                <span className="text-amber-700 font-bold">
                   En eski: {data.openNow.oldestMinutes} dk
                 </span>
               )}
@@ -275,27 +260,27 @@ export function DashboardView({
 
           {/* 4. Tahsil Edilen Ödemeler */}
           <div
-            className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card/90 to-muted/20 backdrop-blur-md shadow-sm hover:shadow-md hover:border-purple-500/40 transition-all duration-200 animate-in fade-in zoom-in-95 fill-mode-both"
+            className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs hover:shadow-md hover:border-gray-300 transition-all duration-150 animate-in fade-in zoom-in-95 fill-mode-both"
             style={{ animationDelay: "110ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground">
+              <span className="text-xs font-medium text-gray-500">
                 Bugün Kasaya Giren (Tahsilat)
               </span>
-              <div className="p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400">
-                <CreditCardIcon className="size-4.5 stroke-[2.5]" />
+              <div className="p-2 rounded-xl bg-purple-50 border border-purple-100 text-purple-600">
+                <CreditCardIcon className="size-4" />
               </div>
             </div>
 
             <div className="my-2.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 tabular-nums">
                 {formatCurrency(paymentsTotal)}
               </span>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
-              <span className="text-muted-foreground">İptal/Fire:</span>
-              <span className="font-extrabold text-rose-600 dark:text-rose-400">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
+              <span className="text-gray-500">İptal/Fire:</span>
+              <span className="font-bold text-rose-600">
                 {data.voidsToday} Kalem
               </span>
             </div>
@@ -306,23 +291,21 @@ export function DashboardView({
       {/* 
         ========================================================================
         KATEGORİ 2: İNTERAKTİF GRAFİK PANELLERİ
-        - Günlük Satış Trendi (Area / Bar)
-        - Saatlik Mutfak & Kasa Yoğunluğu (Peak Hours)
         ========================================================================
       */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Sol Panel: Günlük Satış Trendi */}
         <div
-          className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "140ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h3 className="text-base font-black text-foreground flex items-center gap-2">
-                <TrendingUpIcon className="size-4.5 text-emerald-500" />
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <TrendingUpIcon className="size-4.5 text-emerald-600" />
                 <span>Günlük Ciro & Satış Trendi</span>
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 Aylık performans ve dönemsel dalgalanma analizi
               </p>
             </div>
@@ -333,16 +316,16 @@ export function DashboardView({
 
         {/* Sağ Panel: Saatlik Sipariş Yoğunluğu */}
         <div
-          className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "170ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h3 className="text-base font-black text-foreground flex items-center gap-2">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <ClockIcon className="size-4.5 text-amber-500" />
                 <span>Saatlik Yoğunluk & Zirve Saatler (Peak Hours)</span>
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 Hangi saat diliminde daha çok sipariş geldiğini takip edin
               </p>
             </div>
@@ -351,7 +334,7 @@ export function DashboardView({
           {data.hourlyTraffic && data.hourlyTraffic.length > 0 ? (
             <HourlyTrafficChart data={data.hourlyTraffic} />
           ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground text-xs">
+            <div className="flex flex-col items-center justify-center p-12 text-center text-gray-400 text-xs">
               Bugün için saatlik sipariş verisi henüz oluşmadı.
             </div>
           )}
@@ -363,29 +346,29 @@ export function DashboardView({
         KATEGORİ 3 & 4: SALON KAPASİTESİ, ÖDEME VE HİZMET KANALLARI
         ========================================================================
       */}
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {/* 1. Masa & Salon Doluluk Oranı */}
         <div
-          className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "200ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
-          <div className="flex items-center justify-between border-b border-border/40 pb-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-700">
                 <UtensilsCrossedIcon className="size-4.5" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground">
+                <h3 className="text-sm font-bold text-gray-900">
                   Masa & Kapasite Durumu
                 </h3>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-gray-500">
                   Canlı salon doluluk metriği
                 </span>
               </div>
             </div>
             <Link
               href="/dashboard/tables"
-              className="text-xs font-black text-primary hover:underline"
+              className="text-xs font-semibold text-primary hover:underline"
             >
               Masalar →
             </Link>
@@ -393,27 +376,25 @@ export function DashboardView({
 
           <div className="my-4 flex items-center justify-between gap-4">
             <div>
-              <span className="block text-3xl font-black text-foreground tabular-nums">
+              <span className="block text-3xl font-bold text-gray-900 tabular-nums">
                 {data.occupancy.occupied} / {data.occupancy.total}
               </span>
-              <span className="block text-xs text-muted-foreground font-semibold mt-0.5">
+              <span className="block text-xs text-gray-500 font-medium mt-0.5">
                 {data.occupancy.total - data.occupancy.occupied} masa müsait
               </span>
             </div>
 
-            {/* Doluluk Yüzde Rozeti */}
             <div className="flex flex-col items-end">
-              <span className="text-2xl font-black text-amber-500 tabular-nums">
+              <span className="text-2xl font-bold text-amber-600 tabular-nums">
                 %{occupancyPct}
               </span>
-              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">
                 Doluluk
               </span>
             </div>
           </div>
 
-          {/* Doluluk Çubuğu */}
-          <div className="h-3 w-full bg-muted/60 rounded-full overflow-hidden">
+          <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
             <div
               style={{ width: `${occupancyPct}%` }}
               className={cn(
@@ -426,19 +407,19 @@ export function DashboardView({
 
         {/* 2. Ödeme Yöntemleri Dağılımı */}
         <div
-          className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "230ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
-          <div className="flex items-center justify-between border-b border-border/40 pb-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+              <div className="p-2 rounded-xl bg-purple-50 border border-purple-100 text-purple-700">
                 <CreditCardIcon className="size-4.5" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground">
+                <h3 className="text-sm font-bold text-gray-900">
                   Ödeme Yöntemleri
                 </h3>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-gray-500">
                   Nakit vs Kredi Kartı vs Havale
                 </span>
               </div>
@@ -450,21 +431,21 @@ export function DashboardView({
           </div>
         </div>
 
-        {/* 3. Sipariş Kanalları (Masada, Paket, Gel-Al) */}
+        {/* 3. Sipariş Kanalları */}
         <div
-          className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "260ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
-          <div className="flex items-center justify-between border-b border-border/40 pb-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <div className="p-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-700">
                 <LayersIcon className="size-4.5" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground">
+                <h3 className="text-sm font-bold text-gray-900">
                   Sipariş Kanalları
                 </h3>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-gray-500">
                   Hizmet türüne göre dağılım
                 </span>
               </div>
@@ -482,29 +463,28 @@ export function DashboardView({
         KATEGORİ 5: MENÜ & ŞAMPİYON ÜRÜNLER (EN ÇOK SATANLAR)
         ========================================================================
       */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-        {/* Sol 2 Sütun: En Çok Satanlar Liderlik Tablosu */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div
-          className="lg:col-span-2 flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="lg:col-span-2 flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "290ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
-          <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-700">
                 <SparklesIcon className="size-4.5" />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-black text-foreground">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900">
                   Bugün En Çok Satan Ürünler (Liderlik Tablosu)
                 </h3>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-gray-500">
                   En çok talep gören ve ciro getiren menü kalemleri
                 </span>
               </div>
             </div>
             <Link
               href="/dashboard/menu"
-              className="text-xs font-black text-primary hover:underline"
+              className="text-xs font-semibold text-primary hover:underline"
             >
               Menü Yönetimi →
             </Link>
@@ -513,67 +493,67 @@ export function DashboardView({
           <TopItemsLeaderboard items={data.topItemsToday} />
         </div>
 
-        {/* Sağ 1 Sütun: Müşteri & Ekstra Analitik Özeti */}
+        {/* Sağ Panel: Müşteri & Sistem Durumu */}
         <div
-          className="flex flex-col justify-between p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm animate-in fade-in zoom-in-95 fill-mode-both"
+          className="flex flex-col justify-between p-5 rounded-2xl border border-gray-200 bg-white shadow-xs animate-in fade-in zoom-in-95 fill-mode-both"
           style={{ animationDelay: "320ms", animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
-          <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-primary/10 text-primary">
+              <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
                 <UsersIcon className="size-4.5" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground">
+                <h3 className="text-sm font-bold text-gray-900">
                   Müşteri & Sistem Durumu
                 </h3>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-gray-500">
                   CRM ve operasyonel sağlık
                 </span>
               </div>
             </div>
             <Link
               href="/dashboard/customers"
-              className="text-xs font-black text-primary hover:underline"
+              className="text-xs font-semibold text-primary hover:underline"
             >
               Müşteriler →
             </Link>
           </div>
 
-          <div className="flex flex-col gap-3 my-2">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-border/40">
+          <div className="flex flex-col gap-2.5 my-2">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/80 shadow-2xs">
               <div className="flex items-center gap-2">
                 <UsersIcon className="size-4 text-primary" />
-                <span className="text-xs font-bold text-foreground">Kayıtlı Müşteri</span>
+                <span className="text-xs font-semibold text-gray-800">Kayıtlı Müşteri</span>
               </div>
-              <span className="text-sm font-black text-foreground tabular-nums">
+              <span className="text-sm font-bold text-gray-900 tabular-nums">
                 {data.customerCount ?? 0}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-border/40">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/80 shadow-2xs">
               <div className="flex items-center gap-2">
                 <XCircleIcon className="size-4 text-rose-500" />
-                <span className="text-xs font-bold text-foreground">Bugünkü İptaller</span>
+                <span className="text-xs font-semibold text-gray-800">Bugünkü İptaller</span>
               </div>
-              <span className="text-sm font-black text-rose-600 dark:text-rose-400 tabular-nums">
+              <span className="text-sm font-bold text-rose-600 tabular-nums">
                 {data.voidsToday} Kalem
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-border/40">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-200/80 shadow-2xs">
               <div className="flex items-center gap-2">
                 <AlertCircleIcon className="size-4 text-amber-500" />
-                <span className="text-xs font-bold text-foreground">Kritik Stok Uyarısı</span>
+                <span className="text-xs font-semibold text-gray-800">Kritik Stok Uyarısı</span>
               </div>
-              <span className="text-sm font-black text-amber-600 dark:text-amber-400 tabular-nums">
+              <span className="text-sm font-bold text-amber-700 tabular-nums">
                 {lowStock} Ürün
               </span>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-border/40 text-[11px] text-muted-foreground">
-            AdisyonEx otomatik raporlama her 10 saniyede bir güncellenir.
+          <div className="pt-3 border-t border-gray-100 text-xs text-gray-400">
+            AdisyonEx bulut raporlama otomatik güncellenir.
           </div>
         </div>
       </section>

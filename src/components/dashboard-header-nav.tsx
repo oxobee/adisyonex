@@ -130,7 +130,7 @@ export function DashboardHeaderNav({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full h-14 border-b border-border/70 bg-background/90 dark:bg-zinc-950/90 backdrop-blur-xl transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+      <header className="sticky top-0 z-40 w-full h-14 border-b border-gray-200 bg-white/95 backdrop-blur-xl transition-all select-none shadow-2xs">
         <div className="flex h-full w-full items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
           {/* SOL BÖLÜM */}
           <div className="flex items-center gap-3 shrink-0 min-w-0">
@@ -239,7 +239,7 @@ export function DashboardHeaderNav({
 
                 {/* Dropdown Menü */}
                 {isProfileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-76 sm:w-84 z-50 overflow-hidden rounded-3xl border border-border/80 bg-card p-3 text-card-foreground shadow-2xl backdrop-blur-2xl ring-1 ring-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
+                  <div className="absolute right-0 top-full mt-2 w-76 sm:w-84 z-50 overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 text-gray-900 shadow-xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95 duration-150">
                     {/* Profil başlığı */}
                     <div className="flex items-center justify-between p-2 pb-3 border-b border-border/60">
                       <div className="flex items-center gap-3 min-w-0">

@@ -41,48 +41,40 @@ const CARD_THEME: Record<
   KitchenStatus,
   {
     cardBorder: string;
-    cardGlow: string;
     headerBg: string;
     badgeBg: string;
     badgeText: string;
     stepColor: string;
     btnClass: string;
     btnLabel: string;
-    statusIcon: React.ComponentType<{ className?: string }>;
   }
 > = {
   WAITING: {
-    cardBorder: "border-rose-500/50 hover:border-rose-400/80",
-    cardGlow: "shadow-[0_8px_30px_rgba(244,63,94,0.15)]",
-    headerBg: "bg-gradient-to-r from-rose-950/80 via-rose-900/60 to-zinc-900/80 border-rose-500/40",
-    badgeBg: "bg-rose-600 text-white shadow-[0_0_12px_rgba(244,63,94,0.5)]",
+    cardBorder: "border-rose-200 hover:border-rose-300",
+    headerBg: "bg-rose-50/80 border-b border-rose-100",
+    badgeBg: "bg-rose-100 text-rose-800 border border-rose-200",
     badgeText: "Bekliyor",
-    stepColor: "bg-rose-500 shadow-[0_0_8px_#f43f5e]",
-    btnClass: "bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white shadow-[0_8px_20px_rgba(244,63,94,0.35)] active:scale-95",
+    stepColor: "bg-rose-500",
+    btnClass: "bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xs active:scale-95",
     btnLabel: "🔥 Hazırlamaya Başla",
-    statusIcon: FlameIcon,
   },
   PREPARING: {
-    cardBorder: "border-amber-500/50 hover:border-amber-400/80",
-    cardGlow: "shadow-[0_8px_30px_rgba(245,158,11,0.15)]",
-    headerBg: "bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-zinc-900/80 border-amber-500/40",
-    badgeBg: "bg-amber-500 text-amber-950 shadow-[0_0_12px_rgba(245,158,11,0.5)] animate-pulse",
+    cardBorder: "border-amber-200 hover:border-amber-300",
+    headerBg: "bg-amber-50/80 border-b border-amber-100",
+    badgeBg: "bg-amber-100 text-amber-800 border border-amber-200 animate-pulse",
     badgeText: "Hazırlanıyor",
-    stepColor: "bg-amber-400 shadow-[0_0_8px_#fbbf24]",
-    btnClass: "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black shadow-[0_8px_20px_rgba(245,158,11,0.35)] active:scale-95",
+    stepColor: "bg-amber-500",
+    btnClass: "bg-amber-500 hover:bg-amber-600 text-gray-950 font-bold shadow-xs active:scale-95",
     btnLabel: "✨ Hazırlandı Olarak İşaretle",
-    statusIcon: ChefHatIcon,
   },
   READY: {
-    cardBorder: "border-emerald-500/50 hover:border-emerald-400/80",
-    cardGlow: "shadow-[0_8px_30px_rgba(16,185,129,0.15)]",
-    headerBg: "bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-zinc-900/80 border-emerald-500/40",
-    badgeBg: "bg-emerald-500 text-emerald-950 shadow-[0_0_12px_rgba(16,185,129,0.5)]",
+    cardBorder: "border-emerald-200 hover:border-emerald-300",
+    headerBg: "bg-emerald-50/80 border-b border-emerald-100",
+    badgeBg: "bg-emerald-100 text-emerald-800 border border-emerald-200",
     badgeText: "Servise Hazır",
-    stepColor: "bg-emerald-400 shadow-[0_0_8px_#34d399]",
-    btnClass: "bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] active:scale-95",
+    stepColor: "bg-emerald-500",
+    btnClass: "bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs active:scale-95",
     btnLabel: "Servise Hazır",
-    statusIcon: SparklesIcon,
   },
 };
 
@@ -125,7 +117,6 @@ function TicketCard({
     onError: (m) => toast.error(toMessage(m)),
   });
 
-  // Dokunmatik panelde aşçıların hazırladıkları kalemleri işaretleyebilmesi için yerel durum
   const [checkedLines, setCheckedLines] = useState<Record<string, boolean>>({});
 
   const toggleLine = (id: string) => {
@@ -143,46 +134,39 @@ function TicketCard({
   return (
     <li
       className={cn(
-        "group relative flex flex-col justify-between overflow-hidden rounded-3xl border-2 transition-all duration-200 select-none",
-        "bg-[#111319] text-white shadow-xl hover:-translate-y-1 hover:shadow-2xl",
-        "animate-in fade-in zoom-in-95 duration-300",
+        "group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-200 select-none",
+        "bg-white text-gray-900 shadow-xs hover:shadow-md",
+        "animate-in fade-in zoom-in-95 duration-200",
         theme.cardBorder,
-        theme.cardGlow,
-        isUrgent && "ring-2 ring-red-500/80 animate-pulse",
+        isUrgent && "ring-2 ring-rose-500/50",
       )}
     >
       {/* KART BAŞLIĞI */}
-      <div
-        className={cn(
-          "flex items-center justify-between gap-3 border-b p-4 backdrop-blur-md transition-colors",
-          theme.headerBg,
-        )}
-      >
+      <div className={cn("flex items-center justify-between gap-3 p-4 transition-colors", theme.headerBg)}>
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
             {ticket.orderType === "DINE_IN" ? (
-              <UtensilsIcon className="size-5 text-amber-400 shrink-0" />
+              <UtensilsIcon className="size-5 text-amber-600 shrink-0" />
             ) : ticket.orderType === "DELIVERY" ? (
-              <PackageIcon className="size-5 text-sky-400 shrink-0" />
+              <PackageIcon className="size-5 text-blue-600 shrink-0" />
             ) : (
-              <ShoppingBagIcon className="size-5 text-emerald-400 shrink-0" />
+              <ShoppingBagIcon className="size-5 text-emerald-600 shrink-0" />
             )}
-            <h3 className="truncate text-lg sm:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            <h3 className="truncate text-base sm:text-lg font-bold text-gray-900 tracking-tight">
               {ticketTitle(ticket)}
             </h3>
           </div>
 
-          {/* Bekleme Süresi Rozeti */}
           {ticket.firstFiredAt && (
             <div className="flex items-center gap-1.5 mt-1">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black border tracking-tight tabular-nums",
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border tracking-tight tabular-nums",
                   isUrgent
-                    ? "bg-red-500/25 border-red-500/50 text-red-300 animate-pulse"
+                    ? "bg-rose-100 border-rose-200 text-rose-800 animate-pulse"
                     : isWarning
-                      ? "bg-amber-500/25 border-amber-500/50 text-amber-300"
-                      : "bg-emerald-500/20 border-emerald-500/40 text-emerald-300",
+                      ? "bg-amber-100 border-amber-200 text-amber-800"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-700",
                 )}
               >
                 <ClockIcon className="size-3" />
@@ -193,99 +177,76 @@ function TicketCard({
           )}
         </div>
 
-        {/* Durum Rozeti */}
         <div className="flex flex-col items-end gap-1 shrink-0">
-          <span
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider shadow-md",
-              theme.badgeBg,
-            )}
-          >
+          <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider", theme.badgeBg)}>
             {theme.badgeText}
           </span>
-          <span className="text-[10px] font-bold text-zinc-400">
-            Fiş #{ticket.orderNumber}
+          <span className="text-[11px] font-medium text-gray-500">
+            #{ticket.orderNumber}
           </span>
         </div>
       </div>
 
-      {/* 3 AŞAMALI AKILLI İLERLEME ÇİZGİSİ */}
-      <div className="grid grid-cols-3 gap-1.5 px-4 pt-3.5 pb-2 bg-black/20 border-b border-white/5">
-        {/* Aşama 1: Bekliyor */}
+      {/* 3 AŞAMALI İLERLEME ÇİZGİSİ */}
+      <div className="grid grid-cols-3 gap-2 px-4 py-2.5 bg-gray-50/50 border-b border-gray-100">
         <div className="flex flex-col items-center gap-1">
           <div
             className={cn(
               "h-1.5 w-full rounded-full transition-all duration-300",
-              ticket.status === "WAITING"
-                ? "bg-rose-500 shadow-[0_0_8px_#f43f5e]"
-                : "bg-rose-500/60",
+              ticket.status === "WAITING" ? "bg-rose-500" : "bg-rose-300",
             )}
           />
-          <span
-            className={cn(
-              "text-[10px] tracking-tight font-bold",
-              ticket.status === "WAITING" ? "text-rose-400 font-black" : "text-zinc-500",
-            )}
-          >
+          <span className={cn("text-[10px] font-semibold", ticket.status === "WAITING" ? "text-rose-700 font-bold" : "text-gray-400")}>
             1. Bekliyor
           </span>
         </div>
 
-        {/* Aşama 2: Hazırlanıyor */}
         <div className="flex flex-col items-center gap-1">
           <div
             className={cn(
               "h-1.5 w-full rounded-full transition-all duration-300",
               ticket.status === "PREPARING"
-                ? "bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-pulse"
+                ? "bg-amber-500 animate-pulse"
                 : ticket.status === "READY"
                   ? "bg-emerald-500"
-                  : "bg-zinc-800",
+                  : "bg-gray-200",
             )}
           />
           <span
             className={cn(
-              "text-[10px] tracking-tight font-bold",
+              "text-[10px] font-semibold",
               ticket.status === "PREPARING"
-                ? "text-amber-400 font-black"
+                ? "text-amber-700 font-bold"
                 : ticket.status === "READY"
-                  ? "text-emerald-400"
-                  : "text-zinc-500",
+                  ? "text-emerald-700"
+                  : "text-gray-400",
             )}
           >
             2. Hazırlanıyor
           </span>
         </div>
 
-        {/* Aşama 3: Servise Hazır */}
         <div className="flex flex-col items-center gap-1">
           <div
             className={cn(
               "h-1.5 w-full rounded-full transition-all duration-300",
-              ticket.status === "READY"
-                ? "bg-emerald-400 shadow-[0_0_8px_#34d399]"
-                : "bg-zinc-800",
+              ticket.status === "READY" ? "bg-emerald-500" : "bg-gray-200",
             )}
           />
-          <span
-            className={cn(
-              "text-[10px] tracking-tight font-bold",
-              ticket.status === "READY" ? "text-emerald-400 font-black" : "text-zinc-500",
-            )}
-          >
+          <span className={cn("text-[10px] font-semibold", ticket.status === "READY" ? "text-emerald-700 font-bold" : "text-gray-400")}>
             3. Servise Hazır
           </span>
         </div>
       </div>
 
-      {/* DOKUNMATİK UYUMLU SİPARİŞ KALEMLERİ LİSTESİ */}
+      {/* SİPARİŞ KALEMLERİ LİSTESİ */}
       <div className="flex-1 flex flex-col gap-3 p-4 overflow-y-auto max-h-[320px]">
         {ticket.batches.map((batch, idx) => (
           <div key={batch.firedAt ?? idx} className="flex flex-col gap-2">
             {batch.isAddOn || batch.isSelfOrder ? (
               <div className="flex items-center gap-2">
                 {batch.isAddOn ? (
-                  <span className="rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[11px] font-black uppercase">
+                  <span className="rounded-md bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-[11px] font-bold uppercase">
                     ＋ Ek Sipariş ({getMinutesElapsed(batch.firedAt, now)} dk önce)
                   </span>
                 ) : null}
@@ -293,7 +254,7 @@ function TicketCard({
               </div>
             ) : null}
 
-            <ul className="divide-y divide-white/10 rounded-2xl bg-black/40 border border-white/10 overflow-hidden shadow-inner">
+            <ul className="divide-y divide-gray-100 rounded-xl bg-gray-50/60 border border-gray-200/80 overflow-hidden">
               {batch.lines.map((line) => {
                 const isChecked = checkedLines[line.id] ?? false;
 
@@ -302,60 +263,43 @@ function TicketCard({
                     key={line.id}
                     onClick={() => toggleLine(line.id)}
                     className={cn(
-                      "flex items-start gap-3 p-3 transition-all cursor-pointer select-none active:bg-white/10",
-                      isChecked ? "bg-emerald-950/20 opacity-50" : "hover:bg-white/5",
+                      "flex items-start gap-3 p-3 transition-all cursor-pointer select-none active:bg-gray-100",
+                      isChecked ? "bg-emerald-50/50 opacity-60" : "hover:bg-white",
                     )}
                     title="Hazırlanan ürünü tamamlamak için dokunun"
                   >
-                    {/* Checkbox / Adet Kutusu */}
                     <div
                       className={cn(
-                        "flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl font-black text-sm tabular-nums border transition-all duration-150 shadow-xs",
+                        "flex size-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs tabular-nums border transition-all shadow-2xs",
                         isChecked
-                          ? "bg-emerald-500 border-emerald-400 text-zinc-950 scale-95"
-                          : "bg-white/10 border-white/20 text-white group-hover:scale-105",
+                          ? "bg-emerald-500 border-emerald-600 text-white"
+                          : "bg-white border-gray-200 text-gray-800",
                       )}
                     >
-                      {isChecked ? (
-                        <CheckIcon className="size-5 stroke-[3]" />
-                      ) : (
-                        `${line.quantity}×`
-                      )}
+                      {isChecked ? <CheckIcon className="size-4 stroke-[3]" /> : `${line.quantity}×`}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <span
-                        className={cn(
-                          "block text-sm sm:text-base font-black leading-snug transition-all",
-                          isChecked ? "line-through text-zinc-400" : "text-white",
-                        )}
-                      >
+                      <span className={cn("block text-sm font-bold leading-snug transition-all", isChecked ? "line-through text-gray-400" : "text-gray-900")}>
                         {line.name}
                         {line.variantName && (
-                          <span className="text-zinc-300 font-bold ml-1">
-                            ({line.variantName})
-                          </span>
+                          <span className="text-gray-500 font-medium ml-1">({line.variantName})</span>
                         )}
                       </span>
 
-                      {/* Seçenekler / Modifiers */}
                       {line.modifiers.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {line.modifiers.map((mod, i) => (
-                            <span
-                              key={i}
-                              className="rounded-md bg-white/10 border border-white/15 px-1.5 py-0.2 text-[10px] font-bold text-zinc-300"
-                            >
+                            <span key={i} className="rounded-md bg-white border border-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
                               {mod}
                             </span>
                           ))}
                         </div>
                       )}
 
-                      {/* Not Uyarısı */}
                       {line.lineNote && (
-                        <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 text-amber-200 border border-amber-500/40 px-2 py-0.5 text-xs font-extrabold shadow-xs">
-                          <AlertTriangleIcon className="size-3.5 text-amber-400 shrink-0" />
+                        <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 text-xs font-semibold">
+                          <AlertTriangleIcon className="size-3.5 text-amber-600 shrink-0" />
                           <span>Not: “{line.lineNote}”</span>
                         </div>
                       )}
@@ -368,21 +312,21 @@ function TicketCard({
         ))}
       </div>
 
-      {/* DEV DOKUNMATİK AKSİYON BUTONU (TOUCH PANEL ENTEGRASYONU) */}
-      <div className="p-4 pt-2 border-t border-white/10 bg-black/30">
+      {/* DEV DOKUNMATİK AKSİYON BUTONU */}
+      <div className="p-4 pt-2 border-t border-gray-100 bg-gray-50/40">
         {ticket.advanceLabel ? (
           <button
             type="button"
             disabled={advance.isPending}
             onClick={() => advance.execute({ orderId: ticket.orderId })}
             className={cn(
-              "flex items-center justify-center gap-2.5 h-14 sm:h-15 w-full rounded-2xl text-base sm:text-lg font-black tracking-wide uppercase transition-all duration-150 cursor-pointer select-none",
+              "flex items-center justify-center gap-2 h-13 w-full rounded-xl text-sm sm:text-base font-bold tracking-wide uppercase transition-all duration-150 cursor-pointer select-none",
               theme.btnClass,
             )}
           >
             {advance.isPending ? (
               <span className="inline-flex items-center gap-2">
-                <span className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                <span className="size-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
                 <span>İşleniyor...</span>
               </span>
             ) : (
@@ -390,8 +334,8 @@ function TicketCard({
             )}
           </button>
         ) : (
-          <div className="flex items-center justify-center gap-2.5 h-14 sm:h-15 w-full rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/15 text-emerald-300 font-black text-sm sm:text-base shadow-lg shadow-emerald-500/20">
-            <CheckCircle2Icon className="size-6 text-emerald-400 shrink-0" />
+          <div className="flex items-center justify-center gap-2 h-13 w-full rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 font-bold text-sm shadow-2xs">
+            <CheckCircle2Icon className="size-5 text-emerald-600 shrink-0" />
             <span>Servise & Garsona Teslime Hazır</span>
           </div>
         )}
@@ -418,7 +362,6 @@ export function KitchenDisplay({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const seenRef = useRef<Map<string, number> | null>(null);
 
-  // Canlı saat ve 3 saniyede bir hafif yenileme
   useEffect(() => {
     const id = setInterval(() => {
       setNow(Date.now());
@@ -427,7 +370,6 @@ export function KitchenDisplay({
     return () => clearInterval(id);
   }, [router]);
 
-  // Fullscreen dinleyicisi
   useEffect(() => {
     const handleFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -444,7 +386,6 @@ export function KitchenDisplay({
     }
   };
 
-  // Yeni sipariş sesli uyarısı
   useEffect(() => {
     const sigs = tickets.map((t) => ({
       id: t.orderId,
@@ -468,7 +409,6 @@ export function KitchenDisplay({
     }
   }, [tickets, announce]);
 
-  // Sayaçlar
   const counts = useMemo(() => {
     const waiting = tickets.filter((t) => t.status === "WAITING").length;
     const preparing = tickets.filter((t) => t.status === "PREPARING").length;
@@ -480,52 +420,45 @@ export function KitchenDisplay({
     return { total: tickets.length, waiting, preparing, ready, overdue };
   }, [tickets, now]);
 
-  // Filtrelenmiş fişler
   const filteredTickets = useMemo(() => {
     if (activeFilter === "ALL") return tickets;
     return tickets.filter((t) => t.status === activeFilter);
   }, [tickets, activeFilter]);
 
   return (
-    <div className="w-full flex flex-col gap-4 p-3 sm:p-5 lg:p-6 max-w-[1800px] mx-auto min-h-screen">
-      {/* 
-        PREMIUM KDS HEADER CONTROL BAR:
-        - Mutfak İstasyonu + Canlı Dijital Saat
-        - Dokunmatik Filtre Sekmeleri
-        - Ses & Tam Ekran KDS Butonları
-      */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-3xl border border-white/10 bg-[#12141c]/90 backdrop-blur-2xl shadow-2xl">
-        {/* Sol Alan: Restoran & Aşçı */}
-        <div className="flex items-center gap-3.5">
-          <div className="flex size-12 sm:size-13 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-zinc-950 font-black shadow-lg shadow-orange-500/30">
-            <ChefHatIcon className="size-7 stroke-[2.5]" />
+    <div className="w-full flex flex-col gap-5 p-3.5 sm:p-5 lg:p-6 max-w-[1800px] mx-auto min-h-screen">
+      {/* UNTITLED UI KDS HEADER */}
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-2xl border border-gray-200 bg-white shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <ChefHatIcon className="size-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
                 {restaurantName}
               </span>
-              <span className="text-zinc-600">·</span>
-              <span className="text-xs font-bold text-zinc-400">
+              <span className="text-gray-300">·</span>
+              <span className="text-xs font-semibold text-gray-600">
                 Mutfak İstasyonu
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
               {staffName}
             </h1>
           </div>
         </div>
 
-        {/* Orta Alan: Dokunmatik Filtre Sekmeleri */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/60 border border-white/10 overflow-x-auto no-scrollbar">
+        {/* Untitled UI Segmented Tabs */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-gray-100 border border-gray-200/80 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveFilter("ALL")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap active:scale-95",
+              "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap active:scale-95",
               activeFilter === "ALL"
-                ? "bg-white text-zinc-950 shadow-md"
-                : "text-zinc-400 hover:text-white hover:bg-white/5",
+                ? "bg-white text-gray-900 shadow-xs"
+                : "text-gray-600 hover:text-gray-900",
             )}
           >
             Tümü ({counts.total})
@@ -535,13 +468,13 @@ export function KitchenDisplay({
             type="button"
             onClick={() => setActiveFilter("WAITING")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap active:scale-95 flex items-center gap-1.5",
+              "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap active:scale-95 flex items-center gap-1.5",
               activeFilter === "WAITING"
-                ? "bg-rose-600 text-white shadow-md shadow-rose-600/40"
-                : "text-rose-400 hover:text-rose-300 hover:bg-rose-500/10",
+                ? "bg-white text-rose-700 shadow-xs"
+                : "text-rose-600 hover:text-rose-700",
             )}
           >
-            <FlameIcon className="size-4" />
+            <FlameIcon className="size-3.5" />
             <span>Bekleyen ({counts.waiting})</span>
           </button>
 
@@ -549,13 +482,13 @@ export function KitchenDisplay({
             type="button"
             onClick={() => setActiveFilter("PREPARING")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap active:scale-95 flex items-center gap-1.5",
+              "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap active:scale-95 flex items-center gap-1.5",
               activeFilter === "PREPARING"
-                ? "bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/40"
-                : "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10",
+                ? "bg-white text-amber-700 shadow-xs"
+                : "text-amber-600 hover:text-amber-700",
             )}
           >
-            <ChefHatIcon className="size-4" />
+            <ChefHatIcon className="size-3.5" />
             <span>Hazırlanıyor ({counts.preparing})</span>
           </button>
 
@@ -563,83 +496,72 @@ export function KitchenDisplay({
             type="button"
             onClick={() => setActiveFilter("READY")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap active:scale-95 flex items-center gap-1.5",
+              "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap active:scale-95 flex items-center gap-1.5",
               activeFilter === "READY"
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/40"
-                : "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10",
+                ? "bg-white text-emerald-700 shadow-xs"
+                : "text-emerald-600 hover:text-emerald-700",
             )}
           >
-            <SparklesIcon className="size-4" />
+            <SparklesIcon className="size-3.5" />
             <span>Hazır ({counts.ready})</span>
           </button>
         </div>
 
-        {/* Sağ Alan: Ses & Tam Ekran Araçları */}
-        <div className="flex items-center gap-2.5 self-end lg:self-auto">
-          {/* Kritik Gecikme Rozeti */}
+        {/* Sağ Araçlar */}
+        <div className="flex items-center gap-2 self-end lg:self-auto">
           {counts.overdue > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-black animate-pulse">
-              <AlertTriangleIcon className="size-4 text-red-400" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              <AlertTriangleIcon className="size-3.5 text-rose-600" />
               <span>{counts.overdue} Gecikme</span>
             </div>
           )}
 
-          {/* Ses Kontrolü */}
           {supported && (
             <button
               type="button"
               onClick={toggle}
               className={cn(
-                "flex size-11 items-center justify-center rounded-2xl border transition-all cursor-pointer active:scale-90 shadow-md",
+                "flex size-10 items-center justify-center rounded-xl border transition-all cursor-pointer active:scale-95 shadow-2xs",
                 enabled
-                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
-                  : "bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10",
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                  : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900",
               )}
               title={enabled ? "Sesli Uyarı Açık" : "Sesli Uyarı Kapalı"}
               aria-label="Ses Kontrolü"
             >
-              {enabled ? (
-                <Volume2Icon className="size-5" />
-              ) : (
-                <VolumeXIcon className="size-5" />
-              )}
+              {enabled ? <Volume2Icon className="size-4.5" /> : <VolumeXIcon className="size-4.5" />}
             </button>
           )}
 
-          {/* Tam Ekran KDS Butonu */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-90 shadow-md"
+            className="flex size-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer active:scale-95 shadow-2xs"
             title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran KDS Modu"}
             aria-label="Tam Ekran"
           >
-            {isFullscreen ? (
-              <Minimize2Icon className="size-5" />
-            ) : (
-              <Maximize2Icon className="size-5" />
-            )}
+            {isFullscreen ? <Minimize2Icon className="size-4.5" /> : <Maximize2Icon className="size-4.5" />}
           </button>
         </div>
       </header>
 
       {/* SİPARİŞ FİŞLERİ GRID DÜZENİ */}
       {filteredTickets.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-white/10 bg-[#12141c]/50 p-12 text-center my-auto min-h-[420px]">
-          <div className="flex size-20 items-center justify-center rounded-3xl bg-white/5 border border-white/10 text-zinc-400 mb-4 shadow-xl animate-bounce">
-            <ChefHatIcon className="size-10 stroke-[2] text-amber-400" />
+        <div className="flex-1 flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center my-auto min-h-[420px] shadow-xs">
+          <div className="flex size-16 items-center justify-center rounded-2xl bg-gray-50 border border-gray-200 text-gray-400 mb-3 shadow-xs">
+            <ChefHatIcon className="size-8 stroke-[1.8] text-amber-500" />
           </div>
-          <h3 className="text-xl font-black text-white">
+          <h3 className="text-lg font-bold text-gray-900">
             {activeFilter === "ALL"
               ? "Şu an bekleyen mutfak siparişi yok"
               : "Bu filtrede sipariş bulunmuyor"}
           </h3>
-          <p className="text-sm text-zinc-400 max-w-sm mt-2">
+          <p className="text-xs text-gray-500 max-w-sm mt-1">
             Yeni siparişler verildiğinde sesli uyarı ve animasyonlarla anlık olarak bu ekranda görüntülenecektir.
           </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 w-full">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 w-full">
           {filteredTickets.map((t) => (
             <TicketCard key={t.orderId} ticket={t} now={now} />
           ))}

@@ -24,21 +24,21 @@ function HourlyTooltip({ active, payload }: HourlyTooltipProps) {
   const data = item.payload;
 
   return (
-    <div className="rounded-2xl border border-white/15 bg-zinc-950/95 p-3.5 shadow-2xl backdrop-blur-xl text-left animate-in fade-in zoom-in-95 duration-150">
-      <div className="flex items-center gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-        <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
-        <span className="text-xs font-bold text-zinc-300">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-lg text-left animate-in fade-in zoom-in-95 duration-150">
+      <div className="flex items-center gap-1.5 mb-1.5 border-b border-gray-100 pb-1.5">
+        <span className="size-2 rounded-full bg-amber-500" />
+        <span className="text-xs font-semibold text-gray-700">
           Saat: {data.hour}
         </span>
       </div>
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="text-zinc-400">Sipariş Sayısı:</span>
-          <span className="font-bold text-amber-300">{data.orders} adet</span>
+          <span className="text-gray-500">Sipariş Sayısı:</span>
+          <span className="font-semibold text-gray-900">{data.orders} adet</span>
         </div>
         <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="text-zinc-400">Toplam Ciro:</span>
-          <span className="font-black text-emerald-400">{formatCurrency(data.sales)}</span>
+          <span className="text-gray-500">Toplam Ciro:</span>
+          <span className="font-bold text-emerald-600">{formatCurrency(data.sales)}</span>
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@ export function HourlyTrafficChart({
   return (
     <div className="flex flex-col w-full">
       <div className="flex items-center justify-between gap-2 mb-4 px-1">
-        <span className="text-xs text-muted-foreground font-semibold">
+        <span className="text-xs text-gray-500 font-medium">
           Bugün saatlik sipariş yoğunluğu ve ciro
         </span>
       </div>
@@ -67,14 +67,13 @@ export function HourlyTrafficChart({
             <defs>
               <linearGradient id="hourlyGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#d97706" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#d97706" stopOpacity={0.6} />
               </linearGradient>
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="currentColor"
-              className="stroke-muted-foreground/15"
+              stroke="#f3f4f6"
             />
             <XAxis
               dataKey="hour"
@@ -82,22 +81,20 @@ export function HourlyTrafficChart({
               axisLine={false}
               tickMargin={8}
               interval="preserveStartEnd"
-              tick={{ fontSize: 10, fill: "currentColor" }}
-              className="text-muted-foreground"
+              tick={{ fontSize: 10, fill: "#6b7280" }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               allowDecimals={false}
-              tick={{ fontSize: 10, fill: "currentColor" }}
-              className="text-muted-foreground"
+              tick={{ fontSize: 10, fill: "#6b7280" }}
             />
             <Tooltip content={<HourlyTooltip />} />
             <Bar
               dataKey="orders"
               fill="url(#hourlyGrad)"
-              radius={[6, 6, 0, 0]}
+              radius={[4, 4, 0, 0]}
               maxBarSize={28}
             />
           </BarChart>
