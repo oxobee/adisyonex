@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -154,6 +154,13 @@ export function HomeScreen({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+
+  // Personel yetkilerine göre sadece yetkili olunan menüleri filtrele
+  const visibleItems = useMemo(() => {
+    if (!isStaff || !allowedRoutes) return HOME_ITEMS;
+    const filtered = HOME_ITEMS.filter((item) => allowedRoutes.includes(item.href));
+    return filtered.length > 0 ? filtered : HOME_ITEMS;
+  }, [isStaff, allowedRoutes]);
 
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -458,120 +465,86 @@ export function HomeScreen({
               </button>
             </div>
 
-            {/* Menü Kartları Grid: Tek tek sırayla hızlı elastik açılış (index * 22ms) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-4.5 w-full pb-10">
-              {HOME_ITEMS.map((item, index) => {
+            {/* Menü Kartları: Yetkili butonlar ortalı ve düzgün bir biçimde, yetkisizler tamamen gizli */}
+            <div
+              className={cn(
+                "w-full pb-10 transition-all duration-300",
+                visibleItems.length <= 4
+                  ? "flex flex-wrap items-center justify-center gap-4 sm:gap-6 max-w-4xl mx-auto my-auto"
+                  : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-4.5 justify-center",
+              )}
+            >
+              {visibleItems.map((item, index) => {
                 const Icon = item.icon;
-                const isAllowed =
-                  !isStaff ||
-                  !allowedRoutes ||
-                  allowedRoutes.includes(item.href);
 
                 return (
                   <div
                     key={item.href}
-                    className="relative animate-in fade-in zoom-in-90 slide-in-from-bottom-5 duration-450 fill-mode-both"
+                    className={cn(
+                      "relative animate-in fade-in zoom-in-90 slide-in-from-bottom-5 duration-450 fill-mode-both",
+                      visibleItems.length <= 4
+                        ? "w-[calc(50%-0.6rem)] sm:w-[220px] md:w-[250px]"
+                        : "w-full",
+                    )}
                     style={{
-                      animationDelay: `${index * 22}ms`,
+                      animationDelay: `${index * 25}ms`,
                       animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
                     }}
                   >
-                    {isAllowed ? (
-                      /* AKTİF KART: Tam Renkli, Parıltılı, Tıklanabilir */
-                      <Link
-                        href={item.href}
-                        prefetch={true}
-                        className={cn(
-                          "group relative flex flex-col justify-between w-full cursor-pointer select-none",
-                          // Geniş, dokunmatik uyumlu basma hedefi
-                          "min-h-[135px] sm:min-h-[148px] lg:min-h-[158px]",
-                          "rounded-3xl p-4 lg:p-4.5",
-                          // Cam efektli derin obsidian kart yüzeyi
-                          "border-2 border-white/15 bg-gradient-to-b from-zinc-800/80 via-zinc-900/90 to-[#0c0d11]/95",
-                          "backdrop-blur-2xl shadow-[0_12px_28px_rgba(0,0,0,0.5)]",
-                          // Dokunmatik anında anlık tepki
-                          "active:scale-95 transition-all duration-150",
-                          // Masaüstünde zarif hover
-                          "hover:scale-[1.03] hover:border-white/60 hover:shadow-2xl hover:z-50",
-                        )}
-                      >
-                        {/* Glowing Colored Accent Layer */}
-                        <div
-                          className={cn(
-                            "absolute inset-0 rounded-[22px] bg-gradient-to-br transition-opacity duration-200",
-                            item.gradient,
-                            "opacity-35 group-hover:opacity-75 group-active:opacity-90",
-                          )}
-                        />
-
-                        {/* Top Row: Rozet Numarası & Yön Oku */}
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="flex size-6 items-center justify-center rounded-full bg-black/60 border border-white/20 text-[10px] sm:text-[11px] font-black text-zinc-200">
-                            {item.badge}
-                          </span>
-                          <span className="flex size-6 items-center justify-center rounded-full bg-white/10 text-white/80 group-hover:bg-white group-hover:text-black group-hover:scale-110 transition-all">
-                            <span className="text-xs font-black">↗</span>
-                          </span>
-                        </div>
-
-                        {/* Center: Büyük ve Net Modül İkonu */}
-                        <div className="relative z-10 flex items-center justify-start my-2">
-                          <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-150">
-                            <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[2.2] text-white" />
-                          </div>
-                        </div>
-
-                        {/* Bottom: Kristal Netliğinde Saf Beyaz Başlık ve Açıklama */}
-                        <div className="relative z-10 w-full text-left">
-                          <span className="block text-sm sm:text-base font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate">
-                            {item.title}
-                          </span>
-                          <span className="block text-[10px] sm:text-[11px] font-medium text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] line-clamp-1 mt-0.5">
-                            {item.description}
-                          </span>
-                        </div>
-                      </Link>
-                    ) : (
-                      /* KİLİTLİ / YETKİSİZ KART: Deaktif, Soluk, Tıklanamaz */
+                    {/* AKTİF KART: Tam Renkli, Parıltılı, Tıklanabilir */}
+                    <Link
+                      href={item.href}
+                      prefetch={true}
+                      className={cn(
+                        "group relative flex flex-col justify-between w-full cursor-pointer select-none",
+                        // Geniş, dokunmatik uyumlu basma hedefi
+                        "min-h-[145px] sm:min-h-[155px] lg:min-h-[165px]",
+                        "rounded-3xl p-4 lg:p-5",
+                        // Cam efektli derin obsidian kart yüzeyi
+                        "border-2 border-white/15 bg-gradient-to-b from-zinc-800/80 via-zinc-900/90 to-[#0c0d11]/95",
+                        "backdrop-blur-2xl shadow-[0_12px_28px_rgba(0,0,0,0.5)]",
+                        // Dokunmatik anında anlık tepki
+                        "active:scale-95 transition-all duration-150",
+                        // Masaüstünde zarif hover
+                        "hover:scale-[1.03] hover:border-white/60 hover:shadow-2xl hover:z-50",
+                      )}
+                    >
+                      {/* Glowing Colored Accent Layer */}
                       <div
                         className={cn(
-                          "group relative flex flex-col justify-between w-full select-none",
-                          "min-h-[135px] sm:min-h-[148px] lg:min-h-[158px]",
-                          "rounded-3xl p-4 lg:p-4.5",
-                          "border border-white/5 bg-zinc-950/60 backdrop-blur-md",
-                          "opacity-30 grayscale cursor-not-allowed transition-all duration-150 shadow-inner",
+                          "absolute inset-0 rounded-[22px] bg-gradient-to-br transition-opacity duration-200",
+                          item.gradient,
+                          "opacity-40 group-hover:opacity-80 group-active:opacity-95",
                         )}
-                        title="Bu modüle erişim yetkiniz bulunmuyor"
-                      >
-                        {/* Top Row: Rozet Numarası & Kilit Rozeti */}
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="flex size-6 items-center justify-center rounded-full bg-black/70 border border-white/10 text-[10px] sm:text-[11px] font-bold text-zinc-500">
-                            {item.badge}
-                          </span>
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 border border-white/10 text-[10px] font-bold text-zinc-400">
-                            <LockIcon className="size-2.5 text-zinc-400" />
-                            <span>Kilitli</span>
-                          </span>
-                        </div>
+                      />
 
-                        {/* Center: Soluk İkon */}
-                        <div className="relative z-10 flex items-center justify-start my-2">
-                          <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-zinc-500">
-                            <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[1.8] text-zinc-500" />
-                          </div>
-                        </div>
+                      {/* Top Row: Rozet Numarası & Yön Oku */}
+                      <div className="relative z-10 flex items-center justify-between">
+                        <span className="flex size-6 sm:size-6.5 items-center justify-center rounded-full bg-black/60 border border-white/20 text-[10px] sm:text-[11px] font-black text-zinc-200">
+                          {item.badge}
+                        </span>
+                        <span className="flex size-6 sm:size-6.5 items-center justify-center rounded-full bg-white/10 text-white/80 group-hover:bg-white group-hover:text-black group-hover:scale-110 transition-all">
+                          <span className="text-xs font-black">↗</span>
+                        </span>
+                      </div>
 
-                        {/* Bottom: Başlık ve Yetkisiz Uyarısı */}
-                        <div className="relative z-10 w-full text-left">
-                          <span className="block text-sm sm:text-base font-bold text-zinc-400 truncate">
-                            {item.title}
-                          </span>
-                          <span className="block text-[10px] sm:text-[11px] font-medium text-zinc-500 line-clamp-1 mt-0.5">
-                            Erişim yetkisi yok
-                          </span>
+                      {/* Center: Büyük ve Net Modül İkonu */}
+                      <div className="relative z-10 flex items-center justify-start my-2.5">
+                        <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-150">
+                          <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[2.2] text-white" />
                         </div>
                       </div>
-                    )}
+
+                      {/* Bottom: Kristal Netliğinde Saf Beyaz Başlık ve Açıklama */}
+                      <div className="relative z-10 w-full text-left">
+                        <span className="block text-sm sm:text-base font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate">
+                          {item.title}
+                        </span>
+                        <span className="block text-[10px] sm:text-[11px] font-medium text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] line-clamp-1 mt-0.5">
+                          {item.description}
+                        </span>
+                      </div>
+                    </Link>
                   </div>
                 );
               })}
