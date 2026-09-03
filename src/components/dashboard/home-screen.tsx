@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -19,7 +19,6 @@ import {
   ShieldCheckIcon,
   UsersIcon,
   UtensilsCrossedIcon,
-  XIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -149,6 +148,13 @@ export function HomeScreen({
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic horizontal offsets for smooth elastic spring split (center -> left/right)
+  const [offsets, setOffsets] = useState({ logoX: 0, btnX: 0 });
+
   // Real-time network connectivity detector
   useEffect(() => {
     setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -163,23 +169,42 @@ export function HomeScreen({
     };
   }, []);
 
+  // Compute exact center coordinates so logo & button spring between center and edges
+  useEffect(() => {
+    const calculateOffsets = () => {
+      if (containerRef.current && logoRef.current && btnRef.current) {
+        const cW = containerRef.current.offsetWidth;
+        const lW = logoRef.current.offsetWidth;
+        const bW = btnRef.current.offsetWidth;
+        setOffsets({
+          logoX: Math.round((cW - lW) / 2),
+          btnX: -Math.round((cW - bW) / 2),
+        });
+      }
+    };
+
+    calculateOffsets();
+    window.addEventListener("resize", calculateOffsets);
+    return () => window.removeEventListener("resize", calculateOffsets);
+  }, [isOpen]);
+
   return (
-    <main className="relative min-h-[calc(100vh-3.5rem)] w-full overflow-x-hidden bg-gradient-to-b from-[#16181e] via-[#0d0e12] to-[#07080a] text-white flex flex-col justify-between select-none">
+    <main className="relative min-h-[calc(100vh-3.5rem)] w-full overflow-x-hidden bg-gradient-to-b from-[#181a20] via-[#0e0f13] to-[#07080a] text-white flex flex-col justify-between select-none">
       {/* 
-        SATIN GRADIENT BLACK AMBIENT LIGHTING MESH
-        Deep charcoal & graphite gradient with radial illumination
+        SATIN GRADIENT BLACK AMBIENT LIGHTING
+        Charcoal, slate & deep obsidian gradient with overhead spotlight
       */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Soft overhead radial spotlight */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[850px] h-[550px] bg-[radial-gradient(ellipse_at_center,rgba(56,62,80,0.35)_0%,rgba(22,24,30,0.1)_60%,transparent_80%)] blur-[90px]" />
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(65,72,92,0.3)_0%,rgba(24,26,32,0.08)_65%,transparent_80%)] blur-[95px]" />
 
-        {/* Central core glow */}
+        {/* Central core ambient glow */}
         <div
           className={cn(
             "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px] transition-all duration-700",
             isOpen
-              ? "size-[750px] bg-gradient-to-b from-primary/20 via-primary/5 to-transparent opacity-80"
-              : "size-[450px] bg-gradient-to-b from-white/10 via-primary/5 to-transparent opacity-40",
+              ? "size-[800px] bg-gradient-to-b from-primary/20 via-primary/5 to-transparent opacity-80"
+              : "size-[500px] bg-gradient-to-b from-white/10 via-primary/5 to-transparent opacity-40",
           )}
         />
 
@@ -188,11 +213,11 @@ export function HomeScreen({
       </div>
 
       {/* 
-        TOP STATUS BAR:
-        Online / Offline Pill + Actions
+        TOP BAR:
+        Online / Offline Pill + Staff / Admin Shortcuts
       */}
-      <div className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-4">
-        {/* Online / Offline Status Indicator */}
+      <div className="relative z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
+        {/* Live Online / Offline Pill */}
         <div
           className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors",
@@ -246,109 +271,135 @@ export function HomeScreen({
       </div>
 
       {/* 
-        MAIN CENTER STAGE:
-        1. BEYAZ SİSTEM LOGOSU (Yazısız, menü açıldığında kaybolmaz, yumuşak odakla kalır)
-        2. ORTADAKİ "MENÜ" BUTONU
-        3. DOKUNMATİK UYUMLU, ASLA ÜST ÜSTE BİNMEYEN PROFESYONEL MENÜ KARTLARI
+        MAIN CONTENT STAGE:
+        1. ELASTİK KONTROL SATIRI:
+           - Kapalıyken: Logo ve MENÜ butonu ortada!
+           - Açılınca: Elastik animasyonla Logo SOLA, KAPAT butonu SAĞA gider; aynı hizada yer alırlar!
+        2. DOKUNMATİK MENÜ KARTLARI:
+           - Sıfır çakışma (üst üste binmez)
+           - Açılınca tek tek sırayla biraz hızlı elastik animasyonlarla açılır
       */}
-      <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-4 py-6 sm:px-8 w-full max-w-7xl mx-auto">
-        {/* Center Branding Area */}
-        <div className="flex flex-col items-center justify-center text-center select-none mb-4">
-          {/* Beyaz Sistem Logosu */}
+      <div className="relative z-20 flex-1 flex flex-col justify-start px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
+        {/* 
+          ELASTİK KONTROL ÇUBUĞU (LOGO & BUTON)
+          "kapat butonu menü hizasında en sağda logo kapat butonu ile aynı hizada solda olsun.
+           menü açılınca menü butonu ve logo elastik animasyonlarla açılınca sağa ve sola gitsin"
+        */}
+        <div
+          ref={containerRef}
+          className={cn(
+            "relative w-full flex items-center justify-between transition-all duration-600",
+            isOpen ? "pt-2 sm:pt-4 pb-4 sm:pb-6" : "pt-24 sm:pt-36 pb-12",
+          )}
+        >
+          {/* 
+            SOLDAKİ BEYAZ SİSTEM LOGOSU
+            - Kapalıyken ortadadır.
+            - Menü açılınca elastik yaylanma ile EN SOLA kayar.
+          */}
           <div
-            className={cn(
-              "relative transition-all duration-500 ease-out pointer-events-none mb-3",
-              isOpen
-                ? "opacity-75 blur-[1.5px] scale-95"
-                : "opacity-100 blur-none scale-100",
-            )}
+            ref={logoRef}
+            className="transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] select-none shrink-0"
+            style={{
+              transform: isOpen
+                ? "translate3d(0, 0, 0) scale(1)"
+                : offsets.logoX
+                  ? `translate3d(${offsets.logoX}px, -36px, 0) scale(1.25)`
+                  : "translate3d(0, -36px, 0) scale(1.25)",
+            }}
           >
             {settings.logoDarkUrl || settings.logoUrl ? (
-              <div className="relative h-18 sm:h-24 md:h-28 w-60 sm:w-80 md:w-96 max-w-[380px] drop-shadow-[0_12px_30px_rgba(255,255,255,0.18)]">
+              <div className="relative h-12 sm:h-14 md:h-16 w-44 sm:w-56 md:w-64 drop-shadow-[0_10px_25px_rgba(255,255,255,0.22)]">
                 <Image
                   src={settings.logoDarkUrl || settings.logoUrl || ""}
                   alt="Sistem Logosu"
                   fill
-                  className="object-contain"
+                  className="object-contain object-left"
                   priority
-                  sizes="(max-width: 640px) 240px, 384px"
+                  sizes="(max-width: 640px) 176px, 256px"
                 />
               </div>
             ) : settings.faviconUrl ? (
-              <div className="relative size-18 sm:size-22 overflow-hidden rounded-3xl border border-white/20 bg-white/5 p-3 shadow-2xl">
+              <div className="relative size-14 sm:size-16 overflow-hidden rounded-2xl border border-white/20 bg-white/5 p-2 shadow-2xl">
                 <Image
                   src={settings.faviconUrl}
                   alt="Logo"
                   fill
                   className="object-contain"
                   priority
-                  sizes="88px"
+                  sizes="64px"
                 />
               </div>
             ) : (
-              <div className="flex size-18 sm:size-22 items-center justify-center rounded-3xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/30 text-white shadow-[0_0_35px_rgba(255,255,255,0.2)]">
-                <UtensilsCrossedIcon className="size-9 sm:size-11" />
+              <div className="flex size-14 sm:size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/30 text-white shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+                <UtensilsCrossedIcon className="size-7 sm:size-8" />
               </div>
             )}
           </div>
 
           {/* 
-            ORTADAKİ "MENÜ" BUTONU (Tetikleyici)
-            Elastik açılıp kapanma butonu
+            SAĞDAKİ "MENÜ / KAPAT" BUTONU
+            - Kapalıyken ortadadır (Logo'nun hemen altında).
+            - Menü açılınca elastik yaylanma ile EN SAĞA kayar ve logo ile aynı hizaya gelir.
           */}
-          <button
-            type="button"
-            onClick={() => setIsOpen((prev) => !prev)}
-            aria-expanded={isOpen}
-            aria-label="Menüyü Aç / Kapat"
-            className={cn(
-              "group relative inline-flex items-center justify-center gap-2.5 px-8 sm:px-11 py-3.5 sm:py-4 rounded-full font-black text-sm sm:text-base tracking-widest uppercase transition-all duration-300 cursor-pointer outline-none select-none active:scale-95 shadow-2xl",
-              isOpen
-                ? "bg-white text-zinc-950 hover:bg-zinc-200 border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.4)]"
-                : "bg-white text-zinc-950 hover:scale-105 border-2 border-white/90 shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)]",
-            )}
+          <div
+            ref={btnRef}
+            className="transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] shrink-0 z-30"
+            style={{
+              transform: isOpen
+                ? "translate3d(0, 0, 0) scale(1)"
+                : offsets.btnX
+                  ? `translate3d(${offsets.btnX}px, 36px, 0) scale(1.05)`
+                  : "translate3d(0, 36px, 0) scale(1.05)",
+            }}
           >
-            <span
+            <button
+              type="button"
+              onClick={() => setIsOpen((prev) => !prev)}
+              aria-expanded={isOpen}
+              aria-label={isOpen ? "Menüyü Kapat" : "Menüyü Aç"}
               className={cn(
-                "flex size-5 items-center justify-center transition-transform duration-300",
-                isOpen ? "rotate-90 text-red-600" : "group-hover:rotate-180",
+                "group relative inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3 sm:py-3.5 rounded-full font-black text-xs sm:text-sm tracking-widest uppercase transition-all duration-300 cursor-pointer outline-none select-none active:scale-95 shadow-2xl",
+                isOpen
+                  ? "bg-white text-zinc-950 hover:bg-zinc-100 border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.4)]"
+                  : "bg-white text-zinc-950 hover:scale-105 border-2 border-white/90 shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:shadow-[0_0_45px_rgba(255,255,255,0.5)]",
               )}
             >
-              {isOpen ? <XIcon className="size-4.5 stroke-[3]" /> : "❖"}
-            </span>
-
-            <span className="font-extrabold tracking-widest">
-              {isOpen ? "KAPAT" : "MENÜ"}
-            </span>
-
-            {!isOpen && (
-              <span className="absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary/50 via-white/40 to-primary/50 opacity-40 blur-md group-hover:opacity-80 transition-opacity animate-pulse" />
-            )}
-          </button>
-
-          {!isOpen && (
-            <p className="mt-2.5 text-[11px] sm:text-xs font-semibold tracking-wider text-zinc-400 uppercase">
-              Modülleri açmak için butona dokunun
-            </p>
-          )}
+              {isOpen ? (
+                <>
+                  <span className="text-red-600 font-black text-sm">✕</span>
+                  <span className="font-extrabold tracking-widest text-zinc-950">
+                    KAPAT
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-zinc-950 font-black text-xs">❖</span>
+                  <span className="font-extrabold tracking-widest text-zinc-950">
+                    MENÜ
+                  </span>
+                  <span className="absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary/50 via-white/40 to-primary/50 opacity-40 blur-md group-hover:opacity-80 transition-opacity animate-pulse" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* 
-          DOKUNMATİK EKRAN UYUMLU, ASLA ÜST ÜSTE GELMEYEN PROFESYONEL MENÜ DÜZENİ
-          - Her kart kendi bağımsız alanına sahiptir, sıfır çakışma (zero overlap)
-          - Dokunmatik ekranlar için geniş dokunma alanları (touch targets)
-          - Elastik açılış animasyonu: soldan sağa kademeli yaylanma (staggered spring)
-          - Kartlar üzerine gelindiğinde z-index ve ölçekleme ile canlı geri bildirim
+          DOKUNMATİK UYUMLU, ASLA ÜST ÜSTE BİNMEYEN PROFESYONEL MENÜ KARTLARI
+          "menü açılınca menüler tek tek sırayla biraz hızlı elastik animasyonlarla açılsın"
+          - Staggered timing: index * 22ms (seri, hızlı elastik dalga)
+          - Easing: cubic-bezier(0.34, 1.56, 0.64, 1) fiziksel yaylanma
         */}
         <div
           className={cn(
-            "w-full transition-all duration-500 ease-out",
+            "w-full transition-all duration-400 ease-out",
             isOpen
-              ? "opacity-100 max-h-[1400px] pointer-events-auto"
+              ? "opacity-100 max-h-[1600px] pointer-events-auto"
               : "opacity-0 max-h-0 pointer-events-none overflow-hidden",
           )}
         >
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5 sm:gap-4.5 lg:gap-5 w-full pt-4 pb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-4.5 w-full pb-10">
             {HOME_ITEMS.map((item, index) => {
               const Icon = item.icon;
 
@@ -357,12 +408,15 @@ export function HomeScreen({
                   key={item.href}
                   className="relative transition-all"
                   style={{
-                    transform: isOpen ? "scale(1) translateY(0)" : "scale(0.85) translateY(24px)",
+                    transform: isOpen
+                      ? "translate3d(0, 0, 0) scale(1)"
+                      : "translate3d(0, 24px, 0) scale(0.85)",
                     opacity: isOpen ? 1 : 0,
                     transition: isOpen
-                      ? "transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease"
-                      : "transform 0.35s ease, opacity 0.25s ease",
-                    transitionDelay: isOpen ? `${index * 32}ms` : "0ms",
+                      ? "transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease"
+                      : "transform 0.25s ease, opacity 0.2s ease",
+                    // Hızlı, tek tek sırayla elastik gecikme (22ms)
+                    transitionDelay: isOpen ? `${index * 22}ms` : "0ms",
                   }}
                 >
                   <Link
@@ -370,25 +424,22 @@ export function HomeScreen({
                     prefetch={true}
                     className={cn(
                       "group relative flex flex-col justify-between w-full cursor-pointer select-none",
-                      // Geniş, dokunmatik ekran uyumlu yükseklik ve dokunma alanı
-                      "min-h-[128px] sm:min-h-[145px] lg:min-h-[155px]",
+                      // Geniş, dokunmatik uyumlu basma hedefi
+                      "min-h-[135px] sm:min-h-[148px] lg:min-h-[158px]",
                       "rounded-3xl p-4 lg:p-4.5",
                       // Cam efektli derin obsidian kart yüzeyi
                       "border-2 border-white/15 bg-gradient-to-b from-zinc-800/80 via-zinc-900/90 to-[#0c0d11]/95",
                       "backdrop-blur-2xl shadow-[0_12px_28px_rgba(0,0,0,0.5)]",
-                      // Dokunmatik anında net tıklama tepkisi
-                      "active:scale-95 transition-all duration-200",
-                      // Masaüstünde z-index: 50 ile komşuların üstünde zarif büyüme
-                      "hover:scale-[1.04] hover:border-white/60 hover:shadow-2xl hover:z-50",
+                      // Dokunmatik anında anlık tepki
+                      "active:scale-95 transition-all duration-150",
+                      // Masaüstünde zarif hover
+                      "hover:scale-[1.03] hover:border-white/60 hover:shadow-2xl hover:z-50",
                     )}
-                    style={{
-                      boxShadow: undefined,
-                    }}
                   >
                     {/* Glowing Colored Accent Layer */}
                     <div
                       className={cn(
-                        "absolute inset-0 rounded-[22px] bg-gradient-to-br transition-opacity duration-300",
+                        "absolute inset-0 rounded-[22px] bg-gradient-to-br transition-opacity duration-200",
                         item.gradient,
                         "opacity-35 group-hover:opacity-75 group-active:opacity-90",
                       )}
@@ -406,7 +457,7 @@ export function HomeScreen({
 
                     {/* Center: Büyük ve Net Modül İkonu */}
                     <div className="relative z-10 flex items-center justify-start my-2">
-                      <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-200">
+                      <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-150">
                         <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[2.2] text-white" />
                       </div>
                     </div>
@@ -429,14 +480,16 @@ export function HomeScreen({
       </div>
 
       {/* BOTTOM FOOTER BAR */}
-      <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-white/10 bg-black/30 backdrop-blur-md text-xs text-zinc-400">
+      <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-4 border-t border-white/10 bg-black/30 backdrop-blur-md text-xs text-zinc-400">
         <p className="font-medium text-[11px] text-zinc-500">
           © {new Date().getFullYear()} {settings.systemName}. Tüm hakları saklıdır.
         </p>
 
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline text-[11px] text-zinc-400">
-            {isOpen ? "Menüyü kapatmak için KAPAT butonuna dokunun" : "Tüm modülleri açmak için MENÜ butonuna dokunun"}
+            {isOpen
+              ? "Menüyü kapatmak için sağ üstteki KAPAT butonuna dokunun"
+              : "Tüm modülleri açmak için MENÜ butonuna dokunun"}
           </span>
           <Link
             href="#"
