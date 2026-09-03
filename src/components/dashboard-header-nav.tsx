@@ -43,7 +43,7 @@ import type { SystemSettingsDTO } from "@/services/system-setting.service";
 
 interface ModuleConfig {
   readonly title: string;
-  readonly description: string;
+  readonly description?: string;
   readonly url: string;
   readonly icon: React.ReactNode;
   readonly iconBg: string;
@@ -141,6 +141,7 @@ export const MODULE_ITEMS: readonly ModuleConfig[] = [
 ];
 
 const ROUTE_TITLES: Record<string, string> = {
+  "/dashboard/home": "Ana Ekran",
   "/dashboard/orders": "Anlık Durum & Masalar",
   "/dashboard/kitchen": "Mutfak Ekranı (KDS)",
   "/dashboard/pos": "POS / Hızlı Kasa",
@@ -184,7 +185,7 @@ export function DashboardHeaderNav({
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   // Check if current screen is the Main Screen (Ana Ekran)
-  const isMainScreen = pathname === "/dashboard/orders";
+  const isMainScreen = pathname === "/dashboard/home";
 
   // Current page display title
   const currentTitle =
@@ -287,7 +288,7 @@ export function DashboardHeaderNav({
 
             {/* System Brand Logo & Name */}
             <Link
-              href="/dashboard/orders"
+              href="/dashboard/home"
               prefetch={true}
               className="flex items-center gap-2 select-none cursor-pointer group shrink-0"
               title="Ana Ekran"
@@ -321,7 +322,7 @@ export function DashboardHeaderNav({
             */}
             {!isMainScreen && (
               <Link
-                href="/dashboard/orders"
+                href="/dashboard/home"
                 prefetch={true}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/90 hover:bg-muted/90 text-foreground font-black text-xs shadow-2xs hover:shadow-xs hover:border-primary/40 transition-all active:scale-95 cursor-pointer group shrink-0"
                 title="Ana Ekrana Dön"
