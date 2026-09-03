@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 import {
   BellRingIcon,
   CheckCircle2Icon,
@@ -49,7 +49,7 @@ const formatElapsed = (startedAt: string): string => {
   return `${pad(minutes)}:${pad(seconds)}`;
 };
 
-export function TableCard({
+function TableCardComponent({
   table,
   status,
   total,
@@ -72,6 +72,7 @@ export function TableCard({
 
     setElapsed(formatElapsed(firstOrderAt));
     const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
       setElapsed(formatElapsed(firstOrderAt));
     }, 1000);
 
@@ -277,3 +278,5 @@ export function TableCard({
     </div>
   );
 }
+
+export const TableCard = memo(TableCardComponent);

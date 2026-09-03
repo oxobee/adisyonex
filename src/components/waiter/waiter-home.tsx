@@ -73,30 +73,62 @@ export function WaiterHome({
     onError: (m) => toast.error(toMessage(m)),
   });
 
-  // Auto-refresh so kitchen status (Preparing / Ready) and waiter calls stay current hands-free.
+  // Auto-refresh so kitchen status (Preparing / Ready) and waiter calls stay current hands-free with visibility awareness.
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), 5000);
-    return () => clearInterval(id);
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        router.refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    const id = setInterval(() => {
+      if (!document.hidden) {
+        router.refresh();
+      }
+    }, 5000);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [router]);
+
+  const [orders, setOrders] = useState<readonly OrderDTO[]>(openOrders);
+  useEffect(() => {
+    setOrders(openOrders);
+  }, [openOrders]);
 
   // Active waiter calls
   const activeWaiterCalls = useMemo(
-    () => openOrders.filter((o) => o.note?.includes("GARSON")),
-    [openOrders],
+    () => orders.filter((o) => o.note?.includes("GARSON")),
+    [orders],
   );
   const prevWaiterCallsRef = useRef<Set<string>>(new Set());
 
   const handleDismissWaiterCall = useCallback(
     async (orderId: string) => {
+      const prev = orders;
+      setOrders((current) =>
+        current.map((o) =>
+          o.id === orderId
+            ? { ...o, note: (o.note || "").replace(/\[GARSON_CAGIRILDI\]/g, "").trim() || null }
+            : o,
+        ),
+      );
       try {
-        await dismissWaiterCallAction({ orderId });
-        toast.success("Garson çağrısı kapatıldı ✓");
-        router.refresh();
+        const res = await dismissWaiterCallAction({ orderId });
+        if (res.success) {
+          toast.success("Garson çağrısı kapatıldı ✓");
+          router.refresh();
+        } else {
+          setOrders(prev);
+          toast.error(res.error || "Çağrı kapatılamadı.");
+        }
       } catch {
+        setOrders(prev);
         toast.error("Çağrı kapatılamadı.");
       }
     },
-    [router],
+    [orders, router],
   );
 
   useEffect(() => {
@@ -194,15 +226,15 @@ export function WaiterHome({
 
       <div className="flex flex-col gap-2">
         <h2 className="text-muted-foreground text-sm font-medium">
-          Açık Siparişler {openOrders.length > 0 ? `(${openOrders.length})` : ""}
+          Açık Siparişler {orders.length > 0 ? `(${orders.length})` : ""}
         </h2>
-        {openOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
             Açık sipariş yok. Başlamak için &quot;Yeni Sipariş&quot;e dokunun.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {openOrders.map((order) => (
+            {orders.map((order) => (
               <li
                 key={order.id}
                 className={cn(

@@ -494,7 +494,7 @@ export function Theme2QsrView({
                 style={{ backgroundColor: primaryColor }}
               >
                 {logoUrl ? (
-                  <Image src={logoUrl} alt={restaurantName} fill className="object-cover" sizes="40px" unoptimized />
+                  <Image src={logoUrl} alt={restaurantName} fill className="object-cover" sizes="40px" />
                 ) : (
                   <UtensilsCrossedIcon className="size-5" />
                 )}
@@ -714,7 +714,6 @@ export function Theme2QsrView({
                       fill
                       className="object-cover rounded-xl"
                       sizes="120px"
-                      unoptimized
                     />
                   ) : (
                     <span className="text-5xl">🍔</span>
@@ -911,8 +910,8 @@ export function Theme2QsrView({
                                     alt={item.name}
                                     fill
                                     className="object-cover"
-                                    sizes="160px"
-                                    unoptimized
+                                    sizes="(max-width: 640px) 50vw, 200px"
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <span className="text-4xl">{getCategoryEmoji(currentCategory?.name || "")}</span>
@@ -1058,7 +1057,7 @@ export function Theme2QsrView({
                                     fill
                                     className="object-cover"
                                     sizes="90px"
-                                    unoptimized
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <span className="text-3xl">🍔</span>
@@ -1156,7 +1155,7 @@ export function Theme2QsrView({
                                       fill
                                       className="object-cover"
                                       sizes="150px"
-                                      unoptimized
+                                      loading="lazy"
                                     />
                                   ) : (
                                     <span className="text-4xl">🍔</span>
@@ -1242,7 +1241,7 @@ export function Theme2QsrView({
                                       fill
                                       className="object-cover"
                                       sizes="140px"
-                                      unoptimized
+                                      loading="lazy"
                                     />
                                   ) : (
                                     <span className="text-4xl">🍔</span>
@@ -1414,7 +1413,7 @@ export function Theme2QsrView({
                     >
                       <div className="relative size-16 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center">
                         {photo ? (
-                          <Image src={photo.url} alt={line.name} fill className="object-cover" sizes="64px" unoptimized />
+                          <Image src={photo.url} alt={line.name} fill className="object-cover" sizes="64px" />
                         ) : (
                           <span className="text-2xl">🍔</span>
                         )}
@@ -1564,8 +1563,8 @@ export function Theme2QsrView({
                     alt={detailItem.name}
                     fill
                     className="object-cover"
-                    sizes="400px"
-                    unoptimized
+                    sizes="(max-width: 640px) 100vw, 450px"
+                    priority
                   />
                 ) : (
                   <div className="size-full flex items-center justify-center text-7xl bg-zinc-100">

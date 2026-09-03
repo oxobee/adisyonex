@@ -191,24 +191,54 @@ export function GuestOrderPage({
     persistSession();
   }, [persistSession]);
 
-  const refreshOrders = async () => {
+  const refreshOrders = useCallback(async () => {
+    // Skip polling if the browser tab/app is in background
+    if (typeof document !== "undefined" && document.hidden) return;
     try {
       const res = await guestMyOrdersAction({ username, tableId });
       if (res?.success && res.data) {
-        setMyOrders(res.data);
+        const newData = res.data;
+        setMyOrders((prev) => {
+          if (prev.length === newData.length) {
+            const isSame = prev.every((pOrd, i) => {
+              const nOrd = newData[i];
+              if (
+                pOrd.id !== nOrd.id ||
+                pOrd.status !== nOrd.status ||
+                pOrd.kitchenStatus !== nOrd.kitchenStatus ||
+                pOrd.total !== nOrd.total ||
+                (pOrd.lines?.length ?? 0) !== (nOrd.lines?.length ?? 0)
+              ) {
+                return false;
+              }
+              return true;
+            });
+            if (isSame) return prev; // Retain reference to prevent full page re-render
+          }
+          return newData;
+        });
       }
     } catch {
       // Ignore background poll errors during deployments
     }
-  };
+  }, [username, tableId]);
 
-  // Poll orders so when cashier settles table, button resets automatically
+  // Visibility-aware poll so when cashier settles table, UI updates automatically without wasting background CPU/network
   useEffect(() => {
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        void refreshOrders();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
     const interval = setInterval(() => {
       void refreshOrders();
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    }, 4500);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [refreshOrders]);
 
   const requestBill = useServerAction(guestRequestBillAction, {
     onSuccess: () => {

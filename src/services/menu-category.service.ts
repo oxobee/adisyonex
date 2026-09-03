@@ -9,6 +9,7 @@ import {
   updateMenuCategory,
 } from "@/repositories/menu-category.repository";
 import { countActiveItemsInCategory } from "@/repositories/menu-item.repository";
+import { invalidateMenuCache } from "@/services/menu-item.service";
 
 export const MENU_CATEGORY_NOT_FOUND = "MENU_CATEGORY_NOT_FOUND";
 export const MENU_FORBIDDEN = "MENU_FORBIDDEN";
@@ -32,6 +33,7 @@ export const createCategory = async (
   input: CreateMenuCategoryInput,
 ): Promise<void> => {
   await createMenuCategory(restaurantId, input);
+  invalidateMenuCache(restaurantId);
 };
 
 export const updateCategory = async (
@@ -40,6 +42,7 @@ export const updateCategory = async (
 ): Promise<void> => {
   await assertOwned(restaurantId, input.id);
   await updateMenuCategory(input.id, input);
+  invalidateMenuCache(restaurantId);
 };
 
 export const deleteCategory = async (
@@ -51,4 +54,5 @@ export const deleteCategory = async (
     throw new Error(CATEGORY_NOT_EMPTY);
   }
   await softDeleteMenuCategory(id);
+  invalidateMenuCache(restaurantId);
 };

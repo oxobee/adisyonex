@@ -334,12 +334,23 @@ export function OrdersBoard({
     prevBillRequestsRef.current = currentBillIds;
   }, [activeBillRequests, announce]);
 
-  // Auto-refresh orders board hands-free
+  // Auto-refresh orders board hands-free with visibility awareness
   useEffect(() => {
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        router.refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
     const interval = setInterval(() => {
-      router.refresh();
+      if (!document.hidden) {
+        router.refresh();
+      }
     }, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [router]);
 
   // Active waiter calls
@@ -351,15 +362,30 @@ export function OrdersBoard({
 
   const handleDismissWaiterCall = useCallback(
     async (orderId: string) => {
+      const previousOrders = openOrders;
+      setOpenOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, note: (o.note || "").replace(/\[GARSON_CAGIRILDI\]/g, "").trim() || null }
+            : o,
+        ),
+      );
+
       try {
-        await dismissWaiterCallAction({ orderId });
-        toast.success("Garson çağrısı kapatıldı ✓");
-        router.refresh();
+        const res = await dismissWaiterCallAction({ orderId });
+        if (res.success) {
+          toast.success("Garson çağrısı kapatıldı ✓");
+          router.refresh();
+        } else {
+          setOpenOrders(previousOrders);
+          toast.error(res.error || "Çağrı kapatılamadı.");
+        }
       } catch {
+        setOpenOrders(previousOrders);
         toast.error("Çağrı kapatılamadı.");
       }
     },
-    [router],
+    [openOrders, router],
   );
 
   useEffect(() => {

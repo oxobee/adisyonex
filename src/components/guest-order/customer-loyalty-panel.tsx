@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import {
   ArrowLeftIcon,
@@ -137,9 +137,12 @@ export function CustomerLoyaltyPanel({
     toast.success(`${favName} en çok sevilenlerden kaldırıldı.`);
   };
 
+  const isFetchingProfileRef = useRef(false);
   // Load saved session on mount
   const loadProfile = useCallback(
     async (customerId?: string, savedPhone?: string) => {
+      if (isFetchingProfileRef.current) return;
+      isFetchingProfileRef.current = true;
       try {
         const res = await getCustomerProfileAction({
           username,
@@ -149,11 +152,11 @@ export function CustomerLoyaltyPanel({
         if (res.success && res.data) {
           setProfile(res.data);
           onCustomerIdentified?.(res.data.customer);
-        } else {
-          setProfile(null);
         }
       } catch {
-        setProfile(null);
+        // Network / offline error: Preserve existing cached profile
+      } finally {
+        isFetchingProfileRef.current = false;
       }
     },
     [username, onCustomerIdentified],
@@ -171,7 +174,7 @@ export function CustomerLoyaltyPanel({
     } catch {
       // Ignore JSON parse errors
     }
-  }, [activeOrders?.length, sessionKey, loadProfile]);
+  }, [sessionKey, loadProfile]);
   const liveOrders = (activeOrders ?? []).filter(
     (o) =>
       o.status !== "VOID" &&

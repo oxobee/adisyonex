@@ -26,10 +26,18 @@ export default async function OrderPage({
   params: Promise<{ username: string }>;
   searchParams: Promise<{ table?: string; previewTheme?: string }>;
 }) {
-  const { username } = await params;
-  const { table, previewTheme } = await searchParams;
+  const [
+    { username },
+    { table, previewTheme },
+    deviceId,
+    session,
+  ] = await Promise.all([
+    params,
+    searchParams,
+    getOrCreateDeviceId(),
+    getGuestSession(),
+  ]);
 
-  const deviceId = await getOrCreateDeviceId();
   const result = await loadGuestOrderPage(username, table, deviceId);
 
   if (result.status === "not_found") {
@@ -65,7 +73,6 @@ export default async function OrderPage({
   }
 
   const { data } = result;
-  const session = await getGuestSession();
   const verified =
     session?.restaurantId === data.restaurantId &&
     session?.tableId === data.tableId;

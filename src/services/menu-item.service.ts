@@ -267,8 +267,28 @@ const taxProfile = (r: {
   sacCode: r.sacCode,
 });
 
+interface CachedMenu {
+  menu: MenuDTO;
+  cachedAt: number;
+}
+const menuCache = new Map<string, CachedMenu>();
+const MENU_CACHE_TTL_MS = 60 * 1000;
+
+export const invalidateMenuCache = (restaurantId?: string): void => {
+  if (restaurantId) {
+    menuCache.delete(restaurantId);
+  } else {
+    menuCache.clear();
+  }
+};
+
 /** The full menu (categories + items with resolved tax + computed availability). */
 export const getMenu = async (restaurantId: string): Promise<MenuDTO> => {
+  const cached = menuCache.get(restaurantId);
+  if (cached && Date.now() - cached.cachedAt < MENU_CACHE_TTL_MS) {
+    return cached.menu;
+  }
+
   const restaurant = await findRestaurantById(restaurantId);
   if (!restaurant || restaurant.deletedAt) {
     throw new Error(RESTAURANT_NOT_FOUND);
@@ -280,7 +300,7 @@ export const getMenu = async (restaurantId: string): Promise<MenuDTO> => {
     findMenuItemsByRestaurant(restaurantId),
   ]);
 
-  return {
+  const menu: MenuDTO = {
     categories: categories.map((c) => ({
       id: c.id,
       name: c.name,
@@ -290,6 +310,9 @@ export const getMenu = async (restaurantId: string): Promise<MenuDTO> => {
     })),
     items: items.map((i) => mapItem(i, profile, now)),
   };
+
+  menuCache.set(restaurantId, { menu, cachedAt: Date.now() });
+  return menu;
 };
 
 export const createItem = async (
@@ -299,6 +322,7 @@ export const createItem = async (
   await assertCategoryOwned(restaurantId, input.categoryId);
   await assertGroupsOwned(restaurantId, input.modifierGroupIds);
   await createMenuItem(restaurantId, toWriteData(input));
+  invalidateMenuCache(restaurantId);
 };
 
 export const updateItem = async (
@@ -309,6 +333,7 @@ export const updateItem = async (
   await assertCategoryOwned(restaurantId, input.categoryId);
   await assertGroupsOwned(restaurantId, input.modifierGroupIds);
   await updateMenuItem(input.id, toWriteData(input));
+  invalidateMenuCache(restaurantId);
 };
 
 export const deleteItem = async (
@@ -317,6 +342,7 @@ export const deleteItem = async (
 ): Promise<void> => {
   await assertItemOwned(restaurantId, itemId);
   await softDeleteMenuItem(itemId);
+  invalidateMenuCache(restaurantId);
 };
 
 export const duplicateItem = async (
@@ -328,6 +354,7 @@ export const duplicateItem = async (
   if (!source || source.deletedAt) {
     throw new Error(MENU_ITEM_NOT_FOUND);
   }
+  invalidateMenuCache(restaurantId);
 
   // Determine next copy name: e.g. "Burger - 2", "Burger - 3"
   const existingItems = await findMenuItemsByRestaurant(restaurantId);
