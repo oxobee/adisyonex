@@ -24,7 +24,6 @@ import {
   SelectTrigger,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Toaster } from "@/components/ui/sonner"
 import { useServerAction } from "@/hooks/use-server-action"
 import type { GstRegistrationType, TaxProfileDTO } from "@/types/settings"
 
@@ -161,7 +160,6 @@ export function TaxSettingsForm({ profile }: { profile: TaxProfileDTO }) {
           </form>
         </CardContent>
       </Card>
-      <Toaster />
     </>
   )
 }

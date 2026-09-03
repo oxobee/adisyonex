@@ -131,7 +131,7 @@ export function DashboardHeaderNav({
   return (
     <>
       <header className="sticky top-0 z-40 w-full h-14 border-b border-border/70 bg-background/90 dark:bg-zinc-950/90 backdrop-blur-xl transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        <div className="flex h-full w-full items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
+        <div className="relative flex h-full w-full items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
           {/* SOL BOLUM */}
           <div className="flex items-center gap-3 shrink-0 min-w-0">
             <Link
@@ -206,18 +206,6 @@ export function DashboardHeaderNav({
 
           {/* SAG BOLUM */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {!isMainScreen && (
-              <Link
-                href="/dashboard/home"
-                prefetch={true}
-                className="group inline-flex size-9 items-center justify-center rounded-xl border border-border/80 bg-background/90 text-muted-foreground shadow-2xs outline-none transition-all hover:border-destructive/35 hover:bg-destructive hover:text-destructive-foreground hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-destructive/30"
-                title="Ana ekrana dön"
-                aria-label="Ana ekrana dön"
-              >
-                <XIcon className="size-4 stroke-[2.5] transition-transform duration-200 group-hover:rotate-90" />
-              </Link>
-            )}
-
             {isAdmin && isMainScreen && (
               <>
               {/* Online gostergesi */}
@@ -399,6 +387,18 @@ export function DashboardHeaderNav({
               </>
             )}
           </div>
+
+          {!isMainScreen && (
+            <Link
+              href="/dashboard/home"
+              prefetch={true}
+              className="group absolute right-3 sm:right-5 lg:right-6 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-xl border border-border/80 bg-background/90 text-muted-foreground shadow-2xs outline-none transition-all hover:border-destructive/35 hover:bg-destructive hover:text-destructive-foreground hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-destructive/30"
+              title="Ana ekrana dön"
+              aria-label="Ana ekrana dön"
+            >
+              <XIcon className="size-4 stroke-[2.5] transition-transform duration-200 group-hover:rotate-90" />
+            </Link>
+          )}
         </div>
       </header>
 

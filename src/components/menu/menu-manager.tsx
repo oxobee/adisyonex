@@ -36,7 +36,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Toaster } from "@/components/ui/sonner"
 import { useServerAction } from "@/hooks/use-server-action"
 import { cn } from "@/lib/utils"
 import type {
@@ -321,7 +320,6 @@ export function MenuManager({
           </DialogContent>
         </Dialog>
       ) : null}
-      <Toaster />
     </div>
   )
 }

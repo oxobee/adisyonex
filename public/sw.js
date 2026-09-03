@@ -1,9 +1,9 @@
-const CACHE_NAME = 'adisyonex-offline-v3';
+const CACHE_NAME = 'adisyonex-offline-v4';
 
 // Static assets to pre-cache immediately upon installation
 const PRECACHE_ASSETS = [
   '/',
-  '/dashboard/orders',
+  '/dashboard/home',
   '/dashboard/pos',
   '/dashboard/tables',
   '/manifest.webmanifest',
@@ -98,9 +98,9 @@ self.addEventListener('fetch', (event) => {
           const cleanCached = await caches.match(url.pathname);
           if (cleanCached) return cleanCached;
 
-          // Fallback to orders dashboard or root shell
-          const fallbackOrders = await caches.match('/dashboard/orders');
-          if (fallbackOrders) return fallbackOrders;
+          // Fallback to the default home screen or root shell
+          const fallbackHome = await caches.match('/dashboard/home');
+          if (fallbackHome) return fallbackHome;
 
           const fallbackRoot = await caches.match('/');
           if (fallbackRoot) return fallbackRoot;
@@ -127,7 +127,7 @@ self.addEventListener('fetch', (event) => {
                 <div class="badge">⚡ ÇEVRİMD IŞI LOKAL MOD</div>
                 <h1>İnternet Bağlantısı Yok</h1>
                 <p>Sistem çevrimdışı çalışmaya devam ediyor. Kaydedilen siparişler internet bağlantısı sağlandığında otomatik sunucuya aktarılacaktır.</p>
-                <a href="/dashboard/orders" class="btn">Sipariş Ekranına Dön</a>
+                <a href="/dashboard/home" class="btn">Ana Ekrana Dön</a>
               </div>
             </body>
             </html>`,
@@ -144,5 +144,40 @@ self.addEventListener('fetch', (event) => {
   // 3. All other requests: Network with Cache Fallback
   event.respondWith(
     fetch(req).catch(() => caches.match(req))
+  );
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'AdisyonEx';
+  const options = {
+    body: payload.body || 'Yeni bir bildiriminiz var.',
+    icon: payload.icon || '/icon.png',
+    badge: '/icon.png',
+    tag: payload.tag || `adisyonex-${Date.now()}`,
+    data: { url: payload.url || '/dashboard/home' },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/dashboard/home';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const existing = windows.find((client) => client.url.startsWith(self.location.origin));
+      if (existing) {
+        return existing.focus().then(() => existing.navigate(targetUrl));
+      }
+      return self.clients.openWindow(targetUrl);
+    }),
   );
 });

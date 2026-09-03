@@ -159,6 +159,33 @@
   transform: translateY(-2px);
 }
 
+.notification-toast {
+  width: min(42rem, calc(100vw - 2rem)) !important;
+  min-height: 5.75rem;
+  border: 1px solid color-mix(in oklab, var(--border) 85%, var(--foreground) 15%) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 16px 34px rgb(0 0 0 / 12%) !important;
+  padding: 1.1rem 1.25rem !important;
+}
+
+.notification-toast [data-title] {
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.notification-toast [data-description] {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .notification-toast {
+    width: calc(100vw - 1rem) !important;
+    min-height: 4.75rem;
+    padding: 0.9rem 1rem !important;
+  }
+}
+
 /* Print: strip dashboard chrome so KOT / invoice routes print clean. */
 @media print {
   [data-slot="sidebar"],

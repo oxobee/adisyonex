@@ -36,6 +36,7 @@ const fontMono = Geist_Mono({
 
 import { getSystemSettings } from "@/services/system-setting.service";
 import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
+import { DeviceNotificationBridge } from "@/components/shared/device-notification-bridge";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSystemSettings().catch(() => null);
@@ -93,6 +94,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster />
+        <DeviceNotificationBridge />
         <PwaInstallPrompt
           appName={settings?.systemName}
           logoUrl={settings?.logoUrl}

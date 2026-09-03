@@ -52,27 +52,93 @@ export const aiPhotoProfessionalizeSchema = z.object({
 
 export type AiPhotoProfessionalizeInput = z.infer<typeof aiPhotoProfessionalizeSchema>;
 
+const normalizeOptionalNumber = (value: unknown): unknown => {
+  if (value === null || value === undefined || value === "") return value;
+  const numberValue = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+};
+
+const normalizeDietaryType = (value: unknown): unknown => {
+  if (value === null || value === undefined || value === "") return value;
+  if (typeof value !== "string") return undefined;
+
+  const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if (["VEG", "VEGAN", "VEGETARIAN", "VEJETARYEN"].includes(normalized)) {
+    return "VEG";
+  }
+  if (["NON_VEG", "NONVEG", "MEAT", "ETLI", "ETLİ"].includes(normalized)) {
+    return "NON_VEG";
+  }
+  if (["EGG", "YUMURTALI", "YUMURTALI_URUN"].includes(normalized)) {
+    return "EGG";
+  }
+  return undefined;
+};
+
+const normalizeAllergens = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((allergen) => {
+      if (typeof allergen === "string") return allergen.trim();
+      if (
+        allergen &&
+        typeof allergen === "object" &&
+        "name" in allergen &&
+        typeof allergen.name === "string"
+      ) {
+        return allergen.name.trim();
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .slice(0, 30);
+};
+
+const normalizeVariants = (value: unknown): Array<{ name: string; price: unknown }> => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((variant) => {
+      if (!variant || typeof variant !== "object") return null;
+      const raw = variant as { name?: unknown; price?: unknown };
+      const name = typeof raw.name === "string" ? raw.name.trim() : "";
+      if (!name) return null;
+      return { name, price: normalizeOptionalNumber(raw.price) };
+    })
+    .filter((variant): variant is { name: string; price: unknown } => variant !== null)
+    .slice(0, 20);
+};
+
 export const aiCommitItemSchema = z.object({
-  name: z.string().min(1).max(100),
-  categoryName: z.string().min(1).max(100),
-  price: z.number().min(0),
-  shortDescription: z.string().max(500).optional(),
-  calories: z.number().int().min(0).max(10000).optional().nullable(),
-  prepTimeMinutes: z.number().int().min(0).max(300).optional().nullable(),
-  dietaryType: z.enum(["VEG", "NON_VEG", "EGG"]).optional().nullable(),
-  allergens: z.array(z.string()).default([]),
-  variants: z
-    .array(
+  name: z.string().trim().min(1).max(100),
+  categoryName: z.string().trim().min(1).max(100),
+  price: z.preprocess(normalizeOptionalNumber, z.number().finite().min(0)),
+  shortDescription: z.string().trim().max(500).optional(),
+  calories: z.preprocess(
+    normalizeOptionalNumber,
+    z.number().int().min(0).max(10000).optional().nullable(),
+  ),
+  prepTimeMinutes: z.preprocess(
+    normalizeOptionalNumber,
+    z.number().int().min(0).max(300).optional().nullable(),
+  ),
+  dietaryType: z.preprocess(
+    normalizeDietaryType,
+    z.enum(["VEG", "NON_VEG", "EGG"]).optional().nullable(),
+  ),
+  allergens: z.preprocess(normalizeAllergens, z.array(z.string().trim().min(1)).max(30)),
+  variants: z.preprocess(
+    normalizeVariants,
+    z.array(
       z.object({
-        name: z.string().min(1),
-        price: z.number().min(0),
+        name: z.string().trim().min(1).max(100),
+        price: z.preprocess(normalizeOptionalNumber, z.number().finite().min(0)),
       }),
-    )
-    .default([]),
+    ).max(20),
+  ),
 });
 
 export const aiCommitMenuSchema = z.object({
-  categories: z.array(z.string().min(1)),
+  categories: z.array(z.string().trim().min(1).max(100)),
   items: z.array(aiCommitItemSchema).min(1, "En az bir ürün seçilmelidir"),
 });
 

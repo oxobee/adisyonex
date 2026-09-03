@@ -39,7 +39,7 @@ const Toaster = ({ position = "top-center", ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast: "cn-toast notification-toast",
         },
       }}
       {...props}
