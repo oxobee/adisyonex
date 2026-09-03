@@ -17,6 +17,7 @@ import {
   ReceiptTextIcon,
   Settings2Icon,
   ShieldCheckIcon,
+  SlidersHorizontalIcon,
   UsersIcon,
   UtensilsCrossedIcon,
 } from "lucide-react";
@@ -35,7 +36,7 @@ interface HomeItem {
 
 const HOME_ITEMS: readonly HomeItem[] = [
   {
-    title: "Anlık Durum",
+    title: "Masalar",
     description: "Masalar & Açık Adisyonlar",
     href: "/dashboard/orders",
     icon: ReceiptTextIcon,
@@ -43,7 +44,7 @@ const HOME_ITEMS: readonly HomeItem[] = [
     badge: "01",
   },
   {
-    title: "Mutfak Ekranı",
+    title: "Mutfak",
     description: "KOT & Hazırlık Takibi",
     href: "/dashboard/kitchen",
     icon: ChefHatIcon,
@@ -59,7 +60,7 @@ const HOME_ITEMS: readonly HomeItem[] = [
     badge: "03",
   },
   {
-    title: "Genel Bakış",
+    title: "Analitik",
     description: "Satış & Günlük Raporlar",
     href: "/dashboard",
     icon: LayoutDashboardIcon,
@@ -83,52 +84,20 @@ const HOME_ITEMS: readonly HomeItem[] = [
     badge: "06",
   },
   {
-    title: "Masalar",
-    description: "Salon & Masa Yerleşimi",
-    href: "/dashboard/tables",
-    icon: ArmchairIcon,
-    iconBg: "bg-amber-50 text-amber-600 border border-amber-100",
-    badge: "07",
-  },
-  {
-    title: "Personel",
-    description: "Ekip & Giriş PIN'leri",
-    href: "/dashboard/staff",
-    icon: UsersIcon,
-    iconBg: "bg-orange-50 text-orange-600 border border-orange-100",
-    badge: "08",
-  },
-  {
-    title: "Stok & Envanter",
-    description: "Kritik Stok & Giriş-Çıkış",
-    href: "/dashboard/inventory",
-    icon: BoxesIcon,
-    iconBg: "bg-indigo-50 text-indigo-600 border border-indigo-100",
-    badge: "09",
-  },
-  {
     title: "Müşteriler",
     description: "Sadakat & Kampanyalar",
     href: "/dashboard/customers",
     icon: GiftIcon,
     iconBg: "bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100",
-    badge: "10",
+    badge: "07",
   },
   {
-    title: "Ayarlar",
-    description: "Restoran & Sistem Profili",
-    href: "/dashboard/settings",
-    icon: Settings2Icon,
-    iconBg: "bg-gray-100 text-gray-700 border border-gray-200",
-    badge: "11",
-  },
-  {
-    title: "Z Raporu",
-    description: "Kasa & Gün Sonu Mutabakatı",
-    href: "/dashboard/z-report",
-    icon: FileSpreadsheetIcon,
-    iconBg: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    badge: "12",
+    title: "Sistem",
+    description: "Masa & QR, Personel, Stok, Z Raporu",
+    href: "/dashboard/system",
+    icon: SlidersHorizontalIcon,
+    iconBg: "bg-gray-100 text-gray-800 border border-gray-200",
+    badge: "08",
   },
 ];
 
@@ -153,7 +122,22 @@ export function HomeScreen({
   // Personel yetkilerine göre sadece yetkili olunan menüleri filtrele
   const visibleItems = useMemo(() => {
     if (!isStaff || !allowedRoutes) return HOME_ITEMS;
-    const filtered = HOME_ITEMS.filter((item) => allowedRoutes.includes(item.href));
+    const systemSubRoutes = [
+      "/dashboard/tables",
+      "/dashboard/staff",
+      "/dashboard/inventory",
+      "/dashboard/z-report",
+      "/dashboard/settings",
+      "/dashboard/system",
+    ];
+    const hasSystemAccess = systemSubRoutes.some((r) => allowedRoutes.includes(r));
+
+    const filtered = HOME_ITEMS.filter((item) => {
+      if (item.href === "/dashboard/system") {
+        return hasSystemAccess;
+      }
+      return allowedRoutes.includes(item.href);
+    });
     return filtered.length > 0 ? filtered : HOME_ITEMS;
   }, [isStaff, allowedRoutes]);
 
