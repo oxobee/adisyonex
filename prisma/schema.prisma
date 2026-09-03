@@ -987,6 +987,7 @@ model SystemSetting {
   systemName      String   @default("Elitale Restro")
   systemTagline   String?  @default("Gelişmiş Restoran & QR Menü Yönetim Sistemi")
   logoUrl         String?
+  logoDarkUrl     String?
   faviconUrl      String?
   ogImageUrl      String?
   metaTitle       String?  @default("Elitale Restro | Restoran ve QR Menü Otomasyonu")

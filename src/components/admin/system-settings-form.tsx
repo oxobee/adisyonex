@@ -42,14 +42,16 @@ function DropzoneUploader({
   currentUrl,
   kind,
   aspect = "square",
+  previewBg = "default",
   onUploaded,
   onClear,
 }: {
   label: string;
   recommendation: string;
   currentUrl?: string | null;
-  kind: "logo" | "favicon" | "ogImage";
+  kind: "logo" | "logoDark" | "favicon" | "ogImage";
   aspect?: "square" | "wide" | "favicon";
+  previewBg?: "light" | "dark" | "default";
   onUploaded: (url: string) => void;
   onClear: () => void;
 }) {
@@ -136,7 +138,12 @@ function DropzoneUploader({
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
             <div
               className={cn(
-                "relative overflow-hidden rounded-xl border border-border bg-white dark:bg-zinc-950 p-2 shadow-xs shrink-0 flex items-center justify-center",
+                "relative overflow-hidden rounded-xl border border-border p-2 shadow-xs shrink-0 flex items-center justify-center",
+                previewBg === "dark"
+                  ? "bg-zinc-950 border-zinc-800"
+                  : previewBg === "light"
+                    ? "bg-white border-zinc-200"
+                    : "bg-white dark:bg-zinc-950",
                 aspect === "wide" ? "w-44 h-24" : aspect === "favicon" ? "size-16" : "size-24",
               )}
             >
@@ -211,6 +218,7 @@ export function SystemSettingsForm({
     systemName: initialSettings.systemName,
     systemTagline: initialSettings.systemTagline ?? "",
     logoUrl: initialSettings.logoUrl ?? "",
+    logoDarkUrl: initialSettings.logoDarkUrl ?? "",
     faviconUrl: initialSettings.faviconUrl ?? "",
     ogImageUrl: initialSettings.ogImageUrl ?? "",
     metaTitle: initialSettings.metaTitle ?? "",
@@ -283,22 +291,35 @@ export function SystemSettingsForm({
             </Field>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 pt-2">
-            {/* Logo Drag & Drop */}
+          <div className="grid gap-5 md:grid-cols-3 pt-2">
+            {/* Light Mode Logo Drag & Drop */}
             <DropzoneUploader
-              label="Sistem Ana Logosu (Sol Üst Panel)"
-              recommendation="Önerilen: 256x256px veya 512x128px (PNG/SVG, Şeffaf Arka Plan)"
+              label="Açık Tema Logosu (Light Mode / Siyah Logo)"
+              recommendation="Açık zeminlerde kullanılacak siyah/koyu yatay logo (PNG/SVG)"
               currentUrl={form.logoUrl}
               kind="logo"
               aspect="wide"
+              previewBg="light"
               onUploaded={(url) => set("logoUrl", url)}
               onClear={() => set("logoUrl", "")}
             />
 
-            {/* Favicon Drag & Drop */}
+            {/* Dark Mode Logo Drag & Drop */}
             <DropzoneUploader
-              label="Favicon (Tarayıcı Sekme İkonu)"
-              recommendation="Önerilen: 32x32px veya 64x64px (ICO/PNG)"
+              label="Koyu Tema Logosu (Dark Mode / Beyaz Logo)"
+              recommendation="Koyu zeminlerde kullanılacak beyaz/açık yatay logo (PNG/SVG)"
+              currentUrl={form.logoDarkUrl}
+              kind="logoDark"
+              aspect="wide"
+              previewBg="dark"
+              onUploaded={(url) => set("logoDarkUrl", url)}
+              onClear={() => set("logoDarkUrl", "")}
+            />
+
+            {/* Favicon / Icon Drag & Drop */}
+            <DropzoneUploader
+              label="Sistem İkonu (Favicon / Kare İkon)"
+              recommendation="Tarayıcı sekmesi ve mobil kısayollar için kare ikon (ICO/PNG)"
               currentUrl={form.faviconUrl}
               kind="favicon"
               aspect="favicon"

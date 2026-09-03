@@ -11,6 +11,7 @@ const systemSettingsSchema = z.object({
   systemName: z.string().trim().min(1, "Sistem adı zorunludur").max(100),
   systemTagline: z.string().trim().max(255).optional().nullable(),
   logoUrl: z.string().trim().optional().nullable(),
+  logoDarkUrl: z.string().trim().optional().nullable(),
   faviconUrl: z.string().trim().optional().nullable(),
   ogImageUrl: z.string().trim().optional().nullable(),
   metaTitle: z.string().trim().max(160).optional().nullable(),
@@ -25,6 +26,7 @@ export const updateSystemSettingsAction = withAdminValidation(
       systemName: data.systemName,
       systemTagline: data.systemTagline || null,
       logoUrl: data.logoUrl || null,
+      logoDarkUrl: data.logoDarkUrl || null,
       faviconUrl: data.faviconUrl || null,
       ogImageUrl: data.ogImageUrl || null,
       metaTitle: data.metaTitle || null,
@@ -36,7 +38,7 @@ export const updateSystemSettingsAction = withAdminValidation(
 
 export async function uploadSystemAssetAction(
   formData: FormData,
-  kind: "logo" | "favicon" | "ogImage",
+  kind: "logo" | "logoDark" | "favicon" | "ogImage",
 ): Promise<ActionResult<{ url: string }>> {
   const admin = await getAdminContextOrNull();
   if (!admin) {
@@ -63,6 +65,8 @@ export async function uploadSystemAssetAction(
     // Automatically persist to system settings
     if (kind === "logo") {
       await updateSystemSettings({ logoUrl: url });
+    } else if (kind === "logoDark") {
+      await updateSystemSettings({ logoDarkUrl: url });
     } else if (kind === "favicon") {
       await updateSystemSettings({ faviconUrl: url });
     } else if (kind === "ogImage") {

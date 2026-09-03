@@ -155,16 +155,37 @@ export function DashboardHeaderNav({
               className="flex items-center select-none cursor-pointer group shrink-0"
               title="Ana Ekran"
             >
-              {systemSettings?.logoUrl ? (
+              {systemSettings?.logoUrl || systemSettings?.logoDarkUrl ? (
                 <div className="relative h-8 sm:h-9 w-36 sm:w-44 max-w-[190px]">
-                  <Image
-                    src={systemSettings.logoUrl}
-                    alt={systemSettings?.systemName || "AdisyonEx"}
-                    fill
-                    className="object-contain object-left"
-                    priority
-                    sizes="(max-width: 640px) 144px, 176px"
-                  />
+                  {/* Light Mode Logo (Açık tema / Siyah logo) */}
+                  {systemSettings?.logoUrl && (
+                    <Image
+                      src={systemSettings.logoUrl}
+                      alt={systemSettings?.systemName || "AdisyonEx"}
+                      fill
+                      className={cn(
+                        "object-contain object-left",
+                        systemSettings.logoDarkUrl && "dark:hidden",
+                      )}
+                      priority
+                      sizes="(max-width: 640px) 144px, 176px"
+                    />
+                  )}
+
+                  {/* Dark Mode Logo (Koyu tema / Beyaz logo) */}
+                  {systemSettings?.logoDarkUrl && (
+                    <Image
+                      src={systemSettings.logoDarkUrl}
+                      alt={systemSettings?.systemName || "AdisyonEx"}
+                      fill
+                      className={cn(
+                        "object-contain object-left",
+                        systemSettings.logoUrl ? "hidden dark:block" : "block",
+                      )}
+                      priority
+                      sizes="(max-width: 640px) 144px, 176px"
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
