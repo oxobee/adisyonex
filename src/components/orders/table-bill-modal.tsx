@@ -139,6 +139,9 @@ export function TableBillModal({
                 visibility: visible !important;
               }
               #printable-thermal-receipt {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
                 position: fixed !important;
                 left: 0 !important;
                 top: 0 !important;
@@ -152,6 +155,7 @@ export function TableBillModal({
                 color: #000000 !important;
                 font-size: 11px !important;
                 line-height: 1.35 !important;
+                z-index: 2147483647 !important;
               }
               @page {
                 size: 80mm auto;
