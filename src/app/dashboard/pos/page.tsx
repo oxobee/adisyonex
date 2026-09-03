@@ -2,14 +2,23 @@ import { PosTerminal } from "@/components/pos/pos-terminal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getMenu } from "@/services/menu-item.service";
 import { listOrders } from "@/services/order.service";
 import { getServiceOptions } from "@/services/restaurant-settings.service";
 import { getTables } from "@/services/table.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function PosPage() {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+
+  if (!restaurantId) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader title="Kasa / POS" description="Sipariş alın ve mutfağa iletin." />
@@ -22,10 +31,10 @@ export default async function PosPage() {
   }
 
   const [menu, tables, openOrders, services] = await Promise.all([
-    getMenu(ctx.restaurantId),
-    getTables(ctx.restaurantId),
-    listOrders(ctx.restaurantId, ["OPEN"]),
-    getServiceOptions(ctx.restaurantId),
+    getMenu(restaurantId),
+    getTables(restaurantId),
+    listOrders(restaurantId, ["OPEN"]),
+    getServiceOptions(restaurantId),
   ]);
 
   const occupied: Record<string, string> = {};

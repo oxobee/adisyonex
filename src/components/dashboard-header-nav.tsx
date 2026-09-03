@@ -206,19 +206,6 @@ export function DashboardHeaderNav({
           {/* SAĞ BÖLÜM */}
           {isAdmin && isMainScreen ? (
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Online göstergesi */}
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 border border-border/50">
-                <span
-                  className={cn(
-                    "size-2 rounded-full",
-                    isOnline ? "bg-emerald-500 animate-pulse" : "bg-red-500",
-                  )}
-                />
-                <span className="text-[10px] font-bold text-muted-foreground hidden sm:block">
-                  {isOnline ? "Online" : "Çevrimdışı"}
-                </span>
-              </div>
-
               {/* Profilim Butonu */}
               <div ref={profileRef} className="relative">
                 <button

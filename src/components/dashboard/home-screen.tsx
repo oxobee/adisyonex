@@ -12,6 +12,7 @@ import {
   CircleHelpIcon,
   GiftIcon,
   LayoutDashboardIcon,
+  LockIcon,
   LogInIcon,
   PaletteIcon,
   ReceiptTextIcon,
@@ -139,10 +140,16 @@ const HOME_ITEMS: readonly HomeItem[] = [
 export function HomeScreen({
   settings,
   isAdmin,
+  isStaff = false,
+  staffRole,
+  allowedRoutes = null,
   restaurantUsername,
 }: {
   readonly settings: SystemSettingsDTO;
   readonly isAdmin: boolean;
+  readonly isStaff?: boolean;
+  readonly staffRole?: string;
+  readonly allowedRoutes?: readonly string[] | null;
   readonly restaurantUsername: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -212,73 +219,83 @@ export function HomeScreen({
   return (
     <main
       onClick={() => {
-        // Ekranın herhangi bir yerine tıklandığında menüyü aç (kapalıyken)
+        // Kapalı durumdayken arka plana veya logoya tıklandığında menüyü aç
         if (!isOpen) {
           setIsOpen(true);
         }
       }}
       className={cn(
-        "relative min-h-[calc(100vh-3.5rem)] w-full overflow-x-hidden bg-gradient-to-b from-[#181a20] via-[#0e0f13] to-[#07080a] text-white flex flex-col justify-between select-none transition-colors",
-        !isOpen && "cursor-pointer",
+        "relative min-h-[calc(100vh-3.5rem)] w-full flex flex-col justify-between overflow-hidden select-none transition-colors duration-500",
+        // Kapalıyken tüm ekran tıklanabilir açılış tetiğidir
+        !isOpen ? "cursor-pointer" : "cursor-default",
+        // Derin minimalist obsidian gece teması
+        "bg-[#050608] text-white",
       )}
     >
       {/* 
-        ÖZEL KALP ATIŞI (PUSH) ANİMASYONU
-        Hafif aralıklarla tekrarlayan tatlı bir nabız / push efekti (4.8 saniyede bir çift ritimli atış)
+        PREMIUM DYNAMIC KEYFRAME ANIMATIONS:
+        - gentleHeartbeat: Ekran kapalıyken logonun hafif, organik aralıklarla atması
+        - glowPulse: Arka plan gradyanının tatlı parıltısı
       */}
       <style jsx global>{`
         @keyframes gentleHeartbeat {
-          0%, 62%, 100% {
+          0%, 100% {
             transform: scale(1);
-            filter: drop-shadow(0 20px 45px rgba(255, 255, 255, 0.22));
           }
-          68% {
-            transform: scale(1.042);
-            filter: drop-shadow(0 26px 55px rgba(255, 255, 255, 0.38));
+          14% {
+            transform: scale(1.045);
           }
-          74% {
-            transform: scale(1.012);
-            filter: drop-shadow(0 20px 45px rgba(255, 255, 255, 0.24));
-          }
-          80% {
-            transform: scale(1.058);
-            filter: drop-shadow(0 30px 60px rgba(255, 255, 255, 0.44));
-          }
-          90% {
+          28% {
             transform: scale(1);
-            filter: drop-shadow(0 20px 45px rgba(255, 255, 255, 0.22));
+          }
+          42% {
+            transform: scale(1.025);
+          }
+          70% {
+            transform: scale(1);
           }
         }
-        .animate-gentle-heartbeat {
-          animation: gentleHeartbeat 4.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+        .animate-heartbeat {
+          animation: gentleHeartbeat 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ambientGlowPulse {
+          0%, 100% {
+            opacity: 0.15;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.28;
+            transform: scale(1.08);
+          }
+        }
+        .animate-glow-pulse {
+          animation: ambientGlowPulse 5s ease-in-out infinite;
         }
       `}</style>
 
       {/* 
-        SATIN GRADIENT BLACK AMBIENT LIGHTING MESH
-        Charcoal, slate & deep obsidian gradient with overhead spotlight
+        AMBIENT GLOW LAYERS:
+        Logonun ve kartların arkasında atmosferik, derin stüdyo aydınlatması
       */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Soft overhead radial spotlight */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(65,72,92,0.3)_0%,rgba(24,26,32,0.08)_65%,transparent_80%)] blur-[95px]" />
-
-        {/* Central core ambient glow */}
+        {/* Merkez Büyük Parıltı */}
         <div
-          className={cn(
-            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px] transition-all duration-700",
-            isOpen
-              ? "size-[850px] bg-gradient-to-b from-primary/20 via-primary/5 to-transparent opacity-80"
-              : "size-[600px] bg-gradient-to-b from-white/10 via-primary/5 to-transparent opacity-45",
-          )}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[650px] sm:size-[850px] rounded-full blur-[140px] opacity-20 animate-glow-pulse pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(235, 94, 40, 0.45) 0%, rgba(139, 92, 246, 0.25) 45%, transparent 70%)",
+          }}
         />
-
-        {/* Bottom soft gradient shadow */}
-        <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#07080a] via-[#07080a]/80 to-transparent" />
+        {/* Üst Zarif Sis */}
+        <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+        {/* Alt Taban Gradyanı */}
+        <div className="absolute bottom-0 inset-x-0 h-64 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
       </div>
 
       {/* 
         TOP BAR:
-        Online / Offline Pill on Left + Staff / Admin Shortcuts on Right
+        Online / Offline Pill on Left + Staff / Admin Shortcuts on Right (Sadece yöneticilerde)
       */}
       <div
         className="relative z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
@@ -317,29 +334,31 @@ export function HomeScreen({
           </span>
         </div>
 
-        {/* Top Right Shortcuts */}
-        <div className="flex items-center gap-3">
-          {restaurantUsername && (
-            <Link
-              href={`/${restaurantUsername}/personals`}
-              target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <LogInIcon className="size-3.5" />
-              <span>Personel Girişi</span>
-            </Link>
-          )}
+        {/* Top Right Shortcuts - Yalnızca Yönetici / Admin modunda görünür, personel ekranında gizlenir */}
+        {!isStaff && (
+          <div className="flex items-center gap-3">
+            {restaurantUsername && (
+              <Link
+                href={`/${restaurantUsername}/personals`}
+                target="_blank"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <LogInIcon className="size-3.5" />
+                <span>Personel Girişi</span>
+              </Link>
+            )}
 
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-colors"
-            >
-              <ShieldCheckIcon className="size-3.5" />
-              <span>Yönetici</span>
-            </Link>
-          )}
-        </div>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-colors"
+              >
+                <ShieldCheckIcon className="size-3.5" />
+                <span>Yönetici</span>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 
@@ -349,123 +368,104 @@ export function HomeScreen({
            - Ekranda yalnızca tam ortalanmış, hafif aralıklarla tatlı kalp atışı (push) animasyonu yapan büyük logo yer alır.
            - Logoya veya ekranın herhangi bir yerine basıldığında menü açılır!
         2. AÇIKKEN:
-           - En Solda: Menü butonları ile aynı hizada ve boyutta (h-11 sm:h-12) beyaz logo.
-           - En Sağda: Menü butonları ile aynı hizada KAPAT butonu.
-           - Altında: Sıfır çakışmalı, hızlı elastik animasyonlarla açılan 11 menü kartı.
-           - 1 dakika boyunca ekrana dokunulmazsa otomatik olarak logoya geri döner.
+           - 11 modül kartı tek tek sıralı elastik animasyonla ekrana fırlar.
+           - Personel yetkilerine göre yalnızca yetkili olunan modüller aktif ve tıklanabilirdir.
+           - Sağ üstte net '✕ KAPAT' butonu belirir.
       */}
-      <div className="relative z-20 flex-1 flex flex-col justify-between w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 
-          1. KAPALI HAL (SADECE BÜYÜK KALP ATIŞI YAPAN LOGO - MENÜ BUTONU YOK)
-        */}
-        {!isOpen && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center my-auto py-12 animate-in fade-in zoom-in-95 duration-500">
-            {/* Büyük Beyaz Sistem Logosu (Tatlı Kalp Atışı Animasyonu) */}
-            <div className="relative flex items-center justify-center select-none animate-gentle-heartbeat">
-              {settings.logoDarkUrl || settings.logoUrl ? (
-                <div className="relative h-24 sm:h-36 md:h-44 lg:h-52 w-[340px] sm:w-[500px] md:w-[660px] lg:w-[820px] max-w-full">
+      <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto my-auto">
+        {!isOpen ? (
+          /* ============================================================ */
+          /* KAPALI DURUM: SADECE MERKEZİ LOGO VE HAFİF KALP ATIŞI        */
+          /* ============================================================ */
+          <div className="flex flex-col items-center justify-center text-center my-auto cursor-pointer group py-12">
+            {/* Ortalanmış Canlı Logo Alanı */}
+            <div className="relative transform-gpu transition-transform duration-500 group-hover:scale-105 select-none">
+              {/* Logo Çevresi İnce Parıltı Halkası */}
+              <div className="absolute -inset-8 rounded-full bg-gradient-to-tr from-primary/30 to-amber-500/20 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none" />
+
+              {settings.logoUrl || settings.logoDarkUrl ? (
+                <div className="relative h-20 sm:h-28 lg:h-32 w-72 sm:w-96 lg:w-[460px] animate-heartbeat">
                   <Image
                     src={settings.logoDarkUrl || settings.logoUrl || ""}
-                    alt="Sistem Logosu"
+                    alt={settings.systemName || "Adisyon"}
                     fill
-                    className="object-contain"
+                    className="object-contain drop-shadow-[0_15px_35px_rgba(0,0,0,0.8)]"
                     priority
-                    sizes="(max-width: 640px) 340px, (max-width: 1024px) 660px, 820px"
-                  />
-                </div>
-              ) : settings.faviconUrl ? (
-                <div className="relative size-28 sm:size-40 overflow-hidden rounded-3xl border border-white/20 bg-white/5 p-4 shadow-2xl">
-                  <Image
-                    src={settings.faviconUrl}
-                    alt="Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                    sizes="160px"
+                    sizes="(max-width: 640px) 288px, (max-width: 1024px) 384px, 460px"
                   />
                 </div>
               ) : (
-                <div className="flex size-28 sm:size-40 items-center justify-center rounded-3xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/30 text-white shadow-[0_0_45px_rgba(255,255,255,0.25)]">
-                  <UtensilsCrossedIcon className="size-14 sm:size-20" />
+                <div className="flex items-center gap-4 sm:gap-6 animate-heartbeat">
+                  <div className="flex size-16 sm:size-20 lg:size-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-orange-600 text-white shadow-[0_10px_30px_rgba(235,94,40,0.5)]">
+                    <UtensilsCrossedIcon className="size-8 sm:size-10 lg:size-12 stroke-[2.2]" />
+                  </div>
+                  <span className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-white drop-shadow-2xl">
+                    {settings.systemName || "Adisyon"}
+                  </span>
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* 
-          2. AÇIK HAL:
-          - En Solda: Beyaz logo (h-11 sm:h-12)
-          - En Sağda: KAPAT butonu
-          - Altında: Sıfır çakışmalı 11 menü kartı
-        */}
-        {isOpen && (
-          <div
-            className="w-full flex flex-col justify-start pt-1 pb-4 animate-in fade-in duration-400"
-            onClick={(e) => {
-              // Menü kartlarına veya alana tıklandığında üst kapsayıcıya yayılmasını durdur
-              e.stopPropagation();
-            }}
-          >
-            {/* Üst Eylem Satırı: Sol Logo - Sağ KAPAT Butonu */}
-            <div className="relative w-full flex items-center justify-between min-h-[48px] sm:min-h-[52px] pb-4 sm:pb-6">
-              {/* En Solda: Buton ile aynı boyutta Sistem Logosu (Tıklanırsa kapatır) */}
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                title="Ana Ekrana Dön"
-                className="select-none shrink-0 cursor-pointer transition-transform active:scale-95 animate-in slide-in-from-left-6 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-              >
-                {settings.logoDarkUrl || settings.logoUrl ? (
-                  <div className="relative h-11 sm:h-12 w-36 sm:w-44 md:w-48 drop-shadow-[0_10px_25px_rgba(255,255,255,0.2)]">
+            {/* İnce Tıklama İpucu */}
+            <p className="mt-8 sm:mt-10 text-xs sm:text-sm font-semibold tracking-widest uppercase text-zinc-500 group-hover:text-zinc-300 transition-colors animate-pulse">
+              Menüyü Açmak İçin Dokunun
+            </p>
+          </div>
+        ) : (
+          /* ============================================================ */
+          /* AÇIK DURUM: 11 MODÜL KARTI + SAĞ ÜST 'KAPAT' BUTONU          */
+          /* ============================================================ */
+          <div className="w-full flex flex-col my-auto pt-2 sm:pt-4 animate-in fade-in zoom-in-98 duration-300">
+            {/* Üst Bar: Sol Logo + Sağ Kapat Butonu */}
+            <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8 px-1">
+              {/* Sol: Kompakt Logo */}
+              <div className="flex items-center gap-3">
+                {settings.logoUrl || settings.logoDarkUrl ? (
+                  <div className="relative h-9 sm:h-11 w-32 sm:w-44">
                     <Image
                       src={settings.logoDarkUrl || settings.logoUrl || ""}
-                      alt="Sistem Logosu"
+                      alt={settings.systemName || "Adisyon"}
                       fill
                       className="object-contain object-left"
                       priority
-                      sizes="(max-width: 640px) 144px, 192px"
-                    />
-                  </div>
-                ) : settings.faviconUrl ? (
-                  <div className="relative size-11 sm:size-12 overflow-hidden rounded-2xl border border-white/20 bg-white/5 p-2 shadow-2xl">
-                    <Image
-                      src={settings.faviconUrl}
-                      alt="Logo"
-                      fill
-                      className="object-contain"
-                      priority
-                      sizes="48px"
+                      sizes="176px"
                     />
                   </div>
                 ) : (
-                  <div className="flex size-11 sm:size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/30 text-white shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                    <UtensilsCrossedIcon className="size-6 sm:size-7" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-8 items-center justify-center rounded-xl bg-primary text-white">
+                      <UtensilsCrossedIcon className="size-4" />
+                    </div>
+                    <span className="text-lg font-black tracking-tight text-white">
+                      {settings.systemName || "Adisyon"}
+                    </span>
                   </div>
                 )}
-              </button>
-
-              {/* En Sağda: Menü Kartları ile aynı hizada KAPAT Butonu */}
-              <div className="shrink-0 z-30 animate-in slide-in-from-right-6 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  aria-expanded={true}
-                  aria-label="Menüyü Kapat"
-                  className="group relative inline-flex items-center justify-center gap-2.5 px-8 sm:px-10 h-11 sm:h-12 rounded-full font-black text-xs sm:text-sm tracking-widest uppercase transition-all duration-300 cursor-pointer outline-none select-none active:scale-95 shadow-2xl bg-white text-zinc-950 hover:bg-zinc-100 border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.4)]"
-                >
-                  <span className="text-red-600 font-black text-sm">✕</span>
-                  <span className="font-extrabold tracking-widest text-zinc-950">
-                    KAPAT
-                  </span>
-                </button>
               </div>
+
+              {/* Sağ: Estetik Kapat Butonu */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                className="group relative inline-flex items-center justify-center gap-2 px-6 sm:px-7 h-10 sm:h-11 rounded-full font-black text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 cursor-pointer outline-none select-none active:scale-95 shadow-xl bg-white text-zinc-950 hover:bg-zinc-100 border border-white"
+                title="Menüyü Kapat ve Logoya Dön"
+              >
+                <span className="text-red-600 font-black text-sm">✕</span>
+                <span>KAPAT</span>
+              </button>
             </div>
 
-            {/* Menü Kartları: Tek tek sırayla hızlı elastik açılış (index * 22ms) */}
+            {/* Menü Kartları Grid: Tek tek sırayla hızlı elastik açılış (index * 22ms) */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-4.5 w-full pb-10">
               {HOME_ITEMS.map((item, index) => {
                 const Icon = item.icon;
+                const isAllowed =
+                  !isStaff ||
+                  !allowedRoutes ||
+                  allowedRoutes.includes(item.href);
 
                 return (
                   <div
@@ -476,59 +476,102 @@ export function HomeScreen({
                       animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
                     }}
                   >
-                    <Link
-                      href={item.href}
-                      prefetch={true}
-                      className={cn(
-                        "group relative flex flex-col justify-between w-full cursor-pointer select-none",
-                        // Geniş, dokunmatik uyumlu basma hedefi
-                        "min-h-[135px] sm:min-h-[148px] lg:min-h-[158px]",
-                        "rounded-3xl p-4 lg:p-4.5",
-                        // Cam efektli derin obsidian kart yüzeyi
-                        "border-2 border-white/15 bg-gradient-to-b from-zinc-800/80 via-zinc-900/90 to-[#0c0d11]/95",
-                        "backdrop-blur-2xl shadow-[0_12px_28px_rgba(0,0,0,0.5)]",
-                        // Dokunmatik anında anlık tepki
-                        "active:scale-95 transition-all duration-150",
-                        // Masaüstünde zarif hover
-                        "hover:scale-[1.03] hover:border-white/60 hover:shadow-2xl hover:z-50",
-                      )}
-                    >
-                      {/* Glowing Colored Accent Layer */}
+                    {isAllowed ? (
+                      /* AKTİF KART: Tam Renkli, Parıltılı, Tıklanabilir */
+                      <Link
+                        href={item.href}
+                        prefetch={true}
+                        className={cn(
+                          "group relative flex flex-col justify-between w-full cursor-pointer select-none",
+                          // Geniş, dokunmatik uyumlu basma hedefi
+                          "min-h-[135px] sm:min-h-[148px] lg:min-h-[158px]",
+                          "rounded-3xl p-4 lg:p-4.5",
+                          // Cam efektli derin obsidian kart yüzeyi
+                          "border-2 border-white/15 bg-gradient-to-b from-zinc-800/80 via-zinc-900/90 to-[#0c0d11]/95",
+                          "backdrop-blur-2xl shadow-[0_12px_28px_rgba(0,0,0,0.5)]",
+                          // Dokunmatik anında anlık tepki
+                          "active:scale-95 transition-all duration-150",
+                          // Masaüstünde zarif hover
+                          "hover:scale-[1.03] hover:border-white/60 hover:shadow-2xl hover:z-50",
+                        )}
+                      >
+                        {/* Glowing Colored Accent Layer */}
+                        <div
+                          className={cn(
+                            "absolute inset-0 rounded-[22px] bg-gradient-to-br transition-opacity duration-200",
+                            item.gradient,
+                            "opacity-35 group-hover:opacity-75 group-active:opacity-90",
+                          )}
+                        />
+
+                        {/* Top Row: Rozet Numarası & Yön Oku */}
+                        <div className="relative z-10 flex items-center justify-between">
+                          <span className="flex size-6 items-center justify-center rounded-full bg-black/60 border border-white/20 text-[10px] sm:text-[11px] font-black text-zinc-200">
+                            {item.badge}
+                          </span>
+                          <span className="flex size-6 items-center justify-center rounded-full bg-white/10 text-white/80 group-hover:bg-white group-hover:text-black group-hover:scale-110 transition-all">
+                            <span className="text-xs font-black">↗</span>
+                          </span>
+                        </div>
+
+                        {/* Center: Büyük ve Net Modül İkonu */}
+                        <div className="relative z-10 flex items-center justify-start my-2">
+                          <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-150">
+                            <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[2.2] text-white" />
+                          </div>
+                        </div>
+
+                        {/* Bottom: Kristal Netliğinde Saf Beyaz Başlık ve Açıklama */}
+                        <div className="relative z-10 w-full text-left">
+                          <span className="block text-sm sm:text-base font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate">
+                            {item.title}
+                          </span>
+                          <span className="block text-[10px] sm:text-[11px] font-medium text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] line-clamp-1 mt-0.5">
+                            {item.description}
+                          </span>
+                        </div>
+                      </Link>
+                    ) : (
+                      /* KİLİTLİ / YETKİSİZ KART: Deaktif, Soluk, Tıklanamaz */
                       <div
                         className={cn(
-                          "absolute inset-0 rounded-[22px] bg-gradient-to-br transition-opacity duration-200",
-                          item.gradient,
-                          "opacity-35 group-hover:opacity-75 group-active:opacity-90",
+                          "group relative flex flex-col justify-between w-full select-none",
+                          "min-h-[135px] sm:min-h-[148px] lg:min-h-[158px]",
+                          "rounded-3xl p-4 lg:p-4.5",
+                          "border border-white/5 bg-zinc-950/60 backdrop-blur-md",
+                          "opacity-30 grayscale cursor-not-allowed transition-all duration-150 shadow-inner",
                         )}
-                      />
+                        title="Bu modüle erişim yetkiniz bulunmuyor"
+                      >
+                        {/* Top Row: Rozet Numarası & Kilit Rozeti */}
+                        <div className="relative z-10 flex items-center justify-between">
+                          <span className="flex size-6 items-center justify-center rounded-full bg-black/70 border border-white/10 text-[10px] sm:text-[11px] font-bold text-zinc-500">
+                            {item.badge}
+                          </span>
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 border border-white/10 text-[10px] font-bold text-zinc-400">
+                            <LockIcon className="size-2.5 text-zinc-400" />
+                            <span>Kilitli</span>
+                          </span>
+                        </div>
 
-                      {/* Top Row: Rozet Numarası & Yön Oku */}
-                      <div className="relative z-10 flex items-center justify-between">
-                        <span className="flex size-6 items-center justify-center rounded-full bg-black/60 border border-white/20 text-[10px] sm:text-[11px] font-black text-zinc-200">
-                          {item.badge}
-                        </span>
-                        <span className="flex size-6 items-center justify-center rounded-full bg-white/10 text-white/80 group-hover:bg-white group-hover:text-black group-hover:scale-110 transition-all">
-                          <span className="text-xs font-black">↗</span>
-                        </span>
-                      </div>
+                        {/* Center: Soluk İkon */}
+                        <div className="relative z-10 flex items-center justify-start my-2">
+                          <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-zinc-500">
+                            <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[1.8] text-zinc-500" />
+                          </div>
+                        </div>
 
-                      {/* Center: Büyük ve Net Modül İkonu */}
-                      <div className="relative z-10 flex items-center justify-start my-2">
-                        <div className="flex size-12 sm:size-13 lg:size-14 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-150">
-                          <Icon className="size-6 sm:size-7 lg:size-7.5 stroke-[2.2] text-white" />
+                        {/* Bottom: Başlık ve Yetkisiz Uyarısı */}
+                        <div className="relative z-10 w-full text-left">
+                          <span className="block text-sm sm:text-base font-bold text-zinc-400 truncate">
+                            {item.title}
+                          </span>
+                          <span className="block text-[10px] sm:text-[11px] font-medium text-zinc-500 line-clamp-1 mt-0.5">
+                            Erişim yetkisi yok
+                          </span>
                         </div>
                       </div>
-
-                      {/* Bottom: Kristal Netliğinde Saf Beyaz Başlık ve Açıklama */}
-                      <div className="relative z-10 w-full text-left">
-                        <span className="block text-sm sm:text-base font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate">
-                          {item.title}
-                        </span>
-                        <span className="block text-[10px] sm:text-[11px] font-medium text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] line-clamp-1 mt-0.5">
-                          {item.description}
-                        </span>
-                      </div>
-                    </Link>
+                    )}
                   </div>
                 );
               })}

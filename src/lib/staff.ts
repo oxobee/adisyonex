@@ -42,3 +42,41 @@ export const staffRoleLabel = (role: StaffRole): string =>
 
 export const staffStatusLabel = (status: StaffStatus): string =>
   STAFF_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
+
+export const getStaffDefaultRoutes = (role: StaffRole): readonly string[] => {
+  switch (role) {
+    case "KITCHEN":
+      return ["/dashboard/kitchen"];
+    case "WAITER":
+      return ["/dashboard/orders"];
+    case "CASHIER":
+      return ["/dashboard/pos", "/dashboard/orders"];
+    case "MANAGEMENT":
+      return [
+        "/dashboard",
+        "/dashboard/orders",
+        "/dashboard/kitchen",
+        "/dashboard/pos",
+        "/dashboard/menu",
+        "/dashboard/menu-design",
+        "/dashboard/tables",
+        "/dashboard/staff",
+        "/dashboard/inventory",
+        "/dashboard/customers",
+        "/dashboard/settings",
+      ];
+    case "OTHER":
+    default:
+      return ["/dashboard/orders"];
+  }
+};
+
+export const getStaffEffectiveRoutes = (
+  role: StaffRole,
+  allowedRoutes?: readonly string[] | null,
+): readonly string[] => {
+  if (allowedRoutes && allowedRoutes.length > 0) {
+    return allowedRoutes;
+  }
+  return getStaffDefaultRoutes(role);
+};

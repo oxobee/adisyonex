@@ -2,6 +2,7 @@ import { OrdersBoard } from "@/components/orders/orders-board";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getMenu } from "@/services/menu-item.service";
 import { listOrders } from "@/services/order.service";
 import { getTodaySales } from "@/services/sales.service";
@@ -11,8 +12,14 @@ import { getRestaurantProfile } from "@/services/restaurant-settings.service";
 export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+
+  if (!restaurantId) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader title="Anlık Durum & Masalar" description="Canlı masa adisyonları, salon doluluğu ve hesap yönetimi." />
@@ -25,9 +32,9 @@ export default async function OrdersPage() {
   }
 
   const [open, completed, sales, tables, menu, profile] = await Promise.all([
-    listOrders(ctx.restaurantId, ["OPEN"]).catch(() => []),
-    listOrders(ctx.restaurantId, ["COMPLETED"]).catch(() => []),
-    getTodaySales(ctx.restaurantId).catch(() => ({
+    listOrders(restaurantId, ["OPEN"]).catch(() => []),
+    listOrders(restaurantId, ["COMPLETED"]).catch(() => []),
+    getTodaySales(restaurantId).catch(() => ({
       orders: 0,
       gross: 0,
       tax: 0,
@@ -35,9 +42,9 @@ export default async function OrdersPage() {
       voids: 0,
       byMode: [],
     })),
-    getTables(ctx.restaurantId).catch(() => []),
-    getMenu(ctx.restaurantId).catch(() => ({ categories: [], items: [] })),
-    getRestaurantProfile(ctx.restaurantId).catch(() => null),
+    getTables(restaurantId).catch(() => []),
+    getMenu(restaurantId).catch(() => ({ categories: [], items: [] })),
+    getRestaurantProfile(restaurantId).catch(() => null),
   ]);
 
   return (
@@ -47,8 +54,8 @@ export default async function OrdersPage() {
       sales={sales}
       tables={tables}
       menu={menu}
-      restaurantName={profile?.name ?? "Elitale Restoran"}
-      restaurantTagline={profile?.tagline ?? null}
+      restaurantName={profile?.name || "Restoran"}
+      restaurantTagline={profile?.tagline}
     />
   );
 }
