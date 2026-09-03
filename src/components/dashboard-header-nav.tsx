@@ -130,6 +130,10 @@ export function DashboardHeaderNav({
           ? { label: "♾️ Süresiz", color: "text-purple-600 dark:text-purple-400 border-purple-500/25 bg-purple-500/10" }
           : { label: "⚡ Deneme", color: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/30" };
 
+  if (isMainScreen) {
+    return null;
+  }
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full h-14 border-b border-gray-200 bg-white/95 backdrop-blur-xl transition-all select-none shadow-2xs">
