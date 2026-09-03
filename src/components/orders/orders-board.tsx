@@ -573,6 +573,25 @@ export function OrdersBoard({
 
   return (
     <div className="relative flex flex-col gap-6 p-4 lg:p-6">
+      <style jsx global>{`
+        @keyframes tableCardElasticIn {
+          0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.86);
+          }
+          60% {
+            opacity: 1;
+            transform: translateY(-4px) scale(1.02);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .animate-table-card-elastic {
+          animation: tableCardElasticIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+      `}</style>
       {/* SPOTLIGHT GLASSMORPHISM BACKDROP & CRISP ACTION MODAL */}
       {selectedTable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -756,6 +775,30 @@ export function OrdersBoard({
                   <span>{tableStats.billCount} Hesap İstendi</span>
                 </div>
               )}
+
+              {/* Masa Oturma Süresi Gösterge Lejantı */}
+              <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-muted/60 border border-border/70 px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                <span className="text-[10px] uppercase font-black text-foreground mr-0.5">Süre:</span>
+                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Yeni Masa">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  &lt;20dk
+                </span>
+                <span className="text-border">·</span>
+                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400" title="Orta Süre">
+                  <span className="size-2 rounded-full bg-amber-400" />
+                  20-45dk
+                </span>
+                <span className="text-border">·</span>
+                <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400" title="Uzun Süre">
+                  <span className="size-2 rounded-full bg-orange-500" />
+                  45-75dk
+                </span>
+                <span className="text-border">·</span>
+                <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400" title="Çok Uzun Süre">
+                  <span className="size-2 rounded-full bg-rose-500 animate-pulse" />
+                  &gt;75dk
+                </span>
+              </div>
             </div>
           </div>
 
@@ -869,8 +912,8 @@ export function OrdersBoard({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
-              {filteredTables.map((table) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4">
+              {filteredTables.map((table, index) => {
                 const tableOrders = ordersByTableId.get(table.id) ?? [];
                 const isOccupied = tableOrders.length > 0;
                 const total = round2(
@@ -885,7 +928,13 @@ export function OrdersBoard({
                 const status: TableStatus = isOccupied ? "OCCUPIED" : "EMPTY";
 
                 return (
-                  <div key={table.id} className="relative">
+                  <div
+                    key={table.id}
+                    className="relative animate-table-card-elastic fill-mode-both"
+                    style={{
+                      animationDelay: `${index * 26}ms`,
+                    }}
+                  >
                     <TableCard
                       table={table}
                       status={status}

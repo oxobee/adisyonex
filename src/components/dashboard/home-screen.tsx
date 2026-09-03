@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -148,6 +148,8 @@ export function HomeScreen({
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Real-time network connectivity detector
   useEffect(() => {
     setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -162,8 +164,96 @@ export function HomeScreen({
     };
   }, []);
 
+  // 1-minute inactivity timeout: if screen is untouched for 60s while open, return to logo
+  useEffect(() => {
+    if (!isOpen) {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      return;
+    }
+
+    const resetInactivityTimer = () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      // 60 seconds (1 minute)
+      inactivityTimerRef.current = setTimeout(() => {
+        setIsOpen(false);
+      }, 60000);
+    };
+
+    // Initial reset
+    resetInactivityTimer();
+
+    const activityEvents = [
+      "mousedown",
+      "mousemove",
+      "touchstart",
+      "pointerdown",
+      "keydown",
+      "scroll",
+    ];
+
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, resetInactivityTimer, { passive: true });
+    });
+
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, resetInactivityTimer);
+      });
+    };
+  }, [isOpen]);
+
   return (
-    <main className="relative min-h-[calc(100vh-3.5rem)] w-full overflow-x-hidden bg-gradient-to-b from-[#181a20] via-[#0e0f13] to-[#07080a] text-white flex flex-col justify-between select-none">
+    <main
+      onClick={() => {
+        // Ekranın herhangi bir yerine tıklandığında menüyü aç (kapalıyken)
+        if (!isOpen) {
+          setIsOpen(true);
+        }
+      }}
+      className={cn(
+        "relative min-h-[calc(100vh-3.5rem)] w-full overflow-x-hidden bg-gradient-to-b from-[#181a20] via-[#0e0f13] to-[#07080a] text-white flex flex-col justify-between select-none transition-colors",
+        !isOpen && "cursor-pointer",
+      )}
+    >
+      {/* 
+        ÖZEL KALP ATIŞI (PUSH) ANİMASYONU
+        Hafif aralıklarla tekrarlayan tatlı bir nabız / push efekti (4.8 saniyede bir çift ritimli atış)
+      */}
+      <style jsx global>{`
+        @keyframes gentleHeartbeat {
+          0%, 62%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 20px 45px rgba(255, 255, 255, 0.22));
+          }
+          68% {
+            transform: scale(1.042);
+            filter: drop-shadow(0 26px 55px rgba(255, 255, 255, 0.38));
+          }
+          74% {
+            transform: scale(1.012);
+            filter: drop-shadow(0 20px 45px rgba(255, 255, 255, 0.24));
+          }
+          80% {
+            transform: scale(1.058);
+            filter: drop-shadow(0 30px 60px rgba(255, 255, 255, 0.44));
+          }
+          90% {
+            transform: scale(1);
+            filter: drop-shadow(0 20px 45px rgba(255, 255, 255, 0.22));
+          }
+        }
+        .animate-gentle-heartbeat {
+          animation: gentleHeartbeat 4.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+        }
+      `}</style>
+
       {/* 
         SATIN GRADIENT BLACK AMBIENT LIGHTING MESH
         Charcoal, slate & deep obsidian gradient with overhead spotlight
@@ -190,7 +280,15 @@ export function HomeScreen({
         TOP BAR:
         Online / Offline Pill on Left + Staff / Admin Shortcuts on Right
       */}
-      <div className="relative z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
+      <div
+        className="relative z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
+        onClick={(e) => {
+          // Üst bardaki butonlara tıklandığında menü açma olayının tetiklenmesini engelle
+          if (!isOpen) {
+            e.stopPropagation();
+          }
+        }}
+      >
         {/* Live Online / Offline Pill */}
         <div
           className={cn(
@@ -246,22 +344,26 @@ export function HomeScreen({
 
       {/* 
         MAIN STAGE:
-        1. KAPALIYKEN: Logo ve MENÜ butonu ekranın tam merkezinde, dikey ve yatay olarak kusursuz ORTALI!
-        2. AÇILINCA:
-           - Adisyon logosu menü butonu ile aynı boyutta (h-11 sm:h-12) olup menü kartları ile aynı hizada EN SOLDA!
-           - Menü butonu (KAPAT) menü kartları ile aynı hizada EN SAĞDA!
-           - Kartlar sıfır çakışmayla hızlı elastik animasyonlarla açılır!
+        1. KAPALIYKEN:
+           - Menü butonu YOK.
+           - Ekranda yalnızca tam ortalanmış, hafif aralıklarla tatlı kalp atışı (push) animasyonu yapan büyük logo yer alır.
+           - Logoya veya ekranın herhangi bir yerine basıldığında menü açılır!
+        2. AÇIKKEN:
+           - En Solda: Menü butonları ile aynı hizada ve boyutta (h-11 sm:h-12) beyaz logo.
+           - En Sağda: Menü butonları ile aynı hizada KAPAT butonu.
+           - Altında: Sıfır çakışmalı, hızlı elastik animasyonlarla açılan 11 menü kartı.
+           - 1 dakika boyunca ekrana dokunulmazsa otomatik olarak logoya geri döner.
       */}
       <div className="relative z-20 flex-1 flex flex-col justify-between w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 
-          1. MENÜ KAPALIYKEN: EKRANIN TAM ORTASINDA BÜYÜK LOGO VE BUTON
+          1. KAPALI HAL (SADECE BÜYÜK KALP ATIŞI YAPAN LOGO - MENÜ BUTONU YOK)
         */}
         {!isOpen && (
           <div className="flex-1 flex flex-col items-center justify-center text-center my-auto py-12 animate-in fade-in zoom-in-95 duration-500">
-            {/* Büyük Beyaz Sistem Logosu */}
-            <div className="relative flex items-center justify-center select-none">
+            {/* Büyük Beyaz Sistem Logosu (Tatlı Kalp Atışı Animasyonu) */}
+            <div className="relative flex items-center justify-center select-none animate-gentle-heartbeat">
               {settings.logoDarkUrl || settings.logoUrl ? (
-                <div className="relative h-24 sm:h-36 md:h-44 lg:h-52 w-[340px] sm:w-[500px] md:w-[660px] lg:w-[820px] max-w-full drop-shadow-[0_20px_45px_rgba(255,255,255,0.25)]">
+                <div className="relative h-24 sm:h-36 md:h-44 lg:h-52 w-[340px] sm:w-[500px] md:w-[660px] lg:w-[820px] max-w-full">
                   <Image
                     src={settings.logoDarkUrl || settings.logoUrl || ""}
                     alt="Sistem Logosu"
@@ -288,38 +390,32 @@ export function HomeScreen({
                 </div>
               )}
             </div>
-
-            {/* Logonun Hemen Altında Ortalı "MENÜ" Butonu */}
-            <div className="mt-6 sm:mt-8">
-              <button
-                type="button"
-                onClick={() => setIsOpen(true)}
-                aria-expanded={false}
-                aria-label="Menüyü Aç"
-                className="group relative inline-flex items-center justify-center gap-2.5 px-9 sm:px-12 py-3.5 sm:py-4 rounded-full font-black text-xs sm:text-sm tracking-widest uppercase transition-all duration-300 cursor-pointer outline-none select-none active:scale-95 shadow-2xl bg-white text-zinc-950 hover:scale-105 border-2 border-white/90 shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:shadow-[0_0_55px_rgba(255,255,255,0.6)]"
-              >
-                <span className="text-zinc-950 font-black text-xs">❖</span>
-                <span className="font-extrabold tracking-widest text-zinc-950">
-                  MENÜ
-                </span>
-                <span className="absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary/50 via-white/40 to-primary/50 opacity-40 blur-md group-hover:opacity-80 transition-opacity animate-pulse" />
-              </button>
-            </div>
           </div>
         )}
 
         {/* 
-          2. MENÜ AÇIKKEN:
-          - En Solda: Menü butonu ile aynı boyutta beyaz logo (h-11 sm:h-12)
-          - En Sağda: Menü kartları ile aynı hizada KAPAT butonu
-          - Altında: Sıfır çakışmalı, elastik açılan menü kartları
+          2. AÇIK HAL:
+          - En Solda: Beyaz logo (h-11 sm:h-12)
+          - En Sağda: KAPAT butonu
+          - Altında: Sıfır çakışmalı 11 menü kartı
         */}
         {isOpen && (
-          <div className="w-full flex flex-col justify-start pt-1 pb-4 animate-in fade-in duration-400">
+          <div
+            className="w-full flex flex-col justify-start pt-1 pb-4 animate-in fade-in duration-400"
+            onClick={(e) => {
+              // Menü kartlarına veya alana tıklandığında üst kapsayıcıya yayılmasını durdur
+              e.stopPropagation();
+            }}
+          >
             {/* Üst Eylem Satırı: Sol Logo - Sağ KAPAT Butonu */}
             <div className="relative w-full flex items-center justify-between min-h-[48px] sm:min-h-[52px] pb-4 sm:pb-6">
-              {/* En Solda: Buton ile aynı boyutta Sistem Logosu */}
-              <div className="select-none shrink-0 animate-in slide-in-from-left-6 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+              {/* En Solda: Buton ile aynı boyutta Sistem Logosu (Tıklanırsa kapatır) */}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                title="Ana Ekrana Dön"
+                className="select-none shrink-0 cursor-pointer transition-transform active:scale-95 animate-in slide-in-from-left-6 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+              >
                 {settings.logoDarkUrl || settings.logoUrl ? (
                   <div className="relative h-11 sm:h-12 w-36 sm:w-44 md:w-48 drop-shadow-[0_10px_25px_rgba(255,255,255,0.2)]">
                     <Image
@@ -347,7 +443,7 @@ export function HomeScreen({
                     <UtensilsCrossedIcon className="size-6 sm:size-7" />
                   </div>
                 )}
-              </div>
+              </button>
 
               {/* En Sağda: Menü Kartları ile aynı hizada KAPAT Butonu */}
               <div className="shrink-0 z-30 animate-in slide-in-from-right-6 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
@@ -442,7 +538,15 @@ export function HomeScreen({
       </div>
 
       {/* BOTTOM FOOTER BAR */}
-      <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-4 border-t border-white/10 bg-black/30 backdrop-blur-md text-xs text-zinc-400">
+      <footer
+        className="relative z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-4 border-t border-white/10 bg-black/30 backdrop-blur-md text-xs text-zinc-400"
+        onClick={(e) => {
+          // Footer butonlarına tıklandığında menü açma olayının tetiklenmesini engelle
+          if (!isOpen) {
+            e.stopPropagation();
+          }
+        }}
+      >
         <p className="font-medium text-[11px] text-zinc-500">
           © {new Date().getFullYear()} {settings.systemName}. Tüm hakları saklıdır.
         </p>

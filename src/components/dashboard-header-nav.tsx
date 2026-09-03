@@ -131,8 +131,8 @@ export function DashboardHeaderNav({
   return (
     <>
       <header className="sticky top-0 z-40 w-full h-14 border-b border-border/70 bg-background/90 dark:bg-zinc-950/90 backdrop-blur-xl transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        <div className="relative flex h-full w-full items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
-          {/* SOL BOLUM */}
+        <div className="flex h-full w-full items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
+          {/* SOL BÖLÜM */}
           <div className="flex items-center gap-3 shrink-0 min-w-0">
             <Link
               href="/dashboard/home"
@@ -192,10 +192,9 @@ export function DashboardHeaderNav({
                 </div>
               )}
             </Link>
-
           </div>
 
-          {/* ORTA BOLUM */}
+          {/* ORTA BÖLÜM */}
           {!isMainScreen && (
             <div className="hidden md:flex items-center justify-center flex-1 min-w-0 pointer-events-none">
               <span className="text-xs font-bold text-muted-foreground/85 tracking-tight truncate px-3 py-1 rounded-full bg-muted/40 border border-border/40">
@@ -204,11 +203,10 @@ export function DashboardHeaderNav({
             </div>
           )}
 
-          {/* SAG BOLUM */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {isAdmin && isMainScreen && (
-              <>
-              {/* Online gostergesi */}
+          {/* SAĞ BÖLÜM */}
+          {isAdmin && isMainScreen ? (
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Online göstergesi */}
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 border border-border/50">
                 <span
                   className={cn(
@@ -217,7 +215,7 @@ export function DashboardHeaderNav({
                   )}
                 />
                 <span className="text-[10px] font-bold text-muted-foreground hidden sm:block">
-                  {isOnline ? "Online" : "Cevrimdisi"}
+                  {isOnline ? "Online" : "Çevrimdışı"}
                 </span>
               </div>
 
@@ -230,7 +228,7 @@ export function DashboardHeaderNav({
                     "relative flex items-center gap-2 p-1 pl-1 sm:pr-2.5 rounded-xl border border-border/80 bg-background/80 hover:bg-muted/80 hover:border-foreground/30 active:scale-95 transition-all cursor-pointer select-none outline-none shadow-2xs",
                     isProfileOpen && "border-primary ring-2 ring-primary/20 bg-muted",
                   )}
-                  aria-label="Profil Menusu"
+                  aria-label="Profil Menüsü"
                 >
                   <div className="relative size-7.5 sm:size-8 rounded-lg overflow-hidden bg-muted/40 border border-border/60 shrink-0">
                     <Image
@@ -252,10 +250,10 @@ export function DashboardHeaderNav({
                   </div>
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Dropdown Menü */}
                 {isProfileOpen && (
                   <div className="absolute right-0 top-full mt-2 w-76 sm:w-84 z-50 overflow-hidden rounded-3xl border border-border/80 bg-card p-3 text-card-foreground shadow-2xl backdrop-blur-2xl ring-1 ring-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
-                    {/* Profil basligi */}
+                    {/* Profil başlığı */}
                     <div className="flex items-center justify-between p-2 pb-3 border-b border-border/60">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="relative size-10 shrink-0 rounded-xl border border-border/70 overflow-hidden bg-muted/40 shadow-xs">
@@ -295,13 +293,13 @@ export function DashboardHeaderNav({
                               {isLifetime ? (
                                 <>
                                   <InfinityIcon className="size-2.5" />
-                                  <span>Suresiz</span>
+                                  <span>Süresiz</span>
                                 </>
                               ) : isExpired ? (
-                                <span>Suresi Doldu</span>
+                                <span>Süresi Doldu</span>
                               ) : (
                                 <>
-                                  <span>{days} Gun Kaldi</span>
+                                  <span>{days} Gün Kaldı</span>
                                 </>
                               )}
                             </span>
@@ -321,7 +319,7 @@ export function DashboardHeaderNav({
                       </span>
                     </div>
 
-                    {/* Menu butonlari */}
+                    {/* Menü butonları */}
                     <div className="flex flex-col gap-1 pt-1">
                       <button
                         type="button"
@@ -334,7 +332,7 @@ export function DashboardHeaderNav({
                         <div className="flex size-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
                           <SparklesIcon className="size-4" />
                         </div>
-                        <span>Yapay Zeka Studyosu</span>
+                        <span>Yapay Zeka Stüdyosu</span>
                       </button>
 
                       <button
@@ -348,7 +346,7 @@ export function DashboardHeaderNav({
                         <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform">
                           <CircleUserRoundIcon className="size-4" />
                         </div>
-                        <span>Hesap ve Profil Ayarlari</span>
+                        <span>Hesap ve Profil Ayarları</span>
                       </button>
 
                       <button
@@ -362,7 +360,7 @@ export function DashboardHeaderNav({
                         <div className="flex size-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                           <HeadphonesIcon className="size-4" />
                         </div>
-                        <span>Yetkili Satis Temsilcim</span>
+                        <span>Yetkili Satış Temsilcim</span>
                       </button>
 
                       <div className="my-1 border-t border-border/50" />
@@ -378,31 +376,31 @@ export function DashboardHeaderNav({
                         <div className="flex size-8 items-center justify-center rounded-xl bg-destructive/10 text-destructive group-hover:scale-110 transition-transform">
                           <LogOutIcon className="size-4" />
                         </div>
-                        <span>Cikis Yap</span>
+                        <span>Çıkış Yap</span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
-              </>
-            )}
-          </div>
-
-          {!isMainScreen && (
-            <Link
-              href="/dashboard/home"
-              prefetch={true}
-              className="group absolute right-3 sm:right-5 lg:right-6 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-xl border border-border/80 bg-background/90 text-muted-foreground shadow-2xs outline-none transition-all hover:border-destructive/35 hover:bg-destructive hover:text-destructive-foreground hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-destructive/30"
-              title="Ana ekrana dön"
-              aria-label="Ana ekrana dön"
-            >
-              <XIcon className="size-4 stroke-[2.5] transition-transform duration-200 group-hover:rotate-90" />
-            </Link>
-          )}
+            </div>
+          ) : !isMainScreen ? (
+            <div className="flex items-center gap-2 shrink-0 ml-auto">
+              {/* Kırmızı Buton ve Bembeyaz Çarpı İkonu */}
+              <Link
+                href="/dashboard/home"
+                prefetch={true}
+                className="flex size-9 sm:size-10 items-center justify-center rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white transition-all shadow-md shadow-red-600/30 cursor-pointer select-none"
+                title="Ana Ekrana Dön"
+                aria-label="Ana Ekrana Dön"
+              >
+                <XIcon className="size-4.5 sm:size-5 text-white stroke-[2.5]" />
+              </Link>
+            </div>
+          ) : null}
         </div>
       </header>
 
-      {/* Satis Temsilcisi Modal */}
+      {/* Satış Temsilcisi Modal */}
       <SalesRepModal
         open={isSalesRepModalOpen}
         onOpenChange={setIsSalesRepModalOpen}
@@ -424,7 +422,7 @@ function SalesRepModal({
         <DialogHeader className="p-4 pb-2 border-b bg-muted/30">
           <DialogTitle className="text-base font-black flex items-center gap-2">
             <HeadphonesIcon className="size-4.5 text-primary" />
-            <span>Musteri ve Satis Temsilciniz</span>
+            <span>Müşteri ve Satış Temsilciniz</span>
           </DialogTitle>
         </DialogHeader>
         <div className="p-4">
