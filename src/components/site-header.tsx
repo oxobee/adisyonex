@@ -181,7 +181,7 @@ export function SiteHeader({
         <div className="flex items-center gap-2">
           <ConnectionStatus />
 
-          {staffLoginUsername ? (
+          { (staffContext?.role === "ADMIN" || staffContext?.role === "SUPER_ADMIN" || staffContext?.role === "MANAGER") && staffLoginUsername ? (
             <Button
               variant="outline"
               size="sm"
