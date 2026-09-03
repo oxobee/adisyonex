@@ -146,7 +146,7 @@ export function StaffLoginForm({
 
   const login = useServerAction(staffLoginAction, {
     onSuccess: (result) => {
-      router.push(result?.redirectUrl || `/dashboard/orders`);
+      router.push(result?.redirectUrl || "/dashboard/home");
       router.refresh();
     },
     onError: (message) => {

@@ -45,7 +45,7 @@ describe("staffLoginAction", () => {
     const result = await staffLoginAction(validInput);
 
     expect(result.success).toBe(true);
-    expect(result.data).toEqual({ role: "WAITER", redirectUrl: "/dashboard/orders" });
+    expect(result.data).toEqual({ role: "WAITER", redirectUrl: "/dashboard/home" });
     expect(verifyStaffLogin).toHaveBeenCalledWith("res_1", "E1", "1234");
     expect(createStaffSession).toHaveBeenCalledWith({
       staffId: "st1",

@@ -6,7 +6,6 @@ import { withValidation } from "@/actions/helpers";
 import { createStaffSession, destroyStaffSession } from "@/lib/staff-session";
 import { staffLoginSchema } from "@/lib/validators/staff";
 import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
-import { findStaffById } from "@/repositories/staff.repository";
 import {
   STAFF_LOGIN_INVALID,
   verifyStaffLogin,
@@ -27,12 +26,7 @@ export const staffLoginAction = withValidation(
     );
     await createStaffSession({ staffId, restaurantId: restaurant.id, role });
     
-    const staff = await findStaffById(staffId);
-    const routes = (staff?.allowedRoutes as string[] | null) ?? null;
-    const redirectUrl =
-      routes && routes.length > 0 ? routes[0] : "/dashboard/orders";
-
-    return { role, redirectUrl };
+    return { role, redirectUrl: "/dashboard/home" };
   },
 );
 

@@ -193,16 +193,6 @@ export function DashboardHeaderNav({
               )}
             </Link>
 
-            {!isMainScreen && (
-              <Link
-                href="/dashboard/home"
-                prefetch={true}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/90 hover:bg-muted/90 text-foreground font-black text-xs shadow-2xs hover:shadow-xs hover:border-primary/40 transition-all active:scale-95 cursor-pointer group shrink-0 ml-auto"
-                title="Ana Ekrana Don"
-              >
-                <XIcon className="size-3.5 text-muted-foreground group-hover:text-primary transition-transform stroke-[2.5]" />
-              </Link>
-            )}
           </div>
 
           {/* ORTA BOLUM */}
@@ -215,8 +205,21 @@ export function DashboardHeaderNav({
           )}
 
           {/* SAG BOLUM */}
-          {isAdmin && isMainScreen && (
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {!isMainScreen && (
+              <Link
+                href="/dashboard/home"
+                prefetch={true}
+                className="group inline-flex size-9 items-center justify-center rounded-xl border border-border/80 bg-background/90 text-muted-foreground shadow-2xs outline-none transition-all hover:border-destructive/35 hover:bg-destructive hover:text-destructive-foreground hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-destructive/30"
+                title="Ana ekrana dön"
+                aria-label="Ana ekrana dön"
+              >
+                <XIcon className="size-4 stroke-[2.5] transition-transform duration-200 group-hover:rotate-90" />
+              </Link>
+            )}
+
+            {isAdmin && isMainScreen && (
+              <>
               {/* Online gostergesi */}
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 border border-border/50">
                 <span
@@ -393,8 +396,9 @@ export function DashboardHeaderNav({
                   </div>
                 )}
               </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </header>
 

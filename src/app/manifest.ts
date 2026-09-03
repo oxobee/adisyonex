@@ -16,7 +16,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     name,
     short_name: shortName,
     description,
-    start_url: "/dashboard/orders",
+    start_url: "/dashboard/home",
     scope: "/",
     display: "standalone",
     display_override: ["standalone", "window-controls-overlay", "minimal-ui"],

@@ -9,7 +9,7 @@ import { getTables } from "@/services/table.service";
 export default async function MenuDesignPage() {
   const ctx = await getManagerContextOrNull();
   if (!ctx) {
-    redirect("/dashboard/orders");
+    redirect("/dashboard/home");
   }
 
   const [restaurant, menu, currentTheme, tables, customization] = await Promise.all([
