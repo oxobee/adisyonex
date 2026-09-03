@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 
 import { deliverTableOrdersAction, voidOrderAction } from "@/actions/order.actions";
+import { MODULE_ITEMS } from "@/components/dashboard-header-nav";
 import { PackagedDeliveryDialog } from "@/components/waiter/packaged-delivery-dialog";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
 import { TableBillModal } from "@/components/orders/table-bill-modal";
@@ -651,6 +652,28 @@ export function OrdersBoard({
             </Button>
           )}
         </div>
+      </div>
+
+      {/* DESKTOP OS MODULE DOCK / QUICK LAUNCHER STRIP */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar select-none -mt-2">
+        {MODULE_ITEMS.filter((m) => m.url !== "/dashboard/orders").map((mod) => (
+          <Link
+            key={mod.url}
+            href={mod.url}
+            prefetch={true}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-card/90 border border-border/70 hover:border-primary/50 text-foreground hover:text-primary hover:shadow-xs hover:-translate-y-0.5 active:scale-95 transition-all text-xs font-black shadow-2xs shrink-0 group cursor-pointer"
+          >
+            <div
+              className={cn(
+                "flex size-6 items-center justify-center rounded-xl text-xs transition-transform group-hover:scale-110 shadow-2xs",
+                mod.iconBg,
+              )}
+            >
+              {mod.icon}
+            </div>
+            <span className="tracking-tight">{mod.title}</span>
+          </Link>
+        ))}
       </div>
 
       {/* TOP DROP-DOWN ALERT BANNER FOR BILL REQUESTS */}

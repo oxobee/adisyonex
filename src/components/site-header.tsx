@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ExternalLinkIcon, LockIcon, LogOutIcon } from "lucide-react";
+import { ArrowLeftIcon, ExternalLinkIcon, LockIcon, LogOutIcon } from "lucide-react";
 
 import { ConnectionStatus } from "@/components/shared/connection-status";
 import { StaffLockModal } from "@/components/staff/staff-lock-modal";
@@ -101,6 +101,17 @@ export function SiteHeader({
                 {ROLE_LABELS[staffContext.role] ?? staffContext.role}
               </span>
             </div>
+
+            {pathname !== "/dashboard/orders" && (
+              <Link
+                href="/dashboard/orders"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/90 hover:bg-muted text-foreground font-black text-xs shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 ml-1"
+                title="Ana Ekrana Dön"
+              >
+                <ArrowLeftIcon className="size-3.5 text-muted-foreground stroke-[2.5]" />
+                <span>Ana Ekran</span>
+              </Link>
+            )}
           </div>
 
           {/* Center: Allowed Screens Navigation (if staff has multiple permitted screens) */}
