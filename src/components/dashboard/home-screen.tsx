@@ -42,8 +42,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Masalar & Açık Adisyonlar",
     href: "/dashboard/orders",
     icon: ReceiptTextIcon,
-    gradient: "from-amber-500/40 via-orange-500/30 to-red-600/40",
-    glowColor: "rgba(245, 158, 11, 0.4)",
+    gradient: "from-amber-500/50 via-orange-600/40 to-red-700/50",
+    glowColor: "rgba(245, 158, 11, 0.5)",
     badge: "01",
   },
   {
@@ -51,8 +51,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "KOT & Hazırlık Takibi",
     href: "/dashboard/kitchen",
     icon: ChefHatIcon,
-    gradient: "from-emerald-500/40 via-teal-500/30 to-cyan-600/40",
-    glowColor: "rgba(16, 185, 129, 0.4)",
+    gradient: "from-emerald-500/50 via-teal-600/40 to-cyan-700/50",
+    glowColor: "rgba(16, 185, 129, 0.5)",
     badge: "02",
   },
   {
@@ -60,8 +60,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Hızlı Sipariş & Tahsilat",
     href: "/dashboard/pos",
     icon: CalculatorIcon,
-    gradient: "from-sky-500/40 via-blue-500/30 to-indigo-600/40",
-    glowColor: "rgba(14, 165, 233, 0.4)",
+    gradient: "from-sky-500/50 via-blue-600/40 to-indigo-700/50",
+    glowColor: "rgba(14, 165, 233, 0.5)",
     badge: "03",
   },
   {
@@ -69,8 +69,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Satış & Günlük Raporlar",
     href: "/dashboard",
     icon: LayoutDashboardIcon,
-    gradient: "from-violet-500/40 via-purple-500/30 to-fuchsia-600/40",
-    glowColor: "rgba(139, 92, 246, 0.4)",
+    gradient: "from-violet-500/50 via-purple-600/40 to-fuchsia-700/50",
+    glowColor: "rgba(139, 92, 246, 0.5)",
     badge: "04",
   },
   {
@@ -78,8 +78,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Ürün & Kategori Listesi",
     href: "/dashboard/menu",
     icon: BookOpenIcon,
-    gradient: "from-teal-500/40 via-cyan-500/30 to-emerald-600/40",
-    glowColor: "rgba(20, 184, 166, 0.4)",
+    gradient: "from-teal-500/50 via-cyan-600/40 to-emerald-700/50",
+    glowColor: "rgba(20, 184, 166, 0.5)",
     badge: "05",
   },
   {
@@ -87,8 +87,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "QR Menüyü Özelleştir",
     href: "/dashboard/menu-design",
     icon: PaletteIcon,
-    gradient: "from-pink-500/40 via-rose-500/30 to-red-600/40",
-    glowColor: "rgba(236, 72, 153, 0.4)",
+    gradient: "from-pink-500/50 via-rose-600/40 to-red-700/50",
+    glowColor: "rgba(236, 72, 153, 0.5)",
     badge: "06",
   },
   {
@@ -96,8 +96,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Salon & Masa Yerleşimi",
     href: "/dashboard/tables",
     icon: ArmchairIcon,
-    gradient: "from-rose-500/40 via-red-500/30 to-orange-600/40",
-    glowColor: "rgba(244, 63, 94, 0.4)",
+    gradient: "from-rose-500/50 via-red-600/40 to-orange-700/50",
+    glowColor: "rgba(244, 63, 94, 0.5)",
     badge: "07",
   },
   {
@@ -105,8 +105,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Ekip & Giriş PIN'leri",
     href: "/dashboard/staff",
     icon: UsersIcon,
-    gradient: "from-orange-500/40 via-amber-500/30 to-yellow-600/40",
-    glowColor: "rgba(249, 115, 22, 0.4)",
+    gradient: "from-orange-500/50 via-amber-600/40 to-yellow-700/50",
+    glowColor: "rgba(249, 115, 22, 0.5)",
     badge: "08",
   },
   {
@@ -114,8 +114,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Kritik Stok & Giriş-Çıkış",
     href: "/dashboard/inventory",
     icon: BoxesIcon,
-    gradient: "from-slate-500/40 via-zinc-500/30 to-stone-600/40",
-    glowColor: "rgba(100, 116, 139, 0.4)",
+    gradient: "from-slate-500/50 via-zinc-600/40 to-stone-700/50",
+    glowColor: "rgba(100, 116, 139, 0.5)",
     badge: "09",
   },
   {
@@ -123,8 +123,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Sadakat & Kampanyalar",
     href: "/dashboard/customers",
     icon: GiftIcon,
-    gradient: "from-fuchsia-500/40 via-pink-500/30 to-rose-600/40",
-    glowColor: "rgba(217, 70, 239, 0.4)",
+    gradient: "from-fuchsia-500/50 via-pink-600/40 to-rose-700/50",
+    glowColor: "rgba(217, 70, 239, 0.5)",
     badge: "10",
   },
   {
@@ -132,8 +132,8 @@ const HOME_ITEMS: readonly HomeItem[] = [
     description: "Restoran & Sistem Profili",
     href: "/dashboard/settings",
     icon: Settings2Icon,
-    gradient: "from-zinc-500/40 via-neutral-500/30 to-stone-600/40",
-    glowColor: "rgba(113, 113, 122, 0.4)",
+    gradient: "from-zinc-500/50 via-neutral-600/40 to-stone-700/50",
+    glowColor: "rgba(113, 113, 122, 0.5)",
     badge: "11",
   },
 ];
@@ -149,28 +149,39 @@ export function HomeScreen({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
 
-  // Responsive geometry for the oval arc
+  // Real-time network connectivity detector
+  useEffect(() => {
+    setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Responsive geometry for the desktop radial arc (wider spacing for bigger cards)
   const [geometry, setGeometry] = useState({
-    rx: 440,
-    ry: 260,
+    rx: 520,
+    ry: 290,
     cardScale: 1,
-    centerOffsetY: 40,
+    centerOffsetY: 50,
   });
 
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      if (width < 480) {
-        setGeometry({ rx: 155, ry: 135, cardScale: 0.65, centerOffsetY: 10 });
-      } else if (width < 768) {
-        setGeometry({ rx: 240, ry: 175, cardScale: 0.78, centerOffsetY: 20 });
-      } else if (width < 1024) {
-        setGeometry({ rx: 340, ry: 215, cardScale: 0.88, centerOffsetY: 30 });
+      if (width < 1024) {
+        setGeometry({ rx: 420, ry: 240, cardScale: 0.9, centerOffsetY: 35 });
       } else if (width < 1440) {
-        setGeometry({ rx: 430, ry: 250, cardScale: 0.96, centerOffsetY: 40 });
+        setGeometry({ rx: 500, ry: 280, cardScale: 1, centerOffsetY: 45 });
       } else {
-        setGeometry({ rx: 480, ry: 280, cardScale: 1.05, centerOffsetY: 50 });
+        setGeometry({ rx: 560, ry: 310, cardScale: 1.08, centerOffsetY: 55 });
       }
     };
 
@@ -182,33 +193,55 @@ export function HomeScreen({
   const count = HOME_ITEMS.length;
 
   return (
-    <main className="relative min-h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-[#07080a] text-white flex flex-col justify-between select-none">
+    <main className="relative min-h-[calc(100vh-3.5rem)] w-full overflow-x-hidden bg-[#07080a] text-white flex flex-col justify-between select-none">
       {/* Cinematic Deep Space Ambient Glows */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Central Core Ambient Light */}
         <div
           className={cn(
-            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px] transition-all duration-700",
+            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[130px] transition-all duration-700",
             isOpen
-              ? "size-[650px] bg-gradient-to-b from-primary/25 via-primary/10 to-transparent opacity-80"
-              : "size-[450px] bg-gradient-to-b from-white/10 via-primary/5 to-transparent opacity-40",
+              ? "size-[750px] bg-gradient-to-b from-primary/30 via-primary/10 to-transparent opacity-90"
+              : "size-[500px] bg-gradient-to-b from-white/10 via-primary/5 to-transparent opacity-40",
           )}
         />
-        {/* Subtle Top Arc Vignette */}
-        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-black/80 to-transparent" />
-        {/* Bottom Ambient Floor */}
-        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-black via-black/70 to-transparent" />
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-black/90 to-transparent" />
+        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-black via-black/80 to-transparent" />
       </div>
 
-      {/* TOP STATUS BAR INFO */}
-      <div className="relative z-10 flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-2">
-          <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-            {settings.systemName} OS
+      {/* 
+        TOP HEADER BAR:
+        Adisyon OS yazısı yerine: Canlı yeşil / kırmızı çevrimiçi durumu ve Online / Offline metni
+      */}
+      <div className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-4">
+        {/* Real-time Online / Offline Pill */}
+        <div
+          className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors",
+            isOnline
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+              : "border-red-500/30 bg-red-500/10 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]",
+          )}
+          title={isOnline ? "Sistem Çevrimiçi & Senkronize" : "İnternet Bağlantısı Yok"}
+        >
+          <span className="relative flex size-2.5">
+            {isOnline && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            )}
+            <span
+              className={cn(
+                "relative inline-flex rounded-full size-2.5",
+                isOnline
+                  ? "bg-emerald-500 shadow-[0_0_8px_#10b981]"
+                  : "bg-red-500 shadow-[0_0_8px_#ef4444]",
+              )}
+            />
+          </span>
+          <span className="text-xs font-black tracking-wider uppercase">
+            {isOnline ? "Online" : "Offline"}
           </span>
         </div>
 
+        {/* Top Right Actions */}
         <div className="flex items-center gap-3">
           {restaurantUsername && (
             <Link
@@ -235,42 +268,36 @@ export function HomeScreen({
 
       {/* 
         MAIN CENTER STAGE:
-        1. Radial Arc Items (Z-Index 30 - Over the logo)
-        2. System Logo (Z-Index 10 - Blurs when open)
-        3. Center "MENÜ" Trigger Button (Z-Index 40)
+        1. Radial Arc Items (Desktop / Tablet)
+        2. Beyaz Sistem Logosu (Yazı yok, menü açıldığında kaybolmaz)
+        3. Ortadaki "MENÜ" Butonu
+        4. Sırayla Dizilen Mobil Menü Kartları (Mobil)
       */}
-      <div className="relative z-20 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[520px]">
-        {/* Center Anchor Point for the Arc and Logo */}
-        <div className="relative flex flex-col items-center justify-center">
+      <div className="relative z-20 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[500px]">
+        {/* Center Anchor Point */}
+        <div className="relative flex flex-col items-center justify-center w-full max-w-5xl">
           {/* 
-            OVAL ARC ITEMS (Z-INDEX 30 - SITS OVER THE BLURRED LOGO)
-            Each item is positioned along the convex elliptical arch.
-            Staggered elastic spring animation from left to right.
+            DESKTOP / TABLET: OVAL RADIAL ARC (≥ 768px)
+            Each item's wrapper div gets dynamic zIndex: isHovered ? 100 : 30 + index
+            Guarantees hovered card is ALWAYS on top of neighbor cards!
           */}
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"
+            className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
             style={{ marginTop: `${geometry.centerOffsetY}px` }}
           >
             {HOME_ITEMS.map((item, index) => {
               const Icon = item.icon;
 
-              // Arc angle calculation from left (175 deg) to right (5 deg), Apex at 90 deg
               const startAngle = 175;
               const endAngle = 5;
               const angleDeg =
                 startAngle - index * ((startAngle - endAngle) / (count - 1));
               const angleRad = (angleDeg * Math.PI) / 180;
 
-              // Elliptical coordinates relative to center
               const targetX = Math.round(geometry.rx * Math.cos(angleRad));
               const targetY = Math.round(-geometry.ry * Math.sin(angleRad));
-
-              // Tangent orientation angle for natural curve alignment
               const rotationDeg = Math.round((90 - angleDeg) * 0.52);
 
-              // Left-to-right progressive stagger delay
-              // Open: index * 35ms (starts on left item 0, ripples to right item 10)
-              // Close: (count - 1 - index) * 20ms (collapses back in reverse)
               const staggerDelay = isOpen
                 ? `${index * 38}ms`
                 : `${(count - 1 - index) * 18}ms`;
@@ -286,6 +313,8 @@ export function HomeScreen({
                       ? `translate(${targetX}px, ${targetY}px) scale(${geometry.cardScale})`
                       : "translate(0px, 0px) scale(0)",
                     opacity: isOpen ? 1 : 0,
+                    // CRITICAL FIX: The outer wrapper gets zIndex 100 when hovered so it sits ON TOP of all other cards!
+                    zIndex: isHovered ? 100 : 30 + index,
                     transition: isOpen
                       ? `transform 0.72s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease`
                       : `transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease`,
@@ -298,58 +327,57 @@ export function HomeScreen({
                     onMouseEnter={() => setHoveredIndex(index)}
                     onMouseLeave={() => setHoveredIndex(null)}
                     className={cn(
-                      "pointer-events-auto group relative -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer select-none",
-                      "w-20 h-24 xs:w-22 xs:h-28 sm:w-26 sm:h-32 md:w-28 md:h-36",
-                      "rounded-[22px] sm:rounded-[26px] p-2.5 sm:p-3",
-                      "border border-white/15 bg-gradient-to-b from-zinc-800/90 via-zinc-900/90 to-black/95",
-                      "backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.6)]",
+                      "pointer-events-auto group relative -translate-x-1/2 -translate-y-1/2 flex flex-col justify-between cursor-pointer select-none",
+                      // Significantly enlarged card size
+                      "w-36 h-46 lg:w-42 lg:h-52",
+                      "rounded-[28px] p-3.5 lg:p-4",
+                      "border-2 border-white/20 bg-gradient-to-b from-zinc-900/95 via-zinc-950/95 to-black",
+                      "backdrop-blur-3xl shadow-[0_16px_36px_rgba(0,0,0,0.7)]",
                       "transition-all duration-300 ease-out",
-                      isOpen && "hover:scale-115 hover:z-50 hover:border-white/50",
+                      isHovered && "scale-115 border-white/80 shadow-2xl",
                     )}
                     style={{
                       transform: isHovered
-                        ? "rotate(0deg) translateY(-8px)"
+                        ? "rotate(0deg) translateY(-12px)"
                         : `rotate(${rotationDeg}deg)`,
                       boxShadow: isHovered
-                        ? `0 20px 40px -10px ${item.glowColor}, 0 0 20px ${item.glowColor}`
+                        ? `0 25px 60px -10px ${item.glowColor}, 0 0 30px ${item.glowColor}`
                         : undefined,
                     }}
-                    title={item.title}
                   >
-                    {/* Glowing Inner Tint Layer */}
+                    {/* Glowing Gradient Background Layer */}
                     <div
                       className={cn(
-                        "absolute inset-0 rounded-[22px] sm:rounded-[26px] bg-gradient-to-br opacity-40 group-hover:opacity-80 transition-opacity",
+                        "absolute inset-0 rounded-[26px] bg-gradient-to-br transition-opacity",
                         item.gradient,
+                        isHovered ? "opacity-90" : "opacity-45",
                       )}
                     />
 
-                    {/* Badge Pill Number */}
-                    <div className="absolute top-2 left-2.5 z-10 flex size-4.5 sm:size-5 items-center justify-center rounded-full bg-black/50 border border-white/10 text-[9px] sm:text-[10px] font-black text-zinc-300">
-                      {item.badge}
+                    {/* Top Header: Badge Number & Arrow */}
+                    <div className="relative z-10 flex items-center justify-between">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-black/60 border border-white/20 text-[11px] font-black text-white shadow-xs">
+                        {item.badge}
+                      </span>
+                      <span className="flex size-6 items-center justify-center rounded-full bg-white/10 text-white group-hover:bg-white group-hover:text-black transition-all">
+                        <span className="text-xs font-black">↗</span>
+                      </span>
                     </div>
 
-                    {/* Icon Container */}
-                    <div className="relative z-10 flex flex-1 items-center justify-center">
-                      <div className="flex size-10 sm:size-12 md:size-14 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/20 transition-all duration-200">
-                        <Icon className="size-5 sm:size-6 md:size-7 stroke-[2.2]" />
+                    {/* Center Icon */}
+                    <div className="relative z-10 flex flex-1 items-center justify-center py-1">
+                      <div className="flex size-14 lg:size-16 items-center justify-center rounded-2xl bg-white/15 border border-white/25 text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all duration-200">
+                        <Icon className="size-7 lg:size-8 stroke-[2.2] text-white" />
                       </div>
                     </div>
 
-                    {/* Title & Subtitle */}
-                    <div className="relative z-10 w-full text-center px-0.5">
-                      <span className="block text-[11px] sm:text-xs font-black tracking-tight text-white group-hover:text-primary transition-colors truncate">
+                    {/* Bottom Title & Subtitle: High contrast pure white text */}
+                    <div className="relative z-10 w-full text-center px-1">
+                      <span className="block text-sm lg:text-base font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
                         {item.title}
                       </span>
-                      <span className="hidden sm:block text-[9px] font-medium text-zinc-400 line-clamp-1 opacity-80">
+                      <span className="block text-[10px] lg:text-xs font-semibold text-zinc-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] line-clamp-1 mt-0.5">
                         {item.description}
-                      </span>
-                    </div>
-
-                    {/* Arrow Indicator on Hover */}
-                    <div className="absolute -bottom-2.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-black shadow-lg">
-                        ↗
                       </span>
                     </div>
                   </Link>
@@ -359,93 +387,84 @@ export function HomeScreen({
           </div>
 
           {/* 
-            NEXT / CYCLE ARROW BUTTON (As seen in the uploaded reference photo!)
-            Appears on the right side of the arc to slide/cycle through cards
+            NEXT / CYCLE ARROW BUTTON (≥ 768px Desktop)
           */}
           {isOpen && (
             <button
               type="button"
               onClick={() => {
-                // Focus / cycle to next module
                 setHoveredIndex((prev) =>
                   prev === null || prev >= count - 1 ? 0 : prev + 1,
                 );
               }}
-              className="absolute right-[-45px] sm:right-[-65px] md:right-[-90px] top-1/2 -translate-y-1/2 z-40 flex size-11 sm:size-13 items-center justify-center rounded-full border border-white/20 bg-zinc-900/90 text-white shadow-2xl hover:bg-white hover:text-black hover:scale-110 active:scale-95 transition-all cursor-pointer backdrop-blur-xl animate-in fade-in zoom-in duration-300"
+              className="hidden md:flex absolute right-[-50px] lg:right-[-80px] top-1/2 -translate-y-1/2 z-40 size-13 items-center justify-center rounded-full border border-white/20 bg-zinc-900/90 text-white shadow-2xl hover:bg-white hover:text-black hover:scale-110 active:scale-95 transition-all cursor-pointer backdrop-blur-xl animate-in fade-in zoom-in duration-300"
               title="Sonraki Menü"
               aria-label="Sonraki"
             >
-              <ChevronRightIcon className="size-5 sm:size-6 stroke-[2.5]" />
+              <ChevronRightIcon className="size-6 stroke-[2.5]" />
             </button>
           )}
 
           {/* 
-            SİSTEM LOGOSU (Z-INDEX 10 - MENÜLER AÇILDIĞINDA BULANIK OLUR)
-            "butonun üstünde sistemin logosu olsun . menüler açıldığında logo bulanık olsun menüler logonun üstünde kalsın."
+            BEYAZ SİSTEM LOGOSU (Z-INDEX 10)
+            "Ana ekrandaki Adisyoon yazısı olmasın sadece beyaz logo olsun menüye tıklayınca bu beyaz logo kaybolmasın"
+            - AdisyonEx / Slogan yazısı tamamen kaldırıldı.
+            - Yalnızca beyaz logo görünür.
+            - Menü açıldığında kaybolmaz (hafif yumuşak blur ile arkada kalır).
           */}
           <div
             className={cn(
-              "relative z-10 flex flex-col items-center justify-center mb-6 text-center transition-all duration-600 ease-out select-none pointer-events-none",
+              "relative z-10 flex flex-col items-center justify-center mb-6 text-center select-none pointer-events-none transition-all duration-500",
               isOpen
-                ? "blur-md brightness-75 opacity-25 scale-95"
-                : "blur-none brightness-100 opacity-100 scale-100",
+                ? "opacity-75 blur-[2px] scale-95"
+                : "opacity-100 blur-none scale-100",
             )}
           >
             {settings.logoDarkUrl || settings.logoUrl ? (
-              <div className="relative h-14 sm:h-20 w-52 sm:w-72 max-w-[320px] mb-2 drop-shadow-[0_10px_25px_rgba(255,255,255,0.15)]">
+              <div className="relative h-20 sm:h-26 md:h-32 w-64 sm:w-84 md:w-96 max-w-[380px] drop-shadow-[0_15px_35px_rgba(255,255,255,0.2)]">
                 <Image
                   src={settings.logoDarkUrl || settings.logoUrl || ""}
-                  alt={settings.systemName}
+                  alt="Sistem Logosu"
                   fill
                   className="object-contain"
                   priority
-                  sizes="(max-width: 640px) 208px, 288px"
+                  sizes="(max-width: 640px) 256px, 384px"
                 />
               </div>
             ) : settings.faviconUrl ? (
-              <div className="relative size-16 sm:size-20 mb-3 overflow-hidden rounded-2xl border border-white/20 bg-white/5 p-2 shadow-2xl">
+              <div className="relative size-20 sm:size-24 overflow-hidden rounded-3xl border border-white/20 bg-white/5 p-3 shadow-2xl">
                 <Image
                   src={settings.faviconUrl}
-                  alt={settings.systemName}
+                  alt="Logo"
                   fill
                   className="object-contain"
                   priority
-                  sizes="80px"
+                  sizes="96px"
                 />
               </div>
             ) : (
-              <div className="flex size-16 sm:size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 text-primary mb-3 shadow-[0_0_40px_rgba(255,85,0,0.3)]">
-                <UtensilsCrossedIcon className="size-8 sm:size-10" />
+              <div className="flex size-20 sm:size-24 items-center justify-center rounded-3xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/30 text-white shadow-[0_0_40px_rgba(255,255,255,0.25)]">
+                <UtensilsCrossedIcon className="size-10 sm:size-12" />
               </div>
             )}
-
-            {/* System Title & Tagline */}
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-md">
-              {settings.systemName}
-            </h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-medium text-zinc-400 max-w-sm px-4 leading-snug">
-              {settings.systemTagline || "Restoranınızı tek ekrandan yönetin."}
-            </p>
           </div>
 
           {/* 
-            ORTADAKİ "MENÜ" BUTONU (Z-INDEX 40)
-            "ortada bir buton olsun kullanıcı butona tıkladığında elastik animasyonlu şekilde bu tarzda oval sıra düzeniyle butonlar açılsın tekrar ortadaki butona tıklayınca kapansın. butonda MENÜ yazsın"
+            ORTADAKİ "MENÜ" BUTONU (Z-INDEX 50)
           */}
-          <div className="relative z-40 mt-1">
+          <div className="relative z-50 mt-2">
             <button
               type="button"
               onClick={() => setIsOpen((prev) => !prev)}
               aria-expanded={isOpen}
               aria-label="Menüyü Aç/Kapat"
               className={cn(
-                "group relative inline-flex items-center justify-center gap-2.5 px-8 sm:px-10 py-3.5 sm:py-4 rounded-full font-black text-sm sm:text-base tracking-wider uppercase transition-all duration-300 cursor-pointer outline-none select-none active:scale-95 shadow-2xl",
+                "group relative inline-flex items-center justify-center gap-2.5 px-8 sm:px-12 py-4 sm:py-4.5 rounded-full font-black text-sm sm:text-base tracking-wider uppercase transition-all duration-300 cursor-pointer outline-none select-none active:scale-95 shadow-2xl",
                 isOpen
-                  ? "bg-white text-zinc-950 hover:bg-zinc-200 border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.4)]"
-                  : "bg-white text-zinc-950 hover:scale-105 border-2 border-white/90 shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:shadow-[0_0_45px_rgba(255,255,255,0.5)]",
+                  ? "bg-white text-zinc-950 hover:bg-zinc-200 border-2 border-white shadow-[0_0_40px_rgba(255,255,255,0.45)]"
+                  : "bg-white text-zinc-950 hover:scale-105 border-2 border-white/90 shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:shadow-[0_0_55px_rgba(255,255,255,0.6)]",
               )}
             >
-              {/* Animated Icon Indicator */}
               <span
                 className={cn(
                   "flex size-5 items-center justify-center transition-transform duration-300",
@@ -454,33 +473,87 @@ export function HomeScreen({
               >
                 {isOpen ? "✕" : "❖"}
               </span>
-
-              {/* Button Text */}
               <span className="font-extrabold tracking-widest">
                 {isOpen ? "KAPAT" : "MENÜ"}
               </span>
 
-              {/* Subtle Ambient Pulse Light */}
               {!isOpen && (
-                <span className="absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary/50 via-white/40 to-primary/50 opacity-40 blur-md group-hover:opacity-80 transition-opacity animate-pulse" />
+                <span className="absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary/50 via-white/40 to-primary/50 opacity-50 blur-md group-hover:opacity-90 transition-opacity animate-pulse" />
               )}
             </button>
           </div>
 
-          {/* Active Hovered Item Hint Display */}
+          {/* 
+            MOBİL GÖRÜNÜM: OKUNAKLI & SIRAYLA DİZİLEN MENÜ KARTLARI (< 768px)
+            "mobilde ise ortadaki butona tıklayınca menü kartları ekrana sırayla dizilsin ve okunaklı olsun."
+          */}
+          {isOpen && (
+            <div className="md:hidden w-full mt-8 grid grid-cols-2 gap-3 px-2 animate-in fade-in slide-in-from-bottom-6 duration-300">
+              {HOME_ITEMS.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    prefetch={true}
+                    className="relative flex flex-col justify-between p-3.5 rounded-2xl border border-white/20 bg-gradient-to-b from-zinc-900 via-zinc-950 to-black shadow-xl active:scale-95 transition-all overflow-hidden group"
+                    style={{
+                      animationDelay: `${index * 35}ms`,
+                    }}
+                  >
+                    <div
+                      className={cn(
+                        "absolute inset-0 bg-gradient-to-br opacity-45 group-hover:opacity-75 transition-opacity",
+                        item.gradient,
+                      )}
+                    />
+
+                    {/* Top Row: Badge & Arrow */}
+                    <div className="relative z-10 flex items-center justify-between mb-2">
+                      <span className="flex size-5 items-center justify-center rounded-full bg-black/60 border border-white/20 text-[10px] font-black text-white">
+                        {item.badge}
+                      </span>
+                      <span className="text-xs font-black text-white/80 group-hover:text-white">
+                        ↗
+                      </span>
+                    </div>
+
+                    {/* Icon */}
+                    <div className="relative z-10 flex items-center justify-center my-1.5">
+                      <div className="flex size-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 text-white">
+                        <Icon className="size-6 stroke-[2.2] text-white" />
+                      </div>
+                    </div>
+
+                    {/* Title & Description: Pure white high contrast */}
+                    <div className="relative z-10 text-center mt-1">
+                      <span className="block text-xs font-black tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] truncate">
+                        {item.title}
+                      </span>
+                      <span className="block text-[9px] font-semibold text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate mt-0.5">
+                        {item.description}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Active Hovered Item Hint Display (Desktop) */}
           <div
             className={cn(
-              "absolute -bottom-14 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 text-center whitespace-nowrap pointer-events-none",
+              "hidden md:block absolute -bottom-16 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 text-center whitespace-nowrap pointer-events-none",
               hoveredIndex !== null && isOpen
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-2",
             )}
           >
             {hoveredIndex !== null && (
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/20 bg-zinc-900/90 text-xs font-bold text-white shadow-xl backdrop-blur-md">
-                <SparklesIcon className="size-3 text-amber-400" />
-                <span>{HOME_ITEMS[hoveredIndex].title}</span>
-                <span className="text-zinc-400 font-normal">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-zinc-900/95 text-xs font-bold text-white shadow-2xl backdrop-blur-md">
+                <SparklesIcon className="size-3.5 text-amber-400" />
+                <span className="font-black">{HOME_ITEMS[hoveredIndex].title}</span>
+                <span className="text-zinc-300 font-medium">
                   — {HOME_ITEMS[hoveredIndex].description}
                 </span>
               </span>
@@ -490,7 +563,7 @@ export function HomeScreen({
       </div>
 
       {/* BOTTOM FOOTER BAR */}
-      <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-white/10 bg-black/40 backdrop-blur-md text-xs text-zinc-400">
+      <footer className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-white/10 bg-black/40 backdrop-blur-md text-xs text-zinc-400">
         <p className="font-medium text-[11px] text-zinc-500">
           © {new Date().getFullYear()} {settings.systemName}. Tüm hakları saklıdır.
         </p>
