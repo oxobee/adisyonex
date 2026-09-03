@@ -308,32 +308,6 @@ export function HomeScreen({
                   </span>
                 </div>
               )}
-
-              {/* SİSTEM LOGOSUNUN YANINDA / ALTINDA ZARİF MODERN ONLINE ROZETİ */}
-              <div
-                className={cn(
-                  "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold shadow-xs backdrop-blur-md transition-all mt-4 sm:mt-5",
-                  isOnline
-                    ? "bg-white/90 text-emerald-700 border-emerald-200 shadow-emerald-500/5 ring-4 ring-emerald-500/10"
-                    : "bg-white/90 text-rose-700 border-rose-200 shadow-rose-500/5 ring-4 ring-rose-500/10",
-                )}
-                title={isOnline ? "Sistem Online & Senkronize" : "İnternet Bağlantısı Yok"}
-              >
-                <span className="relative flex size-2">
-                  {isOnline && (
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  )}
-                  <span
-                    className={cn(
-                      "relative inline-flex rounded-full size-2",
-                      isOnline ? "bg-emerald-500" : "bg-rose-500",
-                    )}
-                  />
-                </span>
-                <span className="tracking-wider uppercase text-[11px] font-black">
-                  {isOnline ? "Online" : "Offline"}
-                </span>
-              </div>
             </div>
           </div>
         ) : (
@@ -341,9 +315,9 @@ export function HomeScreen({
           /* AÇIK DURUM: UNTITLED UI BEYAZ TEMA KARTLAR + SAĞ ÜST 'KAPAT' */
           /* ============================================================ */
           <div className="w-full flex flex-col my-auto pt-2 sm:pt-4 animate-in fade-in zoom-in-98 duration-300">
-            {/* Üst Bar: Sol Logo + Online Rozeti + Sağ Kapat Butonu */}
+            {/* Üst Bar: Sol Logo + Sağ Kapat Butonu */}
             <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8 px-1">
-              {/* Sol: Kompakt Logo + Zarif Online Rozeti */}
+              {/* Sol: Kompakt Logo */}
               <div className="flex items-center gap-3">
                 {settings.logoUrl || settings.logoDarkUrl ? (
                   <div className="relative h-8 sm:h-9 w-32 sm:w-40">
@@ -360,32 +334,6 @@ export function HomeScreen({
                     {settings.systemName || "Adisyon"}
                   </span>
                 )}
-
-                {/* SİSTEM LOGOSUNUN YANINDA ZARİF ONLINE ROZETİ */}
-                <div
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-extrabold shadow-2xs backdrop-blur-sm transition-all select-none",
-                    isOnline
-                      ? "bg-emerald-50/90 text-emerald-700 border-emerald-200"
-                      : "bg-rose-50/90 text-rose-700 border-rose-200",
-                  )}
-                  title={isOnline ? "Sistem Online & Senkronize" : "İnternet Bağlantısı Yok"}
-                >
-                  <span className="relative flex size-2">
-                    {isOnline && (
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    )}
-                    <span
-                      className={cn(
-                        "relative inline-flex rounded-full size-2",
-                        isOnline ? "bg-emerald-500" : "bg-rose-500",
-                      )}
-                    />
-                  </span>
-                  <span className="tracking-wide uppercase font-black text-[10px]">
-                    {isOnline ? "Online" : "Offline"}
-                  </span>
-                </div>
               </div>
 
               {/* Sağ: Untitled UI Kapat Butonu */}

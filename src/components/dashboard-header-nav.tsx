@@ -194,6 +194,30 @@ export function DashboardHeaderNav({
                 </div>
               )}
             </Link>
+
+            {/* SİSTEM LOGOSUNUN YANINDA ZARİF VE DİKKAT ÇEKİCİ ONLINE ROZETİ */}
+            <div
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-black tracking-wider uppercase shadow-2xs backdrop-blur-md transition-all select-none",
+                isOnline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 ring-2 ring-emerald-500/10"
+                  : "bg-rose-50 text-rose-700 border-rose-200 ring-2 ring-rose-500/10",
+              )}
+              title={isOnline ? "Sistem Online & Senkronize" : "İnternet Bağlantısı Yok"}
+            >
+              <span className="relative flex size-2">
+                {isOnline && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                )}
+                <span
+                  className={cn(
+                    "relative inline-flex rounded-full size-2 shadow-xs",
+                    isOnline ? "bg-emerald-500" : "bg-rose-500",
+                  )}
+                />
+              </span>
+              <span>{isOnline ? "Online" : "Offline"}</span>
+            </div>
           </div>
 
           {/* ORTA BÖLÜM */}
@@ -297,33 +321,8 @@ export function DashboardHeaderNav({
                       </div>
                     </div>
 
-                    {/* AI Kredisi */}
-                    <div className="flex items-center justify-between text-xs font-bold p-2 pt-2 border-b border-border/40">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <SparklesIcon className="size-3.5 text-amber-500" />
-                        <span>AI Kredisi:</span>
-                      </span>
-                      <span className="font-black text-amber-600 dark:text-amber-400 tabular-nums">
-                        {aiBalance} Kredi
-                      </span>
-                    </div>
-
                     {/* Menü butonları */}
                     <div className="flex flex-col gap-1 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          router.push("/dashboard/ai-studio");
-                        }}
-                        className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-xs font-bold text-foreground hover:bg-muted/80 hover:text-primary transition-all active:scale-98 cursor-pointer text-left group"
-                      >
-                        <div className="flex size-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
-                          <SparklesIcon className="size-4" />
-                        </div>
-                        <span>Yapay Zeka Stüdyosu</span>
-                      </button>
-
                       <button
                         type="button"
                         onClick={() => {

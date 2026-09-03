@@ -294,18 +294,6 @@ export function NavUser({
                   type="button"
                   onClick={() => {
                     setIsOpen(false);
-                    router.push("/dashboard/ai-studio");
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
-                >
-                  <SparklesIcon className="size-4 text-amber-500" />
-                  <span>Yapay Zeka Stüdyosu</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false);
                     router.push("/dashboard/settings");
                   }}
                   className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer text-left"
