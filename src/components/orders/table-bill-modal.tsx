@@ -131,7 +131,7 @@ export function TableBillModal({
       <html lang="tr">
         <head>
           <meta charset="utf-8" />
-          <title>Adisyon - ${table.label}</title>
+          <title>Adisyon - ${table?.label ?? "Masa"}</title>
           ${stylesheets}
           <style>
             @page { size: 80mm auto; margin: 0; }
