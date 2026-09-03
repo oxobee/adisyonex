@@ -24,18 +24,7 @@ export default async function DashboardKitchenPage() {
   const tickets = await listKitchenTickets(restaurantId);
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-6 bg-muted/20 min-h-screen">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-            <span>🍳 Mutfak Ekranı & KOT</span>
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Mutfakta hazırlanan yemekleri anlık takip edin ve durumlarını güncelleyin.
-          </p>
-        </div>
-      </div>
-
+    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[#090a0f] text-white">
       <KitchenDisplay
         username={restaurant.username}
         restaurantName={restaurant.name}
