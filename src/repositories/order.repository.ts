@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 export const ORDER_INCLUDE = {
   items: { orderBy: { sortOrder: "asc" }, include: { modifiers: true } },
   payments: true,
+  customer: true,
 } satisfies Prisma.OrderInclude;
 
 export type OrderWithRelations = Prisma.OrderGetPayload<{
@@ -298,6 +299,17 @@ const settleWithinTx = async (
     await tx.diningTable.updateMany({
       where: { id: updated.tableId, restaurantId },
       data: { billRequestedAt: null },
+    });
+  }
+
+  // Count loyalty only for a completed, paid account.
+  if (updated.customerId) {
+    await tx.customer.update({
+      where: { id: updated.customerId },
+      data: {
+        orderCount: { increment: 1 },
+        totalSpent: { increment: data.grandTotal },
+      },
     });
   }
 

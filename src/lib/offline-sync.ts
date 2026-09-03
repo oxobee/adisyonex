@@ -126,6 +126,7 @@ export function applyOptimisticMutation(mutation: OfflineMutation<any>): void {
           customerName: null,
           customerPhone: p.customerPhone || null,
           customerAddress: p.customerAddress || null,
+          customerId: null,
           note: p.note || null,
           subtotal: grandTotal,
           taxTotal: 0,

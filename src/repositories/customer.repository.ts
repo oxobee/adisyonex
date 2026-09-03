@@ -87,7 +87,7 @@ export const findCustomerWithOrders = async (
     },
     include: {
       orders: {
-        where: { deletedAt: null },
+        where: { deletedAt: null, status: "COMPLETED" },
         orderBy: { createdAt: "desc" },
         include: {
           items: true,
@@ -96,6 +96,86 @@ export const findCustomerWithOrders = async (
       },
     },
   });
+};
+
+export interface CustomerDiscountWriteData {
+  customerId: string;
+  scope: "EVERY_ORDER" | "DATE_RANGE";
+  type: "PERCENT" | "FLAT";
+  value: number;
+  startsAt: Date | null;
+  endsAt: Date | null;
+}
+
+export const createCustomerDiscount = (data: CustomerDiscountWriteData) =>
+  prisma.customerDiscount.create({ data });
+
+export const findActiveCustomerDiscount = async (
+  customerId: string,
+  now: Date,
+) =>
+  prisma.customerDiscount.findFirst({
+    where: {
+      customerId,
+      isActive: true,
+      OR: [
+        { scope: "EVERY_ORDER" },
+        { scope: "DATE_RANGE", startsAt: { lte: now }, endsAt: { gte: now } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+export const findCustomerDiscounts = (customerId: string) =>
+  prisma.customerDiscount.findMany({
+    where: { customerId },
+    orderBy: { createdAt: "desc" },
+  });
+
+export const setCustomerDiscountActive = (
+  customerId: string,
+  discountId: string,
+  isActive: boolean,
+) =>
+  prisma.customerDiscount.updateMany({
+    where: { id: discountId, customerId },
+    data: { isActive },
+  });
+
+export const simulateBirthdayMessages = async (
+  restaurantId: string,
+  now: Date,
+  daysBefore: number,
+  title: string,
+  content: string,
+): Promise<number> => {
+  const upcoming = new Date(now);
+  upcoming.setUTCDate(upcoming.getUTCDate() + daysBefore);
+  const customers = await prisma.customer.findMany({
+    where: {
+      restaurantId,
+      deletedAt: null,
+      birthMonth: upcoming.getUTCMonth() + 1,
+      birthDay: upcoming.getUTCDate(),
+    },
+    select: { id: true, name: true },
+  });
+  const records = await Promise.all(
+    customers.map((customer) =>
+      prisma.birthdayMessageSimulation.upsert({
+        where: { customerId_campaignYear: { customerId: customer.id, campaignYear: upcoming.getUTCFullYear() } },
+        create: {
+          restaurantId,
+          customerId: customer.id,
+          campaignYear: upcoming.getUTCFullYear(),
+          title,
+          content: content.replaceAll("{name}", customer.name),
+        },
+        update: {},
+      }),
+    ),
+  );
+  return records.length;
 };
 
 export const incrementCustomerStats = async (

@@ -12,6 +12,15 @@ vi.mock("@/repositories/order.repository", () => ({
   settleOrder: vi.fn(),
   settleManyOrders: vi.fn(),
 }));
+vi.mock("@/repositories/customer.repository", () => ({
+  findActiveCustomerDiscount: vi.fn(),
+}));
+vi.mock("@/repositories/restaurant.repository", () => ({
+  findRestaurantById: vi.fn(),
+}));
+vi.mock("@/lib/table-device-lock", () => ({
+  clearTableDeviceLock: vi.fn(),
+}));
 
 import { settleManyOrders, settleOrder } from "@/repositories/order.repository";
 import { loadOwnedOrder, orderToBillLines } from "@/services/order.service";

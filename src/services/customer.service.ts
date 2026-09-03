@@ -2,9 +2,14 @@ import {
   deleteCustomer,
   findCustomersPaginated,
   findCustomerWithOrders,
+  createCustomerDiscount,
+  findCustomerDiscounts,
+  setCustomerDiscountActive,
   upsertCustomer,
 } from "@/repositories/customer.repository";
 import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
+import { findRestaurantById, updateRestaurant } from "@/repositories/restaurant.repository";
+import { simulateBirthdayMessages } from "@/repositories/customer.repository";
 import type { CustomerListQuery, RegisterCustomerInput } from "@/lib/validators/customer";
 import type { Paginated } from "@/types";
 
@@ -22,6 +27,25 @@ export interface CustomerDTO {
   kvkkConsent: boolean;
   kvkkAcceptedAt: string | null;
   createdAt: string;
+}
+
+export interface CustomerDiscountDTO {
+  id: string;
+  scope: "EVERY_ORDER" | "DATE_RANGE";
+  type: "PERCENT" | "FLAT";
+  value: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  isActive: boolean;
+}
+
+export interface BirthdayAutomationDTO {
+  enabled: boolean;
+  daysBefore: number;
+  discountType: "PERCENT" | "FLAT";
+  discountValue: number;
+  messageTitle: string;
+  messageContent: string;
 }
 
 export interface CustomerOrderLineDTO {
@@ -61,7 +85,18 @@ export interface CustomerProfileDTO {
   };
   favoriteItems: CustomerFavoriteItem[];
   orders: CustomerOrderDTO[];
+  discounts: CustomerDiscountDTO[];
 }
+
+const mapDiscount = (discount: Awaited<ReturnType<typeof findCustomerDiscounts>>[number]): CustomerDiscountDTO => ({
+  id: discount.id,
+  scope: discount.scope,
+  type: discount.type === "FLAT" ? "FLAT" : "PERCENT",
+  value: Number(discount.value),
+  startsAt: discount.startsAt?.toISOString() ?? null,
+  endsAt: discount.endsAt?.toISOString() ?? null,
+  isActive: discount.isActive,
+});
 
 export const registerCustomer = async (
   input: RegisterCustomerInput,
@@ -167,7 +202,7 @@ export const getCustomerProfile = async (
     .filter((o) => o.status !== "VOID")
     .reduce((sum, o) => sum + Number(o.grandTotal || 0), 0);
   const totalSpent = Math.max(Number(raw.totalSpent || 0), ordersTotal);
-  const orderCount = Math.max(raw.orderCount || 0, orderDtos.length);
+  const orderCount = orderDtos.length;
   const averageOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
 
   return {
@@ -195,6 +230,7 @@ export const getCustomerProfile = async (
     },
     favoriteItems,
     orders: orderDtos,
+    discounts: (await findCustomerDiscounts(raw.id)).map(mapDiscount),
   };
 };
 
@@ -247,8 +283,8 @@ export const getCustomerDetailForAdmin = async (
     })),
   }));
 
-  const totalSpent = Number(raw.totalSpent);
-  const orderCount = raw.orderCount || orderDtos.length;
+  const totalSpent = raw.orders.reduce((sum, order) => sum + Number(order.grandTotal), 0);
+  const orderCount = orderDtos.length;
   const averageOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
 
   return {
@@ -276,7 +312,70 @@ export const getCustomerDetailForAdmin = async (
     },
     favoriteItems,
     orders: orderDtos,
+    discounts: (await findCustomerDiscounts(raw.id)).map(mapDiscount),
   };
+};
+
+export const addCustomerDiscount = async (
+  restaurantId: string,
+  input: {
+    customerId: string;
+    scope: "EVERY_ORDER" | "DATE_RANGE";
+    type: "PERCENT" | "FLAT";
+    value: number;
+    startsAt?: string | null;
+    endsAt?: string | null;
+  },
+): Promise<CustomerDiscountDTO> => {
+  const customer = await findCustomerWithOrders(restaurantId, { id: input.customerId });
+  if (!customer) throw new Error("CUSTOMER_NOT_FOUND");
+  const discount = await createCustomerDiscount({
+    customerId: customer.id,
+    scope: input.scope,
+    type: input.type,
+    value: input.value,
+    startsAt: input.scope === "DATE_RANGE" && input.startsAt ? new Date(input.startsAt) : null,
+    endsAt: input.scope === "DATE_RANGE" && input.endsAt ? new Date(input.endsAt) : null,
+  });
+  return mapDiscount(discount);
+};
+
+export const toggleCustomerDiscount = async (
+  restaurantId: string,
+  customerId: string,
+  discountId: string,
+  isActive: boolean,
+): Promise<void> => {
+  const customer = await findCustomerWithOrders(restaurantId, { id: customerId });
+  if (!customer) throw new Error("CUSTOMER_NOT_FOUND");
+  await setCustomerDiscountActive(customerId, discountId, isActive);
+};
+
+export const getBirthdayAutomation = async (restaurantId: string): Promise<BirthdayAutomationDTO> => {
+  const restaurant = await findRestaurantById(restaurantId);
+  if (!restaurant) throw new Error("RESTAURANT_NOT_FOUND");
+  return {
+    enabled: restaurant.birthdayAutomationEnabled,
+    daysBefore: restaurant.birthdayDaysBefore,
+    discountType: restaurant.birthdayDiscountType === "FLAT" ? "FLAT" : "PERCENT",
+    discountValue: Number(restaurant.birthdayDiscountValue),
+    messageTitle: restaurant.birthdayMessageTitle,
+    messageContent: restaurant.birthdayMessageContent,
+  };
+};
+
+export const updateBirthdayAutomation = async (restaurantId: string, input: BirthdayAutomationDTO): Promise<void> => {
+  await updateRestaurant(restaurantId, {
+    birthdayAutomationEnabled: input.enabled,
+    birthdayDaysBefore: input.daysBefore,
+    birthdayDiscountType: input.discountType,
+    birthdayDiscountValue: input.discountValue,
+    birthdayMessageTitle: input.messageTitle.trim(),
+    birthdayMessageContent: input.messageContent.trim(),
+  });
+  if (input.enabled) {
+    await simulateBirthdayMessages(restaurantId, new Date(), input.daysBefore, input.messageTitle.trim(), input.messageContent.trim());
+  }
 };
 
 export const listCustomers = async (

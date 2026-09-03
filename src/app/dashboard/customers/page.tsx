@@ -2,7 +2,7 @@ import { CustomersTable } from "@/components/customers/customers-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
-import { listCustomers } from "@/services/customer.service";
+import { getBirthdayAutomation, listCustomers } from "@/services/customer.service";
 
 export default async function CustomersPage() {
   const ctx = await getManagerContextOrNull();
@@ -21,10 +21,10 @@ export default async function CustomersPage() {
     );
   }
 
-  const { items } = await listCustomers(ctx.restaurantId, {
+  const [{ items }, birthdayAutomation] = await Promise.all([listCustomers(ctx.restaurantId, {
     page: 1,
     pageSize: 100,
-  });
+  }), getBirthdayAutomation(ctx.restaurantId)]);
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
@@ -32,7 +32,7 @@ export default async function CustomersPage() {
         title="Kayıtlı Müşteriler"
         description="QR menüden doğum günü ve özel kampanyalara kaydolan müşterilerin listesi."
       />
-      <CustomersTable initialCustomers={items} />
+      <CustomersTable initialCustomers={items} birthdayAutomation={birthdayAutomation} />
     </div>
   );
 }

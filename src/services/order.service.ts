@@ -25,7 +25,6 @@ import {
   depleteForLines,
   restoreForLines,
 } from "@/services/stock-depletion.service";
-import { incrementCustomerStats } from "@/repositories/customer.repository";
 import { resolveTableForOrder } from "@/services/table.service";
 import type { MenuDTO } from "@/types/menu";
 import type { OrderDTO } from "@/types/order";
@@ -62,6 +61,7 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
   customerName: o.customerName,
   customerPhone: o.customerPhone,
   customerAddress: o.customerAddress,
+  customerId: o.customerId,
   note: o.note,
   placedById: o.placedById,
   subtotal: num(o.subtotal),
@@ -224,10 +224,6 @@ export const createOrder = async (
     customerId: input.customerId ?? null,
     items,
   });
-
-  if (input.customerId) {
-    await incrementCustomerStats(input.customerId, Number(order.grandTotal)).catch(() => undefined);
-  }
 
   await depleteForLines(
     ctx,

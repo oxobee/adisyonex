@@ -51,6 +51,7 @@ export interface OrderDTO {
   readonly customerName: string | null;
   readonly customerPhone: string | null;
   readonly customerAddress: string | null;
+  readonly customerId: string | null;
   readonly note: string | null;
   readonly placedById?: string | null;
   readonly subtotal: number;

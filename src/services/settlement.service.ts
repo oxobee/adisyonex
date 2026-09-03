@@ -1,5 +1,7 @@
 import type { SettleInput, SettleTableInput } from "@/lib/validators/order";
 import { settleManyOrders, settleOrder } from "@/repositories/order.repository";
+import { findActiveCustomerDiscount } from "@/repositories/customer.repository";
+import { findRestaurantById } from "@/repositories/restaurant.repository";
 import { clearTableDeviceLock } from "@/lib/table-device-lock";
 import { computeBill } from "@/services/billing";
 import {
@@ -13,6 +15,28 @@ import type { OrderDTO } from "@/types/order";
 
 export const PAYMENT_SHORT = "PAYMENT_SHORT";
 
+const birthdayIsApproaching = (birthMonth: number | null, birthDay: number | null, daysBefore: number): boolean => {
+  if (!birthMonth || !birthDay) return false;
+  const today = new Date();
+  const start = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const birthday = new Date(Date.UTC(today.getUTCFullYear(), birthMonth - 1, birthDay));
+  if (birthday.getTime() < start) birthday.setUTCFullYear(birthday.getUTCFullYear() + 1);
+  return Math.floor((birthday.getTime() - start) / 86_400_000) <= daysBefore;
+};
+
+const resolveAutomaticDiscount = async (ctx: OrderContext, order: Awaited<ReturnType<typeof loadOwnedOrder>>) => {
+  if (!order.customerId) return null;
+  const [discount, restaurant] = await Promise.all([
+    findActiveCustomerDiscount(order.customerId, new Date()),
+    findRestaurantById(ctx.restaurantId),
+  ]);
+  if (discount) return { type: discount.type, value: Number(discount.value), reason: "Müşteri indirimi" } as const;
+  if (restaurant?.birthdayAutomationEnabled && birthdayIsApproaching(order.customer?.birthMonth ?? null, order.customer?.birthDay ?? null, restaurant.birthdayDaysBefore)) {
+    return { type: restaurant.birthdayDiscountType, value: Number(restaurant.birthdayDiscountValue), reason: "Doğum günü indirimi" } as const;
+  }
+  return null;
+};
+
 /** Compute the bill (with discount/comp), verify tender covers it, then settle. */
 export const settle = async (
   ctx: OrderContext,
@@ -23,10 +47,9 @@ export const settle = async (
     throw new Error(ORDER_NOT_OPEN);
   }
 
-  const bill = computeBill(orderToBillLines(order), {
-    type: input.discountType,
-    value: input.discountValue,
-  });
+  const automaticDiscount = await resolveAutomaticDiscount(ctx, order);
+  const effectiveDiscount = automaticDiscount ?? { type: input.discountType, value: input.discountValue, reason: input.discountReason ?? null };
+  const bill = computeBill(orderToBillLines(order), effectiveDiscount);
 
   const paid = input.payments.reduce((sum, p) => sum + p.amount, 0);
   if (paid + 0.5 < bill.grandTotal) {
@@ -36,9 +59,9 @@ export const settle = async (
   const settled = await settleOrder(input.orderId, ctx.restaurantId, {
     subtotal: bill.subtotal,
     taxTotal: bill.taxTotal,
-    discountType: input.discountType,
-    discountValue: input.discountValue,
-    discountReason: input.discountReason ?? null,
+    discountType: effectiveDiscount.type,
+    discountValue: effectiveDiscount.value,
+    discountReason: effectiveDiscount.reason,
     discountTotal: bill.discountTotal,
     compTotal: bill.compTotal,
     roundOff: bill.roundOff,
@@ -112,9 +135,13 @@ export const settleTable = async (
     }
   }
 
-  const bills = orders.map((order) => ({
-    order,
-    bill: computeBill(orderToBillLines(order), { type: "NONE", value: 0 }),
+  const bills = await Promise.all(orders.map(async (order) => {
+    const automaticDiscount = await resolveAutomaticDiscount(ctx, order);
+    return {
+      order,
+      automaticDiscount,
+      bill: computeBill(orderToBillLines(order), automaticDiscount ?? { type: "NONE", value: 0 }),
+    };
   }));
   const combined = round2(bills.reduce((s, b) => s + b.bill.grandTotal, 0));
   const paid = round2(input.payments.reduce((s, p) => s + p.amount, 0));
@@ -136,9 +163,9 @@ export const settleTable = async (
     data: {
       subtotal: b.bill.subtotal,
       taxTotal: b.bill.taxTotal,
-      discountType: "NONE" as const,
-      discountValue: 0,
-      discountReason: null,
+      discountType: b.automaticDiscount?.type ?? "NONE",
+      discountValue: b.automaticDiscount?.value ?? 0,
+      discountReason: b.automaticDiscount?.reason ?? null,
       discountTotal: b.bill.discountTotal,
       compTotal: b.bill.compTotal,
       roundOff: b.bill.roundOff,

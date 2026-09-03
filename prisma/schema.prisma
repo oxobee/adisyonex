@@ -76,6 +76,11 @@ enum DiscountType {
   FLAT
 }
 
+enum CustomerDiscountScope {
+  EVERY_ORDER
+  DATE_RANGE
+}
+
 /// Who placed an order line: restaurant STAFF (waiter/POS) or a guest via the
 /// public self-order page (`/order/[username]`).
 enum OrderSource {
@@ -203,6 +208,15 @@ model Restaurant {
   // Custom note printed at the foot of the invoice/bill (owner-editable).
   invoiceFooterNote String?
 
+  // Birthday campaign automation. Message delivery is intentionally simulated
+  // until an SMS provider is enabled for the restaurant.
+  birthdayAutomationEnabled Boolean @default(false)
+  birthdayDiscountType      DiscountType @default(PERCENT)
+  birthdayDiscountValue     Decimal      @default(10) @db.Decimal(10, 2)
+  birthdayDaysBefore        Int          @default(7)
+  birthdayMessageTitle      String       @default("Doğum gününüz yaklaşıyor!")
+  birthdayMessageContent    String       @default("Merhaba {name}, doğum gününüze özel indirim sizi bekliyor. Sizi ağırlamaktan mutluluk duyarız!")
+
   // License & Subscription System
   licensePlan      LicensePlan   @default(TRIAL)
   licenseStatus    LicenseStatus @default(ACTIVE)
@@ -229,6 +243,7 @@ model Restaurant {
   stockItems     StockItem[]
   staff          Staff[]
   customers      Customer[]
+  birthdayMessageSimulations BirthdayMessageSimulation[]
   aiWallet       AiCreditWallet?
   aiTasks        AiTask[]
 
@@ -766,10 +781,49 @@ model Customer {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   orders     Order[]
+  discounts  CustomerDiscount[]
+  birthdayMessageSimulations BirthdayMessageSimulation[]
 
   @@unique([restaurantId, phone])
   @@index([restaurantId])
   @@index([restaurantId, birthMonth])
+}
+
+/// A manager-defined customer discount. Date-range discounts only apply within
+/// their inclusive dates; every-order discounts have no date restriction.
+model CustomerDiscount {
+  id        String               @id @default(cuid())
+  customerId String
+  scope     CustomerDiscountScope @default(EVERY_ORDER)
+  type      DiscountType
+  value     Decimal              @db.Decimal(10, 2)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  isActive  Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, isActive])
+}
+
+/// Outbound birthday messages are recorded here while delivery remains a
+/// simulation. The unique key prevents duplicate messages in a campaign year.
+model BirthdayMessageSimulation {
+  id           String   @id @default(cuid())
+  restaurantId String
+  customerId   String
+  campaignYear Int
+  title        String
+  content      String
+  createdAt    DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, campaignYear])
+  @@index([restaurantId, createdAt])
 }
 
 // ------------------------------------------------------------- AI Studio ---
@@ -960,5 +1014,4 @@ model SalesRep {
 
   @@index([isActive])
 }
-
 

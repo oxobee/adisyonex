@@ -6,15 +6,21 @@ import { z } from "zod";
 import { withManagerValidation, withValidation } from "@/actions/helpers";
 import {
   customerListQuerySchema,
+  customerDiscountSchema,
+  birthdayAutomationSchema,
   customerProfileQuerySchema,
   registerCustomerSchema,
+  toggleCustomerDiscountSchema,
 } from "@/lib/validators/customer";
 import {
   getCustomerDetailForAdmin,
   getCustomerProfile,
+  addCustomerDiscount,
   listCustomers,
   registerCustomer,
   removeCustomer,
+  toggleCustomerDiscount,
+  updateBirthdayAutomation,
 } from "@/services/customer.service";
 
 export const registerCustomerAction = withValidation(
@@ -55,4 +61,19 @@ export const deleteCustomerAction = withManagerValidation(
     revalidatePath("/dashboard/customers");
     return res;
   },
+);
+
+export const addCustomerDiscountAction = withManagerValidation(
+  customerDiscountSchema,
+  async (data, ctx) => addCustomerDiscount(ctx.restaurantId, data),
+);
+
+export const toggleCustomerDiscountAction = withManagerValidation(
+  toggleCustomerDiscountSchema,
+  async (data, ctx) => toggleCustomerDiscount(ctx.restaurantId, data.customerId, data.discountId, data.isActive),
+);
+
+export const updateBirthdayAutomationAction = withManagerValidation(
+  birthdayAutomationSchema,
+  async (data, ctx) => updateBirthdayAutomation(ctx.restaurantId, data),
 );

@@ -4,8 +4,6 @@ import { useMemo, useState, useCallback } from "react";
 import {
   CakeIcon,
   CalendarIcon,
-  ChevronRightIcon,
-  CreditCardIcon,
   EyeIcon,
   GiftIcon,
   HeartIcon,
@@ -14,18 +12,17 @@ import {
   SearchIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
-  SparklesIcon,
   Trash2Icon,
-  UserCheckIcon,
-  UserIcon,
   UsersIcon,
-  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
   deleteCustomerAction,
+  addCustomerDiscountAction,
   getAdminCustomerDetailAction,
+  toggleCustomerDiscountAction,
+  updateBirthdayAutomationAction,
 } from "@/actions/customer.actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +35,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -55,7 +54,7 @@ import {
 import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { CustomerDTO, CustomerProfileDTO } from "@/services/customer.service";
+import type { BirthdayAutomationDTO, CustomerDTO, CustomerProfileDTO } from "@/services/customer.service";
 
 const MONTHS = [
   { value: "ALL", label: "Tüm Aylar" },
@@ -75,8 +74,10 @@ const MONTHS = [
 
 export function CustomersTable({
   initialCustomers,
+  birthdayAutomation,
 }: {
   initialCustomers: readonly CustomerDTO[];
+  birthdayAutomation: BirthdayAutomationDTO;
 }) {
   const [customers, setCustomers] = useState<CustomerDTO[]>([...initialCustomers]);
   const [search, setSearch] = useState("");
@@ -87,6 +88,12 @@ export function CustomersTable({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [detailProfile, setDetailProfile] = useState<CustomerProfileDTO | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [birthday, setBirthday] = useState(birthdayAutomation);
+  const [discountType, setDiscountType] = useState<"PERCENT" | "FLAT">("PERCENT");
+  const [discountValue, setDiscountValue] = useState("");
+  const [discountScope, setDiscountScope] = useState<"EVERY_ORDER" | "DATE_RANGE">("EVERY_ORDER");
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
 
   const currentMonth = new Date().getMonth() + 1;
 
@@ -99,6 +106,27 @@ export function CustomersTable({
       setDeleteTarget(null);
     },
     onError: (m) => toast.error(m || "Silme işlemi başarısız oldu"),
+  });
+
+  const saveBirthday = useServerAction(updateBirthdayAutomationAction, {
+    onSuccess: () => toast.success("Doğum günü otomasyonu güncellendi; mesajlar simülasyon olarak kaydedildi."),
+    onError: (message) => toast.error(message),
+  });
+
+  const addDiscount = useServerAction(addCustomerDiscountAction, {
+    onSuccess: async () => {
+      toast.success("Müşteri indirimi tanımlandı");
+      setDiscountValue("");
+      if (selectedCustomerId) await handleOpenDetail({ id: selectedCustomerId } as CustomerDTO);
+    },
+    onError: (message) => toast.error(message),
+  });
+
+  const toggleDiscount = useServerAction(toggleCustomerDiscountAction, {
+    onSuccess: async () => {
+      if (selectedCustomerId) await handleOpenDetail({ id: selectedCustomerId } as CustomerDTO);
+    },
+    onError: (message) => toast.error(message),
   });
 
   const handleOpenDetail = useCallback(async (customer: CustomerDTO) => {
@@ -181,6 +209,24 @@ export function CustomersTable({
             <p className="text-xs font-bold text-foreground">Otomatik İndirim Aktif</p>
           </div>
         </div>
+      </div>
+
+      <div className="border border-border/80 bg-card p-4 rounded-lg space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold">Doğum Günü Otomasyonu</p>
+            <p className="text-xs text-muted-foreground">Mesaj gönderimi şu an simülasyon olarak kaydedilir.</p>
+          </div>
+          <Switch checked={birthday.enabled} onCheckedChange={(enabled) => setBirthday((prev) => ({ ...prev, enabled }))} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Input type="number" min="0" max="60" value={birthday.daysBefore} onChange={(e) => setBirthday((prev) => ({ ...prev, daysBefore: Number(e.target.value) }))} placeholder="Kaç gün önce" />
+          <Select value={birthday.discountType} onValueChange={(value) => value && setBirthday((prev) => ({ ...prev, discountType: value as "PERCENT" | "FLAT" }))}><SelectTrigger><span>{birthday.discountType === "PERCENT" ? "% indirim" : "Tutar indirimi"}</span></SelectTrigger><SelectContent><SelectItem value="PERCENT">% indirim</SelectItem><SelectItem value="FLAT">Tutar indirimi</SelectItem></SelectContent></Select>
+          <Input type="number" min="1" value={birthday.discountValue} onChange={(e) => setBirthday((prev) => ({ ...prev, discountValue: Number(e.target.value) }))} placeholder="İndirim" />
+          <Button onClick={() => saveBirthday.execute(birthday)} disabled={saveBirthday.isPending}>{saveBirthday.isPending ? "Kaydediliyor..." : "Ayarları Kaydet"}</Button>
+        </div>
+        <Input value={birthday.messageTitle} onChange={(e) => setBirthday((prev) => ({ ...prev, messageTitle: e.target.value }))} placeholder="Mesaj başlığı" />
+        <Textarea value={birthday.messageContent} onChange={(e) => setBirthday((prev) => ({ ...prev, messageContent: e.target.value }))} placeholder="Mesaj içeriği. Müşteri adı için {name} kullanın." />
       </div>
 
       {/* FILTER AND SEARCH BAR */}
@@ -412,6 +458,30 @@ export function CustomersTable({
                       {formatDate(detailProfile.customer.createdAt)}
                     </span>
                   </div>
+                </div>
+
+                <div className="rounded-lg border border-border/80 bg-muted/20 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-sm font-bold flex items-center gap-2"><GiftIcon className="size-4 text-primary" /> Müşteri İndirimleri</h4>
+                    <span className="text-xs text-muted-foreground">Hesap kapanırken otomatik uygulanır</span>
+                  </div>
+                  {detailProfile.discounts.length > 0 && (
+                    <div className="space-y-2">
+                      {detailProfile.discounts.map((discount) => (
+                        <div key={discount.id} className="flex items-center justify-between gap-3 text-xs border rounded-md p-2 bg-card">
+                          <span>{discount.scope === "EVERY_ORDER" ? "Her siparişte" : `${formatDate(discount.startsAt!)} - ${formatDate(discount.endsAt!)}`} · {discount.type === "PERCENT" ? `%${discount.value}` : formatCurrency(discount.value)}</span>
+                          <Switch size="sm" checked={discount.isActive} onCheckedChange={(isActive) => toggleDiscount.execute({ customerId: detailProfile.customer.id, discountId: discount.id, isActive })} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid gap-2 sm:grid-cols-5">
+                    <Select value={discountScope} onValueChange={(value) => value && setDiscountScope(value as "EVERY_ORDER" | "DATE_RANGE")}><SelectTrigger><span>{discountScope === "EVERY_ORDER" ? "Her sipariş" : "Tarih aralığı"}</span></SelectTrigger><SelectContent><SelectItem value="EVERY_ORDER">Her sipariş</SelectItem><SelectItem value="DATE_RANGE">Belirli tarih</SelectItem></SelectContent></Select>
+                    <Select value={discountType} onValueChange={(value) => value && setDiscountType(value as "PERCENT" | "FLAT")}><SelectTrigger><span>{discountType === "PERCENT" ? "%" : "Tutar"}</span></SelectTrigger><SelectContent><SelectItem value="PERCENT">Yüzde</SelectItem><SelectItem value="FLAT">Tutar</SelectItem></SelectContent></Select>
+                    <Input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} inputMode="decimal" placeholder="Değer" />
+                    {discountScope === "DATE_RANGE" ? <><Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} /><Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} /></> : <div className="sm:col-span-2" />}
+                  </div>
+                  <Button size="sm" disabled={!discountValue || addDiscount.isPending} onClick={() => addDiscount.execute({ customerId: detailProfile.customer.id, scope: discountScope, type: discountType, value: Number(discountValue), startsAt: startsAt ? new Date(startsAt).toISOString() : null, endsAt: endsAt ? new Date(endsAt).toISOString() : null })}>{addDiscount.isPending ? "Ekleniyor..." : "İndirim Tanımla"}</Button>
                 </div>
 
                 {/* EN ÇOK SEVDİĞİ LEZZETLER (FAVORİLER) */}
