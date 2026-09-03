@@ -4,19 +4,22 @@ import { useState } from "react"
 
 import { useRouter } from "next/navigation"
 
+import Link from "next/link"
+import Image from "next/image"
+
 import {
   BadgeCheckIcon,
   CopyIcon,
   FolderPlusIcon,
   ImageIcon,
+  PaletteIcon,
   PencilIcon,
   PlusIcon,
   SlidersHorizontalIcon,
+  SparklesIcon,
   Trash2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
-
-import Image from "next/image"
 
 import {
   deleteCategoryAction,
@@ -152,6 +155,15 @@ export function MenuManager({
           >
             <PlusIcon className="size-4" /> Yeni Ürün
           </Button>
+          <Link
+            href="/dashboard/menu-design"
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer ring-2 ring-pink-500/20"
+            title="QR Menü Tasarımını Özelleştir"
+          >
+            <PaletteIcon className="size-4 animate-pulse" />
+            <span>Menü Tasarım</span>
+            <SparklesIcon className="size-3 text-amber-200" />
+          </Link>
         </div>
       </div>
 

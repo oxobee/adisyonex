@@ -19,35 +19,50 @@ export default async function SystemPage() {
 
   const { dayStart, dayEnd } = getTurkeyDayRange();
 
-  const [restaurant, tableCount, staffCount, lowStockCount, todayZReport] =
-    await Promise.all([
-      prisma.restaurant.findUnique({
-        where: { id: restaurantId },
-        select: { name: true },
-      }),
-      prisma.diningTable.count({
-        where: { restaurantId },
-      }),
-      prisma.staff.count({
-        where: { restaurantId, deletedAt: null, status: "ACTIVE" },
-      }),
-      getLowStockCount(restaurantId).catch(() => 0),
-      prisma.zReport.findFirst({
-        where: {
-          restaurantId,
-          reportDate: {
-            gte: dayStart,
-            lte: dayEnd,
-          },
+  const [
+    restaurant,
+    tableCount,
+    staffCount,
+    lowStockCount,
+    todayZReport,
+    menuItemCount,
+    categoryCount,
+  ] = await Promise.all([
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { name: true },
+    }),
+    prisma.diningTable.count({
+      where: { restaurantId },
+    }),
+    prisma.staff.count({
+      where: { restaurantId, deletedAt: null, status: "ACTIVE" },
+    }),
+    getLowStockCount(restaurantId).catch(() => 0),
+    prisma.zReport.findFirst({
+      where: {
+        restaurantId,
+        reportDate: {
+          gte: dayStart,
+          lte: dayEnd,
         },
-        select: { zNumberFormatted: true },
-      }),
-    ]);
+      },
+      select: { zNumberFormatted: true },
+    }),
+    prisma.menuItem.count({
+      where: { restaurantId, deletedAt: null },
+    }),
+    prisma.menuCategory.count({
+      where: { restaurantId },
+    }),
+  ]);
 
   const stats = {
     tableCount,
     staffCount,
     lowStockCount,
+    menuItemCount,
+    categoryCount,
     isDayClosed: !!todayZReport,
     zNumberFormatted: todayZReport?.zNumberFormatted || null,
     restaurantName: restaurant?.name || "AdisyonEx Restoran",

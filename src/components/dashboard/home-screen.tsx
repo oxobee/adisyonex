@@ -68,36 +68,20 @@ const HOME_ITEMS: readonly HomeItem[] = [
     badge: "04",
   },
   {
-    title: "Menü Yönetimi",
-    description: "Ürün & Kategori Listesi",
-    href: "/dashboard/menu",
-    icon: BookOpenIcon,
-    iconBg: "bg-teal-50 text-teal-600 border border-teal-100",
-    badge: "05",
-  },
-  {
-    title: "Menü Tasarım",
-    description: "QR Menüyü Özelleştir",
-    href: "/dashboard/menu-design",
-    icon: PaletteIcon,
-    iconBg: "bg-pink-50 text-pink-600 border border-pink-100",
-    badge: "06",
-  },
-  {
     title: "Müşteriler",
     description: "Sadakat & Kampanyalar",
     href: "/dashboard/customers",
     icon: GiftIcon,
     iconBg: "bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100",
-    badge: "07",
+    badge: "05",
   },
   {
     title: "Sistem",
-    description: "Masa & QR, Personel, Stok, Z Raporu",
+    description: "Menü, Masa & QR, Personel, Stok, Z Raporu",
     href: "/dashboard/system",
     icon: SlidersHorizontalIcon,
     iconBg: "bg-gray-100 text-gray-800 border border-gray-200",
-    badge: "08",
+    badge: "06",
   },
 ];
 
@@ -123,6 +107,8 @@ export function HomeScreen({
   const visibleItems = useMemo(() => {
     if (!isStaff || !allowedRoutes) return HOME_ITEMS;
     const systemSubRoutes = [
+      "/dashboard/menu",
+      "/dashboard/menu-design",
       "/dashboard/tables",
       "/dashboard/staff",
       "/dashboard/inventory",
@@ -248,40 +234,16 @@ export function HomeScreen({
 
       {/* 
         TOP BAR:
-        Online / Offline Pill on Left + Staff / Admin Shortcuts on Right (Sadece yöneticilerde)
+        Staff / Admin Shortcuts on Right (Sadece yöneticilerde)
       */}
       <div
-        className="relative z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
+        className="relative z-30 flex items-center justify-end px-4 sm:px-6 lg:px-8 py-4"
         onClick={(e) => {
           if (!isOpen) {
             e.stopPropagation();
           }
         }}
       >
-        {/* Untitled UI Online Pill */}
-        <div
-          className={cn(
-            "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold shadow-2xs backdrop-blur-sm transition-colors",
-            isOnline
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-rose-50 text-rose-700 border-rose-200",
-          )}
-          title={isOnline ? "Sistem Çevrimiçi & Senkronize" : "İnternet Bağlantısı Yok"}
-        >
-          <span className="relative flex size-2">
-            {isOnline && (
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            )}
-            <span
-              className={cn(
-                "relative inline-flex rounded-full size-2",
-                isOnline ? "bg-emerald-600" : "bg-rose-600",
-              )}
-            />
-          </span>
-          <span>{isOnline ? "Çevrimiçi" : "Çevrimdışı"}</span>
-        </div>
-
         {/* Top Right Shortcuts - Yalnızca Yönetici / Admin modunda görünür, personel ekranında gizlenir */}
         {!isStaff && (
           <div className="flex items-center gap-2.5">
@@ -312,19 +274,20 @@ export function HomeScreen({
       {/* 
         MAIN STAGE:
         1. KAPALIYKEN:
-           - Ekranda yalnızca tam ortalanmış zarif marka logosu
+           - Ekranda yalnızca tam ortalanmış zarif marka logosu ve yanındaki/altındaki şık Online rozeti
            - Tıklandığında menü açılır
         2. AÇIKKEN:
+           - Sol üstte Kompakt Logo + Online rozeti
            - Untitled UI beyaz tema modül kartları
            - Sağ üstte net '✕ KAPAT' butonu
       */}
       <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto my-auto">
         {!isOpen ? (
           /* ============================================================ */
-          /* KAPALI DURUM: SADECE MERKEZİ LOGO VE HAFİF KALP ATIŞI        */
+          /* KAPALI DURUM: SADECE MERKEZİ LOGO + ZARİF ONLINE ROZETİ      */
           /* ============================================================ */
           <div className="flex flex-col items-center justify-center text-center my-auto cursor-pointer group py-12">
-            <div className="relative transform-gpu transition-transform duration-500 group-hover:scale-105 select-none">
+            <div className="relative transform-gpu transition-transform duration-500 group-hover:scale-105 select-none flex flex-col items-center">
               {settings.logoUrl || settings.logoDarkUrl ? (
                 <div className="relative h-24 sm:h-32 lg:h-36 w-72 sm:w-96 lg:w-[480px] animate-heartbeat">
                   <Image
@@ -345,6 +308,32 @@ export function HomeScreen({
                   </span>
                 </div>
               )}
+
+              {/* SİSTEM LOGOSUNUN YANINDA / ALTINDA ZARİF MODERN ONLINE ROZETİ */}
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold shadow-xs backdrop-blur-md transition-all mt-4 sm:mt-5",
+                  isOnline
+                    ? "bg-white/90 text-emerald-700 border-emerald-200 shadow-emerald-500/5 ring-4 ring-emerald-500/10"
+                    : "bg-white/90 text-rose-700 border-rose-200 shadow-rose-500/5 ring-4 ring-rose-500/10",
+                )}
+                title={isOnline ? "Sistem Online & Senkronize" : "İnternet Bağlantısı Yok"}
+              >
+                <span className="relative flex size-2">
+                  {isOnline && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  )}
+                  <span
+                    className={cn(
+                      "relative inline-flex rounded-full size-2",
+                      isOnline ? "bg-emerald-500" : "bg-rose-500",
+                    )}
+                  />
+                </span>
+                <span className="tracking-wider uppercase text-[11px] font-black">
+                  {isOnline ? "Online" : "Offline"}
+                </span>
+              </div>
             </div>
           </div>
         ) : (
@@ -352,9 +341,9 @@ export function HomeScreen({
           /* AÇIK DURUM: UNTITLED UI BEYAZ TEMA KARTLAR + SAĞ ÜST 'KAPAT' */
           /* ============================================================ */
           <div className="w-full flex flex-col my-auto pt-2 sm:pt-4 animate-in fade-in zoom-in-98 duration-300">
-            {/* Üst Bar: Sol Logo + Sağ Kapat Butonu */}
+            {/* Üst Bar: Sol Logo + Online Rozeti + Sağ Kapat Butonu */}
             <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8 px-1">
-              {/* Sol: Kompakt Logo */}
+              {/* Sol: Kompakt Logo + Zarif Online Rozeti */}
               <div className="flex items-center gap-3">
                 {settings.logoUrl || settings.logoDarkUrl ? (
                   <div className="relative h-8 sm:h-9 w-32 sm:w-40">
@@ -371,6 +360,32 @@ export function HomeScreen({
                     {settings.systemName || "Adisyon"}
                   </span>
                 )}
+
+                {/* SİSTEM LOGOSUNUN YANINDA ZARİF ONLINE ROZETİ */}
+                <div
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-extrabold shadow-2xs backdrop-blur-sm transition-all select-none",
+                    isOnline
+                      ? "bg-emerald-50/90 text-emerald-700 border-emerald-200"
+                      : "bg-rose-50/90 text-rose-700 border-rose-200",
+                  )}
+                  title={isOnline ? "Sistem Online & Senkronize" : "İnternet Bağlantısı Yok"}
+                >
+                  <span className="relative flex size-2">
+                    {isOnline && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    )}
+                    <span
+                      className={cn(
+                        "relative inline-flex rounded-full size-2",
+                        isOnline ? "bg-emerald-500" : "bg-rose-500",
+                      )}
+                    />
+                  </span>
+                  <span className="tracking-wide uppercase font-black text-[10px]">
+                    {isOnline ? "Online" : "Offline"}
+                  </span>
+                </div>
               </div>
 
               {/* Sağ: Untitled UI Kapat Butonu */}

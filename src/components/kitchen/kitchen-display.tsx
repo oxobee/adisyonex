@@ -359,7 +359,6 @@ export function KitchenDisplay({
   const { supported, enabled, toggle, announce } = useAnnouncer();
   const [now, setNow] = useState(() => Date.now());
   const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const seenRef = useRef<Map<string, number> | null>(null);
 
   useEffect(() => {
@@ -369,22 +368,6 @@ export function KitchenDisplay({
     }, 3000);
     return () => clearInterval(id);
   }, [router]);
-
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener("fullscreenchange", handleFsChange);
-    return () => document.removeEventListener("fullscreenchange", handleFsChange);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  };
 
   useEffect(() => {
     const sigs = tickets.map((t) => ({
@@ -532,16 +515,6 @@ export function KitchenDisplay({
               {enabled ? <Volume2Icon className="size-4.5" /> : <VolumeXIcon className="size-4.5" />}
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="flex size-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer active:scale-95 shadow-2xs"
-            title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran KDS Modu"}
-            aria-label="Tam Ekran"
-          >
-            {isFullscreen ? <Minimize2Icon className="size-4.5" /> : <Maximize2Icon className="size-4.5" />}
-          </button>
         </div>
       </header>
 

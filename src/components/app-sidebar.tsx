@@ -56,8 +56,6 @@ const navGroups = [
     label: "Yönetim",
     items: [
       { title: "Analitik", url: "/dashboard", icon: <LayoutDashboardIcon /> },
-      { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
-      { title: "Menü Tasarım", url: "/dashboard/menu-design", icon: <PaletteIcon /> },
       { title: "Kayıtlı Müşteriler", url: "/dashboard/customers", icon: <GiftIcon /> },
     ],
   },
@@ -65,6 +63,7 @@ const navGroups = [
     label: "Sistem Ayarları",
     items: [
       { title: "Sistem", url: "/dashboard/system", icon: <SlidersHorizontalIcon /> },
+      { title: "Menü Yönetimi", url: "/dashboard/menu", icon: <BookOpenIcon /> },
       { title: "Masa ve QR Yönetimi", url: "/dashboard/tables", icon: <ArmchairIcon /> },
       { title: "Personel", url: "/dashboard/staff", icon: <UsersIcon /> },
       { title: "Stok & Envanter", url: "/dashboard/inventory", icon: <BoxesIcon /> },

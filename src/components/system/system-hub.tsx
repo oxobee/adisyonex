@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   AlertTriangleIcon,
   ArmchairIcon,
+  BookOpenIcon,
   BoxesIcon,
   CheckCircle2Icon,
   ChevronRightIcon,
@@ -18,6 +19,7 @@ import {
   SparklesIcon,
   StoreIcon,
   UsersIcon,
+  UtensilsIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -26,6 +28,8 @@ export interface SystemStats {
   readonly tableCount: number;
   readonly staffCount: number;
   readonly lowStockCount: number;
+  readonly menuItemCount?: number;
+  readonly categoryCount?: number;
   readonly isDayClosed: boolean;
   readonly zNumberFormatted: string | null;
   readonly restaurantName: string;
@@ -39,6 +43,19 @@ export function SystemHub({
   readonly allowedRoutes?: readonly string[] | null;
 }) {
   const SYSTEM_CARDS = [
+    {
+      title: "Menü Yönetimi",
+      description: "Ürünler, kategoriler, porsiyonlar, ekstralar ve fiyat listesi",
+      href: "/dashboard/menu",
+      icon: BookOpenIcon,
+      iconBg: "bg-teal-50 text-teal-600 border border-teal-200",
+      tag:
+        typeof stats.menuItemCount === "number"
+          ? `${stats.menuItemCount} Ürün`
+          : "Ürün & Kategori",
+      tagColor: "bg-teal-100/80 text-teal-800 border-teal-200",
+      secondaryIcon: UtensilsIcon,
+    },
     {
       title: "Masa ve QR Yönetimi",
       description: "Salon planı, masa numaraları, yerleşim ve masa QR karekodları",
