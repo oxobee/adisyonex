@@ -1,4 +1,5 @@
 import { computeBill } from "@/services/billing";
+import { prisma } from "@/lib/prisma";
 import {
   aggregateSettledBetween,
   countVoidedSince,
@@ -9,6 +10,7 @@ import {
 import { findTablesByRestaurant } from "@/repositories/table.repository";
 import type {
   DashboardDTO,
+  DashboardHourlyTraffic,
   DashboardMetrics,
   DashboardTrendPoint,
 } from "@/types/dashboard";
@@ -80,7 +82,7 @@ const billLines = (o: OrderWithRelations) =>
 /**
  * Everything the `/dashboard` overview needs: today + month-to-date metrics,
  * open-now exposure, occupancy, payment mix, order-type split, the month's
- * daily sales trend, and top items today. All day boundaries are IST.
+ * daily sales trend, hourly traffic, top items today, and customer stats.
  */
 export const getDashboard = async (
   restaurantId: string,
@@ -99,13 +101,14 @@ export const getDashboard = async (
   const fetchSince =
     yesterdayStart.getTime() < monthStart.getTime() ? yesterdayStart : monthStart;
 
-  const [settled, openOrders, tables, voidsToday, lastMonthAgg] =
+  const [settled, openOrders, tables, voidsToday, lastMonthAgg, customerCount] =
     await Promise.all([
       findSettledOrdersSince(restaurantId, fetchSince),
       findOrdersByRestaurant(restaurantId, ["OPEN"]),
       findTablesByRestaurant(restaurantId),
       countVoidedSince(restaurantId, todayStart),
       aggregateSettledBetween(restaurantId, lastMonthStart, monthStart),
+      prisma.customer.count({ where: { restaurantId } }).catch(() => 0),
     ]);
 
   const settledAt = (o: OrderWithRelations): number =>
@@ -138,20 +141,55 @@ export const getDashboard = async (
     trend.push({ date: key, label: String(day), sales: round2(trendMap.get(key) ?? 0) });
   }
 
-  // Top items today.
-  const itemMap = new Map<string, number>();
+  // Hourly traffic today (e.g. 09:00 to 23:00)
+  const hourlyMap = new Map<number, { orders: number; sales: number }>();
+  for (let h = 9; h <= 23; h++) {
+    hourlyMap.set(h, { orders: 0, sales: 0 });
+  }
+  for (const o of todayOrders) {
+    const time = o.settledAt ?? o.createdAt;
+    if (time) {
+      const h = new Date(time.getTime() + IST_OFFSET_MS).getUTCHours();
+      const existing = hourlyMap.get(h) ?? { orders: 0, sales: 0 };
+      existing.orders += 1;
+      existing.sales += num(o.grandTotal);
+      hourlyMap.set(h, existing);
+    }
+  }
+  const hourlyTraffic: DashboardHourlyTraffic[] = [...hourlyMap.entries()].map(
+    ([h, val]) => ({
+      hour: `${pad(h)}:00`,
+      orders: val.orders,
+      sales: round2(val.sales),
+    }),
+  );
+
+  // Top items today with both quantity & total revenue.
+  const itemMap = new Map<string, { quantity: number; revenue: number }>();
   for (const o of todayOrders) {
     for (const it of o.items) {
       if (it.state === "VOID") {
         continue;
       }
-      itemMap.set(it.name, (itemMap.get(it.name) ?? 0) + it.quantity);
+      const existing = itemMap.get(it.name) ?? { quantity: 0, revenue: 0 };
+      const itemTotal =
+        (num(it.unitPrice) +
+          it.modifiers.reduce((s, m) => s + num(m.priceDelta), 0)) *
+        it.quantity;
+      itemMap.set(it.name, {
+        quantity: existing.quantity + it.quantity,
+        revenue: round2(existing.revenue + itemTotal),
+      });
     }
   }
   const topItemsToday = [...itemMap.entries()]
-    .map(([name, quantity]) => ({ name, quantity }))
+    .map(([name, val]) => ({
+      name,
+      quantity: val.quantity,
+      revenue: val.revenue,
+    }))
     .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
+    .slice(0, 6);
 
   // Payment mix today.
   const payMap = new Map<string, number>();
@@ -206,5 +244,7 @@ export const getDashboard = async (
     orderTypeToday,
     trend,
     topItemsToday,
+    hourlyTraffic,
+    customerCount,
   };
 };

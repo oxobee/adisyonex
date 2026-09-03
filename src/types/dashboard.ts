@@ -38,6 +38,13 @@ export interface DashboardTrendPoint {
 export interface DashboardTopItem {
   readonly name: string;
   readonly quantity: number;
+  readonly revenue?: number;
+}
+
+export interface DashboardHourlyTraffic {
+  readonly hour: string;
+  readonly orders: number;
+  readonly sales: number;
 }
 
 export interface DashboardDTO {
@@ -52,4 +59,6 @@ export interface DashboardDTO {
   readonly orderTypeToday: readonly DashboardOrderTypeSlice[];
   readonly trend: readonly DashboardTrendPoint[];
   readonly topItemsToday: readonly DashboardTopItem[];
+  readonly hourlyTraffic?: readonly DashboardHourlyTraffic[];
+  readonly customerCount?: number;
 }

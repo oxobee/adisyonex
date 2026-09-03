@@ -412,11 +412,6 @@ export function HomeScreen({
                 </div>
               )}
             </div>
-
-            {/* İnce Tıklama İpucu */}
-            <p className="mt-8 sm:mt-10 text-xs sm:text-sm font-semibold tracking-widest uppercase text-zinc-500 group-hover:text-zinc-300 transition-colors animate-pulse">
-              Menüyü Açmak İçin Dokunun
-            </p>
           </div>
         ) : (
           /* ============================================================ */
