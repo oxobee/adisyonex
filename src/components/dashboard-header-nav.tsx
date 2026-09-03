@@ -6,25 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ArrowLeftIcon,
-  ArmchairIcon,
-  BookOpenIcon,
-  BoxesIcon,
-  CalculatorIcon,
-  ChefHatIcon,
   CircleUserRoundIcon,
-  ExternalLinkIcon,
-  GiftIcon,
-  HomeIcon,
   HeadphonesIcon,
   InfinityIcon,
-  LayoutDashboardIcon,
-  LayoutGridIcon,
   LogOutIcon,
-  PaletteIcon,
-  ReceiptTextIcon,
-  ShieldCheckIcon,
   SparklesIcon,
-  UsersIcon,
   UtensilsCrossedIcon,
   XIcon,
 } from "lucide-react";
@@ -37,108 +23,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn, isActiveRoute } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { LicenseInfoDTO } from "@/services/license.service";
 import type { SystemSettingsDTO } from "@/services/system-setting.service";
-
-interface ModuleConfig {
-  readonly title: string;
-  readonly description?: string;
-  readonly url: string;
-  readonly icon: React.ReactNode;
-  readonly iconBg: string;
-  readonly iconColor: string;
-}
-
-export const MODULE_ITEMS: readonly ModuleConfig[] = [
-  {
-    title: "Ana Ekran",
-    url: "/dashboard/home",
-    icon: <HomeIcon className="size-4.5" />,
-    iconBg: "bg-red-500/15 group-hover:bg-red-500/25",
-    iconColor: "text-red-600 dark:text-red-400",
-  },
-  {
-    title: "Anlık Durum",
-    description: "Canlı masa doluluğu ve açık adisyonlar",
-    url: "/dashboard/orders",
-    icon: <ReceiptTextIcon className="size-5" />,
-    iconBg: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-    iconColor: "text-amber-600 dark:text-amber-400",
-  },
-  {
-    title: "Mutfak",
-    description: "Mutfak sipariş hazırlık ekranı (KDS)",
-    url: "/dashboard/kitchen",
-    icon: <ChefHatIcon className="size-5" />,
-    iconBg: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-    iconColor: "text-rose-600 dark:text-rose-400",
-  },
-  {
-    title: "POS / Kasa",
-    description: "Hızlı sipariş oluşturma ve hesap alma",
-    url: "/dashboard/pos",
-    icon: <CalculatorIcon className="size-5" />,
-    iconBg: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    title: "Genel Bakış",
-    description: "Günlük ciro, satış raporları ve istatistikler",
-    url: "/dashboard",
-    icon: <LayoutDashboardIcon className="size-5" />,
-    iconBg: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
-    iconColor: "text-sky-600 dark:text-sky-400",
-  },
-  {
-    title: "Masalar",
-    description: "Salon planı, masa ve bölge yönetimi",
-    url: "/dashboard/tables",
-    icon: <ArmchairIcon className="size-5" />,
-    iconBg: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
-    iconColor: "text-violet-600 dark:text-violet-400",
-  },
-  {
-    title: "Menü",
-    description: "Kategoriler, ürünler ve fiyat yönetimi",
-    url: "/dashboard/menu",
-    icon: <BookOpenIcon className="size-5" />,
-    iconBg: "bg-teal-500/15 text-teal-600 dark:text-teal-400",
-    iconColor: "text-teal-600 dark:text-teal-400",
-  },
-  {
-    title: "Menü Tasarım",
-    description: "QR menü teması, renk ve banner ayarları",
-    url: "/dashboard/menu-design",
-    icon: <PaletteIcon className="size-5" />,
-    iconBg: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
-  },
-  {
-    title: "Personel",
-    description: "Çalışan listesi, roller ve giriş PIN'leri",
-    url: "/dashboard/staff",
-    icon: <UsersIcon className="size-5" />,
-    iconBg: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
-    iconColor: "text-orange-600 dark:text-orange-400",
-  },
-  {
-    title: "Stok",
-    description: "Hammadde envanteri ve reçete takibi",
-    url: "/dashboard/inventory",
-    icon: <BoxesIcon className="size-5" />,
-    iconBg: "bg-slate-500/15 text-slate-600 dark:text-slate-400",
-    iconColor: "text-slate-600 dark:text-slate-400",
-  },
-  {
-    title: "Müşteriler",
-    description: "Müşteri sadakat profili ve doğum günleri",
-    url: "/dashboard/customers",
-    icon: <GiftIcon className="size-5" />,
-    iconBg: "bg-pink-500/15 text-pink-600 dark:text-pink-400",
-    iconColor: "text-pink-600 dark:text-pink-400",
-  },
-];
 
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/home": "Ana Ekran",
@@ -160,7 +47,6 @@ export function DashboardHeaderNav({
   user,
   license,
   systemSettings,
-  restaurantUsername,
 }: {
   readonly user: {
     readonly name: string;
@@ -175,14 +61,10 @@ export function DashboardHeaderNav({
   const router = useRouter();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isAppLauncherOpen, setIsAppLauncherOpen] = useState(false);
   const [isSalesRepModalOpen, setIsSalesRepModalOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
   const profileRef = useRef<HTMLDivElement>(null);
-  const appLauncherRef = useRef<HTMLDivElement>(null);
-
-  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   // Check if current screen is the Main Screen (Ana Ekran)
   const isMainScreen = pathname === "/dashboard/home";
@@ -212,20 +94,16 @@ export function DashboardHeaderNav({
     };
   }, []);
 
-  // Close profile and app launcher dropdowns on outside click or escape
+  // Close profile dropdown on outside click or escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setIsProfileOpen(false);
       }
-      if (appLauncherRef.current && !appLauncherRef.current.contains(e.target as Node)) {
-        setIsAppLauncherOpen(false);
-      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIsProfileOpen(false);
-        setIsAppLauncherOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -255,64 +133,61 @@ export function DashboardHeaderNav({
   return (
     <>
       {/* 
-        DESKTOP OS WINDOW TITLEBAR (macOS / Modern Desktop SaaS Style)
-        Unified, single-row, ultra-clean header without cluttered navigation menus.
+        CLEAN SAAS OS WINDOW TITLEBAR
+        Single-row, minimalist header:
+        - Yatay Sistem Logosu
+        - Geri gelme ikonu olan "Ana Ekran" butonu (alt sayfalarda)
+        - Canlı "Online" durum ikonu
+        - "Profilim" butonu
       */}
-      <header className="sticky top-0 z-40 w-full h-13 sm:h-14 border-b border-border/70 bg-background/85 dark:bg-zinc-950/85 backdrop-blur-xl transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]">
+      <header className="sticky top-0 z-40 w-full h-14 border-b border-border/70 bg-background/90 dark:bg-zinc-950/90 backdrop-blur-xl transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="flex h-full w-full items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
           {/* 
-            LEFT SECTION:
-            1. Desktop Window Traffic Light Controls (🔴 🟡 🟢)
-            2. System Brand Logo & Name
-            3. "Ana Ekran" Back Button (Active on ALL sub-pages)
-            4. "Modüller" Launcher (Active on Ana Ekran)
+            SOL BÖLÜM:
+            1. Yatay Sistem Logosu (AdisyonEx)
+            2. "Ana Ekran" Geri Gelme Butonu (Ana ekran hariç tüm sayfalarda)
           */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 min-w-0">
-            {/* macOS Window Traffic Lights */}
-            <div className="hidden sm:flex items-center gap-1.5 shrink-0 pr-1">
-              <span
-                className="size-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-opacity hover:opacity-80"
-                title="Pencere"
-              />
-              <span
-                className="size-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-opacity hover:opacity-80"
-                title="Küçült"
-              />
-              <span
-                className="size-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-opacity hover:opacity-80"
-                title="Büyüt"
-              />
-            </div>
-
-            <div className="hidden sm:block h-4 w-px bg-border/80 shrink-0" />
-
-            {/* System Brand Logo & Name */}
+          <div className="flex items-center gap-3 shrink-0 min-w-0">
+            {/* Yatay Sistem Logosu */}
             <Link
               href="/dashboard/home"
               prefetch={true}
-              className="flex items-center gap-2 select-none cursor-pointer group shrink-0"
+              className="flex items-center select-none cursor-pointer group shrink-0"
               title="Ana Ekran"
             >
-              {systemSettings?.faviconUrl || systemSettings?.logoUrl ? (
-                <div className="relative size-7.5 shrink-0 overflow-hidden rounded-lg group-hover:scale-105 transition-transform">
+              {systemSettings?.logoUrl ? (
+                <div className="relative h-8 sm:h-9 w-36 sm:w-44 max-w-[190px]">
                   <Image
-                    src={systemSettings.faviconUrl || systemSettings.logoUrl || ""}
-                    alt="Logo"
+                    src={systemSettings.logoUrl}
+                    alt={systemSettings?.systemName || "AdisyonEx"}
                     fill
-                    className="object-contain"
-                    sizes="32px"
+                    className="object-contain object-left"
                     priority
+                    sizes="(max-width: 640px) 144px, 176px"
                   />
                 </div>
               ) : (
-                <div className="flex size-7.5 items-center justify-center text-primary group-hover:scale-105 transition-transform shrink-0">
-                  <UtensilsCrossedIcon className="size-4.5" />
+                <div className="flex items-center gap-2">
+                  {systemSettings?.faviconUrl ? (
+                    <div className="relative size-8 shrink-0 overflow-hidden rounded-lg">
+                      <Image
+                        src={systemSettings.faviconUrl}
+                        alt="Logo"
+                        fill
+                        className="object-contain"
+                        sizes="32px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex size-8 items-center justify-center text-primary">
+                      <UtensilsCrossedIcon className="size-5" />
+                    </div>
+                  )}
+                  <span className="text-base font-black tracking-tight text-foreground">
+                    {systemSettings?.systemName || "AdisyonEx"}
+                  </span>
                 </div>
               )}
-
-              <span className="text-sm font-black tracking-tight text-foreground group-hover:text-primary transition-colors hidden xs:inline">
-                {systemSettings?.systemName || "AdisyonEx"}
-              </span>
             </Link>
 
             {/* 
@@ -331,86 +206,11 @@ export function DashboardHeaderNav({
                 <span>Ana Ekran</span>
               </Link>
             )}
-
-            {/* 
-              MAIN SCREEN ACTION:
-              "Modüller" / App Launcher Popover Button
-              (Sadece Ana Ekranda görünür)
-            */}
-            {isMainScreen && (
-              <div ref={appLauncherRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsAppLauncherOpen((p) => !p)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black transition-all active:scale-95 cursor-pointer shadow-2xs",
-                    isAppLauncherOpen
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                      : "border-border/80 bg-background/90 hover:bg-muted/90 text-foreground hover:border-primary/40",
-                  )}
-                  aria-label="Modüller"
-                >
-                  <LayoutGridIcon className="size-3.5 stroke-[2.5]" />
-                  <span>Modüller</span>
-                </button>
-
-                {/* Desktop App Launcher Modal / Grid Dropdown */}
-                {isAppLauncherOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-80 sm:w-96 z-50 overflow-hidden rounded-3xl border border-border/80 bg-card p-3 text-card-foreground shadow-2xl backdrop-blur-2xl ring-1 ring-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between p-2 pb-2.5 border-b border-border/60">
-                      <div className="flex items-center gap-2">
-                        <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-black">
-                          ❖
-                        </span>
-                        <span className="text-xs font-black text-foreground">Sistem Modülleri</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsAppLauncherOpen(false)}
-                        className="flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
-                        aria-label="Kapat"
-                      >
-                        <XIcon className="size-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-2.5 max-h-[70vh] overflow-y-auto pr-0.5">
-                      {MODULE_ITEMS.map((mod) => (
-                        <Link
-                          key={mod.url}
-                          href={mod.url}
-                          prefetch={true}
-                          onClick={() => setIsAppLauncherOpen(false)}
-                          className="flex items-start gap-2.5 p-2.5 rounded-2xl border border-border/60 hover:border-primary/40 hover:bg-muted/70 hover:shadow-xs transition-all group active:scale-98 cursor-pointer"
-                        >
-                          <div
-                            className={cn(
-                              "flex size-8 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 shadow-2xs",
-                              mod.iconBg,
-                            )}
-                          >
-                            {mod.icon}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-xs font-black text-foreground group-hover:text-primary transition-colors truncate">
-                              {mod.title}
-                            </h4>
-                            <p className="text-[10px] text-muted-foreground line-clamp-1">
-                              {mod.description}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* 
-            CENTER SECTION:
-            Subtle desktop window breadcrumb/title indicating current screen
+            ORTA BÖLÜM:
+            Alt sayfalarda hafif sayfa başlığı göstergesi
           */}
           {!isMainScreen && (
             <div className="hidden md:flex items-center justify-center flex-1 min-w-0 pointer-events-none">
@@ -421,10 +221,9 @@ export function DashboardHeaderNav({
           )}
 
           {/* 
-            RIGHT SECTION:
+            SAĞ BÖLÜM:
             1. Sistemin Online olduğunu gösteren canlı yeşil ikon
-            2. Süper Admin / Personel Girişi (Opsiyonel & Kompakt)
-            3. Profilim Butonu (Avatar + Açılır Menü)
+            2. Profilim Butonu (Avatar + Açılır Menü)
           */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Sistemin Online Olduğunu Gösteren İkon */}
@@ -451,32 +250,6 @@ export function DashboardHeaderNav({
               <span className="hidden xs:inline">{isOnline ? "Online" : "Çevrimdışı"}</span>
             </div>
 
-            {/* Subtle Admin / Staff shortcut */}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                prefetch={true}
-                className="hidden lg:inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 px-2 py-1 rounded-lg hover:bg-amber-500/10 transition-colors"
-                title="Süper Admin Paneli"
-              >
-                <ShieldCheckIcon className="size-3.5" />
-                <span>Admin</span>
-              </Link>
-            )}
-
-            {restaurantUsername && (
-              <a
-                href={`/${restaurantUsername}/personals`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden lg:inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-muted transition-colors"
-                title="Personel Girişi Sayfasını Yeni Sekmede Aç"
-              >
-                <ExternalLinkIcon className="size-3" />
-                <span>Personel</span>
-              </a>
-            )}
-
             {/* Profilim Butonu */}
             <div ref={profileRef} className="relative">
               <button
@@ -488,7 +261,7 @@ export function DashboardHeaderNav({
                 )}
                 aria-label="Profil Menüsü"
               >
-                <div className="relative size-7 sm:size-8 rounded-lg overflow-hidden bg-muted/40 border border-border/60 shrink-0">
+                <div className="relative size-7.5 sm:size-8 rounded-lg overflow-hidden bg-muted/40 border border-border/60 shrink-0">
                   <Image
                     src="/default-avatar.png"
                     alt={user.name}
