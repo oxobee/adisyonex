@@ -2,7 +2,6 @@
 
 import { useMemo, useRef } from "react";
 import {
-  CheckCircle2Icon,
   PrinterIcon,
   ReceiptIcon,
   UtensilsIcon,
@@ -13,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency, formatDate, formatTime } from "@/lib/format";
@@ -119,7 +117,39 @@ export function TableBillModal({
   );
 
   const handlePrint = () => {
-    window.print();
+    const receipt = receiptRef.current;
+    if (!receipt) return;
+
+    const printWindow = window.open("", "_blank", "width=420,height=800");
+    if (!printWindow) return;
+
+    const stylesheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
+      .map((link) => `<link rel="stylesheet" href="${link.href}">`)
+      .join("");
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+      <html lang="tr">
+        <head>
+          <meta charset="utf-8" />
+          <title>Adisyon - ${table.label}</title>
+          ${stylesheets}
+          <style>
+            @page { size: 80mm auto; margin: 0; }
+            * { box-sizing: border-box; }
+            html, body { margin: 0; padding: 0; background: #fff; }
+            body { width: 80mm; padding: 4mm; color: #000; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; line-height: 1.35; }
+            .receipt { width: 72mm; max-width: 72mm; margin: 0; padding: 0; border: 0; box-shadow: none; }
+            @media screen { body { margin: 16px auto; } }
+          </style>
+        </head>
+        <body><div class="receipt">${receipt.innerHTML}</div></body>
+      </html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    window.setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 150);
   };
 
   if (!table) return null;
