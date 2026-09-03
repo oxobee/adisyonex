@@ -13,6 +13,7 @@ import {
   CircleUserRoundIcon,
   ExternalLinkIcon,
   GiftIcon,
+  HomeIcon,
   HeadphonesIcon,
   InfinityIcon,
   LayoutDashboardIcon,
@@ -51,6 +52,13 @@ interface NavItemConfig {
 }
 
 const NAV_ITEMS: readonly NavItemConfig[] = [
+  {
+    title: "Ana Ekran",
+    url: "/dashboard/home",
+    icon: <HomeIcon className="size-4.5" />,
+    iconBg: "bg-red-500/15 group-hover:bg-red-500/25",
+    iconColor: "text-red-600 dark:text-red-400",
+  },
   {
     title: "Anlık Durum",
     url: "/dashboard/orders",

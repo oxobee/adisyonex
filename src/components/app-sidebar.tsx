@@ -34,6 +34,7 @@ import {
   GiftIcon,
   LogInIcon,
   PaletteIcon,
+  HomeIcon,
 } from "lucide-react"
 
 import type { LicenseInfoDTO } from "@/services/license.service"
@@ -43,6 +44,7 @@ const navGroups = [
   {
     label: "Operasyon",
     items: [
+      { title: "Ana Ekran", url: "/dashboard/home", icon: <HomeIcon /> },
       { title: "Anlık Durum", url: "/dashboard/orders", icon: <ReceiptTextIcon />, isHighlighted: true },
       { title: "Mutfak Ekranı", url: "/dashboard/kitchen", icon: <ChefHatIcon /> },
       { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },

@@ -115,7 +115,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // Keep signed-in managers out of the auth pages.
   if (authenticated && matchesRoute(pathname, AUTH_ROUTES)) {
-    return NextResponse.redirect(new URL("/dashboard/orders", request.nextUrl));
+    return NextResponse.redirect(new URL("/dashboard/home", request.nextUrl));
   }
 
   // Non-public routes require a session — default redirect to /login.
