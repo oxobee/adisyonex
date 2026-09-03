@@ -8,6 +8,7 @@ import {
   CalculatorIcon,
   CheckIcon,
   ChefHatIcon,
+  FileSpreadsheetIcon,
   GiftIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
@@ -68,6 +69,7 @@ export const AVAILABLE_SCREENS = [
   { id: "/dashboard/inventory", title: "Stok & Envanter", icon: BoxesIcon, desc: "Hammadde ve kritik stoklar" },
   { id: "/dashboard/staff", title: "Personel Yönetimi", icon: UsersIcon, desc: "Çalışan listesi ve yetkiler" },
   { id: "/dashboard", title: "Yönetim Paneli & Raporlar", icon: LayoutDashboardIcon, desc: "Günlük ciro ve genel grafikler" },
+  { id: "/dashboard/z-report", title: "Z Raporu / Gün Sonu", icon: FileSpreadsheetIcon, desc: "Kasa mutabakatı ve gün sonu raporu" },
   { id: "/dashboard/settings", title: "Restoran Ayarları", icon: Settings2Icon, desc: "İşletme profili ve parametreler" },
 ] as const;
 

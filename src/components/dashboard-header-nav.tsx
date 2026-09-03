@@ -40,6 +40,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/customers": "Müşteriler & Sadakat",
   "/dashboard/settings": "Restoran Ayarları",
   "/dashboard/ai-studio": "Yapay Zeka Stüdyosu",
+  "/dashboard/z-report": "Z Raporu & Gün Sonu",
 };
 
 export function DashboardHeaderNav({

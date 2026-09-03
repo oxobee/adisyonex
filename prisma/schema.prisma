@@ -246,6 +246,8 @@ model Restaurant {
   birthdayMessageSimulations BirthdayMessageSimulation[]
   aiWallet       AiCreditWallet?
   aiTasks        AiTask[]
+  zReports       ZReport[]
+  cashMovements  CashMovement[]
 
   salesRepId     String?
   salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
@@ -1014,5 +1016,64 @@ model SalesRep {
   assignedUsers       User[]       @relation("UserSalesRep")
 
   @@index([isActive])
+}
+
+enum CashMovementType {
+  IN
+  OUT
+}
+
+/// Restaurant cash register in/out movements (float, expenses, petty cash, courier, courier float, etc.)
+model CashMovement {
+  id              String           @id @default(cuid())
+  restaurantId    String
+  type            CashMovementType
+  category        String
+  amount          Decimal          @db.Decimal(10, 2)
+  description     String?
+  performedByName String?
+  createdAt       DateTime         @default(now())
+
+  restaurant      Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, createdAt])
+}
+
+/// Immutable End-Of-Day (Z Report) financial snapshot for auditing and reconciliation.
+model ZReport {
+  id               String    @id @default(cuid())
+  restaurantId     String
+  zNumber          Int
+  zNumberFormatted String
+  reportDate       DateTime
+  openedAt         DateTime
+  closedAt         DateTime
+  closedById       String?
+  closedByName     String?
+  grossSales       Decimal   @default(0) @db.Decimal(10, 2)
+  discountTotal    Decimal   @default(0) @db.Decimal(10, 2)
+  voidTotal        Decimal   @default(0) @db.Decimal(10, 2)
+  returnTotal      Decimal   @default(0) @db.Decimal(10, 2)
+  compTotal        Decimal   @default(0) @db.Decimal(10, 2)
+  netSales         Decimal   @default(0) @db.Decimal(10, 2)
+  taxTotal         Decimal   @default(0) @db.Decimal(10, 2)
+  orderCount       Int       @default(0)
+  itemCount        Int       @default(0)
+  avgOrderAmount   Decimal   @default(0) @db.Decimal(10, 2)
+  openingCash      Decimal   @default(0) @db.Decimal(10, 2)
+  cashSales        Decimal   @default(0) @db.Decimal(10, 2)
+  cashInTotal      Decimal   @default(0) @db.Decimal(10, 2)
+  cashOutTotal     Decimal   @default(0) @db.Decimal(10, 2)
+  expectedCash     Decimal   @default(0) @db.Decimal(10, 2)
+  countedCash      Decimal   @default(0) @db.Decimal(10, 2)
+  cashDifference   Decimal   @default(0) @db.Decimal(10, 2)
+  snapshotData     Json
+  notes            String?
+  createdAt        DateTime  @default(now())
+
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, zNumber])
+  @@index([restaurantId, reportDate])
 }
 

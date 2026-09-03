@@ -9,6 +9,7 @@ import {
   BoxesIcon,
   CalculatorIcon,
   ChefHatIcon,
+  FileSpreadsheetIcon,
   GiftIcon,
   LayoutDashboardIcon,
   LogInIcon,
@@ -120,6 +121,14 @@ const HOME_ITEMS: readonly HomeItem[] = [
     icon: Settings2Icon,
     iconBg: "bg-gray-100 text-gray-700 border border-gray-200",
     badge: "11",
+  },
+  {
+    title: "Z Raporu",
+    description: "Kasa & Gün Sonu Mutabakatı",
+    href: "/dashboard/z-report",
+    icon: FileSpreadsheetIcon,
+    iconBg: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    badge: "12",
   },
 ];
 

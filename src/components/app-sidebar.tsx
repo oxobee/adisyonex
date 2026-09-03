@@ -29,6 +29,7 @@ import {
   BoxesIcon,
   UsersIcon,
   Settings2Icon,
+  FileSpreadsheetIcon,
   CircleHelpIcon,
   ShieldCheckIcon,
   GiftIcon,
@@ -54,6 +55,7 @@ const navGroups = [
     label: "Yönetim",
     items: [
       { title: "Genel Bakış", url: "/dashboard", icon: <LayoutDashboardIcon /> },
+      { title: "Z Raporu", url: "/dashboard/z-report", icon: <FileSpreadsheetIcon /> },
       { title: "Menü", url: "/dashboard/menu", icon: <BookOpenIcon /> },
       { title: "Menü Tasarım", url: "/dashboard/menu-design", icon: <PaletteIcon /> },
       { title: "Masalar", url: "/dashboard/tables", icon: <ArmchairIcon /> },
