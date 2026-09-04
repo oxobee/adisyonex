@@ -78,6 +78,46 @@ export function GlobalAiAssistant() {
     },
   ]);
 
+  // Active Staff Account State (Rol Bazlı Yetki Kısıtlama için)
+  const [activeStaff, setActiveStaff] = useState<{
+    id: string;
+    name: string;
+    role: string;
+    jobTitle?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const readActiveStaff = () => {
+      try {
+        const raw = localStorage.getItem("adisyon_active_staff_account");
+        if (raw) {
+          setActiveStaff(JSON.parse(raw));
+        } else {
+          const staffId = localStorage.getItem("adisyon_active_staff_id");
+          if (staffId) {
+            setActiveStaff({ id: staffId, name: "Personel", role: "STAFF" });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    readActiveStaff();
+
+    const handleAccountChange = (e: any) => {
+      if (e?.detail) {
+        setActiveStaff(e.detail);
+      } else {
+        readActiveStaff();
+      }
+    };
+
+    window.addEventListener("active-account-changed", handleAccountChange);
+    return () => window.removeEventListener("active-account-changed", handleAccountChange);
+  }, []);
+
   // Scroll to bottom on new message
   useEffect(() => {
     if (isOpen) {
@@ -194,7 +234,7 @@ export function GlobalAiAssistant() {
         .slice(-6)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const res = await askAiAssistantAction(query, chatHistory);
+      const res = await askAiAssistantAction(query, chatHistory, activeStaff?.id);
 
       if (!res.success || !res.data) {
         setMessages((prev) => [
@@ -239,7 +279,7 @@ export function GlobalAiAssistant() {
   const handleExecuteAction = async (msgId: string, action: AiActionPreview) => {
     setExecutingActionId(msgId);
     try {
-      const res = await executeAiAssistantAction(action);
+      const res = await executeAiAssistantAction(action, activeStaff?.id);
       if (res.success && res.data) {
         toast.success(res.data.message);
         setMessages((prev) =>
@@ -348,16 +388,25 @@ export function GlobalAiAssistant() {
               </div>
 
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <h3 className="text-sm font-black text-gray-900 dark:text-white tracking-tight">
                     AdisyonEx Asistan
                   </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                    Akıllı Mod
-                  </span>
+                  {activeStaff ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      {activeStaff.name} ({activeStaff.jobTitle || activeStaff.role})
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                      Akıllı Mod
+                    </span>
+                  )}
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
-                  Doğal konuşma & sesli restoran kontrolü
+                  {activeStaff
+                    ? `Yetki alanı: ${activeStaff.jobTitle || activeStaff.role} (${activeStaff.name})`
+                    : "Doğal konuşma & sesli restoran kontrolü"}
                 </p>
               </div>
             </div>

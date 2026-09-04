@@ -149,6 +149,13 @@ export function StaffAccountMenu({
     setAccounts([initialAccount]);
     setActiveAccount(initialAccount);
     onActiveAccountChange(initialAccount);
+    try {
+      localStorage.setItem("adisyon_active_staff_id", initialAccount.id);
+      localStorage.setItem("adisyon_active_staff_account", JSON.stringify(initialAccount));
+      window.dispatchEvent(new CustomEvent("active-account-changed", { detail: initialAccount }));
+    } catch {
+      // ignore
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialAccount.id]);
 
@@ -169,6 +176,9 @@ export function StaffAccountMenu({
     onActiveAccountChange(newActive);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newAccounts));
+      localStorage.setItem("adisyon_active_staff_id", newActive.id);
+      localStorage.setItem("adisyon_active_staff_account", JSON.stringify(newActive));
+      window.dispatchEvent(new CustomEvent("active-account-changed", { detail: newActive }));
     } catch {
       // ignore
     }

@@ -38,6 +38,7 @@ export interface AiAssistantResponse {
   readonly actionPreview?: AiActionPreview | null;
   readonly clarificationOptions?: readonly string[];
   readonly userRole: string;
+  readonly userName: string;
   readonly allowedRoutes: readonly string[] | null;
 }
 
@@ -45,20 +46,62 @@ interface UserAuthContext {
   restaurantId: string;
   role: string;
   name: string;
+  jobTitle?: string | null;
   allowedRoutes: readonly string[] | null;
   isManager: boolean;
   userId: string | null;
   staffId: string | null;
 }
 
-async function resolveUserAuthContext(): Promise<UserAuthContext | null> {
-  // 1. Staff Context
+async function resolveUserAuthContext(activeStaffId?: string | null): Promise<UserAuthContext | null> {
   const staff = await getStaffContextOrNull().catch(() => null);
+  const managerCtx = await getManagerContextOrNull().catch(() => null);
+  const currentUserId = await getCurrentUserId().catch(() => null);
+
+  const restaurantId = staff?.restaurantId || managerCtx?.restaurantId;
+  if (!restaurantId) return null;
+
+  // 1. If activeStaffId is explicitly passed from client terminal
+  if (activeStaffId) {
+    const targetStaff = await prisma.staff.findFirst({
+      where: { id: activeStaffId, restaurantId, deletedAt: null },
+    });
+    if (targetStaff) {
+      return {
+        restaurantId,
+        role: targetStaff.role,
+        name: targetStaff.name,
+        jobTitle: targetStaff.jobTitle ?? null,
+        allowedRoutes: (targetStaff.allowedRoutes as string[] | null) ?? null,
+        isManager: false,
+        userId: null,
+        staffId: targetStaff.id,
+      };
+    }
+
+    // Check if activeStaffId belongs to the manager/user
+    if (currentUserId && activeStaffId === currentUserId) {
+      const u = await getManagerById(currentUserId).catch(() => null);
+      return {
+        restaurantId,
+        role: u?.role || "MANAGER",
+        name: u?.name || "Yönetici",
+        jobTitle: "Restoran Sahibi / Yönetici",
+        allowedRoutes: null,
+        isManager: true,
+        userId: currentUserId,
+        staffId: null,
+      };
+    }
+  }
+
+  // 2. Staff Context
   if (staff) {
     return {
       restaurantId: staff.restaurantId,
       role: staff.role,
       name: staff.name,
+      jobTitle: staff.jobTitle ?? null,
       allowedRoutes: staff.allowedRoutes ?? null,
       isManager: false,
       userId: null,
@@ -66,9 +109,7 @@ async function resolveUserAuthContext(): Promise<UserAuthContext | null> {
     };
   }
 
-  // 2. Manager Context
-  const managerCtx = await getManagerContextOrNull().catch(() => null);
-  const currentUserId = await getCurrentUserId().catch(() => null);
+  // 3. Manager Context
   if (managerCtx?.restaurantId) {
     let userName = "Yönetici";
     let role = "MANAGER";
@@ -81,7 +122,8 @@ async function resolveUserAuthContext(): Promise<UserAuthContext | null> {
       restaurantId: managerCtx.restaurantId,
       role,
       name: userName,
-      allowedRoutes: null, // Full access
+      jobTitle: "Restoran Sahibi / Yönetici",
+      allowedRoutes: null,
       isManager: true,
       userId: currentUserId,
       staffId: null,
@@ -94,141 +136,192 @@ async function resolveUserAuthContext(): Promise<UserAuthContext | null> {
 export async function askAiAssistantAction(
   userQuery: string,
   chatHistory: readonly AiMessage[] = [],
+  activeStaffId?: string | null,
 ): Promise<ActionResult<AiAssistantResponse>> {
   try {
-    const auth = await resolveUserAuthContext();
+    const auth = await resolveUserAuthContext(activeStaffId);
     if (!auth) {
       return failure("Oturum süresi dolmuş veya yetki bulunamadı. Lütfen giriş yapınız.");
     }
 
-    const { restaurantId, role, name, allowedRoutes, isManager } = auth;
+    const { restaurantId, role, name, jobTitle, allowedRoutes, isManager } = auth;
 
-    // Fetch Restaurant Details, Active Tables, and Menu Items
-    const [restaurant, tables, menuItems] = await Promise.all([
-      prisma.restaurant.findUnique({
-        where: { id: restaurantId },
-        select: { name: true, branchName: true },
-      }),
-      prisma.diningTable.findMany({
-        where: { restaurantId, deletedAt: null },
-        select: { id: true, label: true, section: true, seats: true },
-        orderBy: { label: "asc" },
-      }),
-      prisma.menuItem.findMany({
-        where: { restaurantId, deletedAt: null, isActive: true },
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          category: { select: { name: true } },
-        },
-        take: 120,
-        orderBy: { name: "asc" },
-      }),
+    // Strict Permissions:
+    // Mutfak Personeli (örn. Ebru UĞURLU - Aşçı): SADECE Mutfak ekranı, hazırlanan siparişler ve operasyon bildirimleri
+    const isKitchenOnly =
+      !isManager &&
+      (role === "KITCHEN" ||
+        (allowedRoutes !== null &&
+          allowedRoutes.includes("/dashboard/kitchen") &&
+          !allowedRoutes.includes("/dashboard/orders") &&
+          !allowedRoutes.includes("/dashboard/z-report")));
+
+    // Garson Personeli (örn. Emre TEKNECİ - Garson): SADECE Masalar ve Siparişler, masaya ürün ekleme ve garson çağrıları
+    const isWaiterOnly =
+      !isManager &&
+      (role === "WAITER" ||
+        (allowedRoutes !== null &&
+          allowedRoutes.includes("/dashboard/orders") &&
+          !allowedRoutes.includes("/dashboard/kitchen") &&
+          !allowedRoutes.includes("/dashboard/z-report") &&
+          !allowedRoutes.includes("/dashboard/settings")));
+
+    const canManageOrders =
+      !isKitchenOnly &&
+      (isManager ||
+        !allowedRoutes ||
+        allowedRoutes.includes("/dashboard/orders") ||
+        allowedRoutes.includes("/dashboard/pos") ||
+        role === "WAITER");
+
+    const canViewFinancials =
+      !isKitchenOnly &&
+      !isWaiterOnly &&
+      (isManager ||
+        !allowedRoutes ||
+        allowedRoutes.includes("/dashboard/z-report") ||
+        allowedRoutes.includes("/dashboard/pos"));
+
+    const canViewKitchen =
+      isKitchenOnly ||
+      isManager ||
+      !allowedRoutes ||
+      allowedRoutes.includes("/dashboard/kitchen");
+
+    const canManageSettings = isManager;
+    const canManageStaff = isManager;
+
+    // Fetch details according to permissions (PREVENTS DATA LEAKAGE TO LLM PROMPT)
+    const restaurantPromise = prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { name: true, branchName: true },
+    });
+
+    const tablesPromise = canManageOrders
+      ? prisma.diningTable.findMany({
+          where: { restaurantId, deletedAt: null },
+          select: { id: true, label: true, section: true, seats: true },
+          orderBy: { label: "asc" },
+        })
+      : Promise.resolve([]);
+
+    const menuItemsPromise = canManageOrders
+      ? prisma.menuItem.findMany({
+          where: { restaurantId, deletedAt: null, isActive: true },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            category: { select: { name: true } },
+          },
+          take: 120,
+          orderBy: { name: "asc" },
+        })
+      : Promise.resolve([]);
+
+    // If kitchen staff, fetch current kitchen queue tickets
+    const kitchenTicketsPromise = canViewKitchen
+      ? prisma.orderItem.findMany({
+          where: {
+            order: { restaurantId, status: "OPEN", deletedAt: null },
+            state: { in: ["FIRED", "PREPARED"] },
+          },
+          select: {
+            name: true,
+            state: true,
+            quantity: true,
+            order: { select: { tableLabel: true, orderNumber: true } },
+          },
+          take: 20,
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]);
+
+    const [restaurant, tables, menuItems, kitchenTickets] = await Promise.all([
+      restaurantPromise,
+      tablesPromise,
+      menuItemsPromise,
+      kitchenTicketsPromise,
     ]);
 
     const restaurantName = restaurant?.name || "Restoran";
     const currency = "₺";
 
-    // Build permissions overview
-    let permissionSummary = "";
-    if (isManager || !allowedRoutes) {
-      permissionSummary = "Tam Yetkili Yönetici (Tüm modüllere ve finansal verilere erişebilir).";
+    // Build role specific strict instructions
+    let roleInstructions = "";
+
+    if (isKitchenOnly) {
+      roleInstructions = `
+DİKKAT: KULLANICI AŞÇI / MUTFAK PERSONELİDİR:
+- İsim: "${name}"
+- Görevi: "${jobTitle || "Aşçı"}"
+- Tanımlı Yetkisi: YALNIZCA Mutfak Ekranı (/dashboard/kitchen), mutfaktaki yemek hazırlıkları ve ana ekrandaki mutfak bildirimleri.
+- ŞU ANKİ MUTFAK SİPARİŞLERİ VE HAZIRLIK DURUMU: ${JSON.stringify(
+        kitchenTickets.map((k) => ({
+          yemek: k.name,
+          adet: k.quantity,
+          durum: k.state === "FIRED" ? "Bekliyor/Hazırlanıyor" : "Hazır/Serviste",
+          masa: k.order?.tableLabel || `#${k.order?.orderNumber}`,
+        }))
+      )}
+
+KESİNLİKLE YASAK ALANLAR:
+1. Masalar, masada oturanlar, adisyon detayları ve masaya sipariş ekleme işlemi KESİNLİKLE YASAKTIR. Aşçının masaya sipariş ekleme yetkisi YOKTUR.
+2. Ciro, kasa, hasılat, ödemeler, Z raporu ve finansal veriler KESİNLİKLE YASAKTIR.
+3. Firma ayarları, şube ayarları, Wi-Fi bilgileri, yazıcılar ve sistem yönetimi KESİNLİKLE YASAKTIR.
+4. Personel şifreleri, PIN kodları ve personel yönetimi KESİNLİKLE YASAKTIR.
+
+KURAL: Kullanıcı bu yasak alanlardan biri hakkında soru sorar veya işlem isterse (örneğin masalar, ciro, ayarlar, garson siparişleri), KESİNLİKLE REDDET:
+"Sayın ${name}, ${jobTitle || "Aşçı"} yetkiniz ile yalnızca Mutfak ekranı operasyonları ve mutfak hazırlık bildirimleri hakkında bilgi alabilirsiniz. Masalar, ciro ve sistem ayarlarına erişim yetkiniz bulunmamaktadır." de.`;
+    } else if (isWaiterOnly) {
+      roleInstructions = `
+DİKKAT: KULLANICI GARSON PERSONELİDİR:
+- İsim: "${name}"
+- Görevi: "${jobTitle || "Garson"}"
+- Tanımlı Yetkisi: YALNIZCA Masalar ve Adisyonlar Ekranı (/dashboard/orders), masaya sipariş/ürün ekleme işlemi ve ana ekrandaki servis bildirimleri (garson çağrıları, hesap isteme, hazır tabaklar).
+- MEVCUT MASALAR: ${JSON.stringify(tables.map((t) => ({ id: t.id, label: t.label, section: t.section })))}
+- MENÜ ÜRÜNLERİ: ${JSON.stringify(menuItems.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })))}
+
+KESİNLİKLE YASAK ALANLAR:
+1. Günlük Ciro, Kasa hasılatı, Z Raporu (/dashboard/z-report) ve finansal analizler KESİNLİKLE YASAKTIR.
+2. Firma Ayarları, şube ayarları, Wi-Fi şifresi ve sistem konfigürasyonu (/dashboard/settings) KESİNLİKLE YASAKTIR.
+3. Personel yönetimi, PIN kodları ve çalışan maaşları (/dashboard/staff) KESİNLİKLE YASAKTIR.
+4. Stok ve hammadde depoları (/dashboard/inventory) KESİNLİKLE YASAKTIR.
+
+KURAL: Kullanıcı bu yasak alanlardan biri hakkında soru sorarsa, KESİNLİKLE REDDET:
+"Sayın ${name}, ${jobTitle || "Garson"} yetkiniz ile yalnızca Masalar, adisyonlar, sipariş ekleme ve servis bildirimleri hakkında işlem yapabilirsiniz. Ciro, kasa, personel yönetimi ve sistem ayarlarına erişim yetkiniz bulunmamaktadır." de.`;
     } else {
-      permissionSummary = `Personel Rolü: ${role}. İzinli Ekranlar: ${
-        allowedRoutes.length > 0 ? allowedRoutes.join(", ") : "Yetkili ekran tanımlanmamış"
-      }.`;
+      // Manager / Admin
+      roleInstructions = `
+KULLANICI: "${name}" (Tam Yetkili Yönetici).
+Tüm modüllere, finansal verilere, ciroya, Z raporuna, masalara, mutfağa, stoğa ve ayarlara tam erişim yetkisi vardır.
+MEVCUT MASALAR: ${JSON.stringify(tables.map((t) => ({ id: t.id, label: t.label, section: t.section })))}
+MENÜ ÜRÜNLERİ: ${JSON.stringify(menuItems.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })))}
+`;
     }
 
-    // Role restrictions
-    const canManageOrders =
-      isManager ||
-      !allowedRoutes ||
-      allowedRoutes.includes("/dashboard/orders") ||
-      allowedRoutes.includes("/dashboard/pos") ||
-      role === "WAITER";
-
-    const canViewFinancials =
-      isManager ||
-      !allowedRoutes ||
-      allowedRoutes.includes("/dashboard/z-report") ||
-      allowedRoutes.includes("/dashboard/pos");
-
-    const canViewKitchen =
-      isManager ||
-      !allowedRoutes ||
-      allowedRoutes.includes("/dashboard/kitchen");
-
-    const canManageMenu =
-      isManager ||
-      !allowedRoutes ||
-      allowedRoutes.includes("/dashboard/menu");
-
-    const canManageStaff =
-      isManager ||
-      !allowedRoutes ||
-      allowedRoutes.includes("/dashboard/staff");
-
-    // System prompt construction
+    // System prompt
     const systemPrompt = `Sen AdisyonEx Akıllı Restoran Asistanısın. Şu anda "${restaurantName}" adlı restoranda çalışıyorsun.
-Hitap ettiğin kullanıcı: "${name}" (${permissionSummary}).
+Hitap ettiğin kullanıcı: "${name}" (${jobTitle || role}).
 Kullanılan para birimi: ${currency}.
 
-ÖNEMLİ KURALLAR:
-1. YALNIZCA BU RESTORAN VE ADİSYONEX SİSTEMİ HAKKINDA BİLGİ VER VE İŞLEM YAP.
-   - Restoran dışı konular (şiir yaz, dünya kupası, tarih, genel sohbet vb.) sorulursa kesinlikle cevaplama. Nezaketle: "Ben AdisyonEx restoran asistanıyım, yalnızca restoran operasyonlarınız, siparişler, menü, masalar ve sistem yönetimi konusunda yardımcı olabilirim." de.
-2. YETKİ KONTROLÜ (ÇOK ÖNEMLİ):
-   - Kullanıcının yetkisi olmayan bilgilere ve ekranlara erişmesine izin verme!
-   - Finansal veriler / Ciro / Z Raporu sorgusu: Kullanıcının finans yetkisi (${canViewFinancials ? "VAR" : "YOK"}). Eğer YOK ise (örneğin mutfak veya garson personeli ciro sorarsa), kibarca "Bu bilgiye erişim yetkiniz bulunmamaktadır. Göreviniz kapsamındaki ekranlar hakkında bilgi verebilirim." de.
-   - Sipariş alma / Masaya ürün ekleme: Kullanıcının sipariş yetkisi (${canManageOrders ? "VAR" : "YOK"}). Eğer YOK ise (örneğin mutfak personeli masaya sipariş eklemek isterse), "Sipariş oluşturma yetkiniz bulunmamaktadır." de.
-   - Personel / Maaş / Şifreler: Kullanıcının personel yetkisi (${canManageStaff ? "VAR" : "YOK"}).
-3. SAYFA YÖNLENDİRME YERİNE KART ÖNERİSİ:
-   - Kullanıcı bir ekranı veya işlemi nasıl yapacağını sorduğunda doğrudan sayfayı açma; soruyu açık ve anlaşılır şekilde yanıtla ve "recommendedPage" alanında ilgili sayfayı öner.
-   - Ekranlar:
-     * Masa & QR Yönetimi: /dashboard/tables (Masalar, kat planı, QR kodlar)
-     * Masalar & Adisyonlar: /dashboard/orders (Açık masalar, sipariş detayları)
-     * Mutfak KOT: /dashboard/kitchen (Mutfak sipariş fişleri, hazırlık durumu)
-     * Hızlı Kasa / POS: /dashboard/pos (Ödeme alma, hesap kapatma)
-     * Menü Yönetimi: /dashboard/menu (Ürünler, fiyatlar, kategoriler)
-     * Z Raporu: /dashboard/z-report (Günlük ciro ve kasa kapanışı)
-     * Stok Yönetimi: /dashboard/inventory (Hammadde ve depolar)
-     * Personel Yönetimi: /dashboard/staff (Çalışanlar, PIN kodları ve yetkiler)
-     * Sistem Ayarları: /dashboard/settings (Firma bilgileri, Wi-Fi, yazıcılar)
-4. SİSTEMDE İŞLEM YAPMA (MASAYA ÜRÜN EKLEME):
-   - Kullanıcı "Masa 5'e 1 hamburger menü", "masa 2 ye 2 kola ekle" gibi bir komut verdiğinde:
-     * Mevcut Masalar Listesinden (${JSON.stringify(
-       tables.map((t: { id: string; label: string; section: string | null }) => ({
-         id: t.id,
-         label: t.label,
-         section: t.section,
-       })),
-     )}) ilgili masayı bul.
-     * Mevcut Menü Ürünleri Listesinden (${JSON.stringify(
-       menuItems.map((m: { id: string; name: string; price: any }) => ({
-         id: m.id,
-         name: m.name,
-         price: Number(m.price),
-       })),
-     )}) ilgili ürünü bul.
-     * EĞER ürün adı veya masa numarası tam net değilse ya da birden fazla seçenek varsa:
-       "needsClarification": true yap, "clarificationOptions" içine seçenekleri koy ve kullanıcıya "Bunu mu demek istediniz?" diye sor.
-     * EĞER ürün ve masa net olarak tespit edildiyse:
-       HER ZAMAN "actionPreview" nesnesi oluştur:
-       {
-         "type": "ADD_ORDER_ITEM",
-         "tableId": "<Masa ID>",
-         "tableLabel": "<Masa Adı / No>",
-         "menuItemId": "<Ürün ID>",
-         "menuItemName": "<Ürün Adı>",
-         "quantity": <Adet (sayı)>,
-         "unitPrice": <Birim Fiyat>,
-         "totalPrice": <Toplam Fiyat>
-       }
-       Yanıtında da "Masa {X} için {adet} adet {ürün} siparişini hazırladım. Eklemek için lütfen aşağıdaki karttan onaylayınız." şeklinde nazikçe belirt.
-5. YANIT FORMATI:
-   Yanıtını YALNIZCA geçerli bir JSON nesnesi olarak döndür. JSON formatı şöyle olmalıdır:
+${roleInstructions}
+
+GENEL VE KESİN KURALLAR:
+1. YALNIZCA BU RESTORAN VE KULLANICININ YETKİLİ OLDUĞU ALANLAR HAKKINDA BİLGİ VER.
+   - Restoran dışı konular (şiir, genel kültür vb.) sorulursa: "Ben AdisyonEx restoran asistanıyım, yalnızca yetkili olduğunuz restoran operasyonlarında yardımcı olabilirim." de.
+2. SAYFA YÖNLENDİRME YERİNE KART ÖNERİSİ:
+   - Kullanıcı yetkili olduğu bir ekranı veya işlemi nasıl yapacağını sorduğunda doğrudan sayfayı açma; soruyu açık ve anlaşılır şekilde yanıtla ve "recommendedPage" alanında ilgili sayfayı öner.
+   - KULLANICININ YETKİSİ OLMAYAN BİR EKRAN İÇİN ASLA recommendedPage DÖNDÜRME!
+3. MASAYA SİPARİŞ EKLEME İŞLEMİ:
+   - Yalnızca sipariş yetkisi olan kullanıcılarda (${canManageOrders ? "VAR" : "YOK"}), "Masa 5'e 1 hamburger" gibi komutlarda:
+     * Ürün ve masa tespit edildiğinde HER ZAMAN "actionPreview" nesnesi üret ve kullanıcıya karttan onaylamasını söyle.
+     * Karışıklık varsa "needsClarification": true ve "clarificationOptions" içine seçenekleri koy.
+     * Sipariş yetkisi olmayan kullanıcılar (örn. Aşçı) masaya ürün eklemek isterse: KESİNLİKLE REDDET!
+4. YANIT FORMATI:
+   Yanıtını YALNIZCA geçerli bir JSON nesnesi olarak döndür:
    {
-     "reply": "Kullanıcıya gösterilecek Türkçe açıklama veya cevap",
+     "reply": "Kullanıcıya gösterilecek Türkçe açıklama veya yetki uyarısı",
      "needsClarification": false,
      "clarificationOptions": ["Seçenek 1", "Seçenek 2"],
      "recommendedPage": {
@@ -240,7 +333,6 @@ Kullanılan para birimi: ${currency}.
      "actionPreview": { ... } | null
    }`;
 
-    // Prepare messages for OpenRouter
     const formattedMessages = [
       { role: "system" as const, content: systemPrompt },
       ...chatHistory.slice(-6).map((m) => ({
@@ -273,13 +365,14 @@ Kullanılan para birimi: ${currency}.
     }
 
     return success<AiAssistantResponse>({
-      reply: parsed.reply || "İşleminiz hazırlandı.",
+      reply: parsed.reply || "İşleminiz tamamlandı.",
       recommendedPage: parsed.recommendedPage || null,
       actionPreview: parsed.actionPreview || null,
       clarificationOptions: Array.isArray(parsed.clarificationOptions)
         ? parsed.clarificationOptions
         : [],
-      userRole: role,
+      userRole: jobTitle || role,
+      userName: name,
       allowedRoutes,
     });
   } catch (error) {
@@ -294,16 +387,28 @@ Kullanılan para birimi: ${currency}.
 
 export async function executeAiAssistantAction(
   action: AiActionPreview,
+  activeStaffId?: string | null,
 ): Promise<ActionResult<{ orderId: string; message: string }>> {
   try {
-    const auth = await resolveUserAuthContext();
+    const auth = await resolveUserAuthContext(activeStaffId);
     if (!auth) {
       return failure("Oturum süresi dolmuş. Lütfen tekrar giriş yapınız.");
     }
 
-    const { restaurantId, role, allowedRoutes, isManager, userId, staffId } = auth;
+    const { restaurantId, role, name, jobTitle, allowedRoutes, isManager, userId, staffId } = auth;
 
-    // Permission check for ordering
+    // Strict Permission check: Aşçı masaya sipariş ekleyemez
+    const isKitchenOnly =
+      !isManager &&
+      (role === "KITCHEN" ||
+        (allowedRoutes !== null &&
+          allowedRoutes.includes("/dashboard/kitchen") &&
+          !allowedRoutes.includes("/dashboard/orders")));
+
+    if (isKitchenOnly) {
+      return failure(`Sayın ${name} (${jobTitle || "Aşçı"}), masaya sipariş ekleme yetkiniz bulunmamaktadır.`);
+    }
+
     const canManageOrders =
       isManager ||
       !allowedRoutes ||
@@ -312,7 +417,7 @@ export async function executeAiAssistantAction(
       role === "WAITER";
 
     if (!canManageOrders) {
-      return failure("Sipariş alma ve masaya ürün ekleme yetkiniz bulunmamaktadır.");
+      return failure(`Sayın ${name}, sipariş alma ve masaya ürün ekleme yetkiniz bulunmamaktadır.`);
     }
 
     // Verify Table
@@ -352,7 +457,6 @@ export async function executeAiAssistantAction(
     const quantity = Math.max(1, Math.min(99, action.quantity || 1));
 
     if (openOrder) {
-      // Add items to existing order and fire to kitchen
       await addItems(orderCtx, {
         orderId: openOrder.id,
         items: [
@@ -371,7 +475,6 @@ export async function executeAiAssistantAction(
         message: `Masa ${table.label} siparişine ${quantity}x ${menuItem.name} başarıyla eklendi ve mutfağa iletildi.`,
       });
     } else {
-      // Create a brand new Dine-In order for this table
       const idempotencyKey = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const newOrder = await createOrder(orderCtx, {
         orderType: "DINE_IN",

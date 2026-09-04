@@ -4,6 +4,8 @@ import { deriveKitchenStatus } from "@/lib/kitchen";
 import { checkTableDeviceLock } from "@/lib/table-device-lock";
 import {
   findOrdersForGuest,
+  createOrder as createOrderRepo,
+  maxOrderNumber,
   type OrderWithRelations,
 } from "@/repositories/order.repository";
 import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
@@ -216,6 +218,40 @@ export const loadGuestOrderPage = async (
         primaryColor: restaurant.qrPrimaryColor || "#FF5500",
         emptyTables,
       };
+    }
+  }
+
+  // If customer opens the table QR link, ensure the table is marked as active/occupied in the system
+  if (tableId !== "preview") {
+    try {
+      const existingOpen = await prisma.order.findFirst({
+        where: {
+          restaurantId: restaurant.id,
+          tableId: table.id,
+          status: "OPEN",
+          deletedAt: null,
+        },
+      });
+      if (!existingOpen) {
+        const orderNum = (await maxOrderNumber(restaurant.id)) + 1;
+        await createOrderRepo({
+          restaurantId: restaurant.id,
+          orderNumber: orderNum,
+          idempotencyKey: `table-session-init-${table.id}-${Date.now()}`,
+          orderType: "DINE_IN",
+          tableId: table.id,
+          tableLabel: table.label,
+          customerName: null,
+          customerPhone: null,
+          customerAddress: null,
+          placedById: null,
+          placedByStaffId: null,
+          items: [],
+          note: "📱 Müşteri QR menüyü açtı (Masa Oturumu)",
+        });
+      }
+    } catch (e) {
+      console.error("Failed to initialize table session on QR open:", e);
     }
   }
 
