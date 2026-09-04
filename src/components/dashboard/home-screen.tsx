@@ -138,6 +138,26 @@ export function HomeScreen({
   const [isScrolled, setIsScrolled] = useState(false);
   const recognitionRef = useRef<any>(null);
 
+  // Kalıcı Bildirim Senkronizasyonu (Sayfa yenilendiğinde temizlenen bildirimlerin gelmemesi için)
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDismissed = () => {
+      try {
+        const stored = localStorage.getItem("adisyonex_dismissed_notifications");
+        if (stored) {
+          setDismissedNotifIds(JSON.parse(stored));
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadDismissed();
+
+    window.addEventListener("notifications-cleared", loadDismissed);
+    return () => window.removeEventListener("notifications-cleared", loadDismissed);
+  }, []);
+
   // Sayfa kaydırma dinleyicisi (Mobilde Sticky AI Bar tetikleyicisi)
   useEffect(() => {
     const handleScroll = () => {
@@ -215,60 +235,19 @@ export function HomeScreen({
   };
 
   const handleAiSubmit = (commandText?: string) => {
-    const query = (commandText ?? aiPrompt).trim().toLowerCase();
-    if (!query) return;
+    const rawQuery = (commandText ?? aiPrompt).trim();
+    if (!rawQuery) return;
+    const query = rawQuery.toLowerCase();
 
-    if (query.includes("masa") || query.includes("adisyon")) {
-      toast.success("Masalar ve adisyonlar ekranına yönlendiriliyorsunuz...");
-      router.push("/dashboard/orders");
-    } else if (
-      query.includes("mutfak") ||
-      query.includes("kot") ||
-      query.includes("hazır") ||
-      query.includes("sipariş")
-    ) {
-      toast.success("Mutfak KOT ekranına yönlendiriliyorsunuz...");
-      router.push("/dashboard/kitchen");
-    } else if (
-      query.includes("kasa") ||
-      query.includes("pos") ||
-      query.includes("tahsilat") ||
-      query.includes("ödeme")
-    ) {
-      toast.success("Hızlı Kasa / POS ekranına yönlendiriliyorsunuz...");
-      router.push("/dashboard/pos");
-    } else if (
-      query.includes("z rapor") ||
-      query.includes("rapor") ||
-      query.includes("ciro") ||
-      query.includes("analiz")
-    ) {
-      toast.success("Z Raporu ekranına yönlendiriliyorsunuz...");
-      router.push("/dashboard/z-report");
-    } else if (query.includes("menü") || query.includes("ürün") || query.includes("fiyat")) {
-      toast.success("Menü yönetimine yönlendiriliyorsunuz...");
-      router.push("/dashboard/menu");
-    } else if (query.includes("tasarım") || query.includes("qr menü")) {
-      toast.success("QR Menü tasarımına yönlendiriliyorsunuz...");
-      router.push("/dashboard/menu-design");
-    } else if (query.includes("stok") || query.includes("depo") || query.includes("hammadde")) {
-      toast.success("Stok yönetimine yönlendiriliyorsunuz...");
-      router.push("/dashboard/inventory");
-    } else if (query.includes("personel") || query.includes("çalışan") || query.includes("garson")) {
-      toast.success("Personel yönetimine yönlendiriliyorsunuz...");
-      router.push("/dashboard/staff");
-    } else if (query.includes("ayar") || query.includes("şube") || query.includes("wifi")) {
-      toast.success("Firma ve şube ayarlarına yönlendiriliyorsunuz...");
-      router.push("/dashboard/settings");
-    } else if (query.includes("müşteri") || query.includes("sadakat")) {
-      toast.success("Müşteri sadakat ekranına yönlendiriliyorsunuz...");
-      router.push("/dashboard/customers");
-    } else if (query.includes("kilit") || query.includes("kilitle")) {
+    if (query.includes("kilit") || query.includes("kilitle")) {
       setIsLockModalOpen(true);
     } else if (query.includes("bildirim")) {
       setIsNotifModalOpen(true);
     } else {
-      toast.info(`"${aiPrompt}" komutu yapay zeka asistanına iletildi.`);
+      // Akıllı Global AI Asistanına iletiyi gönderir ve pencereyi açar
+      window.dispatchEvent(
+        new CustomEvent("open-ai-assistant", { detail: { prompt: rawQuery } })
+      );
     }
 
     setAiPrompt("");
@@ -521,11 +500,15 @@ export function HomeScreen({
     });
   }, [activeAccount]);
 
+  const visibleNotifications = useMemo(() => {
+    return (stats.notifications || []).filter((n) => !dismissedNotifIds.includes(n.id));
+  }, [stats.notifications, dismissedNotifIds]);
+
   const displayBranch = operationalStats?.branchName || restaurantName;
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 pb-28 sm:pb-12 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
       {/* WORLD-CLASS MOTION DESIGN KEYFRAMES (FLUID & REFINED) */}
       <style jsx global>{`
         @keyframes sleekFadeIn {
@@ -945,12 +928,12 @@ export function HomeScreen({
                 </h2>
               </div>
               <span className="flex size-5 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black">
-                {stats.notifications.length}
+                {visibleNotifications.length}
               </span>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {stats.notifications.slice(0, 3).map((n, i) => (
+              {visibleNotifications.slice(0, 3).map((n, i) => (
                 <div
                   key={n.id || i}
                   onClick={() => setIsNotifModalOpen(true)}
@@ -1075,7 +1058,7 @@ export function HomeScreen({
         3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DIŞ LINK YOK, KİLİT YOK)
       */}
       <footer
-        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600"
+        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-16 sm:mb-0"
       >
         {/* Sol: Yatay Sistem Logosu + Slogan */}
         <div className="flex items-center gap-3">
@@ -1210,7 +1193,7 @@ export function HomeScreen({
       <HomeNotificationsModal
         isOpen={isNotifModalOpen}
         onClose={() => setIsNotifModalOpen(false)}
-        notifications={stats.notifications}
+        notifications={visibleNotifications}
       />
 
       {/* EKRAN KİLİDİ MODAL */}

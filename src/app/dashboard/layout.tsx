@@ -13,6 +13,7 @@ import { getManagerById } from "@/services/user.service"
 import { LicenseExpiredModal } from "@/components/license/license-expired-modal"
 import { GlobalEscNavigation } from "@/components/dashboard/global-esc-navigation"
 import { OfflineSyncManager } from "@/components/shared/offline-sync-manager"
+import { GlobalAiAssistant } from "@/components/dashboard/global-ai-assistant"
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,7 @@ export default async function DashboardLayout({
     <>
       <GlobalEscNavigation />
       <OfflineSyncManager />
+      <GlobalAiAssistant />
       {brandColor && (
         <style
           dangerouslySetInnerHTML={{
