@@ -142,14 +142,6 @@ export function SystemHub({
             </p>
           </div>
         </div>
-
-        {/* Geri Dön / Ana Ekran */}
-        <Link
-          href="/dashboard/home"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-2xs transition-all active:scale-95 self-start sm:self-auto"
-        >
-          <span>← Ana Ekran</span>
-        </Link>
       </header>
 
       {/* 2. SİSTEM AYARLARI BÖLÜMÜ (STANDART 6'LI GRID) */}

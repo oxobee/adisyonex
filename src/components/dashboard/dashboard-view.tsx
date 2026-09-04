@@ -19,6 +19,7 @@ import {
   UtensilsCrossedIcon,
   UtensilsIcon,
   XCircleIcon,
+  XIcon,
 } from "lucide-react";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
@@ -77,32 +78,43 @@ export function DashboardView({
           </h1>
         </div>
 
-        {/* Untitled UI Segmented Control */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-gray-100 border border-gray-200/80 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setActivePeriod("today")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none active:scale-95",
-              activePeriod === "today"
-                ? "bg-white text-gray-900 shadow-xs"
-                : "text-gray-500 hover:text-gray-900",
-            )}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Untitled UI Segmented Control */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-gray-100 border border-gray-200/80">
+            <button
+              type="button"
+              onClick={() => setActivePeriod("today")}
+              className={cn(
+                "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none active:scale-95",
+                activePeriod === "today"
+                  ? "bg-white text-gray-900 shadow-xs"
+                  : "text-gray-500 hover:text-gray-900",
+              )}
+            >
+              Bugün
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePeriod("month")}
+              className={cn(
+                "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none active:scale-95",
+                activePeriod === "month"
+                  ? "bg-white text-gray-900 shadow-xs"
+                  : "text-gray-500 hover:text-gray-900",
+              )}
+            >
+              Bu Ay
+            </button>
+          </div>
+
+          {/* Ana Ekrana Dön Butonu */}
+          <Link
+            href="/dashboard/home"
+            className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white transition-all shadow-md shadow-red-600/30 cursor-pointer select-none"
+            title="Ana Ekrana Dön"
           >
-            Bugün
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePeriod("month")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none active:scale-95",
-              activePeriod === "month"
-                ? "bg-white text-gray-900 shadow-xs"
-                : "text-gray-500 hover:text-gray-900",
-            )}
-          >
-            Bu Ay
-          </button>
+            <XIcon className="size-4.5 text-white stroke-[2.5]" />
+          </Link>
         </div>
       </header>
 

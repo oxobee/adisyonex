@@ -18,10 +18,12 @@ import {
   HeadphonesIcon,
   LockIcon,
   MapPinIcon,
+  MicIcon,
   ServerIcon,
   Settings2Icon,
   ShoppingBagIcon,
   SnowflakeIcon,
+  SparklesIcon,
   SunIcon,
   TrendingUpIcon,
   UtensilsCrossedIcon,
@@ -29,6 +31,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { SystemSettingsDTO } from "@/services/system-setting.service";
 import {
   HomeNotificationsModal,
@@ -123,6 +126,10 @@ export function HomeScreen({
   // Modals state
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+
+  // AI Command Input State
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isListening, setIsListening] = useState(false);
 
   // Active Account State (for fast switching and dynamic permission filtering)
   const initialAccount: StaffAccount = useMemo(
@@ -374,7 +381,7 @@ export function HomeScreen({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
       {/* WORLD-CLASS MOTION DESIGN KEYFRAMES (FLUID & REFINED) */}
       <style jsx global>{`
         @keyframes sleekFadeIn {
@@ -390,17 +397,32 @@ export function HomeScreen({
         .anim-sleek {
           animation: sleekFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
+        @keyframes gradientBorderAnimation {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        .animate-gradient-border {
+          background-size: 200% 200%;
+          animation: gradientBorderAnimation 4s ease infinite;
+        }
       `}</style>
 
       {/* 
-        1. ÜST HEADER ALANI (BÜYÜK LOGO + MOBİLDE ADI/GÖREVİ & KİLİT)
+        1. ÜST HEADER ALANI (STATİK, TAŞMAYAN VE MOBİL UYUMLU)
       */}
       <header className="w-full flex flex-col md:flex-row md:items-center justify-between gap-2.5 px-1 py-1">
         {/* Sol: Logo + Alt Slogan */}
-        <div className="flex items-center justify-between md:justify-start gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between md:justify-start gap-2 sm:gap-3 w-full md:w-auto min-w-0">
+          <div className="flex items-center gap-2 min-w-0 shrink">
             {settings.logoUrl || settings.logoDarkUrl ? (
-              <div className="relative h-10 sm:h-12 w-48 sm:w-56">
+              <div className="relative h-8 sm:h-10 md:h-12 w-32 sm:w-44 md:w-56 shrink-0">
                 <Image
                   src={settings.logoUrl || settings.logoDarkUrl || ""}
                   alt="Adisyoon"
@@ -410,11 +432,11 @@ export function HomeScreen({
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-500/25">
-                  <UtensilsCrossedIcon className="size-5 sm:size-6" />
+              <div className="flex items-center gap-2.5 shrink-0">
+                <div className="flex size-9 sm:size-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-500/25">
+                  <UtensilsCrossedIcon className="size-4.5 sm:size-6" />
                 </div>
-                <span className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900">
+                <span className="text-xl sm:text-3xl font-black tracking-tight text-gray-900">
                   {settings.systemName || "AdisyonEx"}
                 </span>
               </div>
@@ -422,7 +444,7 @@ export function HomeScreen({
           </div>
 
           {/* Mobilde sağ üst: Profil Adı + Görevi + Ekranı Kilitle */}
-          <div className="flex md:hidden items-center gap-1.5">
+          <div className="flex md:hidden items-center gap-1.5 shrink-0">
             <StaffAccountMenu
               initialAccount={initialAccount}
               onActiveAccountChange={setActiveAccount}
@@ -432,10 +454,10 @@ export function HomeScreen({
             <button
               type="button"
               onClick={() => setIsLockModalOpen(true)}
-              className="flex size-8 items-center justify-center rounded-full bg-slate-900 text-amber-400 shadow-xs active:scale-90 transition-all cursor-pointer"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-amber-400 shadow-xs active:scale-90 transition-all cursor-pointer"
               title="Ekranı Kilitle"
             >
-              <LockIcon className="size-3.5" />
+              <LockIcon className="size-3.5 shrink-0" />
             </button>
           </div>
         </div>
@@ -563,6 +585,47 @@ export function HomeScreen({
               <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate max-w-[120px]">
                 {stats.weather.cityName}
               </span>
+            </div>
+          </div>
+
+          {/* YAPAY ZEKA DESTEKLİ BORDER ANİMASYONLU INPUT ALANI */}
+          <div className="anim-sleek relative p-[1.5px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs group transition-all" style={{ animationDelay: "20ms" }}>
+            {/* Canlı Gradient Animasyonlu Border */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 animate-gradient-border opacity-85 group-hover:opacity-100 transition-opacity" />
+
+            <div className="relative flex items-center gap-2 bg-white rounded-[calc(1rem-1px)] sm:rounded-[calc(1.5rem-1px)] px-3 py-2 sm:py-2.5">
+              <div className="flex size-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600 shrink-0">
+                <SparklesIcon className="size-4 text-purple-600" />
+              </div>
+
+              <input
+                type="text"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Yapay zeka asistanına komut verin..."
+                className="w-full bg-transparent border-0 outline-none text-xs sm:text-sm font-semibold text-gray-800 placeholder:text-gray-400 min-w-0"
+              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsListening((prev) => !prev);
+                  if (!isListening) {
+                    toast.info("Mikrofon dinleme aktif (Yapay zeka hazır)");
+                  } else {
+                    toast.info("Mikrofon kapatıldı");
+                  }
+                }}
+                className={cn(
+                  "flex size-7.5 sm:size-8 items-center justify-center rounded-xl transition-all active:scale-90 shrink-0 cursor-pointer shadow-2xs",
+                  isListening
+                    ? "bg-rose-500 text-white animate-pulse"
+                    : "bg-purple-50 hover:bg-purple-100 text-purple-600",
+                )}
+                title={isListening ? "Dinlemeyi Durdur" : "Sesli Komut Ver"}
+              >
+                <MicIcon className="size-3.5 sm:size-4" />
+              </button>
             </div>
           </div>
 
@@ -795,8 +858,7 @@ export function HomeScreen({
         3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DIŞ LINK YOK, KİLİT YOK)
       */}
       <footer
-        className="anim-sleek w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600"
-        style={{ animationDelay: "280ms" }}
+        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600"
       >
         {/* Sol: Yatay Sistem Logosu + Slogan */}
         <div className="flex items-center gap-3">

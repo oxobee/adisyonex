@@ -198,38 +198,15 @@ export function DashboardHeaderNav({
                 </div>
               )}
             </Link>
-
-            {/* SİSTEM LOGOSUNUN YANINDA ZARİF VE DİKKAT ÇEKİCİ ONLINE ROZETİ */}
-            <div
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-black tracking-wider uppercase shadow-2xs backdrop-blur-md transition-all select-none",
-                isOnline
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 ring-2 ring-emerald-500/10"
-                  : "bg-rose-50 text-rose-700 border-rose-200 ring-2 ring-rose-500/10",
-              )}
-              title={isOnline ? "Sistem Online & Senkronize" : "İnternet Bağlantısı Yok"}
-            >
-              <span className="relative flex size-2">
-                {isOnline && (
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                )}
-                <span
-                  className={cn(
-                    "relative inline-flex rounded-full size-2 shadow-xs",
-                    isOnline ? "bg-emerald-500" : "bg-rose-500",
-                  )}
-                />
-              </span>
-              <span>{isOnline ? "Online" : "Offline"}</span>
-            </div>
           </div>
 
-          {/* ORTA BÖLÜM */}
+          {/* ORTA BÖLÜM: Sayfa Başlığı ve Zarif Navigasyon Rozeti */}
           {!isMainScreen && (
-            <div className="hidden md:flex items-center justify-center flex-1 min-w-0 pointer-events-none">
-              <span className="text-xs font-bold text-muted-foreground/85 tracking-tight truncate px-3 py-1 rounded-full bg-muted/40 border border-border/40">
-                {currentTitle}
-              </span>
+            <div className="flex items-center justify-center flex-1 min-w-0">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gray-50 border border-gray-200/90 text-xs font-black text-gray-800 shadow-2xs">
+                <span className="size-1.5 rounded-full bg-primary" />
+                <span className="truncate">{currentTitle}</span>
+              </div>
             </div>
           )}
 
@@ -338,7 +315,7 @@ export function DashboardHeaderNav({
                         <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform">
                           <CircleUserRoundIcon className="size-4" />
                         </div>
-                        <span>Hesap ve Profil Ayarları</span>
+                        <span>Hesap Ayarları</span>
                       </button>
 
                       <button
@@ -378,15 +355,22 @@ export function DashboardHeaderNav({
           ) : !isMainScreen ? (
             <div className="flex items-center gap-2 shrink-0 ml-auto">
               {/* Kırmızı Buton ve Bembeyaz Çarpı İkonu */}
-              <Link
-                href="/dashboard/home"
-                prefetch={true}
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/dashboard/home");
+                  setTimeout(() => {
+                    if (window.location.pathname !== "/dashboard/home") {
+                      window.location.href = "/dashboard/home";
+                    }
+                  }, 120);
+                }}
                 className="flex size-9 sm:size-10 items-center justify-center rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white transition-all shadow-md shadow-red-600/30 cursor-pointer select-none"
                 title="Ana Ekrana Dön"
                 aria-label="Ana Ekrana Dön"
               >
                 <XIcon className="size-4.5 sm:size-5 text-white stroke-[2.5]" />
-              </Link>
+              </button>
             </div>
           ) : null}
         </div>

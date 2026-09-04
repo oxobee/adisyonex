@@ -171,3 +171,47 @@ export async function updateStaffSelfProfileAction(data: {
     return failure(e instanceof Error ? e.message : "Profil güncellenemedi");
   }
 }
+
+export interface TerminalStaffOption {
+  id: string;
+  name: string;
+  role: string;
+  jobTitle: string | null;
+  employeeCode: string;
+  photoUrl: string | null;
+}
+
+export async function getRestaurantStaffListForTerminalAction(): Promise<
+  ActionResult<TerminalStaffOption[]>
+> {
+  try {
+    const managerCtx = await getManagerContextOrNull();
+    const staffCtx = await getStaffContextOrNull();
+    const restaurantId = staffCtx?.restaurantId || managerCtx?.restaurantId;
+    if (!restaurantId) {
+      return failure("Restoran oturumu bulunamadı");
+    }
+
+    const staffList = await prisma.staff.findMany({
+      where: {
+        restaurantId,
+        deletedAt: null,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        jobTitle: true,
+        employeeCode: true,
+        photoUrl: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return success(staffList);
+  } catch (e) {
+    return failure(e instanceof Error ? e.message : "Personel listesi alınamadı");
+  }
+}
+
