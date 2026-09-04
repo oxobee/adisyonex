@@ -148,10 +148,10 @@ export function TableActionMenu({
       aria-label={`${table.label} İşlemleri`}
       className={cn(
         "relative flex w-full flex-col bg-card text-card-foreground border-border shadow-2xl",
-        // Desktop: Right slide-over drawer
-        "sm:w-[420px] sm:h-full sm:border-l sm:max-h-none sm:rounded-none",
+        // Desktop: Left slide-over drawer
+        "sm:w-[420px] sm:h-full sm:border-r sm:border-l-0 sm:max-h-none sm:rounded-none sm:shadow-[12px_0_35px_rgba(0,0,0,0.12)]",
         // Mobile: Bottom sheet
-        "max-h-[88vh] rounded-t-[32px] border-t overflow-hidden",
+        "max-h-[88vh] rounded-t-[32px] border-t sm:border-t-0 overflow-hidden",
         "animate-in fade-in duration-300",
       )}
     >
