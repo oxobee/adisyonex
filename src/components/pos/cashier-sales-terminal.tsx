@@ -548,11 +548,11 @@ export function CashierSalesTerminal({
                         </div>
                       )}
 
-                      {/* Üst Alan: Beyaz Arka Planlı & Köşeleri Yuvarlatılmış Görsel Alanı (Tam Olarak Kullanıcı Görseli 1 Gibi) */}
-                      <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 shadow-inner border border-white/30">
+                      {/* Üst Alan: Beyaz Arka Planlı & Köşeleri Yuvarlatılmış Görsel Alanı (Gölgesiz net görünüm) */}
+                      <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 border border-white/40">
                         {/* Kategori Rozeti (Üst Sol Pill) */}
                         <div className="absolute top-2 left-2 z-10">
-                          <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20 shadow-xs">
+                          <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
                             {categoryMap.get(item.categoryId) || "Menü"}
                           </span>
                         </div>
@@ -562,13 +562,13 @@ export function CashierSalesTerminal({
                             <img
                               src={primaryImage}
                               alt={item.name}
-                              className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
                             />
                           </div>
                         ) : (
                           <div className="size-full flex items-center justify-center bg-gray-50">
                             {/* 3D Tactile Sphere Icon */}
-                            <div className="size-16 rounded-full bg-slate-800 text-white shadow-md flex items-center justify-center transition-transform group-hover:scale-110">
+                            <div className="size-16 rounded-full bg-slate-800 text-white flex items-center justify-center transition-transform group-hover:scale-110">
                               <UtensilsCrossedIcon className="size-8 text-white/90" />
                             </div>
                           </div>
@@ -615,20 +615,29 @@ export function CashierSalesTerminal({
         </section>
 
         {/* SAĞ ALAN: ADİSYON TİCKET + FİNANSAL HESAPLAMA + ÖDEME & PARAÜSTÜ */}
-        <aside className="w-full lg:w-[420px] xl:w-[480px] shrink-0 flex flex-col bg-white overflow-hidden shadow-lg border-l border-gray-200">
-          {/* Adisyon Başlığı & Masaya Ekleme Seçeneği */}
-          <div className="p-3 sm:p-3.5 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
-            <div className="flex items-center gap-2">
-              <div className="size-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
-                <ReceiptIcon className="size-4" />
+        <aside className="w-full lg:w-[420px] xl:w-[470px] shrink-0 flex flex-col bg-[#f8fafc] border-l border-slate-200 overflow-hidden shadow-2xl">
+          {/* Adisyon Başlığı & Masa Seçimi */}
+          <div className="p-3.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center border border-slate-800 shadow-xs">
+                <ReceiptIcon className="size-4.5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs sm:text-sm font-black text-gray-900">
-                  Adisyon Fişi ({cart.reduce((s, l) => s + l.quantity, 0)} Kalem)
-                </span>
-                {selectedTableId && (
-                  <span className="text-[10px] font-black text-blue-600">
-                    🪑 Seçili: {tables.find(t => t.id === selectedTableId)?.label || "Masa"}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black text-slate-900 tracking-tight">
+                    Adisyon Fişi
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 border border-slate-200">
+                    {cart.reduce((s, l) => s + l.quantity, 0)} Kalem
+                  </span>
+                </div>
+                {selectedTableId ? (
+                  <span className="text-[11px] font-bold text-blue-600 flex items-center gap-1">
+                    🪑 {tables.find(t => t.id === selectedTableId)?.label || "Masa"} Seçildi
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-medium text-slate-500">
+                    Hızlı Tezgah Satışı
                   </span>
                 )}
               </div>
@@ -640,13 +649,13 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setIsTableModalOpen(true)}
                 className={cn(
-                  "px-2.5 py-1.5 rounded-xl text-[11px] font-black transition-all border flex items-center gap-1 cursor-pointer select-none",
+                  "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer shadow-xs select-none",
                   selectedTableId
-                    ? "bg-blue-50 text-blue-800 border-blue-300 shadow-xs"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
+                    ? "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                    : "bg-white hover:bg-slate-50 text-slate-700 border-slate-300"
                 )}
               >
-                <span>🪑 {selectedTableId ? tables.find(t => t.id === selectedTableId)?.label : "Masaya Ekle"}</span>
+                <span>🪑 {selectedTableId ? tables.find(t => t.id === selectedTableId)?.label : "Masa Seç"}</span>
               </button>
 
               {selectedTableId && (
@@ -654,55 +663,53 @@ export function CashierSalesTerminal({
                   type="button"
                   onClick={() => setSelectedTableId(null)}
                   title="Masayı Kaldır (Hızlı Satışa Çevir)"
-                  className="size-6 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"
+                  className="size-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center border border-transparent hover:border-red-200 transition-colors"
                 >
-                  <XIcon className="size-3.5" />
+                  <XIcon className="size-4" />
                 </button>
               )}
-
-              <span className="hidden sm:inline-flex text-[10px] font-black text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                ⚡ Hızlı Satış
-              </span>
             </div>
           </div>
 
           {/* Sepet Ürün Satırları (Scrollable) */}
-          <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 flex flex-col gap-2 min-h-[140px] max-h-[30vh] lg:max-h-[none]">
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 min-h-[140px] max-h-[30vh] lg:max-h-[none]">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center my-auto py-8 text-center text-gray-400">
-                <ReceiptIcon className="size-10 stroke-[1.5] mb-2 text-gray-300" />
-                <p className="text-xs sm:text-sm font-bold text-gray-700">Sepetiniz Boş</p>
-                <span className="text-[11px] text-gray-400 max-w-[200px]">
-                  Sol taraftaki menüden ürün seçerek hızlı satışa başlayın.
+              <div className="flex flex-col items-center justify-center my-auto py-10 text-center text-slate-400">
+                <div className="size-16 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center mb-3 text-slate-300">
+                  <ReceiptIcon className="size-8 stroke-[1.5]" />
+                </div>
+                <p className="text-sm font-bold text-slate-700">Sepetiniz Henüz Boş</p>
+                <span className="text-xs text-slate-400 max-w-[220px] mt-1">
+                  Menüden ürün ekleyerek hızlı satışa veya adisyona başlayabilirsiniz.
                 </span>
               </div>
             ) : (
               cart.map((line) => (
                 <div
                   key={line.key}
-                  className="flex items-center justify-between p-2.5 rounded-2xl border border-gray-200/90 bg-white shadow-2xs hover:border-gray-300 transition-all gap-2"
+                  className="flex items-center justify-between p-2.5 sm:p-3 rounded-2xl border border-slate-200 bg-white shadow-2xs hover:border-slate-300 transition-all gap-2.5"
                 >
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs sm:text-sm font-black text-gray-900 truncate">
+                      <span className="text-xs sm:text-sm font-black text-slate-800 truncate">
                         {line.name}
                       </span>
                       {line.variantName && (
-                        <span className="text-[10px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
                           {line.variantName}
                         </span>
                       )}
                       {line.isComp && (
-                        <span className="text-[10px] font-black text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded-md border border-purple-200">
+                        <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-md border border-purple-200">
                           İkram
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 font-semibold font-mono">
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 font-medium font-mono">
                       <span>Birim: {formatCurrency(line.unitPrice)}</span>
                       {line.modifiers.length > 0 && (
-                        <span className="text-gray-400 font-sans">
+                        <span className="text-slate-400 font-sans truncate">
                           +{line.modifiers.map((m) => m.name).join(", ")}
                         </span>
                       )}
@@ -710,37 +717,37 @@ export function CashierSalesTerminal({
                   </div>
 
                   {/* Adet ve Tutar Kontrolleri */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-200">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
                       <button
                         type="button"
                         onClick={() => changeQty(line.key, -1)}
-                        className="size-6 sm:size-7 flex items-center justify-center rounded-lg bg-white hover:bg-gray-200 text-gray-800 shadow-2xs active:scale-95 cursor-pointer font-bold"
+                        className="size-6 sm:size-7 flex items-center justify-center rounded-lg bg-white hover:bg-slate-200 text-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold transition-all"
                       >
                         <MinusIcon className="size-3" />
                       </button>
 
-                      <span className="w-6 sm:w-7 text-center text-xs sm:text-sm font-black tabular-nums text-gray-900 font-mono">
+                      <span className="w-6 sm:w-7 text-center text-xs sm:text-sm font-black tabular-nums text-slate-900 font-mono">
                         {line.quantity}
                       </span>
 
                       <button
                         type="button"
                         onClick={() => changeQty(line.key, 1)}
-                        className="size-6 sm:size-7 flex items-center justify-center rounded-lg bg-white hover:bg-gray-200 text-gray-800 shadow-2xs active:scale-95 cursor-pointer font-bold"
+                        className="size-6 sm:size-7 flex items-center justify-center rounded-lg bg-white hover:bg-slate-200 text-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold transition-all"
                       >
                         <PlusIcon className="size-3" />
                       </button>
                     </div>
 
-                    <span className="w-18 text-right text-xs sm:text-sm font-black tabular-nums text-gray-900 font-mono pl-1">
+                    <span className="w-18 text-right text-xs sm:text-sm font-black tabular-nums text-slate-900 font-mono">
                       {line.isComp ? "0.00 ₺" : formatCurrency(line.unitPrice * line.quantity)}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => removeLine(line.key)}
-                      className="size-6 sm:size-7 ml-0.5 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      className="size-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                     >
                       <XIcon className="size-3.5" />
                     </button>
@@ -751,21 +758,21 @@ export function CashierSalesTerminal({
           </div>
 
           {/* İskonto & İndirim Çubuğu */}
-          <div className="px-3 py-2 bg-gray-50 border-t border-b border-gray-200 flex items-center justify-between shrink-0">
+          <div className="px-3.5 py-2 bg-slate-100/90 border-t border-b border-slate-200 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1.5">
-              <TagIcon className="size-3.5 text-gray-500" />
-              <span className="text-xs font-bold text-gray-700">İndirim / İskonto:</span>
+              <TagIcon className="size-3.5 text-slate-600" />
+              <span className="text-xs font-bold text-slate-700">İndirim / İskonto:</span>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setDiscount({ type: "NONE", value: 0 })}
                 className={cn(
-                  "px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer",
+                  "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "NONE"
                     ? "bg-slate-800 text-white border-slate-800"
-                    : "bg-white text-gray-600 border-gray-200"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
                 Sıfırla
@@ -774,10 +781,10 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setDiscount({ type: "PERCENT", value: 10 })}
                 className={cn(
-                  "px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer",
+                  "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "PERCENT" && discount.value === 10
-                    ? "bg-purple-600 text-white border-purple-600"
-                    : "bg-white text-gray-600 border-gray-200"
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
                 %10
@@ -786,10 +793,10 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setDiscount({ type: "PERCENT", value: 20 })}
                 className={cn(
-                  "px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer",
+                  "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "PERCENT" && discount.value === 20
-                    ? "bg-purple-600 text-white border-purple-600"
-                    : "bg-white text-gray-600 border-gray-200"
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
                 %20
@@ -803,10 +810,10 @@ export function CashierSalesTerminal({
                   }
                 }}
                 className={cn(
-                  "px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer",
+                  "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "FLAT"
-                    ? "bg-purple-600 text-white border-purple-600"
-                    : "bg-white text-gray-600 border-gray-200"
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
                 Özel ₺
@@ -814,40 +821,40 @@ export function CashierSalesTerminal({
             </div>
           </div>
 
-          {/* 3D Recessed LCD Toplam Paneli */}
-          <div className="p-3 sm:p-3.5 bg-slate-950 text-white border-t border-slate-800 shadow-[inset_0_3px_6px_rgba(0,0,0,0.5)] shrink-0">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-semibold mb-1">
+          {/* Şık Modern Hesap Özeti (Ferah Slate/Dark Design) */}
+          <div className="p-4 bg-slate-900 text-white border-t border-slate-800 shadow-md shrink-0">
+            <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-1.5">
               <span>Ara Toplam: {formatCurrency(bill.subtotal)}</span>
               {bill.discountTotal > 0 && (
-                <span className="text-amber-400 font-bold">
+                <span className="text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
                   İndirim: -{formatCurrency(bill.discountTotal)}
                 </span>
               )}
               <span>KDV: {formatCurrency(bill.taxTotal)}</span>
             </div>
 
-            <div className="flex items-baseline justify-between pt-1 border-t border-slate-800">
-              <span className="text-xs uppercase tracking-widest font-black text-slate-400">
+            <div className="flex items-baseline justify-between pt-2 border-t border-slate-800">
+              <span className="text-xs uppercase tracking-wider font-extrabold text-slate-300">
                 Ödenecek Tutar:
               </span>
-              <span className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight tabular-nums drop-shadow-[0_2px_8px_rgba(52,211,153,0.4)] font-mono">
+              <span className="text-3xl font-black text-emerald-400 tracking-tight tabular-nums drop-shadow-sm font-mono">
                 {formatCurrency(bill.grandTotal)}
               </span>
             </div>
           </div>
 
           {/* 3. ÖDEME YÖNTEMLERİ VE PARAÜSTÜ MODÜLÜ */}
-          <div className="p-3 sm:p-3.5 bg-white border-t border-gray-200 flex flex-col gap-3 shrink-0">
-            {/* Ödeme Türü Seçici Sekmeler */}
-            <div className="grid grid-cols-4 gap-1.5 p-1 bg-gray-100 rounded-xl border border-gray-200 shadow-inner">
+          <div className="p-3.5 bg-white border-t border-slate-200 flex flex-col gap-3 shrink-0">
+            {/* Ödeme Türü Seçici Sekmeler (Modern Segmented Control) */}
+            <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
               <button
                 type="button"
                 onClick={() => setPaymentMethod("CASH")}
                 className={cn(
-                  "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer",
+                  "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "CASH"
-                    ? "bg-white text-emerald-700 shadow-sm border border-gray-200/80"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200/60"
+                    : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <BanknoteIcon className="size-3.5" />
@@ -858,10 +865,10 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setPaymentMethod("CARD")}
                 className={cn(
-                  "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer",
+                  "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "CARD"
-                    ? "bg-white text-blue-700 shadow-sm border border-gray-200/80"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/60"
+                    : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <CreditCardIcon className="size-3.5" />
@@ -872,10 +879,10 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setPaymentMethod("MEAL_VOUCHER")}
                 className={cn(
-                  "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer",
+                  "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "MEAL_VOUCHER"
-                    ? "bg-white text-amber-700 shadow-sm border border-gray-200/80"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-amber-700 shadow-sm border border-slate-200/60"
+                    : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <WalletIcon className="size-3.5" />
@@ -886,10 +893,10 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setPaymentMethod("SPLIT")}
                 className={cn(
-                  "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer",
+                  "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "SPLIT"
-                    ? "bg-white text-purple-700 shadow-sm border border-gray-200/80"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-purple-700 shadow-sm border border-slate-200/60"
+                    : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <PercentIcon className="size-3.5" />
@@ -897,15 +904,15 @@ export function CashierSalesTerminal({
               </button>
             </div>
 
-            {/* A) NAKİT SEÇİLİYSE: 3D HIZLI BANKNOTLAR + 3D GÖMÜLÜ LCD PANEL + 3D TACTILE NUMPAD */}
+            {/* A) NAKİT SEÇİLİYSE */}
             {paymentMethod === "CASH" && (
               <div className="flex flex-col gap-2.5">
-                {/* 3D Dokunsal Banknot Tuşları */}
+                {/* Hızlı Banknot Tuşları */}
                 <div className="grid grid-cols-5 gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleNumpad("EXACT")}
-                    className="py-2 rounded-xl bg-slate-900 text-white font-black text-xs border-t border-t-white/30 border-b-[3px] border-b-black shadow-md hover:bg-slate-800 active:translate-y-0.5 active:border-b transition-all cursor-pointer select-none"
+                    className="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-xs active:scale-95 transition-all cursor-pointer select-none"
                   >
                     Tam
                   </button>
@@ -914,19 +921,19 @@ export function CashierSalesTerminal({
                       key={amt}
                       type="button"
                       onClick={() => handleQuickBanknote(amt)}
-                      className="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border-t border-t-white/80 border-b-[3px] border-b-slate-300 shadow-xs active:translate-y-0.5 active:border-b transition-all cursor-pointer select-none font-mono"
+                      className="py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-200 shadow-2xs active:scale-95 transition-all cursor-pointer select-none font-mono"
                     >
                       {amt} ₺
                     </button>
                   ))}
                 </div>
 
-                {/* 3D Gömülü LCD Alınan Nakit ve Paraüstü / Kalan Tutar Kutuları (Matching Image 2) */}
+                {/* Alınan Nakit ve Kalan / Para Üstü Kutuları */}
                 <div className="grid grid-cols-2 gap-2">
                   {/* ALINAN NAKİT KUTUSU */}
-                  <div className="flex flex-col justify-center p-2.5 rounded-2xl bg-white border border-gray-200/90 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]">
-                    <span className="text-[10px] uppercase font-black text-gray-500 tracking-wider">
-                      ALINAN NAKİT:
+                  <div className="flex flex-col justify-center px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                      ALINAN NAKİT
                     </span>
                     <input
                       type="text"
@@ -934,25 +941,25 @@ export function CashierSalesTerminal({
                       value={cashTenderedStr}
                       onChange={(e) => setCashTenderedStr(e.target.value)}
                       placeholder="0.00 ₺"
-                      className="text-base sm:text-lg font-black text-gray-900 bg-transparent focus:outline-hidden font-mono tracking-tight"
+                      className="text-lg font-black text-slate-900 bg-transparent focus:outline-hidden font-mono tracking-tight"
                     />
                   </div>
 
-                  {/* KALAN TUTAR / PARA ÜSTÜ KUTUSU */}
+                  {/* PARA ÜSTÜ / KALAN TUTAR */}
                   <div
                     className={cn(
-                      "flex flex-col justify-center p-2.5 rounded-2xl border transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]",
+                      "flex flex-col justify-center px-3.5 py-2 rounded-2xl border transition-all shadow-2xs",
                       cashTendered >= bill.grandTotal && bill.grandTotal > 0
-                        ? "bg-emerald-50/80 border-emerald-400 text-emerald-900"
-                        : "bg-amber-50/90 border-amber-300 text-amber-950"
+                        ? "bg-emerald-50 border-emerald-300 text-emerald-950"
+                        : "bg-amber-50 border-amber-300 text-amber-950"
                     )}
                   >
-                    <span className="text-[10px] uppercase font-black tracking-wider">
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
                       {cashTendered >= bill.grandTotal && bill.grandTotal > 0
-                        ? "PARA ÜSTÜ:"
-                        : "KALAN TUTAR:"}
+                        ? "PARA ÜSTÜ"
+                        : "KALAN TUTAR"}
                     </span>
-                    <span className="text-base sm:text-lg font-black tabular-nums font-mono tracking-tight">
+                    <span className="text-lg font-black tabular-nums font-mono tracking-tight">
                       {cashTendered >= bill.grandTotal && bill.grandTotal > 0
                         ? formatCurrency(changeDue)
                         : formatCurrency(cashRemaining)}
@@ -960,14 +967,14 @@ export function CashierSalesTerminal({
                   </div>
                 </div>
 
-                {/* 3D Tactile POS Numpad */}
+                {/* Dokunsal POS Numpad */}
                 <div className="grid grid-cols-6 gap-1.5 text-xs">
                   {["1", "2", "3", "4", "5", "6"].map((n) => (
                     <button
                       key={n}
                       type="button"
                       onClick={() => handleNumpad(n)}
-                      className="py-2 sm:py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold border-t border-t-white border-x border-gray-200 border-b-[3px] border-b-gray-300 shadow-xs active:translate-y-0.5 active:border-b active:shadow-inner transition-all select-none cursor-pointer font-mono text-sm"
+                      className="py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-bold border border-slate-200 shadow-2xs active:scale-95 transition-all select-none cursor-pointer font-mono text-sm"
                     >
                       {n}
                     </button>
@@ -978,10 +985,10 @@ export function CashierSalesTerminal({
                       type="button"
                       onClick={() => handleNumpad(n)}
                       className={cn(
-                        "py-2 sm:py-2.5 rounded-xl font-bold border-t border-x border-b-[3px] shadow-xs active:translate-y-0.5 active:border-b active:shadow-inner transition-all select-none cursor-pointer font-mono text-sm",
+                        "py-2.5 rounded-xl font-bold border shadow-2xs active:scale-95 transition-all select-none cursor-pointer font-mono text-sm",
                         n === "BACK"
-                          ? "bg-red-50 text-red-700 border-t-red-200 border-x-red-200 border-b-red-300 hover:bg-red-100"
-                          : "bg-gray-50 hover:bg-gray-100 text-gray-900 border-t-white border-gray-200 border-b-gray-300"
+                          ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                          : "bg-white hover:bg-slate-50 text-slate-900 border-slate-200"
                       )}
                     >
                       {n === "BACK" ? "⌫" : n}
@@ -993,11 +1000,11 @@ export function CashierSalesTerminal({
 
             {/* B) KREDİ KARTI SEÇİLİYSE */}
             {paymentMethod === "CARD" && (
-              <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 flex items-center gap-3">
+              <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-950 flex items-center gap-3">
                 <CreditCardIcon className="size-6 text-blue-600 shrink-0" />
                 <div className="flex flex-col">
                   <span className="text-xs font-black">Banka / Kredi Kartı POS Tahsilatı</span>
-                  <span className="text-[11px] text-blue-700">
+                  <span className="text-[11px] text-blue-700 font-medium">
                     POS cihazından {formatCurrency(bill.grandTotal)} çekim yapıp satışı onaylayın.
                   </span>
                 </div>
@@ -1007,7 +1014,7 @@ export function CashierSalesTerminal({
             {/* C) YEMEK ÇEKİ SEÇİLİYSE */}
             {paymentMethod === "MEAL_VOUCHER" && (
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-bold text-gray-600">Yemek Kartı / Çeki Seçin:</span>
+                <span className="text-[11px] font-bold text-slate-600">Yemek Kartı / Çeki Seçin:</span>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                   {MEAL_VOUCHERS.map((v) => (
                     <button
@@ -1015,10 +1022,10 @@ export function CashierSalesTerminal({
                       type="button"
                       onClick={() => setSelectedMealVoucher(v.name)}
                       className={cn(
-                        "py-1.5 px-1 rounded-xl text-[10px] font-black border transition-all flex flex-col items-center justify-center cursor-pointer",
+                        "py-2 px-1 rounded-xl text-[10px] font-black border transition-all flex flex-col items-center justify-center cursor-pointer",
                         selectedMealVoucher === v.name
-                          ? `${v.bg} ${v.border} ${v.color} shadow-sm ring-2 ring-primary/40`
-                          : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                          ? `${v.bg} ${v.border} ${v.color} shadow-xs ring-2 ring-primary/40`
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                       )}
                     >
                       <span>{v.name}</span>
@@ -1030,13 +1037,13 @@ export function CashierSalesTerminal({
 
             {/* D) PARÇALI ÖDEME SEÇİLİYSE */}
             {paymentMethod === "SPLIT" && (
-              <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-purple-50/60 border border-purple-200">
+              <div className="flex flex-col gap-2 p-3 rounded-2xl bg-purple-50/60 border border-purple-200">
                 <span className="text-[11px] font-bold text-purple-900">
                   Nakit ve Kredi Kartı Bölüştürme:
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] font-bold text-gray-500">Nakit Tutar:</label>
+                    <label className="text-[10px] font-bold text-slate-500">Nakit Tutar:</label>
                     <input
                       type="number"
                       value={splitCashStr}
@@ -1047,36 +1054,33 @@ export function CashierSalesTerminal({
                         setSplitCardStr(String(Math.max(0, bill.grandTotal - num)));
                       }}
                       placeholder="0"
-                      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-bold"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-500">Kart Tutar:</label>
+                    <label className="text-[10px] font-bold text-slate-500">Kart Tutar:</label>
                     <input
                       type="number"
                       value={splitCardStr}
                       onChange={(e) => setSplitCardStr(e.target.value)}
                       placeholder="0"
-                      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-bold"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono"
                     />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* BÜYÜK 3D TACTILE 'Siparişi Tamamla' BUTONU */}
+            {/* BÜYÜK MODERN 'Siparişi Tamamla' BUTONU */}
             <button
               type="button"
               onClick={handleCompleteSale}
               disabled={cart.length === 0 || submitSale.isPending}
               className={cn(
-                "w-full py-3.5 sm:py-4 px-4 rounded-2xl font-black text-sm sm:text-base text-white tracking-wide transition-all select-none cursor-pointer",
-                "bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600",
-                "border-t border-t-emerald-300/80 border-x border-emerald-600",
-                "border-b-[4px] border-b-emerald-950",
-                "shadow-[0_12px_24px_-4px_rgba(16,185,129,0.4),inset_0_1.5px_1px_rgba(255,255,255,0.6)]",
-                "hover:-translate-y-0.5 hover:shadow-xl hover:brightness-105",
-                "active:translate-y-1 active:scale-[0.985] active:border-b-[2px] active:shadow-md",
+                "w-full py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base text-white tracking-wide transition-all select-none cursor-pointer",
+                "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700",
+                "shadow-lg shadow-emerald-600/25",
+                "active:scale-[0.99] transition-transform",
                 "disabled:opacity-50 disabled:pointer-events-none",
                 "flex items-center justify-center gap-2"
               )}
