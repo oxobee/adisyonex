@@ -13,9 +13,9 @@ const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 1
 const money = (n: number): string => n.toFixed(2);
 
 const TYPE_LABEL: Record<string, string> = {
-  DINE_IN: "Masa",
-  TAKEAWAY: "Gel-Al",
-  DELIVERY: "Paket",
+  DINE_IN: "Masada Servis",
+  TAKEAWAY: "Gel-Al / Paket",
+  DELIVERY: "Paket Servis / Kurye",
 };
 
 const unitPrice = (line: OrderLineDTO): number =>

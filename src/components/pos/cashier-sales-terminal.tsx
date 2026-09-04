@@ -25,6 +25,9 @@ import {
   UtensilsCrossedIcon,
   WalletIcon,
   XIcon,
+  ArmchairIcon,
+  ShoppingBagIcon,
+  BikeIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,7 +45,7 @@ import { ItemConfigDialog } from "./item-config-dialog";
 import { toBillLine, type CartLine } from "./types";
 import { useOrderCart } from "./use-order-cart";
 
-import type { OrderDTO } from "@/types/order";
+import type { OrderDTO, OrderType } from "@/types/order";
 
 export interface CashierSalesTerminalProps {
   readonly menu: MenuDTO;
@@ -80,9 +83,10 @@ export function CashierSalesTerminal({
   restaurantName = "Adisyoon",
 }: CashierSalesTerminalProps) {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [serviceType, setServiceType] = useState<OrderType>("TAKEAWAY");
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const router = useRouter();
-  const orderCart = useOrderCart();
+  const orderCart = useOrderCart("pos_cashier_cart_persist");
   const { cart, quickAdd, addLine, changeQty, removeLine, toggleComp, replaceAll, clear } = orderCart;
 
   // Search & Category Filtering
@@ -119,6 +123,7 @@ export function CashierSalesTerminal({
     tenderedAmount: number;
     changeAmount: number;
     paymentModeLabel: string;
+    serviceTypeLabel?: string;
     invoiceUrl: string;
     kotUrl: string;
   } | null>(null);
@@ -185,6 +190,7 @@ export function CashierSalesTerminal({
   // Handle table selection & load items if table has open order
   const handleSelectTable = (table: TableDTO) => {
     setSelectedTableId(table.id);
+    setServiceType("DINE_IN");
     const existingOrder = tableOrderMap.get(table.id) || (occupied[table.id] ? openOrders.find(o => o.id === occupied[table.id]) : undefined);
     
     if (existingOrder && existingOrder.lines.length > 0) {
@@ -335,6 +341,14 @@ export function CashierSalesTerminal({
       else if (paymentMethod === "SPLIT") modeLabel = "Parçalı Ödeme";
       else if (paymentMethod === "QR") modeLabel = "FAST / QR Kod";
 
+      let currentServiceTypeLabel = "Gel-Al / Paket";
+      if (selectedTableId || serviceType === "DINE_IN") {
+        const tbl = tables.find((t) => t.id === selectedTableId);
+        currentServiceTypeLabel = tbl ? `Masada Servis (${tbl.label})` : "Masada Servis";
+      } else if (serviceType === "DELIVERY") {
+        currentServiceTypeLabel = "Paket Servis / Kurye";
+      }
+
       setCompletedSale({
         orderId: res.orderId,
         orderNumber: res.orderNumber,
@@ -343,6 +357,7 @@ export function CashierSalesTerminal({
         tenderedAmount: res.tenderedAmount,
         changeAmount: res.changeAmount,
         paymentModeLabel: modeLabel,
+        serviceTypeLabel: currentServiceTypeLabel,
         invoiceUrl: res.invoiceUrl,
         kotUrl: res.kotUrl,
       });
@@ -430,7 +445,7 @@ export function CashierSalesTerminal({
 
     const payload = {
       idempotencyKey: uuid(),
-      orderType: selectedTableId ? ("DINE_IN" as const) : ("TAKEAWAY" as const),
+      orderType: selectedTableId ? ("DINE_IN" as const) : serviceType,
       tableId: selectedTableId ?? undefined,
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
@@ -740,18 +755,37 @@ export function CashierSalesTerminal({
                     🪑 {tables.find(t => t.id === selectedTableId)?.label || "Masa"} Seçildi
                   </span>
                 ) : (
-                  <span className="text-[11px] font-medium text-slate-500">
-                    Hızlı Tezgah Satışı
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    {serviceType === "TAKEAWAY"
+                      ? "🛍️ Gel-Al / Paket Satışı"
+                      : serviceType === "DELIVERY"
+                      ? "🛵 Paket Servis / Kurye"
+                      : "🪑 Masada Servis"}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Masaya Ata / Seç Butonu */}
+            {/* Masaya Ata / Seç Butonu & Sepet Temizle */}
             <div className="flex items-center gap-1.5">
+              {cart.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => clear()}
+                  title="Sepeti Boşalt"
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Trash2Icon className="size-3.5" />
+                  <span className="hidden sm:inline">Temizle</span>
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={() => setIsTableModalOpen(true)}
+                onClick={() => {
+                  setServiceType("DINE_IN");
+                  setIsTableModalOpen(true);
+                }}
                 className={cn(
                   "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer shadow-xs select-none",
                   selectedTableId
@@ -772,6 +806,64 @@ export function CashierSalesTerminal({
                   <XIcon className="size-4" />
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Servis Türü Seçici: Masada Servis | Gel-Al / Paket | Paket Servis / Kurye */}
+          <div className="px-3 py-2 bg-slate-100/90 border-b border-slate-200 shrink-0">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-200/80 rounded-xl border border-slate-300/60 shadow-inner">
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("DINE_IN");
+                  if (!selectedTableId) {
+                    setIsTableModalOpen(true);
+                  }
+                }}
+                className={cn(
+                  "py-2 px-1 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
+                  serviceType === "DINE_IN"
+                    ? "bg-white text-blue-700 shadow-sm border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                )}
+              >
+                <ArmchairIcon className="size-3.5 shrink-0" />
+                <span className="truncate">Masada Servis</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("TAKEAWAY");
+                  setSelectedTableId(null);
+                }}
+                className={cn(
+                  "py-2 px-1 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
+                  serviceType === "TAKEAWAY"
+                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                )}
+              >
+                <ShoppingBagIcon className="size-3.5 shrink-0" />
+                <span className="truncate">Gel-Al / Paket</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("DELIVERY");
+                  setSelectedTableId(null);
+                }}
+                className={cn(
+                  "py-2 px-1 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
+                  serviceType === "DELIVERY"
+                    ? "bg-white text-orange-700 shadow-sm border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                )}
+              >
+                <BikeIcon className="size-3.5 shrink-0" />
+                <span className="truncate">Paket / Kurye</span>
+              </button>
             </div>
           </div>
 
@@ -1237,6 +1329,10 @@ export function CashierSalesTerminal({
 
             {/* Özet Kartı */}
             <div className="w-full my-4 p-4 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col gap-2 text-xs">
+              <div className="flex justify-between font-bold text-gray-600">
+                <span>Servis Türü:</span>
+                <span className="text-gray-900 font-black">{completedSale.serviceTypeLabel || "Gel-Al / Paket"}</span>
+              </div>
               <div className="flex justify-between font-bold text-gray-600">
                 <span>Ödeme Yöntemi:</span>
                 <span className="text-gray-900 font-black">{completedSale.paymentModeLabel}</span>

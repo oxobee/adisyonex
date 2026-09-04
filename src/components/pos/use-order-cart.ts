@@ -1,6 +1,6 @@
 "use client";
-
-import { useState } from "react";
+ 
+import { useState, useEffect, useRef } from "react";
 
 import type { MenuItemDTO } from "@/types/menu";
 
@@ -17,9 +17,42 @@ export interface OrderCart {
   readonly clear: () => void;
 }
 
-/** Local order cart used by the POS terminal and the add-a-round dialog. */
-export function useOrderCart(): OrderCart {
+/** Local order cart used by the POS terminal and the add-a-round dialog. Supports optional persistence via storageKey. */
+export function useOrderCart(storageKey?: string): OrderCart {
   const [cart, setCart] = useState<CartLine[]>([]);
+  const isHydratedRef = useRef(false);
+
+  // Load initial cart from localStorage if storageKey is provided
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCart(parsed);
+        }
+      }
+    } catch {
+      // ignore parsing errors
+    } finally {
+      isHydratedRef.current = true;
+    }
+  }, [storageKey]);
+
+  // Sync cart to localStorage whenever it updates
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined" || !isHydratedRef.current) return;
+    try {
+      if (cart.length === 0) {
+        localStorage.removeItem(storageKey);
+      } else {
+        localStorage.setItem(storageKey, JSON.stringify(cart));
+      }
+    } catch {
+      // ignore quota errors
+    }
+  }, [cart, storageKey]);
 
   const addLine = (line: CartLine) => setCart((prev) => [...prev, line]);
 
