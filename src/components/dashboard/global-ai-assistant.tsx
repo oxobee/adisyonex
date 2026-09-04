@@ -658,46 +658,46 @@ export function GlobalAiAssistant() {
 
       {/* 2. EXPANDABLE CHAT SHEET / DRAWER */}
       {isOpen && (
-        <div className="fixed bottom-2 right-2 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-1rem)] sm:w-[420px] md:w-[450px] max-h-[88vh] sm:max-h-[640px] flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/90 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-2 right-2 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-1rem)] sm:w-[440px] md:w-[460px] max-h-[88vh] sm:max-h-[660px] flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-6 duration-250">
           {/* HEADER */}
-          <div className="flex items-center justify-between p-4 sm:p-4.5 border-b border-gray-100 dark:border-slate-800 bg-linear-to-r from-blue-50/70 via-indigo-50/50 to-purple-50/70 dark:from-slate-800/80 dark:to-slate-900">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/25">
-                  <BotIcon className="size-5" />
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative shrink-0">
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25 ring-1 ring-white/20">
+                  <SparklesIcon className="size-5" />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
+                <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
               </div>
 
-              <div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <h3 className="text-sm font-black text-gray-900 dark:text-white tracking-tight">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                     AdisyonEx Asistan
                   </h3>
                   {activeStaff ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      {activeStaff.name} ({activeStaff.jobTitle || activeStaff.role})
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 inline-flex items-center gap-1.5 truncate">
+                      <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="truncate">{activeStaff.name} ({activeStaff.role})</span>
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                      Akıllı Mod
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800">
+                      AI Aktif
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
                   {activeStaff
-                    ? `Yetki alanı: ${activeStaff.jobTitle || activeStaff.role} (${activeStaff.name})`
-                    : "Doğal konuşma & sesli restoran kontrolü"}
+                    ? `Yetki: ${activeStaff.jobTitle || activeStaff.role} (${activeStaff.name})`
+                    : "Akıllı restoran kontrol & operasyon asistanı"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 shrink-0 ml-2">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="flex size-8 items-center justify-center rounded-xl bg-white/80 dark:bg-slate-800 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors shadow-2xs cursor-pointer"
+                className="flex size-8 items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 title="Küçült"
               >
                 <ChevronDownIcon className="size-4" />
@@ -705,7 +705,7 @@ export function GlobalAiAssistant() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="flex size-8 items-center justify-center rounded-xl bg-white/80 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 text-gray-500 transition-colors shadow-2xs cursor-pointer"
+                className="flex size-8 items-center justify-center rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                 title="Kapat"
               >
                 <XIcon className="size-4" />
@@ -714,34 +714,34 @@ export function GlobalAiAssistant() {
           </div>
 
           {/* CHAT MESSAGES SCROLL AREA */}
-          <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-3.5 min-h-[280px] max-h-[460px] text-xs">
+          <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 min-h-[280px] max-h-[460px] text-xs">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={cn(
-                  "flex gap-2.5 animate-in fade-in-50 duration-200",
+                  "flex gap-3 animate-in fade-in-50 duration-200",
                   msg.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
                 {msg.role === "assistant" && (
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 border border-purple-200 dark:border-purple-800 mt-0.5">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-800 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-slate-700 mt-0.5 shadow-2xs">
                     <SparklesIcon className="size-3.5" />
                   </div>
                 )}
 
                 <div
                   className={cn(
-                    "flex flex-col gap-2 max-w-[84%]",
+                    "flex flex-col gap-2 max-w-[85%]",
                     msg.role === "user" ? "items-end" : "items-start"
                   )}
                 >
                   {/* MESSAGE BUBBLE */}
                   <div
                     className={cn(
-                      "px-3.5 py-2.5 rounded-2xl leading-relaxed whitespace-pre-line shadow-2xs font-medium",
+                      "px-4 py-3 rounded-2xl leading-relaxed whitespace-pre-line shadow-2xs text-xs sm:text-[13px]",
                       msg.role === "user"
-                        ? "bg-blue-600 text-white rounded-br-xs"
-                        : "bg-gray-100/90 dark:bg-slate-800/90 text-gray-800 dark:text-gray-200 border border-gray-200/60 dark:border-slate-700/60 rounded-bl-xs"
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-br-xs shadow-md shadow-blue-500/15"
+                        : "bg-slate-100/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 rounded-bl-xs font-normal"
                     )}
                   >
                     {msg.content}
@@ -749,16 +749,16 @@ export function GlobalAiAssistant() {
 
                   {/* 1. INTERACTIVE NAVIGATION RECOMMENDATION CARD */}
                   {msg.recommendedPage && (
-                    <div className="w-full bg-linear-to-br from-blue-50/90 to-indigo-50/90 dark:from-slate-800 dark:to-slate-850 p-3 rounded-2xl border border-blue-200/80 dark:border-blue-900/50 shadow-xs flex items-center justify-between gap-2.5 mt-1">
+                    <div className="w-full bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200 dark:border-slate-750 shadow-xs flex items-center justify-between gap-2.5 mt-1">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-2xs border border-blue-100 dark:border-slate-700">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-2xs border border-slate-200/80 dark:border-slate-700">
                           {getPageIcon(msg.recommendedPage.icon)}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-xs font-black text-gray-900 dark:text-white truncate">
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white truncate">
                             {msg.recommendedPage.title}
                           </h4>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                             {msg.recommendedPage.description}
                           </p>
                         </div>
@@ -770,7 +770,7 @@ export function GlobalAiAssistant() {
                           setIsOpen(false);
                           router.push(msg.recommendedPage!.url);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shrink-0 shadow-xs transition-all active:scale-95 cursor-pointer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-[11px] shrink-0 shadow-xs transition-all cursor-pointer"
                       >
                         <span>Sayfaya Git</span>
                         <ArrowRightIcon className="size-3" />
@@ -780,28 +780,28 @@ export function GlobalAiAssistant() {
 
                   {/* 2. INTERACTIVE ORDER ACTION PREVIEW CARD (HER ZAMAN ONAY İSTER) */}
                   {msg.actionPreview && !msg.actionExecuted && !msg.actionCancelled && (
-                    <div className="w-full bg-gradient-to-br from-purple-50/90 via-white to-indigo-50/90 dark:from-slate-850 dark:via-slate-800 dark:to-slate-850 p-3.5 rounded-2xl border-2 border-purple-300 dark:border-purple-800 shadow-md flex flex-col gap-2.5 mt-1">
-                      <div className="flex items-center justify-between border-b border-purple-100 dark:border-slate-700 pb-2">
-                        <div className="flex items-center gap-1.5 text-purple-700 dark:text-purple-300 font-black text-[11px]">
+                    <div className="w-full bg-white dark:bg-slate-800/95 p-3.5 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 shadow-lg shadow-indigo-500/5 flex flex-col gap-2.5 mt-1">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-2">
+                        <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 font-extrabold text-[11px]">
                           <FlameIcon className="size-3.5 text-amber-500" />
-                          <span>SİPARİŞ ONAYI BEKLENİYOR</span>
+                          <span>Sipariş Onayı Bekleniyor</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200/60">
                           {formatTableBadge(msg.actionPreview.tableLabel)}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="bg-white/80 dark:bg-slate-900 p-2 rounded-xl border border-gray-100 dark:border-slate-800">
-                          <span className="text-[10px] text-gray-500 block font-medium">Ürün Adı:</span>
-                          <span className="font-bold text-gray-900 dark:text-white truncate block">
+                        <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Ürün Adı:</span>
+                          <span className="font-bold text-slate-900 dark:text-white truncate block">
                             {msg.actionPreview.menuItemName || "Ürün"}
                           </span>
                         </div>
 
-                        <div className="bg-white/80 dark:bg-slate-900 p-2 rounded-xl border border-gray-100 dark:border-slate-800">
-                          <span className="text-[10px] text-gray-500 block font-medium">Miktar & Tutar:</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400 block">
+                        <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Miktar & Tutar:</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 block font-mono">
                             {msg.actionPreview.quantity || 1} Adet · ₺{msg.actionPreview.totalPrice || msg.actionPreview.unitPrice}
                           </span>
                         </div>
@@ -844,7 +844,7 @@ export function GlobalAiAssistant() {
                           type="button"
                           disabled={executingActionId === msg.id}
                           onClick={() => handleCancelAction(msg.id)}
-                          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-gray-600 dark:text-gray-300 font-bold text-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                          className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-600 dark:text-slate-300 font-bold text-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                         >
                           İptal
                         </button>
@@ -852,29 +852,30 @@ export function GlobalAiAssistant() {
                     </div>
                   )}
 
-                  {/* 3. CLARIFICATION PILLS ("Bunu mu demek istediniz?") */}
+                  {/* 3. CLARIFICATION PILLS (Modern, Rafine Butonlar) */}
                   {msg.clarificationOptions && msg.clarificationOptions.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1">
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
                       {msg.clarificationOptions.map((opt, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => handleSend(opt)}
-                          className="px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-bold text-[11px] hover:bg-purple-50 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                          className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all active:scale-95 shadow-2xs cursor-pointer flex items-center gap-1.5"
                         >
-                          👉 {opt}
+                          <span className="text-indigo-500 font-bold">↳</span>
+                          <span>{opt}</span>
                         </button>
                       ))}
                     </div>
                   )}
 
-                  <span className="text-[9px] text-gray-400 font-medium px-1">
+                  <span className="text-[10px] text-slate-400 font-medium px-1">
                     {msg.timestamp}
                   </span>
                 </div>
 
                 {msg.role === "user" && (
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 border border-blue-200 dark:border-blue-800 mt-0.5">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-blue-50 dark:bg-slate-800 text-blue-600 border border-blue-100 dark:border-slate-700 mt-0.5 shadow-2xs">
                     <UserIcon className="size-3.5" />
                   </div>
                 )}
@@ -882,10 +883,10 @@ export function GlobalAiAssistant() {
             ))}
 
             {loading && (
-              <div className="flex items-center gap-2 text-gray-400 text-xs font-medium pl-9">
+              <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium pl-10">
                 <div className="flex gap-1">
-                  <span className="size-1.5 rounded-full bg-purple-500 animate-bounce" />
-                  <span className="size-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
+                  <span className="size-1.5 rounded-full bg-indigo-500 animate-bounce" />
+                  <span className="size-1.5 rounded-full bg-purple-500 animate-bounce [animation-delay:0.2s]" />
                   <span className="size-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
                 </div>
                 <span>Düşünüyor ve sistem kontrolü yapılıyor...</span>
@@ -896,8 +897,8 @@ export function GlobalAiAssistant() {
           </div>
 
           {/* INPUT BAR */}
-          <div className="p-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-900/80">
-            <div className="relative flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-gray-200/90 dark:border-slate-700 rounded-2xl px-2.5 py-1.5 shadow-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+          <div className="p-3.5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-md">
+            <div className="relative flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-2xl px-3 py-2 shadow-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
               {/* Sound wave oscillation when listening */}
               {(isListening || isHoldingMic) && (
                 <div className="flex items-center gap-0.5 h-4 px-1 shrink-0">
@@ -923,7 +924,7 @@ export function GlobalAiAssistant() {
                     ? "Dinleniyor, konuşun..."
                     : getRoleSuggestionsAndGreeting(activeStaff).placeholder
                 }
-                className="w-full bg-transparent border-0 outline-none text-xs font-semibold text-gray-800 dark:text-gray-100 placeholder:text-gray-400 min-w-0"
+                className="w-full bg-transparent border-0 outline-none text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 min-w-0"
               />
 
               {/* MIC BUTTON */}
@@ -941,12 +942,12 @@ export function GlobalAiAssistant() {
                   }
                 }}
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-xl transition-all shrink-0 cursor-pointer shadow-2xs select-none",
+                  "flex size-8 items-center justify-center rounded-xl transition-all shrink-0 cursor-pointer select-none",
                   isHoldingMic
                     ? "scale-110 bg-red-600 text-white shadow-md shadow-red-500/30"
                     : isListening
                     ? "bg-rose-500 text-white animate-pulse"
-                    : "bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 text-purple-600"
+                    : "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300"
                 )}
                 title={isListening ? "Dinlemeyi Durdur" : "Sesli Komut Ver"}
               >
@@ -958,7 +959,7 @@ export function GlobalAiAssistant() {
                 type="button"
                 disabled={!inputQuery.trim() || loading}
                 onClick={() => handleSend()}
-                className="flex size-8 items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white transition-all shrink-0 cursor-pointer disabled:opacity-40 shadow-xs"
+                className="flex size-8 items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white transition-all shrink-0 cursor-pointer disabled:opacity-40 shadow-xs"
                 title="Gönder"
               >
                 <SendIcon className="size-3.5" />
