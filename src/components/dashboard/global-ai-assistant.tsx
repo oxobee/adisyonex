@@ -633,7 +633,7 @@ export function GlobalAiAssistant() {
 
   return (
     <>
-      {/* 1. DRAGGABLE FLOATING ICON LAUNCHER (Metinsiz, Serbest Sürüklenebilir) */}
+      {/* 1. DRAGGABLE FLOATING ICON LAUNCHER (Kompakt, Sade ve Dikkat Çekmeyen Tasarım) */}
       {!isOpen && position && (
         <div
           style={{
@@ -646,20 +646,12 @@ export function GlobalAiAssistant() {
           onPointerUp={handlePointerUp}
           className="fixed z-40 select-none cursor-grab active:cursor-grabbing transition-transform active:scale-95 animate-in fade-in zoom-in-95 duration-200"
         >
-          <div className="relative p-[1.5px] rounded-full overflow-hidden shadow-2xl shadow-purple-950/30 group">
-            {/* Pulsing Gradient Border */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 animate-gradient-border opacity-90 group-hover:opacity-100 transition-opacity" />
-
-            <div
-              className="relative flex size-13 sm:size-14 items-center justify-center bg-slate-900/95 hover:bg-slate-900 text-white rounded-full backdrop-blur-md cursor-pointer"
-              title="AdisyonEx Akıllı Asistan (Sürükleyin veya dokunun)"
-            >
-              <div className="flex size-9 sm:size-10 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white shadow-md">
-                <SparklesIcon className="size-5 animate-pulse" />
-              </div>
-              <span className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-emerald-400 border-2 border-slate-900 animate-ping" />
-              <span className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-emerald-400 border-2 border-slate-900" />
-            </div>
+          <div
+            className="flex size-9 sm:size-10 items-center justify-center rounded-full bg-card/90 hover:bg-card text-muted-foreground hover:text-foreground border border-border shadow-md backdrop-blur-md cursor-pointer transition-all hover:scale-105 group"
+            title="AdisyonEx Asistan"
+          >
+            <SparklesIcon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="sr-only">Yapay Zeka Asistanı</span>
           </div>
         </div>
       )}

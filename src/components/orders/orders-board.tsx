@@ -572,12 +572,7 @@ export function OrdersBoard({
   };
 
   return (
-    <div
-      className={cn(
-        "relative flex flex-col gap-6 p-4 lg:p-6 transition-all duration-500 ease-[cubic-bezier(0.34,1.4,0.64,1)]",
-        selectedTable && "sm:pl-[440px] lg:pl-[450px]"
-      )}
-    >
+    <div className="relative flex flex-col gap-6 p-4 lg:p-6">
       <style jsx global>{`
         @keyframes tableCardElasticIn {
           0% {
@@ -604,10 +599,10 @@ export function OrdersBoard({
           }
           60% {
             opacity: 1;
-            transform: translateX(14px) scale(1.015);
+            transform: translateX(12px) scale(1.012);
           }
           85% {
-            transform: translateX(-4px) scale(0.995);
+            transform: translateX(-3px) scale(0.996);
           }
           100% {
             opacity: 1;
@@ -615,21 +610,21 @@ export function OrdersBoard({
           }
         }
         .animate-drawer-elastic-left {
-          animation: elasticSlideInLeft 0.52s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+          animation: elasticSlideInLeft 0.45s cubic-bezier(0.34, 1.45, 0.64, 1) both;
         }
       `}</style>
-      {/* MODERN POS SLIDE-OVER DRAWER (LEFT DOCKED, ELASTIC ENTRY, ZERO BLUR) */}
+      {/* MODERN POS SLIDE-OVER DRAWER (LEFT DOCKED, ELASTIC ENTRY, CRISP ZERO-BLUR BACKDROP) */}
       {selectedTable && (
-        <>
-          {/* Mobile-only backdrop for click-away */}
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Crisp, non-blurry subtle backdrop for click-away */}
           <div
-            className="sm:hidden fixed inset-0 z-40 bg-black/25 transition-opacity animate-in fade-in duration-200 cursor-pointer"
+            className="fixed inset-0 bg-black/25 dark:bg-black/45 transition-opacity animate-in fade-in duration-200 cursor-pointer"
             onClick={() => setSelectedTableId(null)}
           />
 
           {/* Desktop Left Slide-Over / Mobile Bottom Sheet */}
           <div className="fixed inset-x-0 bottom-0 sm:inset-y-0 sm:left-0 sm:right-auto max-w-full flex z-50 pointer-events-auto">
-            <div className="w-full sm:w-[420px] flex flex-col h-auto sm:h-full shadow-2xl animate-in slide-in-from-bottom sm:animate-drawer-elastic-left">
+            <div className="w-full sm:w-[380px] flex flex-col h-auto sm:h-full shadow-2xl animate-in slide-in-from-bottom sm:animate-drawer-elastic-left">
               <TableActionMenu
                 table={selectedTable}
                 orders={selectedTableOrders}
@@ -649,7 +644,7 @@ export function OrdersBoard({
               />
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* TOP HEADER & ACTION BAR */}
