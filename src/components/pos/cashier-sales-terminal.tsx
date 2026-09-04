@@ -90,6 +90,10 @@ export function CashierSalesTerminal({
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
 
+  // Drag & Drop State
+  const [draggedItem, setDraggedItem] = useState<MenuItemDTO | null>(null);
+  const [isDragOverCart, setIsDragOverCart] = useState(false);
+
   // Discount State
   const [discount, setDiscount] = useState<DiscountInput>({ type: "NONE", value: 0 });
 
@@ -222,6 +226,64 @@ export function CashierSalesTerminal({
       return;
     }
     quickAdd(item);
+  };
+
+  // Drag & Drop Handlers
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, item: MenuItemDTO) => {
+    e.dataTransfer.setData("application/json", JSON.stringify(item));
+    e.dataTransfer.effectAllowed = "copy";
+    setDraggedItem(item);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setIsDragOverCart(false);
+  };
+
+  const handleDragOverCart = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    if (!isDragOverCart) {
+      setIsDragOverCart(true);
+    }
+  };
+
+  const handleDragLeaveCart = (e: React.DragEvent<HTMLElement>) => {
+    // Only deactivate if leaving the container itself
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragOverCart(false);
+  };
+
+  const handleDropOnCart = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    setIsDragOverCart(false);
+    try {
+      const raw = e.dataTransfer.getData("application/json");
+      const item: MenuItemDTO = raw ? JSON.parse(raw) : draggedItem;
+      if (item) {
+        if (item.variants.length > 0 || item.modifierGroups.length > 0) {
+          setConfigItem(item);
+        } else {
+          quickAdd(item);
+          toast.success(`${item.name} adisyona eklendi!`, {
+            duration: 1500,
+          });
+        }
+      }
+    } catch (err) {
+      if (draggedItem) {
+        if (draggedItem.variants.length > 0 || draggedItem.modifierGroups.length > 0) {
+          setConfigItem(draggedItem);
+        } else {
+          quickAdd(draggedItem);
+          toast.success(`${draggedItem.name} adisyona eklendi!`, {
+            duration: 1500,
+          });
+        }
+      }
+    } finally {
+      setDraggedItem(null);
+    }
   };
 
   // Numpad key input for cash tendered
@@ -510,14 +572,18 @@ export function CashierSalesTerminal({
                   return (
                     <div
                       key={item.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, item)}
+                      onDragEnd={handleDragEnd}
                       onClick={() => handleTapItem(item)}
                       className={cn(
-                        "group relative rounded-3xl overflow-hidden cursor-pointer select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
+                        "group relative rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
                         `bg-gradient-to-br ${gradient}`,
                         "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
                         "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
                         "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
                         "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
+                        draggedItem?.id === item.id && "opacity-50 scale-95 ring-4 ring-emerald-400/80",
                         "min-h-[250px] sm:min-h-[275px]"
                       )}
                     >
@@ -615,7 +681,32 @@ export function CashierSalesTerminal({
         </section>
 
         {/* SAĞ ALAN: ADİSYON TİCKET + FİNANSAL HESAPLAMA + ÖDEME & PARAÜSTÜ */}
-        <aside className="w-full lg:w-[420px] xl:w-[470px] shrink-0 flex flex-col bg-[#f8fafc] border-l border-slate-200 overflow-hidden shadow-2xl">
+        <aside
+          onDragOver={handleDragOverCart}
+          onDragLeave={handleDragLeaveCart}
+          onDrop={handleDropOnCart}
+          className={cn(
+            "relative w-full lg:w-[420px] xl:w-[470px] shrink-0 flex flex-col bg-[#f8fafc] border-l border-slate-200 overflow-hidden shadow-2xl transition-all duration-200",
+            isDragOverCart && "ring-4 ring-emerald-500/80 bg-emerald-50/20"
+          )}
+        >
+          {/* Sürükle-Bırak Aktif Görsel Göstergesi (Overlay) */}
+          {isDragOverCart && (
+            <div className="absolute inset-0 z-50 pointer-events-none bg-emerald-500/10 backdrop-blur-[2px] border-4 border-dashed border-emerald-500 flex flex-col items-center justify-center gap-3 animate-in fade-in-50 duration-150">
+              <div className="size-18 rounded-3xl bg-emerald-500 text-white flex items-center justify-center shadow-xl shadow-emerald-500/40 animate-bounce">
+                <PlusIcon className="size-10 stroke-[3]" />
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-base font-black text-emerald-950 bg-white/95 px-4 py-1.5 rounded-full shadow-md border border-emerald-200">
+                  {draggedItem ? `${draggedItem.name} Ürününü Ekle` : "Adisyona Eklemek İçin Bırakın"}
+                </span>
+                <span className="text-xs font-bold text-emerald-800 mt-1">
+                  Ödeme alanına bırakınca sepete eklenecektir
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Adisyon Başlığı & Masa Seçimi */}
           <div className="p-3.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
             <div className="flex items-center gap-2.5">
