@@ -28,6 +28,7 @@ import type { ServiceOptions } from "@/types/settings";
 import type { TableDTO } from "@/types/table";
 
 import { CartLineList } from "./cart-line-list";
+import { CashierSalesTerminal } from "./cashier-sales-terminal";
 import { ItemConfigDialog } from "./item-config-dialog";
 import { MenuItemGrid } from "./menu-item-grid";
 import { TablePicker } from "./table-picker";
@@ -49,13 +50,18 @@ export function PosTerminal({
   tables,
   occupied,
   services,
+  cashierName = "Kasa Personeli",
+  restaurantName = "Adisyoon",
 }: {
   readonly menu: MenuDTO;
   readonly tables: readonly TableDTO[];
   readonly occupied: Record<string, string>;
   readonly services: ServiceOptions;
+  readonly cashierName?: string;
+  readonly restaurantName?: string;
 }) {
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<"CASHIER" | "TABLES">("CASHIER");
   const orderCart = useOrderCart();
   const { cart } = orderCart;
   const enabledTypes = ORDER_TYPES.filter((t) => services[t.key]);
@@ -227,13 +233,41 @@ export function PosTerminal({
     </div>
   );
 
-  return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-4 p-4 lg:flex-row lg:p-6">
-      <section className="flex min-h-0 flex-1 flex-col">
-        <MenuItemGrid menu={menu} onTapItem={onTapItem} />
-      </section>
+  if (viewMode === "CASHIER") {
+    return (
+      <CashierSalesTerminal
+        menu={menu}
+        tables={tables}
+        cashierName={cashierName}
+        restaurantName={restaurantName}
+        onSwitchToTables={() => setViewMode("TABLES")}
+      />
+    );
+  }
 
-      <aside className="flex min-h-0 w-full flex-col rounded-lg border lg:w-[360px]">
+  return (
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col gap-3 p-3 lg:p-4 bg-gray-50">
+      {/* Üst Mod Değiştirici Bar */}
+      <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-xs shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black text-gray-800">🪑 Masalar & Salon Sipariş Modu</span>
+          <span className="text-[11px] text-gray-500 hidden sm:inline">• Masaya sipariş açıp mutfağa iletin</span>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => setViewMode("CASHIER")}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+        >
+          ⚡ Hızlı Kasa Satışına Geç
+        </Button>
+      </div>
+
+      <div className="flex flex-1 min-h-0 flex-col gap-4 lg:flex-row">
+        <section className="flex min-h-0 flex-1 flex-col">
+          <MenuItemGrid menu={menu} onTapItem={onTapItem} />
+        </section>
+
+        <aside className="flex min-h-0 w-full flex-col rounded-2xl border border-gray-200/90 bg-white shadow-xs lg:w-[360px]">
         <div className="flex flex-col gap-3 border-b p-3">
           <div className="flex gap-1">
             {enabledTypes.map((t) => (
@@ -334,6 +368,7 @@ export function PosTerminal({
           </Button>
         </div>
       </aside>
+    </div>
 
       {configItem ? (
         <ItemConfigDialog

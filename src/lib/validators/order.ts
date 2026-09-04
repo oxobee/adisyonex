@@ -91,3 +91,20 @@ export const settleTableSchema = z.object({
   payments: z.array(paymentSchema).min(1, "Add at least one payment"),
 });
 export type SettleTableInput = z.infer<typeof settleTableSchema>;
+
+export const quickCashierSaleSchema = z.object({
+  idempotencyKey: z.string().trim().min(8).max(100),
+  orderType: orderTypeSchema.default("TAKEAWAY"),
+  tableId: idSchema.optional(),
+  tableLabel: z.string().trim().max(40).optional(),
+  customerName: z.string().trim().max(120).optional(),
+  customerPhone: z.string().trim().max(20).optional(),
+  note: z.string().trim().max(300).optional(),
+  items: z.array(cartLineSchema).min(1, "Sepete en az bir ürün ekleyin"),
+  discountType: discountTypeSchema.default("NONE"),
+  discountValue: z.coerce.number().min(0).max(1_000_000).default(0),
+  discountReason: z.string().trim().max(200).optional(),
+  payments: z.array(paymentSchema).min(1, "En az bir ödeme yöntemi girin"),
+});
+export type QuickCashierSaleInput = z.infer<typeof quickCashierSaleSchema>;
+

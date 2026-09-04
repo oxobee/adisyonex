@@ -124,3 +124,47 @@ export const withStaffValidation = <TSchema extends ZodType, TOutput>(
     return runHandler<TOutput>(() => handler(parsed.data, ctx));
   };
 };
+
+export interface OperatorContext {
+  readonly restaurantId: string;
+  readonly userId?: string | null;
+  readonly staffId?: string | null;
+  readonly role?: string;
+  readonly name?: string;
+}
+
+/** Require either a manager or a staff session, validate input, then delegate. */
+export const withOperatorValidation = <TSchema extends ZodType, TOutput>(
+  schema: TSchema,
+  handler: (
+    data: z.infer<TSchema>,
+    ctx: OperatorContext,
+  ) => Promise<ActionResult<TOutput>> | Promise<TOutput>,
+) => {
+  return async (raw: unknown): Promise<ActionResult<TOutput>> => {
+    const [managerCtx, staffCtx] = await Promise.all([
+      getManagerContextOrNull(),
+      getStaffContextOrNull(),
+    ]);
+    const restaurantId = staffCtx?.restaurantId || managerCtx?.restaurantId;
+    if (!restaurantId) {
+      return failure<TOutput>("NO_SESSION");
+    }
+    const ctx: OperatorContext = {
+      restaurantId,
+      userId: managerCtx?.userId ?? null,
+      staffId: staffCtx?.staffId ?? null,
+      role: staffCtx?.role || "MANAGER",
+      name: staffCtx?.name || "Yönetici",
+    };
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) {
+      return failure<TOutput>(
+        "Validation failed",
+        extractFieldErrors(parsed.error),
+      );
+    }
+    return runHandler<TOutput>(() => handler(parsed.data, ctx));
+  };
+};
+

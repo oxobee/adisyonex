@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
+import { prisma } from "@/lib/prisma";
 import { getMenu } from "@/services/menu-item.service";
 import { listOrders } from "@/services/order.service";
 import { getServiceOptions } from "@/services/restaurant-settings.service";
@@ -30,11 +31,15 @@ export default async function PosPage() {
     );
   }
 
-  const [menu, tables, openOrders, services] = await Promise.all([
+  const [menu, tables, openOrders, services, restaurant] = await Promise.all([
     getMenu(restaurantId),
     getTables(restaurantId),
     listOrders(restaurantId, ["OPEN"]),
     getServiceOptions(restaurantId),
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { name: true },
+    }),
   ]);
 
   const occupied: Record<string, string> = {};
@@ -50,6 +55,8 @@ export default async function PosPage() {
       tables={tables}
       occupied={occupied}
       services={services}
+      cashierName={staffCtx?.name || "Kasa Yetkilisi"}
+      restaurantName={restaurant?.name || "Adisyoon"}
     />
   );
 }
