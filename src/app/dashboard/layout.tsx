@@ -11,6 +11,7 @@ import { getSystemSettings, type SystemSettingsDTO } from "@/services/system-set
 import { getManagerById } from "@/services/user.service"
 
 import { LicenseExpiredModal } from "@/components/license/license-expired-modal"
+import { GlobalEscNavigation } from "@/components/dashboard/global-esc-navigation"
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,7 @@ export default async function DashboardLayout({
 
   return (
     <>
+      <GlobalEscNavigation />
       {brandColor && (
         <style
           dangerouslySetInnerHTML={{

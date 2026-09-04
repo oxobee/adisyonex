@@ -61,6 +61,8 @@ export interface RestaurantProfileDTO {
   readonly coverUrl: string | null;
   readonly addressLine1: string | null;
   readonly addressLine2: string | null;
+  readonly branchName: string | null;
+  readonly branchAddress: string | null;
   readonly city: string | null;
   readonly state: string | null;
   readonly postalCode: string | null;

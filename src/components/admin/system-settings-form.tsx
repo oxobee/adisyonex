@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   CheckCircle2Icon,
   GlobeIcon,
+  HeadphonesIcon,
   ImageIcon,
   Loader2Icon,
   SaveIcon,
@@ -224,6 +225,9 @@ export function SystemSettingsForm({
     metaTitle: initialSettings.metaTitle ?? "",
     metaDescription: initialSettings.metaDescription ?? "",
     metaKeywords: initialSettings.metaKeywords ?? "",
+    supportPhone: initialSettings.supportPhone ?? "+90 850 309 9901",
+    websiteUrl: initialSettings.websiteUrl ?? "https://adisyonex.com",
+    copyrightText: initialSettings.copyrightText ?? "© 2026 AdisyonEx. Tüm hakları saklıdır.",
   });
 
   const set = (key: keyof typeof form, val: string) =>
@@ -394,6 +398,61 @@ export function SystemSettingsForm({
               onClear={() => set("ogImageUrl", "")}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Destek Hattı & Footer Sistem Bilgileri */}
+      <Card className="rounded-3xl border-border/80 shadow-xs">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+              <HeadphonesIcon className="size-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-black text-foreground">
+                Destek Hattı & Alt Bilgi (Footer) Ayarları
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Ana ekranın altındaki sistem bilgi footer alanında ve destek bağlantılarında görüntülenecek iletişim bilgilerini yapılandırın.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="sys-support-phone">Müşteri Destek Hattı Telefonu</FieldLabel>
+              <Input
+                id="sys-support-phone"
+                value={form.supportPhone}
+                onChange={(e) => set("supportPhone", e.target.value)}
+                placeholder="Örn: +90 850 309 9901"
+                className="rounded-xl font-bold"
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="sys-website-url">Resmi Web Sitesi URL</FieldLabel>
+              <Input
+                id="sys-website-url"
+                value={form.websiteUrl}
+                onChange={(e) => set("websiteUrl", e.target.value)}
+                placeholder="Örn: https://adisyonex.com"
+                className="rounded-xl font-mono text-sm"
+              />
+            </Field>
+          </div>
+
+          <Field>
+            <FieldLabel htmlFor="sys-copyright">Telif Hakkı (Copyright) Metni</FieldLabel>
+            <Input
+              id="sys-copyright"
+              value={form.copyrightText}
+              onChange={(e) => set("copyrightText", e.target.value)}
+              placeholder="Örn: © 2026 AdisyonEx. Tüm hakları saklıdır."
+              className="rounded-xl"
+            />
+          </Field>
         </CardContent>
       </Card>
 

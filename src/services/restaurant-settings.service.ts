@@ -194,6 +194,8 @@ export const getRestaurantProfile = async (
     coverUrl: restaurant.coverUrl,
     addressLine1: restaurant.addressLine1,
     addressLine2: restaurant.addressLine2,
+    branchName: (restaurant as unknown as { branchName?: string | null }).branchName ?? null,
+    branchAddress: (restaurant as unknown as { branchAddress?: string | null }).branchAddress ?? null,
     city: restaurant.city,
     state: restaurant.state,
     postalCode: restaurant.postalCode,
@@ -240,6 +242,8 @@ export const updateRestaurantProfile = async (
     brandColor: input.brandColor ?? null,
     addressLine1: input.addressLine1 ?? null,
     addressLine2: input.addressLine2 ?? null,
+    branchName: input.branchName ?? null,
+    branchAddress: input.branchAddress ?? null,
     city: input.city ?? null,
     state: input.state ?? null,
     postalCode: input.postalCode ?? null,
@@ -420,5 +424,29 @@ export const updateQrThemeCustomization = async (
     ...(data.qrGreetingSubtitle !== undefined ? { qrGreetingSubtitle: data.qrGreetingSubtitle } : {}),
     ...(data.qrHomeSections !== undefined ? { qrHomeSections: data.qrHomeSections as unknown as object } : {}),
   });
+};
+
+/** Get the 4-digit screen lock PIN for this restaurant (default "0000"). */
+export const getScreenLockPin = async (
+  restaurantId: string,
+): Promise<string> => {
+  const restaurant = await findRestaurantById(restaurantId);
+  if (!restaurant || restaurant.deletedAt) {
+    throw new Error(RESTAURANT_NOT_FOUND);
+  }
+  return (restaurant as unknown as { screenLockPin?: string | null }).screenLockPin || "0000";
+};
+
+/** Update the 4-digit screen lock PIN. */
+export const updateScreenLockPin = async (
+  restaurantId: string,
+  pin: string,
+): Promise<void> => {
+  if (!/^\d{4}$/.test(pin)) {
+    throw new Error("PIN kodu 4 haneli rakamlardan oluşmalıdır");
+  }
+  await updateRestaurant(restaurantId, {
+    screenLockPin: pin,
+  } as unknown as Parameters<typeof updateRestaurant>[1]);
 };
 

@@ -1,10 +1,12 @@
 import { HomeScreen, type HomeOperationalStats } from "@/components/dashboard/home-screen";
+import type { HomeNotificationItem } from "@/components/dashboard/home-notifications-modal";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getStaffEffectiveRoutes } from "@/lib/staff";
 import { getSystemSettings } from "@/services/system-setting.service";
 import { getSelfOrderShareInfo } from "@/services/restaurant-settings.service";
 import { getManagerById } from "@/services/user.service";
+import { getLiveWeather } from "@/services/weather.service";
 import { prisma } from "@/lib/prisma";
 import { getTurkeyDayRange } from "@/services/z-report.service";
 
@@ -21,7 +23,7 @@ export default async function HomePage() {
   const { dayStart, dayEnd } = getTurkeyDayRange();
 
   let operationalStats: HomeOperationalStats | null = null;
-  let restaurantName = settings.systemName || "Adisyon";
+  let restaurantName = settings.systemName || "AdisyonEx";
 
   if (restaurantId) {
     try {
@@ -30,16 +32,26 @@ export default async function HomePage() {
         totalTables,
         activeTables,
         openOrders,
+        takeawayOrders,
         waitingItems,
         readyItems,
         todayOrders,
         totalCustomers,
         newCustomers,
         recentOrders,
+        activeTablesList,
+        stockItems,
       ] = await Promise.all([
         prisma.restaurant.findUnique({
           where: { id: restaurantId },
-          select: { name: true },
+          select: {
+            name: true,
+            branchName: true,
+            branchAddress: true,
+            addressLine1: true,
+            city: true,
+            screenLockPin: true,
+          },
         }),
         prisma.diningTable.count({
           where: { restaurantId, deletedAt: null },
@@ -53,6 +65,13 @@ export default async function HomePage() {
         }),
         prisma.order.count({
           where: { restaurantId, status: "OPEN" },
+        }),
+        prisma.order.count({
+          where: {
+            restaurantId,
+            status: "OPEN",
+            orderType: { in: ["TAKEAWAY", "DELIVERY"] },
+          },
         }),
         prisma.orderItem.count({
           where: {
@@ -84,13 +103,46 @@ export default async function HomePage() {
         prisma.order.findMany({
           where: { restaurantId },
           orderBy: { createdAt: "desc" },
-          take: 3,
+          take: 6,
           select: {
             id: true,
             orderNumber: true,
+            orderType: true,
             createdAt: true,
             table: { select: { label: true } },
           },
+        }),
+        prisma.diningTable.findMany({
+          where: {
+            restaurantId,
+            deletedAt: null,
+            orders: { some: { status: "OPEN" } },
+          },
+          take: 3,
+          select: {
+            id: true,
+            label: true,
+            orders: {
+              where: { status: "OPEN" },
+              select: { id: true, createdAt: true },
+              take: 1,
+            },
+          },
+        }),
+        prisma.stockItem.findMany({
+          where: {
+            restaurantId,
+            deletedAt: null,
+            reorderLevel: { not: null },
+          },
+          select: {
+            id: true,
+            name: true,
+            onHand: true,
+            reorderLevel: true,
+            unit: true,
+          },
+          take: 5,
         }),
       ]);
 
@@ -98,51 +150,106 @@ export default async function HomePage() {
         restaurantName = restaurant.name;
       }
 
+      // Canlı Gerçek Hava Durumu (Open-Meteo)
+      const weather = await getLiveWeather(
+        restaurant?.branchAddress || restaurant?.addressLine1,
+        restaurant?.city || restaurant?.branchName,
+      );
+
+      // Kategorize Edilmiş Gerçek Canlı Bildirimler
+      const notifications: HomeNotificationItem[] = [];
+
+      // 1. Sipariş Bildirimleri
+      for (const o of recentOrders) {
+        const diffMinutes = Math.max(
+          1,
+          Math.round((Date.now() - new Date(o.createdAt).getTime()) / 60000),
+        );
+        notifications.push({
+          id: `order-${o.id}`,
+          type: "order",
+          title: o.table?.label
+            ? `Masa ${o.table.label} Adisyonu Açıldı`
+            : `Paket Sipariş #${o.orderNumber}`,
+          description:
+            o.orderType === "TAKEAWAY"
+              ? "Paket servis siparişi işleme alındı"
+              : o.orderType === "DELIVERY"
+              ? "Online kurye teslimat adisyonu"
+              : "Masa servisi devam ediyor",
+          timeAgo: `${diffMinutes} dk önce`,
+          targetUrl: "/dashboard/orders",
+        });
+      }
+
+      // 2. Masa Bildirimleri
+      for (const t of activeTablesList) {
+        const orderTime = t.orders[0]?.createdAt;
+        const diffMinutes = orderTime
+          ? Math.max(1, Math.round((Date.now() - new Date(orderTime).getTime()) / 60000))
+          : 5;
+        notifications.push({
+          id: `table-${t.id}`,
+          type: "table",
+          title: `Masa ${t.label} Dolu`,
+          description: `Masa servisi aktif, adisyon işlem görüyor`,
+          timeAgo: `${diffMinutes} dk önce`,
+          targetUrl: "/dashboard/orders",
+        });
+      }
+
+      // 3. Mutfak Bildirimleri
+      if (waitingItems > 0) {
+        notifications.push({
+          id: "kitchen-waiting",
+          type: "kitchen",
+          title: `Mutfakta ${waitingItems} Ürün Hazırlanıyor`,
+          description: "KOT fişleri mutfak kuyruğunda beklemede",
+          timeAgo: "Canlı",
+          targetUrl: "/dashboard/kitchen",
+        });
+      }
+      if (readyItems > 0) {
+        notifications.push({
+          id: "kitchen-ready",
+          type: "kitchen",
+          title: `${readyItems} Ürün Servise Hazır`,
+          description: "Mutfak hazırlığı tamamlandı, garson teslim alabilir",
+          timeAgo: "Hemen",
+          targetUrl: "/dashboard/kitchen",
+        });
+      }
+
+      // 4. Stok Uyarıları
+      for (const item of stockItems) {
+        if (Number(item.onHand) <= Number(item.reorderLevel)) {
+          notifications.push({
+            id: `stock-${item.id}`,
+            type: "stock",
+            title: `${item.name} Kritik Seviyede`,
+            description: `Kalan: ${item.onHand} ${item.unit} (Kritik Eşik: ${item.reorderLevel})`,
+            timeAgo: "Uyarı",
+            targetUrl: "/dashboard/inventory",
+          });
+        }
+      }
+
       operationalStats = {
         restaurantName,
+        branchName: restaurant?.branchName ?? null,
+        branchAddress: restaurant?.branchAddress ?? null,
+        screenLockPin: restaurant?.screenLockPin || "0000",
         totalTables: totalTables || 24,
-        activeTables: activeTables || 18,
-        openOrders: openOrders || 24,
-        waitingItems: waitingItems || 7,
-        readyItems: readyItems || 5,
-        todayOrders: todayOrders || 142,
-        totalCustomers: totalCustomers || 1248,
-        newCustomers: newCustomers || 4,
-        recentNotifications: recentOrders.length > 0
-          ? recentOrders.map((o) => {
-              const diffMinutes = Math.max(
-                1,
-                Math.round((Date.now() - new Date(o.createdAt).getTime()) / 60000),
-              );
-              return {
-                id: o.id,
-                type: "order" as const,
-                text: o.table?.label
-                  ? `Masa ${o.table.label} adisyonu açıldı`
-                  : `Yeni online sipariş alındı #${o.orderNumber}`,
-                timeAgo: `${diffMinutes} dk önce`,
-              };
-            })
-          : [
-              {
-                id: "notif-1",
-                type: "order" as const,
-                text: "Yeni online sipariş alındı",
-                timeAgo: "5 dk önce",
-              },
-              {
-                id: "notif-2",
-                type: "table" as const,
-                text: "Masa 12 adisyonu açıldı",
-                timeAgo: "10 dk önce",
-              },
-              {
-                id: "notif-3",
-                type: "kitchen" as const,
-                text: "Mutfakta 3 sipariş bekliyor",
-                timeAgo: "12 dk önce",
-              },
-            ],
+        activeTables: activeTables || 0,
+        openOrders: openOrders || 0,
+        takeawayOrders: takeawayOrders || 0,
+        waitingItems: waitingItems || 0,
+        readyItems: readyItems || 0,
+        todayOrders: todayOrders || 0,
+        totalCustomers: totalCustomers || 0,
+        newCustomers: newCustomers || 0,
+        weather,
+        notifications,
       };
     } catch (e) {
       console.error("Failed to load home operational stats:", e);

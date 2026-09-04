@@ -16,6 +16,7 @@ import { InvoiceFooterCard } from "@/components/settings/invoice-footer-card"
 import { LocationMapCard } from "@/components/settings/location-map-card"
 import { ProfileHeader } from "@/components/settings/profile-header"
 import { RestaurantProfileForm } from "@/components/settings/restaurant-profile-form"
+import { ScreenLockPinCard } from "@/components/settings/screen-lock-pin-card"
 import { SelfOrderCard } from "@/components/settings/self-order-card"
 import { SignInPinCard } from "@/components/settings/sign-in-pin-card"
 import { TaxSettingsForm } from "@/components/settings/tax-settings-form"
@@ -247,6 +248,7 @@ export default async function SettingsPage() {
             keepMounted
             className="flex flex-col gap-6"
           >
+            <ScreenLockPinCard />
             <UsernameCard username={profile.username} />
             <SignInPinCard status={pinStatus} />
           </TabsContent>

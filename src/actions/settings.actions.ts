@@ -35,6 +35,7 @@ import {
   clearGeolocation,
   updateQrMenuTheme,
   updateQrThemeCustomization,
+  updateScreenLockPin,
   type QrThemeCustomizationDTO,
 } from "@/services/restaurant-settings.service";
 import {
@@ -221,3 +222,18 @@ export const updateQrThemeCustomizationAction = async (
   }
   return res;
 };
+
+export const updateScreenLockPinAction = async (
+  pin: string,
+): Promise<ActionResult<void>> => {
+  if (!/^\d{4}$/.test(pin)) {
+    return failure("PIN kodu 4 haneli rakamlardan oluşmalıdır");
+  }
+  const res = await runOwned((restaurantId) => updateScreenLockPin(restaurantId, pin));
+  if (res.success) {
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard/home");
+  }
+  return res;
+};
+

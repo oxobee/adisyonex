@@ -7,30 +7,22 @@ import {
   ArmchairIcon,
   BarChart3Icon,
   BellIcon,
-  BoxesIcon,
   CalculatorIcon,
   CheckCircle2Icon,
   ChefHatIcon,
-  ChevronRightIcon,
-  CircleDotIcon,
-  ClockIcon,
+  CloudFogIcon,
+  CloudIcon,
+  CloudLightningIcon,
+  CloudRainIcon,
+  CloudSunIcon,
+  ExternalLinkIcon,
   HeadphonesIcon,
-  HeartHandshakeIcon,
-  LayoutDashboardIcon,
-  LogInIcon,
+  LockIcon,
   MapPinIcon,
-  PaletteIcon,
-  PrinterIcon,
-  QrCodeIcon,
-  ReceiptTextIcon,
-  SearchIcon,
   ServerIcon,
   Settings2Icon,
-  ShieldCheckIcon,
   ShoppingBagIcon,
-  SlidersHorizontalIcon,
-  SparklesIcon,
-  StarIcon,
+  SnowflakeIcon,
   SunIcon,
   TrendingUpIcon,
   UsersIcon,
@@ -40,23 +32,52 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { SystemSettingsDTO } from "@/services/system-setting.service";
+import {
+  HomeNotificationsModal,
+  type HomeNotificationItem,
+} from "./home-notifications-modal";
+import { HomeScreenLockModal } from "./home-screen-lock-modal";
 
 export interface HomeOperationalStats {
   readonly restaurantName: string;
+  readonly branchName?: string | null;
+  readonly branchAddress?: string | null;
+  readonly screenLockPin?: string;
   readonly totalTables: number;
   readonly activeTables: number;
   readonly openOrders: number;
+  readonly takeawayOrders: number;
   readonly waitingItems: number;
   readonly readyItems: number;
   readonly todayOrders: number;
   readonly totalCustomers: number;
   readonly newCustomers: number;
-  readonly recentNotifications: Array<{
-    readonly id: string;
-    readonly type: "order" | "table" | "kitchen";
-    readonly text: string;
-    readonly timeAgo: string;
-  }>;
+  readonly weather?: {
+    readonly temperature: number;
+    readonly description: string;
+    readonly cityName: string;
+    readonly iconType: "sun" | "cloud-sun" | "cloud" | "fog" | "rain" | "snow" | "thunder";
+  };
+  readonly notifications?: readonly HomeNotificationItem[];
+}
+
+function WeatherIcon({ iconType }: { readonly iconType: string }) {
+  switch (iconType) {
+    case "cloud-sun":
+      return <CloudSunIcon className="size-8 text-amber-500" />;
+    case "cloud":
+      return <CloudIcon className="size-8 text-slate-400" />;
+    case "rain":
+      return <CloudRainIcon className="size-8 text-blue-500 animate-pulse" />;
+    case "snow":
+      return <SnowflakeIcon className="size-8 text-sky-400 animate-spin" />;
+    case "thunder":
+      return <CloudLightningIcon className="size-8 text-amber-600" />;
+    case "fog":
+      return <CloudFogIcon className="size-8 text-gray-400" />;
+    default:
+      return <SunIcon className="size-8 text-amber-500 animate-[spin_24s_linear_infinite]" />;
+  }
 }
 
 export function HomeScreen({
@@ -84,6 +105,10 @@ export function HomeScreen({
   const [timeStr, setTimeStr] = useState("16:04");
   const [dateStr, setDateStr] = useState("29 Ocak 2026, Perşembe");
   const [isOnline, setIsOnline] = useState(true);
+
+  // Modals state
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -125,6 +150,7 @@ export function HomeScreen({
     const totalTables = operationalStats?.totalTables ?? 24;
     const activeTables = operationalStats?.activeTables ?? 18;
     const openOrders = operationalStats?.openOrders ?? 24;
+    const takeawayOrders = operationalStats?.takeawayOrders ?? 0;
     const waitingItems = operationalStats?.waitingItems ?? 7;
     const readyItems = operationalStats?.readyItems ?? 5;
     const todayOrders = operationalStats?.todayOrders ?? 142;
@@ -133,40 +159,57 @@ export function HomeScreen({
     const occupancyRate =
       totalTables > 0 ? Math.min(100, Math.round((activeTables / totalTables) * 100)) : 75;
 
+    const weather = operationalStats?.weather ?? {
+      temperature: 22,
+      description: "Parçalı Bulutlu",
+      cityName: operationalStats?.branchName || "İstanbul",
+      iconType: "cloud-sun" as const,
+    };
+
+    const notifications: readonly HomeNotificationItem[] = operationalStats?.notifications ?? [
+      {
+        id: "1",
+        type: "order" as const,
+        title: "Yeni online paket siparişi",
+        description: "Mutfak kuyruğuna aktarıldı (#1042)",
+        timeAgo: "2 dk önce",
+        targetUrl: "/dashboard/orders",
+      },
+      {
+        id: "2",
+        type: "table" as const,
+        title: "Masa 4 adisyonu açıldı",
+        description: "4 kişilik masa servisi başladı",
+        timeAgo: "8 dk önce",
+        targetUrl: "/dashboard/orders",
+      },
+      {
+        id: "3",
+        type: "kitchen" as const,
+        title: "Mutfakta 3 sipariş bekliyor",
+        description: "Hazırlık süresi ortalama 10 dk",
+        timeAgo: "12 dk önce",
+        targetUrl: "/dashboard/kitchen",
+      },
+    ];
+
     return {
       totalTables,
       activeTables,
       openOrders,
+      takeawayOrders,
       waitingItems,
       readyItems,
       todayOrders,
       totalCustomers,
       newCustomers,
       occupancyRate,
-      notifications: operationalStats?.recentNotifications ?? [
-        {
-          id: "1",
-          type: "order" as const,
-          text: "Yeni online sipariş alındı",
-          timeAgo: "5 dk önce",
-        },
-        {
-          id: "2",
-          type: "table" as const,
-          text: "Masa 12 adisyonu açıldı",
-          timeAgo: "10 dk önce",
-        },
-        {
-          id: "3",
-          type: "kitchen" as const,
-          text: "Mutfakta 3 sipariş bekliyor",
-          timeAgo: "12 dk önce",
-        },
-      ],
+      weather,
+      notifications,
     };
   }, [operationalStats]);
 
-  // 6 Temel Aksiyon Kartı
+  // 6 Temel Aksiyon Kartı (Finansal Veri İçermez)
   const ACTION_CARDS = [
     {
       id: "masalar",
@@ -195,8 +238,8 @@ export function HomeScreen({
       icon: ChefHatIcon,
       statLeftValue: `${stats.waitingItems}`,
       statLeftLabel: "bekleyen sipariş",
-      statRightValue: "12 dk",
-      statRightLabel: "ort. hazırlık",
+      statRightValue: `${stats.readyItems}`,
+      statRightLabel: "servise hazır",
       statLeftColor: "text-orange-600",
       statRightColor: "text-orange-600",
     },
@@ -221,7 +264,7 @@ export function HomeScreen({
       badge: "04",
       badgeColor: "text-purple-600 bg-purple-50/80 border-purple-200/60",
       title: "Analitik",
-      description: "Satış & Günlük Raporlar",
+      description: "Operasyonel Günlük Raporlar",
       href: "/dashboard",
       circleBg: "bg-purple-50/80 border border-purple-100 text-purple-600",
       icon: BarChart3Icon,
@@ -237,14 +280,14 @@ export function HomeScreen({
       badge: "05",
       badgeColor: "text-rose-600 bg-rose-50/80 border-rose-200/60",
       title: "Müşteriler",
-      description: "Sadakat & Kampanyalar",
+      description: "Sadakat & Müşteri Takibi",
       href: "/dashboard/customers",
       circleBg: "bg-rose-50/80 border border-rose-100 text-rose-600",
       icon: UsersIcon,
       statLeftValue: `${stats.totalCustomers.toLocaleString("tr-TR")}`,
-      statLeftLabel: "toplam müşteri",
+      statLeftLabel: "toplam kayıt",
       statRightValue: `${stats.newCustomers}`,
-      statRightLabel: "yeni müşteri",
+      statRightLabel: "bugün yeni",
       statLeftColor: "text-rose-600",
       statRightColor: "text-rose-600",
     },
@@ -288,6 +331,8 @@ export function HomeScreen({
       return allowedRoutes.includes(card.href);
     });
   }, [isStaff, allowedRoutes]);
+
+  const displayBranch = operationalStats?.branchName || restaurantName;
 
   return (
     <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-3 sm:p-5 lg:p-6 flex flex-col justify-between gap-5 selection:bg-primary/20">
@@ -356,7 +401,7 @@ export function HomeScreen({
       `}</style>
 
       {/* 
-        1. ÜST HEADER ALANI (GÖRSELDEKİ BİREBİR BAŞLIK VE DURUM ROZETLERİ)
+        1. ÜST HEADER ALANI (LOGO + AĞ/SUNUCU DURUMU + ŞUBE + KİLİT BUTONU)
       */}
       <header className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 py-1">
         {/* Sol: Logo + Alt Başlık */}
@@ -378,18 +423,18 @@ export function HomeScreen({
                   <UtensilsCrossedIcon className="size-5" />
                 </div>
                 <span className="text-xl font-black tracking-tight text-gray-900">
-                  {settings.systemName || "adisyoon"}
+                  {settings.systemName || "AdisyonEx"}
                 </span>
               </div>
             )}
           </div>
 
           <span className="text-xs font-semibold text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
-            Restoran yönetim sistemi
+            {settings.systemTagline || "Restoran yönetim sistemi"}
           </span>
         </div>
 
-        {/* Sağ: İnternet Bağlı + Sunucu Bağlı + Şube + Kullanıcı */}
+        {/* Sağ: İnternet Bağlı + Sunucu/Lokal Bağlı + Şube + Kilit + Kullanıcı */}
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {/* İnternet Durumu */}
           <div
@@ -405,17 +450,39 @@ export function HomeScreen({
             <span>{isOnline ? "İnternet Bağlı" : "Bağlantı Yok"}</span>
           </div>
 
-          {/* Sunucu Durumu */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold shadow-2xs">
+          {/* Sunucu Durumu: İnternet kesilince "Lokal Sunucu", gelince "Sunucu Bağlı" */}
+          <div
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold shadow-2xs transition-all",
+              isOnline
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-amber-50 text-amber-700 border-amber-200",
+            )}
+            title={isOnline ? "Merkezi Bulut Sunucu Bağlantısı Aktif" : "Yerel Ağ / Lokal Sunucu Modu"}
+          >
             <ServerIcon className="size-3.5" />
-            <span>Sunucu Bağlı</span>
+            <span>{isOnline ? "Sunucu Bağlı" : "Lokal Sunucu"}</span>
           </div>
 
           {/* Şube Bilgisi */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-gray-700 border border-gray-200 text-xs font-bold shadow-2xs">
-            <MapPinIcon className="size-3.5 text-gray-500" />
-            <span>Şube: {restaurantName}</span>
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-gray-700 border border-gray-200 text-xs font-bold shadow-2xs"
+            title={`Şube: ${displayBranch}`}
+          >
+            <MapPinIcon className="size-3.5 text-blue-600" />
+            <span>Şube: {displayBranch}</span>
           </div>
+
+          {/* Ekranı Kilitle Butonu */}
+          <button
+            type="button"
+            onClick={() => setIsLockModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+            title="Terminal Ekranını Kilitle"
+          >
+            <LockIcon className="size-3.5 text-amber-400" />
+            <span>Ekranı Kilitle</span>
+          </button>
 
           {/* Kullanıcı / Rol */}
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-gray-800 border border-gray-200 text-xs font-extrabold shadow-2xs cursor-default">
@@ -427,14 +494,14 @@ export function HomeScreen({
       </header>
 
       {/* 
-        2. ANA GÖVDE: SOL PANEL (SAAT, OPERASYON, BİLDİRİMLER) + SAĞ 6'LI KART GRID'İ
+        2. ANA GÖVDE: SOL PANEL (SAAT & HAVA, OPERASYON, BİLDİRİMLER) + SAĞ 6'LI KART GRID'İ
       */}
       <main className="w-full flex flex-col lg:flex-row gap-5 items-start flex-1">
         {/* ============================================================ */}
         {/* SOL PANEL (W-FULL LG:W-[320px])                               */}
         {/* ============================================================ */}
         <aside className="w-full lg:w-[320px] xl:w-[340px] shrink-0 flex flex-col gap-4">
-          {/* KART 1: GÜNCEL SAAT & TARİH & HAVA DURUMU */}
+          {/* KART 1: GÜNCEL SAAT & TARİH & CANLI HAVA DURUMU */}
           <div
             className="anim-elastic-left rounded-3xl p-5 border border-gray-200/90 bg-white shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:border-gray-300"
             style={{ animationDelay: "0ms" }}
@@ -449,21 +516,32 @@ export function HomeScreen({
             </div>
 
             <div className="flex flex-col items-end text-right">
-              <SunIcon className="size-8 text-amber-500 animate-[spin_24s_linear_infinite]" />
-              <span className="text-xl font-extrabold text-gray-900 mt-1">18°</span>
-              <span className="text-[11px] font-medium text-gray-400">Açık ve Güneşli</span>
-              <span className="text-[11px] font-bold text-gray-600">İstanbul</span>
+              <WeatherIcon iconType={stats.weather.iconType} />
+              <span className="text-xl font-extrabold text-gray-900 mt-1 tabular-nums">
+                {stats.weather.temperature}°
+              </span>
+              <span className="text-[11px] font-medium text-gray-500">
+                {stats.weather.description}
+              </span>
+              <span className="text-[11px] font-bold text-gray-700 truncate max-w-[130px]">
+                {stats.weather.cityName}
+              </span>
             </div>
           </div>
 
-          {/* KART 2: OPERASYON ÖZETİ (FİNANSAL VERİLER YOKTUR - TAMAMEN OPERASYONEL) */}
+          {/* KART 2: OPERASYON ÖZETİ (FİNANSAL VERİLER YOKTUR - %100 GERÇEK CANLI DB) */}
           <div
             className="anim-elastic-left rounded-3xl p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3.5 transition-all hover:shadow-md hover:border-gray-300"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
-              <TrendingUpIcon className="size-4.5 text-primary" />
-              <h2 className="text-sm font-black text-gray-900">Operasyon Özeti</h2>
+            <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <TrendingUpIcon className="size-4.5 text-primary" />
+                <h2 className="text-sm font-black text-gray-900">Operasyon Özeti</h2>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Canlı
+              </span>
             </div>
 
             <div className="flex flex-col gap-2.5">
@@ -506,15 +584,17 @@ export function HomeScreen({
                 </span>
               </div>
 
-              {/* Online / Paket Sipariş */}
+              {/* Online / Paket Sipariş (CANLI DB VERİSİ) */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex size-7.5 items-center justify-center rounded-xl bg-pink-50 text-pink-600 border border-pink-100">
                     <ShoppingBagIcon className="size-4" />
                   </div>
-                  <span className="text-xs font-bold text-gray-700">Online Sipariş</span>
+                  <span className="text-xs font-bold text-gray-700">Paket & Online</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 tabular-nums">12</span>
+                <span className="text-sm font-black text-gray-900 tabular-nums">
+                  {stats.takeawayOrders}
+                </span>
               </div>
 
               {/* Hazır / Servis Bekleyen */}
@@ -532,15 +612,20 @@ export function HomeScreen({
             </div>
           </div>
 
-          {/* KART 3: BİLDİRİMLER */}
+          {/* KART 3: BİLDİRİMLER (TIKLANINCA TAM EKRAN KATEGORİZE MODAL AÇILIR) */}
           <div
             className="anim-elastic-left rounded-3xl p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3 transition-all hover:shadow-md hover:border-gray-300"
             style={{ animationDelay: "200ms" }}
           >
-            <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+            <div
+              onClick={() => setIsNotifModalOpen(true)}
+              className="flex items-center justify-between pb-1 border-b border-gray-100 cursor-pointer group"
+            >
               <div className="flex items-center gap-2">
-                <BellIcon className="size-4 text-gray-700" />
-                <h2 className="text-sm font-black text-gray-900">Bildirimler</h2>
+                <BellIcon className="size-4 text-gray-700 group-hover:text-primary transition-colors" />
+                <h2 className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">
+                  Bildirimler
+                </h2>
               </div>
               <span className="flex size-5 items-center justify-center rounded-full bg-rose-500 text-white text-[11px] font-black">
                 {stats.notifications.length}
@@ -548,23 +633,29 @@ export function HomeScreen({
             </div>
 
             <div className="flex flex-col gap-2.5">
-              {stats.notifications.map((n, i) => (
-                <div key={n.id || i} className="flex items-center justify-between gap-2">
+              {stats.notifications.slice(0, 3).map((n, i) => (
+                <div
+                  key={n.id || i}
+                  onClick={() => setIsNotifModalOpen(true)}
+                  className="flex items-center justify-between gap-2 cursor-pointer hover:bg-gray-50/80 p-1.5 rounded-xl transition-colors"
+                >
                   <div className="flex items-center gap-2 min-w-0">
                     <div
                       className={cn(
                         "flex size-6 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-black",
-                        i === 0
+                        n.type === "order"
                           ? "bg-emerald-500"
-                          : i === 1
-                            ? "bg-blue-500"
-                            : "bg-orange-500",
+                          : n.type === "table"
+                          ? "bg-blue-500"
+                          : n.type === "kitchen"
+                          ? "bg-orange-500"
+                          : "bg-rose-500",
                       )}
                     >
-                      {i === 0 ? "go" : i === 1 ? "M" : "K"}
+                      {n.type === "order" ? "S" : n.type === "table" ? "M" : n.type === "kitchen" ? "K" : "!"}
                     </div>
                     <span className="text-xs font-bold text-gray-800 truncate">
-                      {n.text}
+                      {n.title}
                     </span>
                   </div>
                   <span className="text-[11px] font-medium text-gray-400 shrink-0">
@@ -574,13 +665,14 @@ export function HomeScreen({
               ))}
             </div>
 
-            <Link
-              href="/dashboard/orders"
-              className="mt-1 inline-flex items-center justify-between text-xs font-bold text-gray-500 hover:text-primary transition-colors pt-2 border-t border-gray-100 group"
+            <button
+              type="button"
+              onClick={() => setIsNotifModalOpen(true)}
+              className="mt-1 inline-flex items-center justify-between text-xs font-bold text-gray-500 hover:text-primary transition-colors pt-2 border-t border-gray-100 group cursor-pointer"
             >
               <span>Tüm bildirimleri göster</span>
               <span className="transition-transform group-hover:translate-x-1">→</span>
-            </Link>
+            </button>
           </div>
         </aside>
 
@@ -665,68 +757,95 @@ export function HomeScreen({
       </main>
 
       {/* 
-        3. ALT BAR (FAVORİLER, HIZLI AKSİYONLAR VE DESTEK HATTI)
+        3. ALT BAR (SÜPER ADMİN YÖNETİMLİ SİSTEM BİLGİLERİ VE DESTEK FOOTER'I)
       */}
       <footer
-        className="anim-elastic-bottom w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-wrap items-center justify-between gap-3"
+        className="anim-elastic-bottom w-full rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-semibold text-gray-600"
         style={{ animationDelay: "380ms" }}
       >
-        {/* Sol: Favoriler Başlığı */}
-        <div className="flex items-center gap-1.5 text-xs font-black text-gray-600 pl-1">
-          <StarIcon className="size-4 text-amber-500 fill-amber-500" />
-          <span>Favoriler</span>
+        {/* Sol: Logo + Sistem Adı & Açıklaması */}
+        <div className="flex items-center gap-3">
+          <div className="flex size-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
+            <UtensilsCrossedIcon className="size-4 text-amber-400" />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black text-gray-900 tracking-tight">
+                {settings.systemName || "AdisyonEx"}
+              </span>
+              <span className="px-2 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+                v2.4 Online
+              </span>
+            </div>
+            <span className="text-[11px] text-gray-400 line-clamp-1">
+              {settings.systemTagline || "Yeni Nesil Restoran & POS Otomasyon Platformu"}
+            </span>
+          </div>
         </div>
 
-        {/* Orta: Hızlı Aksiyon Butonları */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-          <Link
-            href="/dashboard/orders"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100/80 text-blue-700 text-xs font-bold transition-all shadow-2xs active:scale-95"
-          >
-            <ArmchairIcon className="size-3.5 text-blue-600" />
-            <span>Hızlı Masa Aç</span>
-          </Link>
-
-          <Link
-            href="/dashboard/pos"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/80 text-emerald-700 text-xs font-bold transition-all shadow-2xs active:scale-95"
-          >
-            <ShoppingBagIcon className="size-3.5 text-emerald-600" />
-            <span>Paket Sipariş</span>
-          </Link>
-
-          <Link
-            href="/dashboard/orders"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100/80 text-purple-700 text-xs font-bold transition-all shadow-2xs active:scale-95"
-          >
-            <SearchIcon className="size-3.5 text-purple-600" />
-            <span>Adisyon Ara</span>
-          </Link>
-
-          <Link
-            href="/dashboard/menu-design"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-orange-200 bg-orange-50/60 hover:bg-orange-100/80 text-orange-700 text-xs font-bold transition-all shadow-2xs active:scale-95"
-          >
-            <QrCodeIcon className="size-3.5 text-orange-600" />
-            <span>QR Menü</span>
-          </Link>
-
-          <Link
-            href="/dashboard/settings"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sky-200 bg-sky-50/60 hover:bg-sky-100/80 text-sky-700 text-xs font-bold transition-all shadow-2xs active:scale-95"
-          >
-            <PrinterIcon className="size-3.5 text-sky-600" />
-            <span>Yazdırma Merkezi</span>
-          </Link>
+        {/* Orta: Telif Hakkı & Resmi Web Sitesi */}
+        <div className="flex items-center gap-3 text-[11px] text-gray-500">
+          <span>{settings.copyrightText || "© 2026 AdisyonEx. Tüm hakları saklıdır."}</span>
+          {settings.websiteUrl && (
+            <>
+              <span className="text-gray-300">·</span>
+              <a
+                href={settings.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
+              >
+                <span>Resmi Web Sitesi</span>
+                <ExternalLinkIcon className="size-3" />
+              </a>
+            </>
+          )}
         </div>
 
-        {/* Sağ: Destek Hattı */}
-        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 pr-1">
-          <HeadphonesIcon className="size-4 text-gray-400" />
-          <span>Destek Hattı</span>
-          <span className="font-mono font-black text-gray-800">0850 123 45 67</span>
+        {/* Sağ: Destek Hattı + Hızlı Ekran Kilitleme */}
+        <div className="flex items-center gap-4">
+          <a
+            href={`tel:${(settings.supportPhone || "+908503099901").replace(/\s+/g, "")}`}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-800 transition-colors shadow-2xs group"
+          >
+            <HeadphonesIcon className="size-4 text-primary group-hover:scale-110 transition-transform" />
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                Destek Hattı
+              </span>
+              <span className="font-mono font-black text-xs text-gray-900">
+                {settings.supportPhone || "+90 850 309 9901"}
+              </span>
+            </div>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setIsLockModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-2xs transition-all active:scale-95 cursor-pointer"
+            title="Terminal Ekranını Kilitle"
+          >
+            <LockIcon className="size-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Kilitle</span>
+          </button>
         </div>
       </footer>
+
+      {/* AÇILIR TAM EKRAN BİLDİRİM PANELİ MODAL */}
+      <HomeNotificationsModal
+        isOpen={isNotifModalOpen}
+        onClose={() => setIsNotifModalOpen(false)}
+        notifications={stats.notifications}
+      />
+
+      {/* EKRAN KİLİDİ MODAL (NUMPAD + ŞİFRELEME) */}
+      <HomeScreenLockModal
+        isLocked={isLockModalOpen}
+        onUnlock={() => setIsLockModalOpen(false)}
+        correctPin={operationalStats?.screenLockPin || "0000"}
+        restaurantName={restaurantName}
+        logoUrl={settings.logoUrl || settings.logoDarkUrl}
+      />
     </div>
   );
 }

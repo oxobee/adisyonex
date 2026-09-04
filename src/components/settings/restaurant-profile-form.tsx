@@ -49,6 +49,8 @@ export function RestaurantProfileForm({
     legalName: profile.legalName ?? "",
     tagline: profile.tagline ?? "",
     brandColor: profile.brandColor ?? "",
+    branchName: profile.branchName ?? "",
+    branchAddress: profile.branchAddress ?? "",
     addressLine1: profile.addressLine1 ?? "",
     addressLine2: profile.addressLine2 ?? "",
     city: profile.city ?? "",
@@ -105,6 +107,8 @@ export function RestaurantProfileForm({
       legalName: trimmed(form.legalName),
       tagline: trimmed(form.tagline),
       brandColor: trimmed(form.brandColor),
+      branchName: trimmed(form.branchName),
+      branchAddress: trimmed(form.branchAddress),
       addressLine1: trimmed(form.addressLine1),
       addressLine2: trimmed(form.addressLine2),
       city: trimmed(form.city),
@@ -200,6 +204,32 @@ export function RestaurantProfileForm({
           <CardDescription>Müşteri fişlerinde ve resmi evraklarda basılır.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 rounded-2xl bg-muted/30 p-3.5 border border-border/60">
+            <Field>
+              <FieldLabel htmlFor="p-branch-name" className="font-bold">Şube Adı</FieldLabel>
+              <Input
+                id="p-branch-name"
+                value={form.branchName}
+                onChange={(e) => set("branchName", e.target.value)}
+                placeholder="Örn: Kadıköy Moda Şubesi"
+                className="bg-background"
+              />
+              <span className="text-[11px] text-muted-foreground mt-1">Ana ekran başlığında ve şube rozetinde gösterilir.</span>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="p-branch-addr" className="font-bold">Şube Adresi (Hava Durumu ve Konum)</FieldLabel>
+              <Input
+                id="p-branch-addr"
+                value={form.branchAddress}
+                onChange={(e) => set("branchAddress", e.target.value)}
+                placeholder="Örn: Caferağa Mah. Moda Cad. Kadıköy, İstanbul"
+                className="bg-background"
+              />
+              <span className="text-[11px] text-muted-foreground mt-1">Ana ekrandaki canlı hava durumunu doğrudan bu adrese göre çeker.</span>
+            </Field>
+          </div>
+
           <Field>
             <FieldLabel htmlFor="p-addr1">Adres Satırı 1</FieldLabel>
             <Input

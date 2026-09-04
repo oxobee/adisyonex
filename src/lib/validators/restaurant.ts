@@ -73,6 +73,8 @@ export const updateProfileSchema = z
       .optional(),
     addressLine1: optionalText(160),
     addressLine2: optionalText(160),
+    branchName: optionalText(120),
+    branchAddress: optionalText(300),
     city: optionalText(80),
     state: optionalText(80),
     postalCode: optionalText(12),

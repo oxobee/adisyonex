@@ -10,6 +10,9 @@ export interface SystemSettingsDTO {
   metaTitle: string | null;
   metaDescription: string | null;
   metaKeywords: string | null;
+  supportPhone: string | null;
+  websiteUrl: string | null;
+  copyrightText: string | null;
 }
 
 const DEFAULT_SETTINGS: SystemSettingsDTO = {
@@ -22,6 +25,9 @@ const DEFAULT_SETTINGS: SystemSettingsDTO = {
   metaTitle: "AdisyonEx | Restoran ve QR Menü Otomasyonu",
   metaDescription: "Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.",
   metaKeywords: "restoran otomasyonu, adisyon sistemi, qr menü, pos kasa",
+  supportPhone: "+90 850 309 9901",
+  websiteUrl: "https://adisyonex.com",
+  copyrightText: "© 2026 AdisyonEx. Tüm hakları saklıdır.",
 };
 
 export async function getSystemSettings(): Promise<SystemSettingsDTO> {
@@ -42,6 +48,9 @@ export async function getSystemSettings(): Promise<SystemSettingsDTO> {
       metaTitle: row.metaTitle || DEFAULT_SETTINGS.metaTitle,
       metaDescription: row.metaDescription || DEFAULT_SETTINGS.metaDescription,
       metaKeywords: row.metaKeywords || DEFAULT_SETTINGS.metaKeywords,
+      supportPhone: (row as unknown as { supportPhone?: string | null }).supportPhone ?? DEFAULT_SETTINGS.supportPhone,
+      websiteUrl: (row as unknown as { websiteUrl?: string | null }).websiteUrl ?? DEFAULT_SETTINGS.websiteUrl,
+      copyrightText: (row as unknown as { copyrightText?: string | null }).copyrightText ?? DEFAULT_SETTINGS.copyrightText,
     };
   } catch (error) {
     console.error("Failed to read system settings:", error);
@@ -63,6 +72,9 @@ export async function updateSystemSettings(data: Partial<SystemSettingsDTO>): Pr
       metaTitle: data.metaTitle ?? DEFAULT_SETTINGS.metaTitle,
       metaDescription: data.metaDescription ?? DEFAULT_SETTINGS.metaDescription,
       metaKeywords: data.metaKeywords ?? DEFAULT_SETTINGS.metaKeywords,
+      supportPhone: data.supportPhone ?? DEFAULT_SETTINGS.supportPhone,
+      websiteUrl: data.websiteUrl ?? DEFAULT_SETTINGS.websiteUrl,
+      copyrightText: data.copyrightText ?? DEFAULT_SETTINGS.copyrightText,
     },
     update: {
       ...(data.systemName !== undefined && { systemName: data.systemName }),
@@ -74,6 +86,9 @@ export async function updateSystemSettings(data: Partial<SystemSettingsDTO>): Pr
       ...(data.metaTitle !== undefined && { metaTitle: data.metaTitle }),
       ...(data.metaDescription !== undefined && { metaDescription: data.metaDescription }),
       ...(data.metaKeywords !== undefined && { metaKeywords: data.metaKeywords }),
+      ...(data.supportPhone !== undefined && { supportPhone: data.supportPhone }),
+      ...(data.websiteUrl !== undefined && { websiteUrl: data.websiteUrl }),
+      ...(data.copyrightText !== undefined && { copyrightText: data.copyrightText }),
     },
   });
 
@@ -87,5 +102,8 @@ export async function updateSystemSettings(data: Partial<SystemSettingsDTO>): Pr
     metaTitle: updated.metaTitle,
     metaDescription: updated.metaDescription,
     metaKeywords: updated.metaKeywords,
+    supportPhone: (updated as unknown as { supportPhone?: string | null }).supportPhone ?? DEFAULT_SETTINGS.supportPhone,
+    websiteUrl: (updated as unknown as { websiteUrl?: string | null }).websiteUrl ?? DEFAULT_SETTINGS.websiteUrl,
+    copyrightText: (updated as unknown as { copyrightText?: string | null }).copyrightText ?? DEFAULT_SETTINGS.copyrightText,
   };
 }

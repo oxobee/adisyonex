@@ -176,6 +176,9 @@ model Restaurant {
   addressLine2     String?
   state            String?
   postalCode       String?
+  branchName       String?
+  branchAddress    String?
+  screenLockPin    String?            @default("0000")
   latitude         Float?
   longitude        Float?
   website          String?
@@ -995,6 +998,9 @@ model SystemSetting {
   metaTitle       String?  @default("Elitale Restro | Restoran ve QR Menü Otomasyonu")
   metaDescription String?  @default("Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.")
   metaKeywords    String?  @default("restoran otomasyonu, adisyon sistemi, qr menü, pos kasa")
+  supportPhone    String?  @default("+90 850 309 9901")
+  websiteUrl      String?  @default("https://adisyonex.com")
+  copyrightText   String?  @default("© 2026 AdisyonEx. Tüm hakları saklıdır.")
   updatedAt       DateTime @updatedAt
 }
 

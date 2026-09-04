@@ -17,6 +17,9 @@ const systemSettingsSchema = z.object({
   metaTitle: z.string().trim().max(160).optional().nullable(),
   metaDescription: z.string().trim().max(350).optional().nullable(),
   metaKeywords: z.string().trim().max(300).optional().nullable(),
+  supportPhone: z.string().trim().max(50).optional().nullable(),
+  websiteUrl: z.string().trim().max(255).optional().nullable(),
+  copyrightText: z.string().trim().max(255).optional().nullable(),
 });
 
 export const updateSystemSettingsAction = withAdminValidation(
@@ -32,6 +35,9 @@ export const updateSystemSettingsAction = withAdminValidation(
       metaTitle: data.metaTitle || null,
       metaDescription: data.metaDescription || null,
       metaKeywords: data.metaKeywords || null,
+      supportPhone: data.supportPhone || null,
+      websiteUrl: data.websiteUrl || null,
+      copyrightText: data.copyrightText || null,
     });
   },
 );
