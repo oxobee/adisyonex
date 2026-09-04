@@ -433,7 +433,7 @@ export function CashierSalesTerminal({
                 <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir kategori seçin</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5">
                 {filteredItems.map((item, idx) => {
                   const cartCount = cartItemCounts[item.id] || 0;
                   const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
@@ -455,20 +455,20 @@ export function CashierSalesTerminal({
                       key={item.id}
                       onClick={() => handleTapItem(item)}
                       className={cn(
-                        "group relative rounded-2xl overflow-hidden cursor-pointer select-none flex flex-col justify-between transition-all duration-150 transform-gpu",
+                        "group relative rounded-3xl overflow-hidden cursor-pointer select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
                         `bg-gradient-to-br ${gradient}`,
-                        "border-t border-t-white/50 border-x border-white/15 border-b-[3.5px] border-b-black/40",
-                        "shadow-[0_8px_20px_-4px_rgba(0,0,0,0.35),inset_0_1.5px_1px_rgba(255,255,255,0.4)]",
+                        "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
+                        "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
                         "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
-                        "active:translate-y-1 active:scale-[0.98] active:border-b-[1.5px]",
-                        "min-h-[175px] sm:min-h-[195px]"
+                        "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
+                        "min-h-[250px] sm:min-h-[275px]"
                       )}
                     >
                       {/* Subdued Eye-Friendly Texture Overlay & Concentric Rings */}
                       <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
-                        {/* Concentric rings in corner */}
+                        {/* Concentric geometric rings in bottom corner */}
                         <svg
-                          className="absolute -bottom-6 -right-6 w-32 h-32 opacity-15 text-white pointer-events-none"
+                          className="absolute -bottom-6 -right-6 w-36 h-36 opacity-15 text-white pointer-events-none"
                           viewBox="0 0 160 160"
                           fill="none"
                         >
@@ -478,7 +478,7 @@ export function CashierSalesTerminal({
                         </svg>
 
                         {/* Top Specular Bevel Highlight */}
-                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
+                        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
 
                         {/* Bottom Extrusion Shadow */}
                         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 via-black/15 to-transparent pointer-events-none" />
@@ -486,57 +486,63 @@ export function CashierSalesTerminal({
 
                       {/* Sepetteki Adet Rozeti (3D Tactile Pill) */}
                       {cartCount > 0 && (
-                        <div className="absolute top-2 right-2 z-20 flex size-7 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-lg border-2 border-white animate-in zoom-in-75">
+                        <div className="absolute top-2.5 right-2.5 z-20 flex size-7 sm:size-8 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-lg border-2 border-white animate-in zoom-in-75">
                           {cartCount}
                         </div>
                       )}
 
-                      {/* Üst Alan: Ürün Fotoğrafı veya 3D İkon Küresi */}
-                      <div className="relative w-full h-24 sm:h-28 overflow-hidden bg-black/25">
+                      {/* Üst Alan: Tam ve Net Görünen Görsel Alanı (Hafif Dikdörtgen, object-contain veya geniş kadraj) */}
+                      <div className="relative w-full h-36 sm:h-42 overflow-hidden bg-black/20 flex items-center justify-center p-2">
                         {primaryImage ? (
-                          <img
-                            src={primaryImage}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
-                          />
+                          <div className="relative w-full h-full">
+                            <img
+                              src={primaryImage}
+                              alt={item.name}
+                              className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
                         ) : (
                           <div className="size-full flex items-center justify-center">
-                            {/* 3D Tactile Sphere Icon from reference style */}
-                            <div className="size-12 rounded-full bg-white/20 backdrop-blur-xs border border-white/40 shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.3)] flex items-center justify-center text-white transition-transform group-hover:scale-110">
-                              <UtensilsCrossedIcon className="size-6" />
+                            {/* 3D Tactile Sphere Icon */}
+                            <div className="size-16 rounded-full bg-white/20 backdrop-blur-xs border border-white/40 shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.3)] flex items-center justify-center text-white transition-transform group-hover:scale-110">
+                              <UtensilsCrossedIcon className="size-8" />
                             </div>
                           </div>
                         )}
 
-                        {/* Gradient shade over image to seamlessly transition to card */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-
-                        {/* Category Label Chip */}
-                        <div className="absolute bottom-1.5 left-2 z-10">
-                          <span className="text-[10px] font-bold text-white/90 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/20">
+                        {/* Category Label Chip on Image */}
+                        <div className="absolute top-2.5 left-2.5 z-10">
+                          <span className="text-[10px] font-bold text-white/90 bg-black/45 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/25 shadow-xs">
                             {categoryMap.get(item.categoryId) || "Genel"}
                           </span>
                         </div>
                       </div>
 
-                      {/* Alt Alan: Ürün Adı & 3D Fiyat Paneli */}
-                      <div className="relative z-10 p-2.5 sm:p-3 flex flex-col justify-between flex-1">
-                        <span className="text-xs sm:text-sm font-black text-white leading-tight line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                          {item.name}
-                        </span>
+                      {/* Alt Alan: Ürün Bilgileri, Adı, Fiyat ve Ekle Butonu */}
+                      <div className="relative z-10 p-3 sm:p-3.5 flex flex-col justify-between flex-1 bg-black/15 backdrop-blur-[2px] border-t border-white/15">
+                        <div className="flex flex-col">
+                          <span className="text-sm sm:text-base font-black text-white leading-snug line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                            {item.name}
+                          </span>
+                          {item.shortDescription && (
+                            <span className="text-[11px] font-medium text-white/70 line-clamp-1 mt-0.5">
+                              {item.shortDescription}
+                            </span>
+                          )}
+                        </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/20">
-                          <span className="text-xs sm:text-sm font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/20">
+                          <span className="text-base sm:text-lg font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                             {formatCurrency(item.price)}
                           </span>
 
                           {hasVariants ? (
-                            <span className="text-[10px] font-black text-amber-200 bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-400/40">
+                            <span className="text-xs font-black text-amber-200 bg-amber-950/70 px-2.5 py-1 rounded-xl border border-amber-400/40 shadow-xs">
                               Seçenekli
                             </span>
                           ) : (
-                            <div className="size-6 rounded-full bg-white/25 backdrop-blur-xs text-white border border-white/40 flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-colors shadow-xs">
-                              <PlusIcon className="size-3.5 stroke-[3]" />
+                            <div className="size-8 rounded-xl bg-white/25 backdrop-blur-xs text-white border border-white/40 flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-all shadow-xs group-hover:scale-105 active:scale-95">
+                              <PlusIcon className="size-4 stroke-[3]" />
                             </div>
                           )}
                         </div>
