@@ -47,6 +47,114 @@ interface ChatMessage {
   timestamp: string;
 }
 
+export interface StaffInfo {
+  id: string;
+  name: string;
+  role: string;
+  jobTitle?: string | null;
+  allowedRoutes?: readonly string[] | null;
+}
+
+export function getRoleSuggestionsAndGreeting(staff: StaffInfo | null) {
+  const role = (staff?.role || "").toUpperCase();
+  const jobTitle = (staff?.jobTitle || "").toLowerCase();
+  const name = staff?.name?.trim() || "";
+  const routes = staff?.allowedRoutes ?? null;
+
+  const isKitchen =
+    role === "KITCHEN" ||
+    role === "CHEF" ||
+    jobTitle.includes("aşçı") ||
+    jobTitle.includes("mutfak") ||
+    jobTitle.includes("chef") ||
+    (routes !== null &&
+      routes.includes("/dashboard/kitchen") &&
+      !routes.includes("/dashboard/orders") &&
+      !routes.includes("/dashboard/z-report"));
+
+  const isWaiter =
+    !isKitchen &&
+    (role === "WAITER" ||
+      jobTitle.includes("garson") ||
+      jobTitle.includes("servis") ||
+      (routes !== null &&
+        routes.includes("/dashboard/orders") &&
+        !routes.includes("/dashboard/kitchen") &&
+        !routes.includes("/dashboard/z-report")));
+
+  const isCashier =
+    !isKitchen &&
+    !isWaiter &&
+    (role === "CASHIER" ||
+      jobTitle.includes("kasa") ||
+      jobTitle.includes("kasiyer") ||
+      (routes !== null &&
+        routes.includes("/dashboard/pos") &&
+        !routes.includes("/dashboard/z-report")));
+
+  if (isKitchen) {
+    return {
+      isKitchen: true,
+      greeting: name
+        ? `Merhaba ${name}! Ben AdisyonEx Mutfak Asistanınız. Mutfak siparişleri, hazırlık durumu ve operasyon bildirimleri hakkında bana danışabilirsiniz.`
+        : "Merhaba! Ben AdisyonEx Mutfak Asistanınız. Mutfak siparişleri, hazırlık durumu ve operasyon bildirimleri hakkında bana danışabilirsiniz.",
+      options: [
+        "Bekleyen siparişleri göster",
+        "Tavuk burger hazırlanıyor mu?",
+        "Mutfak ekranına git",
+        "Hazırlanan yemekler listesi",
+      ],
+      placeholder: "Örn: Bekleyen siparişleri göster veya Mutfak ekranı...",
+    };
+  }
+
+  if (isWaiter) {
+    return {
+      isWaiter: true,
+      greeting: name
+        ? `Merhaba ${name}! Ben AdisyonEx Garson Asistanınız. Masalar, sipariş ekleme ve servis bildirimleri hakkında bana danışabilirsiniz.`
+        : "Merhaba! Ben AdisyonEx Garson Asistanınız. Masalar, sipariş ekleme ve servis bildirimleri hakkında bana danışabilirsiniz.",
+      options: [
+        "Masa 5'e 1 Hamburger ekle",
+        "Boş masaları göster",
+        "Masa durumunu göster",
+        "Masa yönetimine git",
+      ],
+      placeholder: "Örn: Masa 5'e 1 Hamburger ekle veya Boş masalar...",
+    };
+  }
+
+  if (isCashier) {
+    return {
+      isCashier: true,
+      greeting: name
+        ? `Merhaba ${name}! Ben AdisyonEx Kasa Asistanınız. Açık hesaplar, ödemeler ve POS işlemleri hakkında bana danışabilirsiniz.`
+        : "Merhaba! Ben AdisyonEx Kasa Asistanınız. Açık hesaplar, ödemeler ve POS işlemleri hakkında bana danışabilirsiniz.",
+      options: [
+        "Açık masa hesaplarını göster",
+        "POS ödeme ekranına git",
+        "Masa durumunu göster",
+        "Kasa durumunu göster",
+      ],
+      placeholder: "Örn: Açık masaları listele veya POS ödeme ekranı...",
+    };
+  }
+
+  // Management / Super Admin / Owner / General Staff
+  return {
+    greeting: name
+      ? `Merhaba ${name}! Ben AdisyonEx Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.`
+      : "Merhaba! Ben AdisyonEx Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.",
+    options: [
+      "Bugünkü toplam ciro ne kadar?",
+      "Masa 5'e 1 Hamburger ekle",
+      "Mutfak durumunu göster",
+      "Z Raporu nedir?",
+    ],
+    placeholder: "Örn: Masa 3'e 2 Çay ekle veya Ciro ne kadar?",
+  };
+}
+
 export function GlobalAiAssistant() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -79,28 +187,53 @@ export function GlobalAiAssistant() {
   ]);
 
   // Active Staff Account State (Rol Bazlı Yetki Kısıtlama için)
-  const [activeStaff, setActiveStaff] = useState<{
-    id: string;
-    name: string;
-    role: string;
-    jobTitle?: string | null;
-  } | null>(null);
+  const [activeStaff, setActiveStaff] = useState<StaffInfo | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const applyStaffToChat = (staffData: StaffInfo | null) => {
+      setActiveStaff(staffData);
+      const roleConfig = getRoleSuggestionsAndGreeting(staffData);
+      setMessages((prev) => {
+        if (prev.length <= 1) {
+          return [
+            {
+              id: "welcome",
+              role: "assistant",
+              content: roleConfig.greeting,
+              clarificationOptions: roleConfig.options,
+              timestamp: "Şimdi",
+            },
+          ];
+        }
+        return prev.map((m) =>
+          m.id === "welcome"
+            ? {
+                ...m,
+                content: roleConfig.greeting,
+                clarificationOptions: roleConfig.options,
+              }
+            : m
+        );
+      });
+    };
+
     const readActiveStaff = () => {
       try {
         const raw = localStorage.getItem("adisyon_active_staff_account");
         if (raw) {
-          setActiveStaff(JSON.parse(raw));
+          applyStaffToChat(JSON.parse(raw));
         } else {
           const staffId = localStorage.getItem("adisyon_active_staff_id");
           if (staffId) {
-            setActiveStaff({ id: staffId, name: "Personel", role: "STAFF" });
+            applyStaffToChat({ id: staffId, name: "Personel", role: "STAFF" });
+          } else {
+            applyStaffToChat(null);
           }
         }
       } catch {
-        // ignore
+        applyStaffToChat(null);
       }
     };
 
@@ -108,7 +241,7 @@ export function GlobalAiAssistant() {
 
     const handleAccountChange = (e: any) => {
       if (e?.detail) {
-        setActiveStaff(e.detail);
+        applyStaffToChat(e.detail);
       } else {
         readActiveStaff();
       }
@@ -698,7 +831,7 @@ export function GlobalAiAssistant() {
                 placeholder={
                   isListening || isHoldingMic
                     ? "Dinleniyor, konuşun..."
-                    : "Örn: Masa 3'e 2 Çay ekle veya Ciro ne kadar?"
+                    : getRoleSuggestionsAndGreeting(activeStaff).placeholder
                 }
                 className="w-full bg-transparent border-0 outline-none text-xs font-semibold text-gray-800 dark:text-gray-100 placeholder:text-gray-400 min-w-0"
               />

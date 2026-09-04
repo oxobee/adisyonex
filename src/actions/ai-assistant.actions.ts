@@ -146,11 +146,18 @@ export async function askAiAssistantAction(
 
     const { restaurantId, role, name, jobTitle, allowedRoutes, isManager } = auth;
 
+    const roleUpper = (role || "").toUpperCase();
+    const jobTitleLower = (jobTitle || "").toLowerCase();
+
     // Strict Permissions:
     // Mutfak Personeli (örn. Ebru UĞURLU - Aşçı): SADECE Mutfak ekranı, hazırlanan siparişler ve operasyon bildirimleri
     const isKitchenOnly =
       !isManager &&
-      (role === "KITCHEN" ||
+      (roleUpper === "KITCHEN" ||
+        roleUpper === "CHEF" ||
+        jobTitleLower.includes("aşçı") ||
+        jobTitleLower.includes("mutfak") ||
+        jobTitleLower.includes("chef") ||
         (allowedRoutes !== null &&
           allowedRoutes.includes("/dashboard/kitchen") &&
           !allowedRoutes.includes("/dashboard/orders") &&
@@ -159,12 +166,26 @@ export async function askAiAssistantAction(
     // Garson Personeli (örn. Emre TEKNECİ - Garson): SADECE Masalar ve Siparişler, masaya ürün ekleme ve garson çağrıları
     const isWaiterOnly =
       !isManager &&
-      (role === "WAITER" ||
+      !isKitchenOnly &&
+      (roleUpper === "WAITER" ||
+        jobTitleLower.includes("garson") ||
+        jobTitleLower.includes("servis") ||
         (allowedRoutes !== null &&
           allowedRoutes.includes("/dashboard/orders") &&
           !allowedRoutes.includes("/dashboard/kitchen") &&
           !allowedRoutes.includes("/dashboard/z-report") &&
           !allowedRoutes.includes("/dashboard/settings")));
+
+    const isCashierOnly =
+      !isManager &&
+      !isKitchenOnly &&
+      !isWaiterOnly &&
+      (roleUpper === "CASHIER" ||
+        jobTitleLower.includes("kasa") ||
+        jobTitleLower.includes("kasiyer") ||
+        (allowedRoutes !== null &&
+          allowedRoutes.includes("/dashboard/pos") &&
+          !allowedRoutes.includes("/dashboard/z-report")));
 
     const canManageOrders =
       !isKitchenOnly &&
@@ -172,7 +193,7 @@ export async function askAiAssistantAction(
         !allowedRoutes ||
         allowedRoutes.includes("/dashboard/orders") ||
         allowedRoutes.includes("/dashboard/pos") ||
-        role === "WAITER");
+        roleUpper === "WAITER");
 
     const canViewFinancials =
       !isKitchenOnly &&
@@ -271,8 +292,12 @@ KESİNLİKLE YASAK ALANLAR:
 3. Firma ayarları, şube ayarları, Wi-Fi bilgileri, yazıcılar ve sistem yönetimi KESİNLİKLE YASAKTIR.
 4. Personel şifreleri, PIN kodları ve personel yönetimi KESİNLİKLE YASAKTIR.
 
-KURAL: Kullanıcı bu yasak alanlardan biri hakkında soru sorar veya işlem isterse (örneğin masalar, ciro, ayarlar, garson siparişleri), KESİNLİKLE REDDET:
-"Sayın ${name}, ${jobTitle || "Aşçı"} yetkiniz ile yalnızca Mutfak ekranı operasyonları ve mutfak hazırlık bildirimleri hakkında bilgi alabilirsiniz. Masalar, ciro ve sistem ayarlarına erişim yetkiniz bulunmamaktadır." de.`;
+ÖNERİLEN SEÇENEKLER (clarificationOptions) KESİN KURALI:
+- clarificationOptions içine ASLA ve ASLA masaya sipariş ekleme ("Masa 5'e 1 Hamburger ekle"), ciro, kasa, Z raporu, masa yönetimi veya ayarlar KOYMA.
+- SADECE aşçının yetkisi dahilindeki mutfakla ilgili örnekler ver (örn: "Bekleyen siparişleri göster", "Tavuk burger hazırlanıyor mu?", "Mutfak ekranına git", "Hazırlanan yemekler listesi").
+
+KURAL: Kullanıcı bu yasak alanlardan biri hakkında soru sorar veya işlem isterse (örneğin masalar, ciro, Z raporu, ayarlar, garson siparişleri), KESİNLİKLE REDDET:
+"Sayın ${name}, ${jobTitle || "Aşçı"} yetkiniz ile yalnızca Mutfak ekranı operasyonları ve mutfak hazırlık bildirimleri hakkında bilgi alabilirsiniz. Masalar, ciro, Z Raporu ve sistem ayarlarına erişim yetkiniz bulunmamaktadır." de.`;
     } else if (isWaiterOnly) {
       roleInstructions = `
 DİKKAT: KULLANICI GARSON PERSONELİDİR:
@@ -288,8 +313,26 @@ KESİNLİKLE YASAK ALANLAR:
 3. Personel yönetimi, PIN kodları ve çalışan maaşları (/dashboard/staff) KESİNLİKLE YASAKTIR.
 4. Stok ve hammadde depoları (/dashboard/inventory) KESİNLİKLE YASAKTIR.
 
+ÖNERİLEN SEÇENEKLER (clarificationOptions) KESİN KURALI:
+- clarificationOptions içine ASLA ciro, kasa, Z raporu, ayarlar veya personel maaşları KOYMA.
+- SADECE masalar, siparişler ve servis bildirimleri ile ilgili örnekler ver (örn: "Masa 5'e 1 Hamburger ekle", "Boş masaları göster", "Masa 3 sipariş durumu").
+
 KURAL: Kullanıcı bu yasak alanlardan biri hakkında soru sorarsa, KESİNLİKLE REDDET:
 "Sayın ${name}, ${jobTitle || "Garson"} yetkiniz ile yalnızca Masalar, adisyonlar, sipariş ekleme ve servis bildirimleri hakkında işlem yapabilirsiniz. Ciro, kasa, personel yönetimi ve sistem ayarlarına erişim yetkiniz bulunmamaktadır." de.`;
+    } else if (isCashierOnly) {
+      roleInstructions = `
+DİKKAT: KULLANICI KASİYER PERSONELİDİR:
+- İsim: "${name}"
+- Görevi: "${jobTitle || "Kasiyer"}"
+- Tanımlı Yetkisi: YALNIZCA Kasa ve POS Ekranı (/dashboard/pos), açık masa hesapları, ödemeler ve adisyon kapatma.
+
+KESİNLİKLE YASAK ALANLAR:
+1. Firma ayarları, şube ayarları, Wi-Fi şifresi ve sistem konfigürasyonu (/dashboard/settings) KESİNLİKLE YASAKTIR.
+2. Personel yönetimi, PIN kodları ve çalışan maaşları (/dashboard/staff) KESİNLİKLE YASAKTIR.
+
+ÖNERİLEN SEÇENEKLER (clarificationOptions) KESİN KURALI:
+- clarificationOptions içine ASLA şube/personel ayarları veya mutfak içi hazırlık detayları koyma.
+- SADECE kasa, ödemeler, açık adisyonlar ve POS ile ilgili örnekler ver (örn: "Açık masa hesaplarını göster", "POS ödeme ekranına git", "Kasa durumunu göster").`;
     } else {
       // Manager / Admin
       roleInstructions = `
@@ -364,13 +407,54 @@ GENEL VE KESİN KURALLAR:
       };
     }
 
+    // Role-based post-filtering of clarificationOptions to ensure zero leakage
+    let sanitizedOptions: string[] = Array.isArray(parsed.clarificationOptions)
+      ? parsed.clarificationOptions.map((o: any) => String(o).trim()).filter(Boolean)
+      : [];
+
+    if (isKitchenOnly) {
+      const forbidden = ["ciro", "z rapor", "z-rapor", "kasa", "ödeme", "masaya", "sipariş ekle", "ayar", "personel", "fiyat"];
+      sanitizedOptions = sanitizedOptions.filter(
+        (opt) => !forbidden.some((bad) => opt.toLowerCase().includes(bad))
+      );
+      if (sanitizedOptions.length === 0) {
+        sanitizedOptions = [
+          "Bekleyen siparişleri göster",
+          "Mutfak ekranına git",
+          "Hazırlanan yemekler listesi",
+        ];
+      }
+    } else if (isWaiterOnly) {
+      const forbidden = ["ciro", "z rapor", "z-rapor", "kasa", "hasılat", "ayar", "personel maaş", "maaş"];
+      sanitizedOptions = sanitizedOptions.filter(
+        (opt) => !forbidden.some((bad) => opt.toLowerCase().includes(bad))
+      );
+      if (sanitizedOptions.length === 0) {
+        sanitizedOptions = [
+          "Masa 5'e 1 Hamburger ekle",
+          "Boş masaları göster",
+          "Masa durumunu göster",
+        ];
+      }
+    } else if (isCashierOnly) {
+      const forbidden = ["personel maaş", "ayar", "şube ayar", "wi-fi", "wifi"];
+      sanitizedOptions = sanitizedOptions.filter(
+        (opt) => !forbidden.some((bad) => opt.toLowerCase().includes(bad))
+      );
+      if (sanitizedOptions.length === 0) {
+        sanitizedOptions = [
+          "Açık masa hesaplarını göster",
+          "POS ödeme ekranına git",
+          "Kasa durumunu göster",
+        ];
+      }
+    }
+
     return success<AiAssistantResponse>({
       reply: parsed.reply || "İşleminiz tamamlandı.",
       recommendedPage: parsed.recommendedPage || null,
       actionPreview: parsed.actionPreview || null,
-      clarificationOptions: Array.isArray(parsed.clarificationOptions)
-        ? parsed.clarificationOptions
-        : [],
+      clarificationOptions: sanitizedOptions,
       userRole: jobTitle || role,
       userName: name,
       allowedRoutes,

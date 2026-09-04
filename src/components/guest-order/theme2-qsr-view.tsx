@@ -2856,6 +2856,7 @@ export function Theme2QsrView({
         secondaryColor={secondaryColor}
         menu={menu}
         onQuickAdd={onQuickAdd}
+        onAddCustomLine={onAddCustomLine}
         enabled={qrAiEnabled !== false}
       />
     </div>

@@ -453,6 +453,34 @@ export function GuestOrderPage({
     cart.quickAdd(item);
   };
 
+  const handleAddCustomLine = (line: {
+    item: MenuItemDTO;
+    quantity: number;
+    variantId?: string | null;
+    modifierItems?: readonly { optionId: string; optionName: string; price: number }[];
+    notes?: string;
+  }) => {
+    const variant = line.variantId ? line.item.variants.find((v) => v.id === line.variantId) : null;
+    cart.addLine({
+      key: newLineKey(),
+      menuItemId: line.item.id,
+      name: line.item.name,
+      variantId: variant?.id ?? null,
+      variantName: variant?.name ?? null,
+      unitPrice: variant ? variant.price : line.item.price,
+      taxRate: line.item.tax.rate,
+      taxInclusive: line.item.tax.inclusive,
+      modifiers: (line.modifierItems ?? []).map((m) => ({
+        id: m.optionId,
+        name: m.optionName,
+        priceDelta: m.price,
+      })),
+      quantity: line.quantity,
+      lineNote: line.notes ?? null,
+      isComp: false,
+    });
+  };
+
   const busy = isOrderSubmitting || place.isPending;
 
 
@@ -477,27 +505,7 @@ export function GuestOrderPage({
         cartItemCount={itemCount}
         cartGrandTotal={bill.grandTotal}
         onQuickAdd={onQuickAdd}
-        onAddCustomLine={(line) => {
-          const variant = line.variantId ? line.item.variants.find((v) => v.id === line.variantId) : null;
-          cart.addLine({
-            key: newLineKey(),
-            menuItemId: line.item.id,
-            name: line.item.name,
-            variantId: variant?.id ?? null,
-            variantName: variant?.name ?? null,
-            unitPrice: variant ? variant.price : line.item.price,
-            taxRate: line.item.tax.rate,
-            taxInclusive: line.item.tax.inclusive,
-            modifiers: (line.modifierItems ?? []).map((m) => ({
-              id: m.optionId,
-              name: m.optionName,
-              priceDelta: m.price,
-            })),
-            quantity: line.quantity,
-            lineNote: line.notes ?? null,
-            isComp: false,
-          });
-        }}
+        onAddCustomLine={handleAddCustomLine}
         onUpdateQuantity={(key, qty) => {
           const existing = cart.cart.find((c) => c.key === key);
           if (existing) {
@@ -1046,6 +1054,7 @@ export function GuestOrderPage({
         secondaryColor={qrSecondaryColor}
         menu={menu}
         onQuickAdd={onQuickAdd}
+        onAddCustomLine={handleAddCustomLine}
         enabled={qrAiEnabled !== false}
       />
     </div>
