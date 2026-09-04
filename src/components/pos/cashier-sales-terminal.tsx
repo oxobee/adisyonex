@@ -809,64 +809,6 @@ export function CashierSalesTerminal({
             </div>
           </div>
 
-          {/* Servis Türü Seçici: Masada Servis | Gel-Al / Paket | Paket Servis / Kurye */}
-          <div className="px-3 py-2 bg-slate-100/90 border-b border-slate-200 shrink-0">
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-200/80 rounded-xl border border-slate-300/60 shadow-inner">
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("DINE_IN");
-                  if (!selectedTableId) {
-                    setIsTableModalOpen(true);
-                  }
-                }}
-                className={cn(
-                  "py-2 px-1 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
-                  serviceType === "DINE_IN"
-                    ? "bg-white text-blue-700 shadow-sm border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
-                )}
-              >
-                <ArmchairIcon className="size-3.5 shrink-0" />
-                <span className="truncate">Masada Servis</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("TAKEAWAY");
-                  setSelectedTableId(null);
-                }}
-                className={cn(
-                  "py-2 px-1 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
-                  serviceType === "TAKEAWAY"
-                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
-                )}
-              >
-                <ShoppingBagIcon className="size-3.5 shrink-0" />
-                <span className="truncate">Gel-Al / Paket</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("DELIVERY");
-                  setSelectedTableId(null);
-                }}
-                className={cn(
-                  "py-2 px-1 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
-                  serviceType === "DELIVERY"
-                    ? "bg-white text-orange-700 shadow-sm border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
-                )}
-              >
-                <BikeIcon className="size-3.5 shrink-0" />
-                <span className="truncate">Paket / Kurye</span>
-              </button>
-            </div>
-          </div>
-
           {/* Sepet Ürün Satırları (Scrollable) */}
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 min-h-[140px] max-h-[30vh] lg:max-h-[none]">
             {cart.length === 0 ? (
@@ -1041,6 +983,62 @@ export function CashierSalesTerminal({
 
           {/* 3. ÖDEME YÖNTEMLERİ VE PARAÜSTÜ MODÜLÜ */}
           <div className="p-3.5 bg-white border-t border-slate-200 flex flex-col gap-3 shrink-0">
+            {/* Servis Türü Seçici (Masada Servis | Gel-Al / Paket | Paket Servis / Kurye) */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("DINE_IN");
+                  if (!selectedTableId) {
+                    setIsTableModalOpen(true);
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
+                  serviceType === "DINE_IN"
+                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/80 ring-1 ring-blue-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <ArmchairIcon className="size-3.5 shrink-0 text-blue-600" />
+                <span className="truncate">Masada Servis</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("TAKEAWAY");
+                  setSelectedTableId(null);
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
+                  serviceType === "TAKEAWAY"
+                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80 ring-1 ring-emerald-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <ShoppingBagIcon className="size-3.5 shrink-0 text-emerald-600" />
+                <span className="truncate">Gel-Al / Paket</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("DELIVERY");
+                  setSelectedTableId(null);
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
+                  serviceType === "DELIVERY"
+                    ? "bg-white text-orange-700 shadow-sm border border-slate-200/80 ring-1 ring-orange-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <BikeIcon className="size-3.5 shrink-0 text-orange-600" />
+                <span className="truncate">Paket Servis / Kurye</span>
+              </button>
+            </div>
+
             {/* Ödeme Türü Seçici Sekmeler (Modern Segmented Control) */}
             <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
               <button
