@@ -29,9 +29,8 @@ import { toast } from "sonner";
 import { deliverTableOrdersAction, voidOrderAction } from "@/actions/order.actions";
 import { PackagedDeliveryDialog } from "@/components/waiter/packaged-delivery-dialog";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
-import { TableCarousel } from "@/components/orders/table-carousel";
-import { TableActionWorkbench } from "@/components/orders/table-action-workbench";
-import { TableSplitView } from "@/components/orders/table-split-view";
+import { MaterialTableCard } from "@/components/orders/material-table-card";
+import { TableActionModal } from "@/components/orders/table-action-modal";
 import { TableBillModal } from "@/components/orders/table-bill-modal";
 import { TableCard, type TableStatus } from "@/components/orders/table-card";
 import { TableDetailModal } from "@/components/orders/table-detail-modal";
@@ -221,9 +220,6 @@ export function OrdersBoard({
 
   // Spotlight State
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-
-  // Table Board Layout Mode ("COVERFLOW" | "SPLIT")
-  const [boardLayout, setBoardLayout] = useState<"COVERFLOW" | "SPLIT">("COVERFLOW");
 
   // Dialog States
   const [printBillTable, setPrintBillTable] = useState<{
@@ -485,81 +481,70 @@ export function OrdersBoard({
     return { empty, occupied, total: tables.length, billCount };
   }, [tables, ordersByTableId]);
 
-  const currentTable = useMemo(() => {
-    if (selectedTableId) {
-      const found = tables.find((t) => t.id === selectedTableId);
-      if (found) return found;
-    }
-    return filteredTables[0] ?? tables[0] ?? null;
-  }, [tables, filteredTables, selectedTableId]);
-
-  const selectedTable = currentTable;
-
-  const currentTableOrders = useMemo(
-    () => (currentTable ? ordersByTableId.get(currentTable.id) ?? [] : []),
-    [ordersByTableId, currentTable],
+  const selectedTable = useMemo(
+    () => (selectedTableId ? tables.find((t) => t.id === selectedTableId) ?? null : null),
+    [tables, selectedTableId],
   );
 
-  const selectedTableOrders = currentTableOrders;
+  const selectedTableOrders = useMemo(
+    () => (selectedTableId ? ordersByTableId.get(selectedTableId) ?? [] : []),
+    [ordersByTableId, selectedTableId],
+  );
 
-  const currentTableTotal = useMemo(
+  const selectedTableTotal = useMemo(
     () =>
       round2(
-        currentTableOrders.reduce(
+        selectedTableOrders.reduce(
           (sum, o) => sum + orderRunningTotal(o),
           0,
         ),
       ),
-    [currentTableOrders],
+    [selectedTableOrders],
   );
 
-  const selectedTableTotal = currentTableTotal;
-
-  const currentTableFirstOrderAt = useMemo(
+  const selectedTableFirstOrderAt = useMemo(
     () =>
-      currentTableOrders.length > 0 ? currentTableOrders[0].createdAt : null,
-    [currentTableOrders],
+      selectedTableOrders.length > 0 ? selectedTableOrders[0].createdAt : null,
+    [selectedTableOrders],
   );
-
-  const selectedTableFirstOrderAt = currentTableFirstOrderAt;
 
   const selectedTableStatus: TableStatus =
-    currentTableOrders.length > 0 ? "OCCUPIED" : "EMPTY";
+    selectedTableOrders.length > 0 ? "OCCUPIED" : "EMPTY";
 
-  // Handlers for table actions (keep selection intact)
+  // Handlers for table actions (close table action modal and open target dialog)
   const handlePrintBill = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setPrintBillTable({ table: t, orders: ords });
   };
 
   const handleAddProduct = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setPosModalTable({ table: t, orders: ords });
   };
 
   const handleSettle = (t: TableDTO, ords: readonly OrderDTO[]) => {
     if (ords.length === 0) return;
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setSettleTableModal({ table: t, orders: ords });
   };
 
   const handleTransfer = (t: TableDTO) => {
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setTransferDialog({ table: t, mode: "TRANSFER" });
   };
 
   const handleMerge = (t: TableDTO) => {
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setTransferDialog({ table: t, mode: "MERGE" });
   };
 
   const handleViewDetails = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setDetailModalTable({ table: t, orders: ords });
   };
 
   const handleVoid = (t: TableDTO) => {
-    setSelectedTableId(t.id);
+    setSelectedTableId(null);
     setVoidConfirmTable(t);
   };
 
@@ -634,39 +619,6 @@ export function OrdersBoard({
         />
 
         <div className="flex items-center gap-2">
-          {/* Layout Mode Switcher (Coverflow vs Split) */}
-          {viewMode === "TABLE_GRID" && (
-            <div className="flex items-center rounded-2xl border border-border/80 bg-background/80 p-0.5 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setBoardLayout("COVERFLOW")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                  boardLayout === "COVERFLOW"
-                    ? "bg-[#5c328e] text-white shadow-xs font-black"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                title="3D Coverflow Vitrin Görünümü"
-              >
-                <span>🎠 Vitrin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setBoardLayout("SPLIT")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                  boardLayout === "SPLIT"
-                    ? "bg-[#5c328e] text-white shadow-xs font-black"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                title="Split Panel Görünümü (Masa Kartları & Sabit Adisyon)"
-              >
-                <span>📑 Split Panel</span>
-              </button>
-            </div>
-          )}
-
           {viewMode === "COMPLETED" ? (
             <Button
               variant="outline"
@@ -732,68 +684,104 @@ export function OrdersBoard({
       ) : null}
 
       {/* ---------------------------------------------------- */}
-      {/* 1. MASA PLANI (3D COVERFLOW & SABİT MASA İŞLEM MENÜSÜ) */}
+      {/* 1. MASA PLANI (MATERIAL CARDS GRID & MODAL / BOTTOM SHEET) */}
       {/* ---------------------------------------------------- */}
       {viewMode === "TABLE_GRID" && (
-        <div className="flex flex-col gap-6 w-full">
-          {boardLayout === "COVERFLOW" ? (
-            <>
-              {/* 3D Coverflow Table Carousel & Search Bar & Salon Chips */}
-              <TableCarousel
-                tables={filteredTables}
-                ordersByTableId={ordersByTableId}
-                selectedTableId={currentTable?.id ?? null}
-                onSelectTable={(tableId) => setSelectedTableId(tableId)}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                sections={sections}
-                selectedSection={selectedSection}
-                onSelectSection={setSelectedSection}
-              />
-
-              {/* Sabit Masa İşlem Menüsü (Fixed POS Workbench) */}
-              {currentTable && (
-                <div className="w-full mt-1 animate-in fade-in slide-in-from-bottom-3 duration-300">
-                  <TableActionWorkbench
-                    table={currentTable}
-                    orders={currentTableOrders}
-                    total={currentTableTotal}
-                    firstOrderAt={currentTableFirstOrderAt}
-                    onPrintBill={() => handlePrintBill(currentTable, currentTableOrders)}
-                    onAddProduct={() => handleAddProduct(currentTable, currentTableOrders)}
-                    onSettleBill={() => handleSettle(currentTable, currentTableOrders)}
-                    onTransferTable={() => handleTransfer(currentTable)}
-                    onMergeTable={() => handleMerge(currentTable)}
-                    onViewDetails={() => handleViewDetails(currentTable, currentTableOrders)}
-                    onVoidTable={() => handleVoid(currentTable)}
-                    onDeliverTable={() => handleDeliverTable(currentTable.id)}
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            /* Split Panel Mode: Left Table Cards, Right Fixed Workbench (100% Mobile Responsive) */
-            <div className="w-full animate-in fade-in duration-300">
-              <TableSplitView
-                tables={filteredTables}
-                ordersByTableId={ordersByTableId}
-                selectedTableId={currentTable?.id ?? null}
-                onSelectTable={(tableId) => setSelectedTableId(tableId)}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                sections={sections}
-                selectedSection={selectedSection}
-                onSelectSection={setSelectedSection}
-                onPrintBill={handlePrintBill}
-                onAddProduct={handleAddProduct}
-                onSettleBill={handleSettle}
-                onTransferTable={handleTransfer}
-                onMergeTable={handleMerge}
-                onViewDetails={handleViewDetails}
-                onVoidTable={handleVoid}
-                onDeliverTable={handleDeliverTable}
+        <div className="flex flex-col gap-5 w-full">
+          {/* Top Search & Material Segmented Filter Pills */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full max-w-5xl mx-auto">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md w-full">
+              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Masa adı veya salon ara…"
+                className="w-full h-11 pl-10 pr-4 rounded-full bg-card/90 dark:bg-card/70 border border-border/80 text-foreground text-xs sm:text-sm font-medium placeholder:text-muted-foreground shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-primary/40 transition-colors"
               />
             </div>
+
+            {/* Material Segmented Salon Pills (like Day | Week | Month in reference image) */}
+            <div className="no-scrollbar flex items-center p-1 bg-muted/70 dark:bg-muted/30 rounded-full border border-border/70 overflow-x-auto shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setSelectedSection("ALL")}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer select-none",
+                  selectedSection === "ALL"
+                    ? "bg-[#34495e] dark:bg-primary text-white shadow-sm font-black"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span>Tümü</span>
+                <span className="text-[10px] opacity-75">({tables.length})</span>
+              </button>
+
+              {sections.map((sec) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => setSelectedSection(sec)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer select-none",
+                    selectedSection === sec
+                      ? "bg-[#34495e] dark:bg-primary text-white shadow-sm font-black"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <span>{sec}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* MATERIAL TABLE CARDS GRID (2 COLUMNS ON MOBILE, LIKE REFERENCE IMAGE) */}
+          {filteredTables.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-border/80 bg-muted/10 w-full max-w-md mx-auto my-8">
+              <SparklesIcon className="size-8 text-muted-foreground/60 mb-2" />
+              <p className="font-bold text-foreground text-sm">Masa Bulunamadı</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Lütfen arama terimini veya salon filtresini kontrol edin.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5 w-full max-w-5xl mx-auto">
+              {filteredTables.map((table, idx) => {
+                const tableOrders = ordersByTableId.get(table.id) ?? [];
+                return (
+                  <div
+                    key={table.id}
+                    className="animate-in fade-in-0 zoom-in-95 duration-200"
+                    style={{ animationDelay: `${idx * 20}ms` }}
+                  >
+                    <MaterialTableCard
+                      table={table}
+                      orders={tableOrders}
+                      onClick={() => setSelectedTableId(table.id)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* TABLE ACTION MODAL (MOBILE ELASTIC BOTTOM SHEET & DESKTOP POPUP) */}
+          {selectedTable && (
+            <TableActionModal
+              table={selectedTable}
+              orders={selectedTableOrders}
+              isOpen={Boolean(selectedTableId)}
+              onClose={() => setSelectedTableId(null)}
+              onPrintBill={handlePrintBill}
+              onAddProduct={handleAddProduct}
+              onSettleBill={handleSettle}
+              onTransferTable={handleTransfer}
+              onMergeTable={handleMerge}
+              onViewDetails={handleViewDetails}
+              onVoidTable={handleVoid}
+              onDeliverTable={handleDeliverTable}
+            />
           )}
         </div>
       )}
