@@ -158,6 +158,8 @@ export function ItemDialog({
     item?.tax.inclusive ?? true,
   );
   const [isActive, setIsActive] = useState(item?.isActive ?? true);
+  const [isChefSpecial, setIsChefSpecial] = useState(item?.isChefSpecial ?? false);
+  const [isAiFeatured, setIsAiFeatured] = useState(item?.isAiFeatured ?? false);
   const [variants, setVariants] = useState<VariantRow[]>(
     item
       ? item.variants.map((v) => ({ name: v.name, price: String(v.price) }))
@@ -231,6 +233,8 @@ export function ItemDialog({
           : undefined,
       hsnSacCode: hsnSacCode || undefined,
       isActive,
+      isChefSpecial,
+      isAiFeatured,
       variants: variants
         .filter((v) => v.name.trim())
         .map((v) => ({ name: v.name, price: Number(v.price || 0) })),
@@ -800,9 +804,39 @@ export function ItemDialog({
               onPendingFilesChange={(files) => setPendingImages(files)}
             />
 
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-sm font-medium">Satışta / Aktif</span>
-              <Switch checked={isActive} onCheckedChange={setIsActive} />
+            <div className="space-y-3 pt-2.5 border-t border-gray-100 dark:border-slate-800">
+              {/* 1. ŞEFIN SEÇTİKLERİ */}
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/50">
+                <div className="flex flex-col">
+                  <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                    <span>👨‍🍳</span> Şefin Seçtikleri (Özel Tavsiye)
+                  </span>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                    QR menüde en başta dikkat çeken parlak kategori olarak sergilenir.
+                  </span>
+                </div>
+                <Switch checked={isChefSpecial} onCheckedChange={setIsChefSpecial} />
+              </div>
+
+              {/* 2. YAPAY ZEKADA ÖNE ÇIKAR */}
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/70 dark:border-purple-900/50">
+                <div className="flex flex-col">
+                  <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                    <SparklesIcon className="size-3.5 text-purple-600" />
+                    Yapay Zekada Öne Çıkar
+                  </span>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Müşteri yemek danıştığında yapay zeka bu yemeği ilk sıralarda önerir.
+                  </span>
+                </div>
+                <Switch checked={isAiFeatured} onCheckedChange={setIsAiFeatured} />
+              </div>
+
+              {/* 3. SATIŞTA / AKTİF */}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-sm font-medium">Satışta / Aktif</span>
+                <Switch checked={isActive} onCheckedChange={setIsActive} />
+              </div>
             </div>
 
             <DialogFooter>

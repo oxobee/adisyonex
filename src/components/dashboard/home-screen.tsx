@@ -30,6 +30,7 @@ import {
   TrendingUpIcon,
   UtensilsCrossedIcon,
   WifiIcon,
+  HistoryIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ import {
   type HomeNotificationItem,
 } from "./home-notifications-modal";
 import { HomeScreenLockModal } from "./home-screen-lock-modal";
+import { SystemActivityLogModal } from "./system-activity-log-modal";
 import {
   StaffAccountMenu,
   type StaffAccount,
@@ -130,13 +132,7 @@ export function HomeScreen({
   // Modals state
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
-
-  // AI Command Input & Speech State
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [isListening, setIsListening] = useState(false);
-  const [isHoldingMic, setIsHoldingMic] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // Kalıcı Bildirim Senkronizasyonu (Sayfa yenilendiğinde temizlenen bildirimlerin gelmemesi için)
   const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([]);
@@ -157,102 +153,6 @@ export function HomeScreen({
     window.addEventListener("notifications-cleared", loadDismissed);
     return () => window.removeEventListener("notifications-cleared", loadDismissed);
   }, []);
-
-  // Sayfa kaydırma dinleyicisi (Mobilde Sticky AI Bar tetikleyicisi)
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 120);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Web Speech API Entegrasyonu (Tarayıcı destekliyorsa canlı konuşmayı metne çevirir)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const SpeechRec =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRec) return;
-
-    try {
-      const rec = new SpeechRec();
-      rec.continuous = false;
-      rec.interimResults = true;
-      rec.lang = "tr-TR";
-
-      rec.onresult = (event: any) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcript += event.results[i][0].transcript;
-        }
-        if (transcript) {
-          setAiPrompt(transcript);
-        }
-      };
-
-      rec.onerror = () => {
-        setIsListening(false);
-        setIsHoldingMic(false);
-      };
-
-      rec.onend = () => {
-        setIsListening(false);
-        setIsHoldingMic(false);
-      };
-
-      recognitionRef.current = rec;
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const startListening = () => {
-    setIsListening(true);
-    try {
-      recognitionRef.current?.start();
-    } catch {
-      // ignore if already started
-    }
-  };
-
-  const stopListening = () => {
-    setIsListening(false);
-    setIsHoldingMic(false);
-    try {
-      recognitionRef.current?.stop();
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleMicPressStart = (e: React.MouseEvent | React.TouchEvent) => {
-    setIsHoldingMic(true);
-    startListening();
-  };
-
-  const handleMicPressEnd = () => {
-    setIsHoldingMic(false);
-  };
-
-  const handleAiSubmit = (commandText?: string) => {
-    const rawQuery = (commandText ?? aiPrompt).trim();
-    if (!rawQuery) return;
-    const query = rawQuery.toLowerCase();
-
-    if (query.includes("kilit") || query.includes("kilitle")) {
-      setIsLockModalOpen(true);
-    } else if (query.includes("bildirim")) {
-      setIsNotifModalOpen(true);
-    } else {
-      // Akıllı Global AI Asistanına iletiyi gönderir ve pencereyi açar
-      window.dispatchEvent(
-        new CustomEvent("open-ai-assistant", { detail: { prompt: rawQuery } })
-      );
-    }
-
-    setAiPrompt("");
-    stopListening();
-  };
 
   // Active Account State (for fast switching and dynamic permission filtering)
   const initialAccount: StaffAccount = useMemo(
@@ -508,7 +408,7 @@ export function HomeScreen({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 pb-28 sm:pb-12 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 pb-4 sm:pb-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
       {/* WORLD-CLASS MOTION DESIGN KEYFRAMES (FLUID & REFINED) */}
       <style jsx global>{`
         @keyframes sleekFadeIn {
@@ -738,97 +638,6 @@ export function HomeScreen({
             </div>
           </div>
 
-          {/* YAPAY ZEKA DESTEKLİ BORDER ANİMASYONLU INPUT ALANI */}
-          <div
-            className="anim-sleek relative p-[1.5px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs group transition-all"
-            style={{ animationDelay: "20ms" }}
-          >
-            {/* Canlı Gradient Animasyonlu Border */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 animate-gradient-border opacity-85 group-hover:opacity-100 transition-opacity" />
-
-            <div className="relative flex items-center gap-2 bg-white rounded-[calc(1rem-1px)] sm:rounded-[calc(1.5rem-1px)] px-3 py-2 sm:py-2.5">
-              <div className="flex size-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600 shrink-0">
-                <SparklesIcon className="size-4 text-purple-600" />
-              </div>
-
-              {/* Canlı Ses Spektrumu Animasyonu (Mikrofon açıkken veya basılı tutulurken) */}
-              {(isListening || isHoldingMic) && (
-                <div
-                  className="flex items-center gap-0.5 sm:gap-1 h-5 px-1 shrink-0"
-                  title="Ses dinleniyor..."
-                >
-                  <span className="w-1 bg-purple-600 rounded-full sound-bar-1" />
-                  <span className="w-1 bg-indigo-600 rounded-full sound-bar-2" />
-                  <span className="w-1 bg-blue-600 rounded-full sound-bar-3" />
-                  <span className="w-1 bg-indigo-600 rounded-full sound-bar-4" />
-                  <span className="w-1 bg-purple-600 rounded-full sound-bar-5" />
-                </div>
-              )}
-
-              <input
-                type="text"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAiSubmit();
-                  }
-                }}
-                placeholder={
-                  isListening || isHoldingMic
-                    ? "Sizi dinliyorum, komutunuzu söyleyin..."
-                    : "Yapay zeka asistanına komut verin..."
-                }
-                className="w-full bg-transparent border-0 outline-none text-xs sm:text-sm font-semibold text-gray-800 placeholder:text-gray-400 min-w-0"
-              />
-
-              {/* Dinamik Buton: Metin varsa Gönder ikonu, yoksa Bas-Konuş Mikrofon */}
-              {aiPrompt.trim().length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => handleAiSubmit()}
-                  className="flex size-7.5 sm:size-8 items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all active:scale-90 shrink-0 cursor-pointer shadow-sm"
-                  title="Komutu Gönder"
-                >
-                  <SendIcon className="size-3.5 sm:size-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onMouseDown={handleMicPressStart}
-                  onMouseUp={handleMicPressEnd}
-                  onTouchStart={handleMicPressStart}
-                  onTouchEnd={handleMicPressEnd}
-                  onClick={() => {
-                    if (isListening) {
-                      stopListening();
-                      toast.info("Mikrofon kapatıldı");
-                    } else {
-                      startListening();
-                      toast.info("Mikrofon dinleme aktif (Yapay zeka hazır)");
-                    }
-                  }}
-                  className={cn(
-                    "flex size-7.5 sm:size-8 items-center justify-center rounded-xl transition-all duration-200 shrink-0 cursor-pointer shadow-2xs select-none",
-                    isHoldingMic
-                      ? "scale-115 bg-red-600 text-white shadow-lg shadow-red-500/30"
-                      : isListening
-                      ? "bg-rose-500 text-white animate-pulse"
-                      : "bg-purple-50 hover:bg-purple-100 text-purple-600 active:scale-90"
-                  )}
-                  title={
-                    isListening
-                      ? "Dinlemeyi Durdur"
-                      : "Sesli Komut Ver (Tıkla veya Basılı Tut)"
-                  }
-                >
-                  <MicIcon className="size-3.5 sm:size-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* KART 2: OPERASYON ÖZETİ (%100 GERÇEK CANLI DB) */}
           <div
             className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3"
@@ -1055,10 +864,38 @@ export function HomeScreen({
       </main>
 
       {/* 
-        3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DIŞ LINK YOK, KİLİT YOK)
+        3. SİSTEM DEĞİŞİKLİK VE İŞLEM GÜNLÜĞÜ (AUDIT LOG ÇUBUĞU - DAR, GENİŞ VE DİKKAT ÇEKMEYEN ZARİF ALAN)
+      */}
+      <div className="w-full rounded-2xl p-2.5 sm:p-3 border border-gray-200/90 bg-white/95 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex size-7 items-center justify-center rounded-xl bg-slate-900 text-white shadow-2xs shrink-0">
+            <HistoryIcon className="size-3.5 text-indigo-400" />
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-black text-gray-900 tracking-tight shrink-0">
+              Sistem Değişiklik Günlüğü:
+            </span>
+            <span className="text-[11px] text-gray-500 font-medium truncate hidden sm:inline">
+              Sipariş, masa, menü ve personel hareketleri anlık arşivlenir.
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsLogModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-slate-900 text-gray-700 hover:text-white text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0 ml-auto"
+        >
+          <HistoryIcon className="size-3.5" />
+          <span>Logları İncele</span>
+        </button>
+      </div>
+
+      {/* 
+        4. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DİŞ LINK YOK, KİLİT YOK, SIFIR FAZLA BOŞLUK)
       */}
       <footer
-        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-16 sm:mb-0"
+        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0"
       >
         {/* Sol: Yatay Sistem Logosu + Slogan */}
         <div className="flex items-center gap-3">
@@ -1103,91 +940,11 @@ export function HomeScreen({
         </div>
       </footer>
 
-      {/* 
-        4. MOBİL ELASTİK AÇILIR YAPAY ZEKA DOCK BARI (AŞAĞI KAYDIRILDIĞINDA GÖRÜNÜR)
-      */}
-      <div
-        className={cn(
-          "sm:hidden fixed bottom-3 left-3 right-3 z-40 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-          isScrolled
-            ? "translate-y-0 opacity-100 pointer-events-auto shadow-2xl shadow-purple-950/20"
-            : "translate-y-16 opacity-0 pointer-events-none"
-        )}
-      >
-        <div className="relative p-[1.5px] rounded-2xl overflow-hidden shadow-lg bg-white">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 animate-gradient-border opacity-90" />
-          <div className="relative flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-[calc(1rem-1.5px)] px-3 py-2">
-            <div className="flex size-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600 shrink-0">
-              <SparklesIcon className="size-3.5 text-purple-600" />
-            </div>
-
-            {(isListening || isHoldingMic) && (
-              <div className="flex items-center gap-0.5 h-4 px-0.5 shrink-0" title="Ses dinleniyor...">
-                <span className="w-1 bg-purple-600 rounded-full sound-bar-1" />
-                <span className="w-1 bg-indigo-600 rounded-full sound-bar-2" />
-                <span className="w-1 bg-blue-600 rounded-full sound-bar-3" />
-                <span className="w-1 bg-indigo-600 rounded-full sound-bar-4" />
-                <span className="w-1 bg-purple-600 rounded-full sound-bar-5" />
-              </div>
-            )}
-
-            <input
-              type="text"
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAiSubmit();
-                }
-              }}
-              placeholder={
-                isListening || isHoldingMic ? "Dinleniyor, komutu söyleyin..." : "Yapay zeka asistanına komut..."
-              }
-              className="w-full bg-transparent border-0 outline-none text-xs font-semibold text-gray-800 placeholder:text-gray-400 min-w-0"
-            />
-
-            {aiPrompt.trim().length > 0 ? (
-              <button
-                type="button"
-                onClick={() => handleAiSubmit()}
-                className="flex size-7.5 items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all active:scale-90 shrink-0 cursor-pointer shadow-xs"
-                title="Komutu Gönder"
-              >
-                <SendIcon className="size-3.5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onMouseDown={handleMicPressStart}
-                onMouseUp={handleMicPressEnd}
-                onTouchStart={handleMicPressStart}
-                onTouchEnd={handleMicPressEnd}
-                onClick={() => {
-                  if (isListening) {
-                    stopListening();
-                    toast.info("Mikrofon kapatıldı");
-                  } else {
-                    startListening();
-                    toast.info("Mikrofon dinleme aktif");
-                  }
-                }}
-                className={cn(
-                  "flex size-7.5 items-center justify-center rounded-xl transition-all duration-200 shrink-0 cursor-pointer shadow-2xs select-none",
-                  isHoldingMic
-                    ? "scale-115 bg-red-600 text-white shadow-lg shadow-red-500/30"
-                    : isListening
-                    ? "bg-rose-500 text-white animate-pulse"
-                    : "bg-purple-50 hover:bg-purple-100 text-purple-600 active:scale-90"
-                )}
-                title={isListening ? "Dinlemeyi Durdur" : "Sesli Komut Ver"}
-              >
-                <MicIcon className="size-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* SİSTEM DEĞİŞİKLİK VE İŞLEM GÜNLÜĞÜ MODAL (ELASTİK POPUP) */}
+      <SystemActivityLogModal
+        isOpen={isLogModalOpen}
+        onClose={() => setIsLogModalOpen(false)}
+      />
 
       {/* AÇILIR TAM EKRAN BİLDİRİM PANELİ MODAL */}
       <HomeNotificationsModal

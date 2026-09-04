@@ -152,8 +152,8 @@ describe("getDashboard", () => {
       { mode: "UPI", amount: 300 },
     ]);
     expect(d.topItemsToday).toEqual([
-      { name: "Tea", quantity: 2 },
-      { name: "Coffee", quantity: 1 },
+      { name: "Tea", quantity: 2, revenue: 200 },
+      { name: "Coffee", quantity: 1, revenue: 100 },
     ]);
     expect(d.orderTypeToday).toEqual([
       { type: "DINE_IN", orders: 1 },

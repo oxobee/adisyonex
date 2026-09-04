@@ -78,12 +78,31 @@ export const findCustomerWithOrders = async (
   restaurantId: string,
   identifier: { id?: string; phone?: string },
 ) => {
+  let phoneFilter: { in: string[] } | undefined = undefined;
+  if (identifier.phone) {
+    const rawPhone = identifier.phone.trim();
+    const digitsOnly = rawPhone.replace(/\D/g, "");
+    const variations = new Set<string>([rawPhone, digitsOnly]);
+    if (digitsOnly.length === 10) {
+      variations.add(`0${digitsOnly}`);
+      variations.add(`+90${digitsOnly}`);
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith("0")) {
+      variations.add(digitsOnly.slice(1));
+      variations.add(`+90${digitsOnly.slice(1)}`);
+    } else if (digitsOnly.length === 12 && digitsOnly.startsWith("90")) {
+      variations.add(digitsOnly.slice(2));
+      variations.add(`0${digitsOnly.slice(2)}`);
+      variations.add(`+${digitsOnly}`);
+    }
+    phoneFilter = { in: Array.from(variations) };
+  }
+
   return prisma.customer.findFirst({
     where: {
       restaurantId,
       deletedAt: null,
       ...(identifier.id ? { id: identifier.id } : {}),
-      ...(identifier.phone ? { phone: identifier.phone } : {}),
+      ...(phoneFilter ? { phone: phoneFilter } : {}),
     },
     include: {
       orders: {

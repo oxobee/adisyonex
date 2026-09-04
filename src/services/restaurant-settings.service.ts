@@ -357,6 +357,7 @@ export interface QrThemeCustomizationDTO {
   readonly qrPrimaryColor: string;
   readonly qrSecondaryColor: string;
   readonly qrSlidersEnabled: boolean;
+  readonly qrAiEnabled?: boolean;
   readonly qrSliders: readonly QrSliderItem[];
   readonly qrGreetingTitle?: string;
   readonly qrGreetingSubtitle?: string;
@@ -408,6 +409,7 @@ export const getQrThemeCustomization = async (
     qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
     qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
     qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
+    qrAiEnabled: restaurant.qrAiEnabled ?? true,
     qrSliders: sliders,
     qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
     qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
@@ -423,6 +425,7 @@ export const updateQrThemeCustomization = async (
     ...(data.qrPrimaryColor ? { qrPrimaryColor: data.qrPrimaryColor } : {}),
     ...(data.qrSecondaryColor ? { qrSecondaryColor: data.qrSecondaryColor } : {}),
     ...(typeof data.qrSlidersEnabled === "boolean" ? { qrSlidersEnabled: data.qrSlidersEnabled } : {}),
+    ...(typeof data.qrAiEnabled === "boolean" ? { qrAiEnabled: data.qrAiEnabled } : {}),
     ...(data.qrSliders ? { qrSliders: data.qrSliders as unknown as object } : {}),
     ...(data.qrGreetingTitle !== undefined ? { qrGreetingTitle: data.qrGreetingTitle } : {}),
     ...(data.qrGreetingSubtitle !== undefined ? { qrGreetingSubtitle: data.qrGreetingSubtitle } : {}),

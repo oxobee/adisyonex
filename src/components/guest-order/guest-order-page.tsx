@@ -26,7 +26,9 @@ import {
   guestPlaceOrderAction,
   guestRequestBillAction,
   guestCallWaiterAction,
+  checkGuestTableSessionAction,
 } from "@/actions/guest-order.actions";
+import { GuestAiAssistant } from "./guest-ai-assistant";
 import { ItemConfigDialog } from "@/components/pos/item-config-dialog";
 import { linePrice, toBillLine, type CartLine } from "@/components/pos/types";
 import { useOrderCart } from "@/components/pos/use-order-cart";
@@ -94,6 +96,7 @@ export function GuestOrderPage({
   username,
   tableId,
   tableLabel,
+  tableSessionId = null,
   restaurantName,
   logoUrl,
   menu,
@@ -105,6 +108,7 @@ export function GuestOrderPage({
   qrPrimaryColor = "#FF5500",
   qrSecondaryColor = "#FFF7ED",
   qrSlidersEnabled = true,
+  qrAiEnabled = true,
   qrSliders,
   qrGreetingTitle = "Bugün Ne Yemek İstersiniz?",
   qrGreetingSubtitle = "Hoş Geldiniz 👋",
@@ -115,6 +119,7 @@ export function GuestOrderPage({
   readonly username: string;
   readonly tableId: string;
   readonly tableLabel: string;
+  readonly tableSessionId?: string | null;
   readonly restaurantName: string;
   readonly logoUrl?: string | null;
   readonly menu: MenuDTO;
@@ -127,6 +132,7 @@ export function GuestOrderPage({
   readonly secondaryColor?: string;
   readonly qrSecondaryColor?: string;
   readonly qrSlidersEnabled?: boolean;
+  readonly qrAiEnabled?: boolean;
   readonly qrSliders?: readonly QrSliderItem[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
@@ -145,6 +151,7 @@ export function GuestOrderPage({
   const [myOrders, setMyOrders] = useState<readonly GuestOrderSummaryDTO[]>(initialOrders);
   const [placed, setPlaced] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<CustomerDTO | null>(null);
+  const [tableSessionClosed, setTableSessionClosed] = useState(false);
 
   // Customer Loyalty Registration State
   const [customerName, setCustomerName] = useState("");
@@ -200,7 +207,37 @@ export function GuestOrderPage({
     // Skip polling if the browser tab/app is in background
     if (typeof document !== "undefined" && document.hidden) return;
     try {
-      const res = await guestMyOrdersAction({ username, tableId });
+      // 1. Authoritative check: has the table session closed?
+      if (tableSessionId && !tableSessionClosed) {
+        const sessionCheck = await checkGuestTableSessionAction({
+          username,
+          tableId,
+          tableSessionId,
+        });
+        if (sessionCheck?.success && sessionCheck.data?.isClosed) {
+          setTableSessionClosed(true);
+          cart.clear();
+          clearGuestSession(storageKey);
+          toast.info("Masa hesabınız kapatıldı. Masa oturumunuz sona erdi.");
+          return;
+        }
+      }
+
+      // 2. Fetch table orders
+      const res = await guestMyOrdersAction({
+        username,
+        tableId,
+        tableSessionId: tableSessionId ?? undefined,
+      });
+
+      if (!res?.success && (res?.error === "TABLE_SESSION_EXPIRED" || res?.error?.includes("oturum"))) {
+        setTableSessionClosed(true);
+        cart.clear();
+        clearGuestSession(storageKey);
+        toast.info("Masa hesabınız kapatıldı. Masa oturumunuz sona erdi.");
+        return;
+      }
+
       if (res?.success && res.data) {
         const newData = res.data;
         setMyOrders((prev) => {
@@ -226,7 +263,7 @@ export function GuestOrderPage({
     } catch {
       // Ignore background poll errors during deployments
     }
-  }, [username, tableId]);
+  }, [username, tableId, tableSessionId, tableSessionClosed, storageKey, cart]);
 
   // Visibility-aware poll so when cashier settles table, UI updates automatically without wasting background CPU/network
   useEffect(() => {
@@ -351,6 +388,10 @@ export function GuestOrderPage({
   const [isOrderSubmitting, setIsOrderSubmitting] = useState(false);
 
   const submitOrder = async (): Promise<boolean> => {
+    if (tableSessionClosed) {
+      toast.error("Masa hesabınız kapatılmıştır. Yeni sipariş verilemez.");
+      return false;
+    }
     if (itemCount === 0 || isOrderSubmitting) return false;
     setIsOrderSubmitting(true);
     let activeCustId = currentCustomer?.id ?? null;
@@ -370,6 +411,7 @@ export function GuestOrderPage({
       const res = await guestPlaceOrderAction({
         username,
         tableId,
+        tableSessionId: tableSessionId ?? undefined,
         idempotencyKey: idempotencyKey.current,
         customerId: activeCustId,
         items: items(),
@@ -385,6 +427,13 @@ export function GuestOrderPage({
         toast.success("Siparişiniz başarıyla mutfağa iletildi!");
         return true;
       } else {
+        if (res.error === "TABLE_SESSION_EXPIRED" || res.error?.includes("oturum")) {
+          setTableSessionClosed(true);
+          cart.clear();
+          clearGuestSession(storageKey);
+          toast.error("Masa hesabı kapatılmıştır. Yeni sipariş verilemez.");
+          return false;
+        }
         toast.error(res.error || "Sipariş oluşturulurken bir hata oluştu");
         return false;
       }
@@ -470,6 +519,8 @@ export function GuestOrderPage({
         myOrders={myOrders}
         busy={busy}
         onCustomerIdentified={(c) => setCurrentCustomer(c)}
+        tableSessionClosed={tableSessionClosed}
+        qrAiEnabled={qrAiEnabled}
       />
     );
   }
@@ -535,19 +586,24 @@ export function GuestOrderPage({
               </h1>
 
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold shadow-2xs",
-                    qrMenuTheme === "ELEGANT_DARK"
-                      ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
-                      : qrMenuTheme === "QSR_FASTFOOD"
-                        ? "border-red-500/30 bg-red-500/10 text-red-600 font-extrabold"
+                {tableSessionClosed ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-black text-amber-900 shadow-2xs">
+                    <span>🔒</span>
+                    <span>Masa Kapandı</span>
+                  </span>
+                ) : (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold shadow-2xs",
+                      qrMenuTheme === "ELEGANT_DARK"
+                        ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
                         : "border-primary/30 bg-primary/15 text-primary",
-                  )}
-                >
-                  <span>🍽️</span>
-                  <span>Masa No : {tableLabel}</span>
-                </span>
+                    )}
+                  >
+                    <span>🍽️</span>
+                    <span>Masa No : {tableLabel}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -579,6 +635,18 @@ export function GuestOrderPage({
             ) : null}
           </div>
         </div>
+
+        {tableSessionClosed && (
+          <div className="mt-3 p-3 rounded-2xl bg-amber-500/15 border border-amber-300 text-amber-950 text-xs font-medium space-y-1 animate-in fade-in">
+            <div className="flex items-center gap-1.5 font-black text-amber-900">
+              <span className="text-sm">🔒</span>
+              <span>Masa Hesabı Kapatıldı</span>
+            </div>
+            <p className="text-[11px] text-amber-900 leading-relaxed">
+              Masa hesabınız kapatılmış olup oturumunuz sona ermiştir. Yeni bir sipariş vermek için lütfen masadaki QR kodu tekrar okutun.
+            </p>
+          </div>
+        )}
       </div>
 
       <MenuBrowser
@@ -630,11 +698,11 @@ export function GuestOrderPage({
 
               <Button
                 size="lg"
-                className="h-11 shrink-0 rounded-xl px-4 sm:px-5 font-bold shadow-sm whitespace-nowrap transition-all active:scale-95 cursor-pointer bg-primary text-primary-foreground"
-                disabled={busy}
+                className="h-11 shrink-0 rounded-xl px-4 sm:px-5 font-bold shadow-sm whitespace-nowrap transition-all active:scale-95 cursor-pointer bg-primary text-primary-foreground disabled:opacity-50"
+                disabled={busy || tableSessionClosed}
                 onClick={() => setReviewOpen(true)}
               >
-                {busy ? "İletiliyor…" : "Sipariş Özeti →"}
+                {tableSessionClosed ? "Masa Kapandı" : busy ? "İletiliyor…" : "Sipariş Özeti →"}
               </Button>
             </div>
           </div>
@@ -788,11 +856,11 @@ export function GuestOrderPage({
 
             <DialogFooter className="pt-1">
               <Button
-                className="h-12 w-full rounded-2xl font-black bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm tracking-wide whitespace-nowrap transition-transform active:scale-[0.98] cursor-pointer"
-                disabled={itemCount === 0 || busy}
+                className="h-12 w-full rounded-2xl font-black bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm tracking-wide whitespace-nowrap transition-transform active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                disabled={itemCount === 0 || busy || tableSessionClosed}
                 onClick={submitOrder}
               >
-                {busy ? "İletiliyor…" : "Sipariş Oluştur"}
+                {tableSessionClosed ? "Masa Hesabı Kapandı" : busy ? "İletiliyor…" : "Sipariş Oluştur"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -968,6 +1036,18 @@ export function GuestOrderPage({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* GUEST AI ASSISTANT (Yapay Zeka Menü Danışmanı) */}
+      <GuestAiAssistant
+        username={username}
+        tableId={tableId}
+        restaurantName={restaurantName}
+        primaryColor={qrPrimaryColor}
+        secondaryColor={qrSecondaryColor}
+        menu={menu}
+        onQuickAdd={onQuickAdd}
+        enabled={qrAiEnabled !== false}
+      />
     </div>
   );
 }

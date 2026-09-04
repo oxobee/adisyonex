@@ -145,6 +145,8 @@ const mapItem = (
           icon: a.icon,
         }))
       : [],
+    isChefSpecial: item.isChefSpecial ?? false,
+    isAiFeatured: item.isAiFeatured ?? false,
     isActive: item.isActive,
     available: isItemAvailable(item, now),
     disabledReason: liveDisable?.reason ?? null,
@@ -242,6 +244,8 @@ const toWriteData = (
   prepTimeMinutes: input.prepTimeMinutes ?? 15,
   calories: input.calories ?? null,
   allergens: input.allergens ?? [],
+  isChefSpecial: input.isChefSpecial ?? false,
+  isAiFeatured: input.isAiFeatured ?? false,
   sortOrder: input.sortOrder,
   isActive: input.isActive,
   variants: input.variants.map((v) => ({
@@ -323,6 +327,16 @@ export const createItem = async (
   await assertGroupsOwned(restaurantId, input.modifierGroupIds);
   await createMenuItem(restaurantId, toWriteData(input));
   invalidateMenuCache(restaurantId);
+
+  const { recordActivityLog } = await import("@/services/activity-log.service");
+  recordActivityLog({
+    restaurantId,
+    actorName: "Yönetici",
+    actorRole: "YÖNETİM",
+    category: "MENÜ",
+    action: "Yeni Ürün Eklendi",
+    details: `"${input.name}" (₺${input.price}) menüye eklendi.${input.isChefSpecial ? " [Şefin Seçimi]" : ""}${input.isAiFeatured ? " [AI Öne Çıkar]" : ""}`,
+  }).catch(() => {});
 };
 
 export const updateItem = async (
@@ -334,6 +348,16 @@ export const updateItem = async (
   await assertGroupsOwned(restaurantId, input.modifierGroupIds);
   await updateMenuItem(input.id, toWriteData(input));
   invalidateMenuCache(restaurantId);
+
+  const { recordActivityLog } = await import("@/services/activity-log.service");
+  recordActivityLog({
+    restaurantId,
+    actorName: "Yönetici",
+    actorRole: "YÖNETİM",
+    category: "MENÜ",
+    action: "Ürün Güncellendi",
+    details: `"${input.name}" (₺${input.price}) ürün bilgileri güncellendi.`,
+  }).catch(() => {});
 };
 
 export const deleteItem = async (
@@ -341,8 +365,19 @@ export const deleteItem = async (
   itemId: string,
 ): Promise<void> => {
   await assertItemOwned(restaurantId, itemId);
+  const item = await findMenuItemById(itemId);
   await softDeleteMenuItem(itemId);
   invalidateMenuCache(restaurantId);
+
+  const { recordActivityLog } = await import("@/services/activity-log.service");
+  recordActivityLog({
+    restaurantId,
+    actorName: "Yönetici",
+    actorRole: "YÖNETİM",
+    category: "MENÜ",
+    action: "Ürün Silindi",
+    details: `"${item?.name || itemId}" menüden silindi.`,
+  }).catch(() => {});
 };
 
 export const duplicateItem = async (

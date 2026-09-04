@@ -16,6 +16,7 @@ import {
   SearchIcon,
   SlidersHorizontalIcon,
   SmartphoneIcon,
+  SparklesIcon,
   Trash2Icon,
   TypeIcon,
   UploadCloudIcon,
@@ -91,6 +92,9 @@ export function ThemeCustomizerModal({
   );
   const [slidersEnabled, setSlidersEnabled] = useState(
     initialCustomization.qrSlidersEnabled ?? true,
+  );
+  const [qrAiEnabled, setQrAiEnabled] = useState(
+    initialCustomization.qrAiEnabled ?? true,
   );
   const [sliders, setSliders] = useState<QrSliderItem[]>(
     initialCustomization.qrSliders && initialCustomization.qrSliders.length > 0
@@ -352,6 +356,7 @@ export function ThemeCustomizerModal({
         qrGreetingTitle: greetingTitle,
         qrGreetingSubtitle: greetingSubtitle,
         qrHomeSections: homeSections,
+        qrAiEnabled: qrAiEnabled,
       });
 
       if (res.success) {
@@ -576,6 +581,31 @@ export function ThemeCustomizerModal({
                       kullanılır.
                     </p>
                   </div>
+                </div>
+
+                {/* QR Menü AI Asistanı Toggle */}
+                <div className="p-4 rounded-2xl bg-card border flex items-center justify-between gap-4 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <SparklesIcon className="size-5" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <Label className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
+                        QR Menü Akıllı AI Asistanı
+                        <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-primary/20 text-primary uppercase">
+                          Yeni
+                        </span>
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Müşterilerinize menü önerisi, alerjen/diyet danışmanlığı sunan ve sepete tek tıkla ürün ekleten interaktif yapay zeka asistanını aktifleştirin.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={qrAiEnabled}
+                    onCheckedChange={setQrAiEnabled}
+                    className="data-[state=checked]:bg-primary shrink-0"
+                  />
                 </div>
               </TabsContent>
 

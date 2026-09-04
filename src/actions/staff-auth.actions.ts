@@ -141,6 +141,18 @@ export async function switchStaffAccountAction(data: {
         role: staff.role,
       });
 
+      const { recordActivityLog } = await import("@/services/activity-log.service");
+      recordActivityLog({
+        restaurantId: staff.restaurantId,
+        actorId: staff.id,
+        actorName: staff.name,
+        actorRole: staff.role,
+        actorEmail: staff.email,
+        category: "PERSONEL",
+        action: "Personel Hesabına Geçiş Yapıldı",
+        details: `${staff.name} (${staff.jobTitle || staff.role}) terminal oturumuna giriş yaptı.`,
+      }).catch(() => {});
+
       return success(undefined);
     }
 

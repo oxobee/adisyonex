@@ -165,6 +165,9 @@ describe("userRepository", () => {
   it("getUserAuthState selects role + status flags", async () => {
     findUnique.mockResolvedValue({
       role: "ADMIN",
+      email: "test@example.com",
+      phone: "05550000000",
+      name: "Test",
       suspendedAt: null,
       deletedAt: null,
     });
@@ -173,9 +176,16 @@ describe("userRepository", () => {
 
     expect(findUnique).toHaveBeenCalledWith({
       where: { id: "usr_1" },
-      select: { role: true, suspendedAt: true, deletedAt: true },
+      select: { role: true, email: true, phone: true, name: true, suspendedAt: true, deletedAt: true },
     });
-    expect(result).toEqual({ role: "ADMIN", suspendedAt: null, deletedAt: null });
+    expect(result).toEqual({
+      role: "ADMIN",
+      email: "test@example.com",
+      phone: "05550000000",
+      name: "Test",
+      suspendedAt: null,
+      deletedAt: null,
+    });
   });
 
   it("findUsersPaginated filters by role + search and paginates", async () => {

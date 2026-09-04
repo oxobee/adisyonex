@@ -20,6 +20,7 @@ import {
 import { requestGuestOtp, verifyGuestOtp } from "@/services/guest-otp.service";
 import { failure, success, type ActionResult } from "@/types";
 import type { GuestOrderSummaryDTO, OrderDTO } from "@/types/order";
+import { recordActivityLog } from "@/services/activity-log.service";
 
 const GUEST_NOT_VERIFIED = "GUEST_NOT_VERIFIED";
 
@@ -53,15 +54,27 @@ export const guestPlaceOrderAction = withValidation(
     const target = await resolveGuestOrderTarget(data.username, data.tableId);
     const session = await getGuestSession();
     const deviceId = await getOrCreateDeviceId();
-    return placeGuestOrder(
+    const order = await placeGuestOrder(
       {
         restaurantId: target.restaurantId,
         tableId: target.tableId,
         phone: session?.phone ?? "",
         deviceId,
+        tableSessionId: data.tableSessionId,
       },
       data,
     );
+
+    recordActivityLog({
+      restaurantId: target.restaurantId,
+      actorName: session?.phone ? `Müşteri (${session.phone})` : `Masa Misafiri (${target.tableLabel})`,
+      actorRole: "MÜŞTERİ",
+      category: "SİPARİŞ",
+      action: "Yeni QR Siparişi Verildi",
+      details: `${target.tableLabel} masasında ${data.items.length} çeşit ürün sipariş edildi.`,
+    }).catch(() => {});
+
+    return order;
   },
 );
 
@@ -71,13 +84,92 @@ import {
   callWaiterForTable,
   dismissWaiterCall,
 } from "@/services/guest-order.service";
+import { prisma } from "@/lib/prisma";
+
+export interface TableSessionStatusResult {
+  readonly isClosed: boolean;
+  readonly isActive: boolean;
+  readonly tableLabel: string;
+}
+
+/** Check if the current table session is still active or has been closed by the cashier/admin. */
+export const checkGuestTableSessionAction = async (data: {
+  username: string;
+  tableId: string;
+  tableSessionId?: string | null;
+}): Promise<ActionResult<TableSessionStatusResult>> => {
+  try {
+    const target = await resolveGuestOrderTarget(data.username, data.tableId);
+    if (!target) {
+      return success({ isClosed: true, isActive: false, tableLabel: "Masa" });
+    }
+
+    if (data.tableSessionId) {
+      const session = await prisma.tableSession.findUnique({
+        where: { id: data.tableSessionId },
+        select: { status: true, tableId: true },
+      });
+
+      if (!session || session.status === "CLOSED" || session.tableId !== target.tableId) {
+        return success({
+          isClosed: true,
+          isActive: false,
+          tableLabel: target.tableLabel,
+        });
+      }
+
+      return success({
+        isClosed: false,
+        isActive: true,
+        tableLabel: target.tableLabel,
+      });
+    }
+
+    // Fallback if no tableSessionId: check if table is empty / available
+    const activeSession = await prisma.tableSession.findFirst({
+      where: {
+        restaurantId: target.restaurantId,
+        tableId: target.tableId,
+        status: "ACTIVE",
+      },
+    });
+    const openOrder = await prisma.order.findFirst({
+      where: {
+        restaurantId: target.restaurantId,
+        tableId: target.tableId,
+        status: "OPEN",
+        deletedAt: null,
+      },
+    });
+
+    const isAvailable = !activeSession && !openOrder;
+    return success({
+      isClosed: isAvailable,
+      isActive: !isAvailable,
+      tableLabel: target.tableLabel,
+    });
+  } catch {
+    return failure("Masa durumu doğrulanamadı.");
+  }
+};
 
 /** The guest's table orders with live kitchen & bill status. */
 export const guestMyOrdersAction = async (targetParam?: {
   username: string;
   tableId: string;
+  tableSessionId?: string | null;
 }): Promise<ActionResult<GuestOrderSummaryDTO[]>> => {
   try {
+    if (targetParam?.tableSessionId) {
+      const sess = await prisma.tableSession.findUnique({
+        where: { id: targetParam.tableSessionId },
+        select: { status: true },
+      });
+      if (sess && sess.status === "CLOSED") {
+        return failure<GuestOrderSummaryDTO[]>("TABLE_SESSION_EXPIRED");
+      }
+    }
+
     const session = await getGuestSession();
     if (session) {
       return success(
@@ -114,6 +206,14 @@ export const guestRequestBillAction = withValidation(
   async (data) => {
     const target = await resolveGuestOrderTarget(data.username, data.tableId);
     await requestBillForTable(target.restaurantId, target.tableId);
+    recordActivityLog({
+      restaurantId: target.restaurantId,
+      actorName: `Misafir (${target.tableLabel})`,
+      actorRole: "MÜŞTERİ",
+      category: "MASA",
+      action: "Hesap İstendi",
+      details: `${target.tableLabel} masası hesap istedi.`,
+    }).catch(() => {});
     return { success: true };
   },
 );
@@ -127,6 +227,14 @@ export const guestCallWaiterAction = withValidation(
   async (data) => {
     const target = await resolveGuestOrderTarget(data.username, data.tableId);
     await callWaiterForTable(target.restaurantId, target.tableId, target.tableLabel);
+    recordActivityLog({
+      restaurantId: target.restaurantId,
+      actorName: `Misafir (${target.tableLabel})`,
+      actorRole: "MÜŞTERİ",
+      category: "MASA",
+      action: "Garson Çağrıldı",
+      details: `${target.tableLabel} masası garson çağırdı.`,
+    }).catch(() => {});
     return { success: true };
   },
 );

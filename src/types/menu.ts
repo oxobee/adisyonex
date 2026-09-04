@@ -55,6 +55,8 @@ export interface MenuItemDTO {
   readonly prepTimeMinutes: number | null;
   readonly calories: number | null;
   readonly allergens: readonly AllergenDTO[];
+  readonly isChefSpecial?: boolean;
+  readonly isAiFeatured?: boolean;
   readonly isActive: boolean;
   readonly available: boolean;
   readonly disabledReason: string | null;

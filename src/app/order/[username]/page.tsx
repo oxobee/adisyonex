@@ -90,6 +90,7 @@ export default async function OrderPage({
         username={data.username}
         tableId={data.tableId}
         tableLabel={data.tableLabel}
+        tableSessionId={data.tableSessionId ?? null}
         restaurantName={data.restaurantName}
         logoUrl={data.logoUrl}
         menu={data.menu}
@@ -101,6 +102,7 @@ export default async function OrderPage({
         qrPrimaryColor={data.qrPrimaryColor || "#FF5500"}
         qrSecondaryColor={data.qrSecondaryColor || "#FFF7ED"}
         qrSlidersEnabled={data.qrSlidersEnabled ?? true}
+        qrAiEnabled={data.qrAiEnabled ?? true}
         qrSliders={data.qrSliders as never}
         qrGreetingTitle={data.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?"}
         qrGreetingSubtitle={data.qrGreetingSubtitle || "Hoş Geldiniz 👋"}

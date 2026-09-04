@@ -64,6 +64,7 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
   customerId: o.customerId,
   note: o.note,
   placedById: o.placedById,
+  tableSessionId: o.tableSessionId ?? null,
   subtotal: num(o.subtotal),
   taxTotal: num(o.taxTotal),
   discountTotal: num(o.discountTotal),
@@ -319,6 +320,20 @@ export const voidWholeOrder = async (
       .map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
     input.orderId,
   ).catch(() => undefined);
+
+  if (order.tableId) {
+    const { prisma } = await import("@/lib/prisma");
+    const remainingOpen = await prisma.order.count({
+      where: {
+        tableId: order.tableId,
+        status: "OPEN",
+      },
+    });
+    if (remainingOpen === 0) {
+      const { clearTableDeviceLock } = await import("@/lib/table-device-lock");
+      await clearTableDeviceLock(order.tableId).catch(() => undefined);
+    }
+  }
 };
 
 export const listOrders = async (

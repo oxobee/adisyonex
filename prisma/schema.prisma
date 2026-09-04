@@ -54,6 +54,11 @@ enum OrderStatus {
   VOID
 }
 
+enum TableSessionStatus {
+  ACTIVE
+  CLOSED
+}
+
 enum OrderLineState {
   UNSENT
   FIRED
@@ -201,6 +206,7 @@ model Restaurant {
 
   // Public guest self-ordering (`/order/[username]`); off until the owner opts in.
   selfOrderEnabled   Boolean            @default(false)
+  qrAiEnabled        Boolean?           @default(true)
   qrMenuTheme        String?            @default("MODERN")
   qrPrimaryColor     String?            @default("#FF5500")
   qrSecondaryColor   String?            @default("#FFF7ED")
@@ -243,11 +249,13 @@ model Restaurant {
   modifierGroups ModifierGroup[]
   orders         Order[]
   tables         DiningTable[]
+  tableSessions  TableSession[]
   images         RestaurantImage[]
   videos         RestaurantVideo[]
   stockItems     StockItem[]
   staff          Staff[]
   customers      Customer[]
+  activityLogs   SystemActivityLog[]
   birthdayMessageSimulations BirthdayMessageSimulation[]
   aiWallet       AiCreditWallet?
   aiTasks        AiTask[]
@@ -348,6 +356,8 @@ model MenuItem {
   prepTimeMinutes   Int?         @default(15)
   calories          Int?
   allergens         Json?
+  isChefSpecial     Boolean      @default(false)
+  isAiFeatured      Boolean      @default(false)
   sortOrder         Int          @default(0)
   isActive          Boolean      @default(true)
   createdAt         DateTime     @default(now())
@@ -481,6 +491,7 @@ model DiningTable {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   orders     Order[]
+  tableSessions TableSession[]
 
   @@unique([restaurantId, label])
   @@index([restaurantId])
@@ -498,6 +509,7 @@ model Order {
   status          OrderStatus  @default(OPEN)
   tableLabel      String?
   tableId         String?
+  tableSessionId  String?
   customerName    String?
   customerPhone   String?
   customerAddress String?
@@ -515,26 +527,49 @@ model Order {
 
   placedById      String?
   placedByStaffId String?
-  voidedById String?
-  voidReason String?
   billRequestedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  settledAt  DateTime?
-  deletedAt  DateTime?
+  settledAt       DateTime?
+  voidReason      String?
+  voidedById      String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?
 
   customerId   String?
   customer     Customer?    @relation(fields: [customerId], references: [id])
 
-  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
-  table      DiningTable? @relation(fields: [tableId], references: [id])
-  items      OrderItem[]
-  payments   Payment[]
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
+  table        DiningTable?  @relation(fields: [tableId], references: [id])
+  tableSession TableSession? @relation(fields: [tableSessionId], references: [id])
+  items        OrderItem[]
+  payments     Payment[]
 
   @@unique([restaurantId, orderNumber])
   @@index([restaurantId, status])
   @@index([tableId])
+  @@index([tableSessionId])
   @@index([customerId])
+}
+
+/// A discrete session of table occupancy (e.g. from guest seated to bill closed).
+model TableSession {
+  id           String             @id @default(cuid())
+  restaurantId String
+  tableId      String
+  deviceId     String?
+  phone        String?
+  status       TableSessionStatus @default(ACTIVE)
+  startedAt    DateTime           @default(now())
+  closedAt     DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table      DiningTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  orders     Order[]
+
+  @@index([restaurantId, tableId, status])
+  @@index([tableId, status])
 }
 
 /// One line on an order — fully snapshotted from the menu at add time.
@@ -1084,4 +1119,25 @@ model ZReport {
   @@unique([restaurantId, zNumber])
   @@index([restaurantId, reportDate])
 }
+
+/// System and user activity audit log for tracking categorized events with exact timestamps.
+model SystemActivityLog {
+  id           String    @id @default(cuid())
+  restaurantId String
+  actorId      String?
+  actorName    String
+  actorRole    String
+  actorEmail   String?
+  category     String    // "SİPARİŞ", "MENÜ", "MASA", "AYARLAR", "PERSONEL", "KASA", "BİLDİRİM"
+  action       String    // e.g. "Yeni Sipariş Eklendi", "Ürün Fiyatı Değiştirildi", "Masa Açıldı"
+  details      String?   // Ayrıntılı açıklama
+  createdAt    DateTime  @default(now())
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@index([createdAt])
+  @@index([restaurantId, category])
+}
+
 

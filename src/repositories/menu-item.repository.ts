@@ -43,6 +43,8 @@ export interface MenuItemWriteData {
   prepTimeMinutes?: number | null;
   calories?: number | null;
   allergens?: Prisma.InputJsonValue;
+  isChefSpecial?: boolean;
+  isAiFeatured?: boolean;
   sortOrder?: number;
   isActive?: boolean;
   variants: MenuItemVariantWriteData[];
@@ -80,6 +82,8 @@ export const createMenuItem = (
       prepTimeMinutes: data.prepTimeMinutes ?? 15,
       calories: data.calories ?? null,
       allergens: data.allergens ?? [],
+      isChefSpecial: data.isChefSpecial ?? false,
+      isAiFeatured: data.isAiFeatured ?? false,
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,
       variants: { create: variantCreate(data.variants) },
@@ -122,6 +126,8 @@ export const updateMenuItem = (
       prepTimeMinutes: data.prepTimeMinutes !== undefined ? data.prepTimeMinutes : 15,
       calories: data.calories !== undefined ? data.calories : null,
       allergens: data.allergens !== undefined ? data.allergens : [],
+      isChefSpecial: data.isChefSpecial !== undefined ? data.isChefSpecial : false,
+      isAiFeatured: data.isAiFeatured !== undefined ? data.isAiFeatured : false,
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,
       // v1: replace variants + group links wholesale (nothing references them yet).

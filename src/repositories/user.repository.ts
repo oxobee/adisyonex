@@ -61,6 +61,9 @@ export const resetPinCounters = (id: string): Promise<User> =>
 
 export interface UserAuthState {
   readonly role: UserRole;
+  readonly email: string | null;
+  readonly phone: string | null;
+  readonly name: string | null;
   readonly suspendedAt: Date | null;
   readonly deletedAt: Date | null;
 }
@@ -68,7 +71,7 @@ export interface UserAuthState {
 export const getUserAuthState = (id: string): Promise<UserAuthState | null> =>
   prisma.user.findUnique({
     where: { id },
-    select: { role: true, suspendedAt: true, deletedAt: true },
+    select: { role: true, email: true, phone: true, name: true, suspendedAt: true, deletedAt: true },
   });
 
 const USER_LIST_SELECT = {

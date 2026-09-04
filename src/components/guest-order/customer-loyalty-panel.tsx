@@ -63,7 +63,7 @@ export interface CountryCodeOption {
 }
 
 export const COUNTRY_CODES: CountryCodeOption[] = [
-  { code: "TR", prefix: "+90", name: "Türkiye", flag: "🇹🇷", maxDigits: 11, placeholder: "05XX XXX XX XX" },
+  { code: "TR", prefix: "+90", name: "Türkiye", flag: "🇹🇷", maxDigits: 10, placeholder: "5XX XXX XX XX" },
   { code: "AZ", prefix: "+994", name: "Azerbaycan", flag: "🇦🇿", maxDigits: 9, placeholder: "50 XXX XX XX" },
   { code: "DE", prefix: "+49", name: "Almanya", flag: "🇩🇪", maxDigits: 11, placeholder: "151 XXXX XXXX" },
   { code: "GB", prefix: "+44", name: "İngiltere", flag: "🇬🇧", maxDigits: 10, placeholder: "7XXX XXXXXX" },
@@ -257,17 +257,48 @@ export function CustomerLoyaltyPanel({
     return count;
   }, [profile, validProfileOrders, liveOrders]);
 
-  // Handle SMS OTP Sending (Simulation)
-  const handleSendOtp = (e: React.FormEvent) => {
+  // Handle SMS OTP Sending / Instant Fast Login if account exists
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginPhone.trim()) {
+    const cleanPhone = loginPhone.trim();
+    if (!cleanPhone) {
       toast.error("Lütfen telefon numaranızı girin");
       return;
     }
-    setLoginStep("OTP");
-    toast.success("Doğrulama Kodu Gönderildi! 📲", {
-      description: "Simülasyon Modu: Herhangi bir 6 haneli kod girerek giriş yapabilirsiniz.",
-    });
+
+    setIsLoggingIn(true);
+    try {
+      // If customer is already registered, log in directly!
+      const res = await getCustomerProfileAction({
+        username,
+        phone: cleanPhone,
+      });
+
+      if (res.success && res.data?.customer) {
+        const cust = res.data.customer;
+        localStorage.setItem(
+          sessionKey,
+          JSON.stringify({ id: cust.id, phone: cust.phone, name: cust.name }),
+        );
+        toast.success(`Tekrar hoş geldiniz, ${cust.name}! 👋`, {
+          description: "Mevcut hesabınız bulundu ve anında giriş yapıldı.",
+        });
+        setLoginDrawerOpen(false);
+        setLoginStep("PHONE");
+        setLoginOtp("");
+        await loadProfile(cust.id, cust.phone);
+        return;
+      }
+
+      setLoginStep("OTP");
+      toast.success("Doğrulama Kodu Gönderildi! 📲", {
+        description: "Simülasyon Modu: Herhangi bir 6 haneli kod girerek giriş yapabilirsiniz.",
+      });
+    } catch {
+      setLoginStep("OTP");
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   // Handle SMS OTP Verification & Login
@@ -329,6 +360,29 @@ export function CustomerLoyaltyPanel({
 
     setIsSubmitting(true);
     try {
+      // Check if user with this phone already exists: if so, log in directly!
+      try {
+        const existing = await getCustomerProfileAction({
+          username,
+          phone: phone.trim(),
+        });
+        if (existing.success && existing.data?.customer) {
+          const cust = existing.data.customer;
+          localStorage.setItem(
+            sessionKey,
+            JSON.stringify({ id: cust.id, phone: cust.phone, name: cust.name }),
+          );
+          toast.success(`Mevcut hesabınız bulundu! Tekrar hoş geldiniz, ${cust.name}! 👋`, {
+            description: "Giriş başarılı, mevcut hesabınıza yönlendirildiniz.",
+          });
+          setRegisterDrawerOpen(false);
+          await loadProfile(cust.id, cust.phone);
+          return;
+        }
+      } catch {
+        // Continue with registration
+      }
+
       const res = await registerCustomerAction({
         username,
         name: name.trim(),
@@ -1051,7 +1105,10 @@ export function CustomerLoyaltyPanel({
                     inputMode="numeric"
                     value={loginPhone}
                     onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
+                      let digits = e.target.value.replace(/\D/g, "");
+                      if (selectedCountry.code === "TR" && digits.startsWith("0")) {
+                        digits = digits.replace(/^0+/, "");
+                      }
                       setLoginPhone(digits.slice(0, selectedCountry.maxDigits));
                     }}
                     placeholder={selectedCountry.placeholder}
@@ -1232,7 +1289,10 @@ export function CustomerLoyaltyPanel({
                   inputMode="numeric"
                   value={phone}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "");
+                    let digits = e.target.value.replace(/\D/g, "");
+                    if (selectedCountry.code === "TR" && digits.startsWith("0")) {
+                      digits = digits.replace(/^0+/, "");
+                    }
                     setPhone(digits.slice(0, selectedCountry.maxDigits));
                   }}
                   placeholder={selectedCountry.placeholder}

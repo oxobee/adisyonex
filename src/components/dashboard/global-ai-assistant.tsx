@@ -118,6 +118,81 @@ export function GlobalAiAssistant() {
     return () => window.removeEventListener("active-account-changed", handleAccountChange);
   }, []);
 
+  // Draggable FAB State (Basılı tutup sürükleyebilme)
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; posX: number; posY: number }>({
+    startX: 0,
+    startY: 0,
+    posX: 0,
+    posY: 0,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem("adisyon_ai_fab_pos");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+          const maxX = window.innerWidth - 64;
+          const maxY = window.innerHeight - 64;
+          setPosition({
+            x: Math.min(Math.max(12, parsed.x), maxX),
+            y: Math.min(Math.max(12, parsed.y), maxY),
+          });
+          return;
+        }
+      }
+    } catch {}
+    const defaultX = Math.max(12, window.innerWidth - 76);
+    const defaultY = Math.max(12, window.innerHeight - 84);
+    setPosition({ x: defaultX, y: defaultY });
+  }, []);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    isDraggingRef.current = false;
+    const currentX = position ? position.x : window.innerWidth - 76;
+    const currentY = position ? position.y : window.innerHeight - 84;
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: currentX,
+      posY: currentY,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (dragStartRef.current.startX === 0 && dragStartRef.current.startY === 0) return;
+    const deltaX = e.clientX - dragStartRef.current.startX;
+    const deltaY = e.clientY - dragStartRef.current.startY;
+    if (Math.hypot(deltaX, deltaY) > 5) {
+      isDraggingRef.current = true;
+      const maxX = window.innerWidth - 64;
+      const maxY = window.innerHeight - 64;
+      const newX = Math.min(Math.max(12, dragStartRef.current.posX + deltaX), maxX);
+      const newY = Math.min(Math.max(12, dragStartRef.current.posY + deltaY), maxY);
+      setPosition({ x: newX, y: newY });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    if (isDraggingRef.current) {
+      if (position) {
+        localStorage.setItem("adisyon_ai_fab_pos", JSON.stringify(position));
+      }
+      isDraggingRef.current = false;
+    } else {
+      setIsOpen(true);
+    }
+    dragStartRef.current = { startX: 0, startY: 0, posX: 0, posY: 0 };
+  };
+
   // Scroll to bottom on new message
   useEffect(() => {
     if (isOpen) {
@@ -135,8 +210,6 @@ export function GlobalAiAssistant() {
         setTimeout(() => {
           handleSend(initialPrompt);
         }, 150);
-      } else {
-        setTimeout(() => inputRef.current?.focus(), 250);
       }
     };
 
@@ -341,35 +414,33 @@ export function GlobalAiAssistant() {
 
   return (
     <>
-      {/* 1. FLOATING MINIMALIST LAUNCHER (Tüm sayfalarda sağ altta) */}
-      {!isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 animate-in fade-in zoom-in-95 duration-300">
-          <div className="relative p-[1.5px] rounded-full overflow-hidden shadow-xl shadow-purple-950/20 group">
+      {/* 1. DRAGGABLE FLOATING ICON LAUNCHER (Metinsiz, Serbest Sürüklenebilir) */}
+      {!isOpen && position && (
+        <div
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            touchAction: "none",
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          className="fixed z-40 select-none cursor-grab active:cursor-grabbing transition-transform active:scale-95 animate-in fade-in zoom-in-95 duration-200"
+        >
+          <div className="relative p-[1.5px] rounded-full overflow-hidden shadow-2xl shadow-purple-950/30 group">
             {/* Pulsing Gradient Border */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 animate-gradient-border opacity-90 group-hover:opacity-100 transition-opacity" />
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(true);
-                setTimeout(() => inputRef.current?.focus(), 250);
-              }}
-              className="relative flex items-center gap-2.5 px-4 py-2.5 bg-slate-900/95 hover:bg-slate-900 text-white rounded-full transition-all active:scale-95 cursor-pointer backdrop-blur-md"
-              title="AdisyonEx Akıllı Yapay Zeka Asistanı"
+            <div
+              className="relative flex size-13 sm:size-14 items-center justify-center bg-slate-900/95 hover:bg-slate-900 text-white rounded-full backdrop-blur-md cursor-pointer"
+              title="AdisyonEx Akıllı Asistan (Sürükleyin veya dokunun)"
             >
-              <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white shadow-xs">
-                <SparklesIcon className="size-4 animate-pulse" />
+              <div className="flex size-9 sm:size-10 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white shadow-md">
+                <SparklesIcon className="size-5 animate-pulse" />
               </div>
-              <div className="flex flex-col text-left pr-1">
-                <span className="text-xs font-black tracking-tight flex items-center gap-1.5">
-                  AI Asistan
-                  <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
-                </span>
-                <span className="text-[10px] text-gray-300 font-medium hidden sm:inline">
-                  Tıkla veya komut ver
-                </span>
-              </div>
-            </button>
+              <span className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-emerald-400 border-2 border-slate-900 animate-ping" />
+              <span className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-emerald-400 border-2 border-slate-900" />
+            </div>
           </div>
         </div>
       )}

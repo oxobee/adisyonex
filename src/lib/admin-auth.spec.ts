@@ -69,6 +69,9 @@ describe("getAdminContextOrNull", () => {
     vi.mocked(getCurrentUserId).mockResolvedValue("usr_1");
     vi.mocked(getUserAuthState).mockResolvedValue({
       role: "ADMIN",
+      email: "admin@example.com",
+      phone: "05551234567",
+      name: "Admin User",
       suspendedAt: null,
       deletedAt: null,
     });
@@ -76,6 +79,9 @@ describe("getAdminContextOrNull", () => {
     expect(await getAdminContextOrNull()).toEqual({
       userId: "usr_1",
       role: "ADMIN",
+      isSuperAdmin: false,
+      email: "admin@example.com",
+      name: "Admin User",
     });
   });
 });

@@ -54,6 +54,7 @@ import type { DietaryType, MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 import { linePrice, type CartLine } from "@/components/pos/types";
 import { CustomerLoyaltyPanel } from "@/components/guest-order/customer-loyalty-panel";
+import { GuestAiAssistant } from "./guest-ai-assistant";
 import type { CustomerDTO } from "@/services/customer.service";
 
 const DIET_BADGES: Record<string, { label: string; icon: string }> = {
@@ -150,6 +151,8 @@ export interface Theme2QsrViewProps {
   readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
   readonly wifiSsid?: string | null;
   readonly wifiPassword?: string | null;
+  readonly tableSessionClosed?: boolean;
+  readonly qrAiEnabled?: boolean;
 }
 
 export function Theme2QsrView({
@@ -182,6 +185,8 @@ export function Theme2QsrView({
   myOrders,
   busy,
   onCustomerIdentified,
+  tableSessionClosed = false,
+  qrAiEnabled = true,
 }: Theme2QsrViewProps) {
   // Navigation Tabs: 'home' | 'categories' | 'cart' | 'profile'
   const [activeTab, setActiveTab] = useState<"home" | "categories" | "cart" | "profile">("home");
@@ -376,6 +381,10 @@ export function Theme2QsrView({
 
   const handleItemAddClick = (item: MenuItemDTO, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    if (tableSessionClosed) {
+      toast.error("Masa hesabınız kapatıldı. Yeni sipariş vermek için masadaki QR kodu tekrar okutun.");
+      return;
+    }
     if (item.variants.length > 0 || item.modifierGroups.length > 0) {
       setDetailItem(item);
     } else {
@@ -425,10 +434,21 @@ export function Theme2QsrView({
     [menu.categories],
   );
 
+  const chefSpecialItems = useMemo(() => {
+    return menu.items.filter(
+      (item) => item.isChefSpecial && item.isActive && item.available !== false,
+    );
+  }, [menu.items]);
+  const hasChefSpecials = chefSpecialItems.length > 0;
+
   const items = useMemo(() => {
     return menu.items.filter((it) => {
       if (!it.isActive) return false;
-      if (selectedCategory && it.categoryId !== selectedCategory) return false;
+      if (selectedCategory === "CHEF_SPECIALS") {
+        if (!it.isChefSpecial) return false;
+      } else if (selectedCategory && it.categoryId !== selectedCategory) {
+        return false;
+      }
       if (searchQuery.trim() && !it.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
@@ -542,6 +562,10 @@ export function Theme2QsrView({
   };
 
   const handleFinalCheckout = async () => {
+    if (tableSessionClosed) {
+      toast.error("Masa hesabınız kapatıldı. Yeni sipariş verilemez.");
+      return;
+    }
     try {
       await onPlaceOrder();
       setCheckoutOpen(false);
@@ -587,12 +611,18 @@ export function Theme2QsrView({
 
             {/* Table Badge & Order Bell */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <span
-                className="px-2.5 py-1 rounded-full text-[10px] font-extrabold shadow-2xs border"
-                style={{ backgroundColor: secondaryColor, color: primaryColor, borderColor: `${primaryColor}40` }}
-              >
-                🍽️ {tableLabel}
-              </span>
+              {tableSessionClosed ? (
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xs border bg-zinc-100 text-zinc-600 border-zinc-300 flex items-center gap-1">
+                  🔒 Masa Kapandı
+                </span>
+              ) : (
+                <span
+                  className="px-2.5 py-1 rounded-full text-[10px] font-extrabold shadow-2xs border"
+                  style={{ backgroundColor: secondaryColor, color: primaryColor, borderColor: `${primaryColor}40` }}
+                >
+                  🍽️ {tableLabel}
+                </span>
+              )}
 
               {(() => {
                 const validCount = myOrders.filter(
@@ -637,6 +667,19 @@ export function Theme2QsrView({
               </button>
             </div>
           </div>
+
+          {/* Table Session Closed Notification Banner */}
+          {tableSessionClosed && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-950 text-xs font-medium space-y-1 animate-in fade-in shadow-xs">
+              <div className="flex items-center gap-1.5 font-black text-amber-900">
+                <span className="text-sm">🔒</span>
+                <span>Masa Hesabı Kapatıldı</span>
+              </div>
+              <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                Masa hesabınız kapatılmış olup oturumunuz sona ermiştir. Yeni bir sipariş vermek için lütfen masadaki QR kodu tekrar okutun.
+              </p>
+            </div>
+          )}
 
           {/* Search Bar with Filter Trigger */}
           <div className="flex items-center gap-2">
@@ -882,6 +925,40 @@ export function Theme2QsrView({
                 </span>
               </button>
 
+              {hasChefSpecials && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedCategory(
+                      selectedCategory === "CHEF_SPECIALS" ? null : "CHEF_SPECIALS",
+                    )
+                  }
+                  className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer transition-transform active:scale-95"
+                >
+                  <div
+                    className={cn(
+                      "size-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs transition-all border relative",
+                      selectedCategory === "CHEF_SPECIALS"
+                        ? "border-2 border-amber-500 bg-amber-500 text-white shadow-md scale-105"
+                        : "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 hover:border-amber-400 text-amber-900 shadow-sm",
+                    )}
+                  >
+                    <span className="text-2xl">👨‍🍳</span>
+                    <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-amber-500 ring-2 ring-white animate-pulse" />
+                  </div>
+                  <span
+                    className={cn(
+                      "text-[11px] truncate max-w-[70px]",
+                      selectedCategory === "CHEF_SPECIALS"
+                        ? "font-black text-amber-700"
+                        : "font-bold text-amber-800",
+                    )}
+                  >
+                    Şefin Seçimi
+                  </span>
+                </button>
+              )}
+
               {categories.map((c) => {
                 const isSelected = selectedCategory === c.id;
                 const emoji = getCategoryEmoji(c.name);
@@ -923,28 +1000,55 @@ export function Theme2QsrView({
           {selectedCategory ? (
             /* ACTIVE SELECTED CATEGORY PRODUCTS VIEW */
             (() => {
-              const currentCategory = categories.find((c) => c.id === selectedCategory);
+              const isChef = selectedCategory === "CHEF_SPECIALS";
+              const currentCategory = isChef
+                ? { id: "CHEF_SPECIALS", name: "Şefin Özel Seçtikleri" }
+                : categories.find((c) => c.id === selectedCategory);
               const categoryItems = applyFilters(
-                menu.items.filter((it) => it.categoryId === selectedCategory),
+                isChef
+                  ? menu.items.filter((it) => it.isChefSpecial)
+                  : menu.items.filter((it) => it.categoryId === selectedCategory),
               );
 
               return (
                 <div className="space-y-4 pt-1 animate-in fade-in duration-200">
                   {/* Category Header Banner */}
-                  <div className="p-4 rounded-3xl bg-white border border-zinc-200/80 shadow-xs flex items-center justify-between gap-3">
+                  <div
+                    className={cn(
+                      "p-4 rounded-3xl border shadow-xs flex items-center justify-between gap-3",
+                      isChef
+                        ? "bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border-amber-300 text-amber-950"
+                        : "bg-white border-zinc-200/80",
+                    )}
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="size-11 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0"
-                        style={{ backgroundColor: secondaryColor }}
+                        className={cn(
+                          "size-11 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0",
+                          isChef ? "bg-amber-500 text-white shadow-md" : undefined,
+                        )}
+                        style={!isChef ? { backgroundColor: secondaryColor } : undefined}
                       >
-                        {getCategoryEmoji(currentCategory?.name || "")}
+                        {isChef ? "👨‍🍳" : getCategoryEmoji(currentCategory?.name || "")}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm sm:text-base font-black text-zinc-900 truncate">
-                          {currentCategory?.name || "Kategori"}
+                        <h3 className="text-sm sm:text-base font-black truncate flex items-center gap-1.5">
+                          <span>{currentCategory?.name || "Kategori"}</span>
+                          {isChef && (
+                            <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full shadow-xs">
+                              Özel
+                            </span>
+                          )}
                         </h3>
-                        <span className="text-[11px] font-bold text-zinc-400 block">
-                          {categoryItems.length} çeşit lezzet listeleniyor
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold block",
+                            isChef ? "text-amber-700/80" : "text-zinc-400",
+                          )}
+                        >
+                          {isChef
+                            ? "Şefimizin sizin için özenle hazırladığı spesiyal lezzetler"
+                            : `${categoryItems.length} çeşit lezzet listeleniyor`}
                         </span>
                       </div>
                     </div>
@@ -1417,8 +1521,41 @@ export function Theme2QsrView({
 
           {/* 2-Column Categories Grid (Görseldeki Categories Ekranı) */}
           <div className="grid grid-cols-2 gap-3">
+            {hasChefSpecials && (
+              <div
+                onClick={() => {
+                  setSelectedCategory("CHEF_SPECIALS");
+                  setActiveTab("home");
+                }}
+                className="col-span-2 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 rounded-3xl p-4 border border-amber-300 shadow-xs hover:border-amber-400 hover:shadow-md transition-all flex items-center justify-between gap-3 cursor-pointer group active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="size-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-3xl shadow-md group-hover:scale-110 transition-transform shrink-0">
+                    👨‍🍳
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="font-black text-xs sm:text-sm text-amber-950 group-hover:text-amber-700 transition-colors">
+                        Şefin Özel Seçtikleri
+                      </h4>
+                      <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full">
+                        Öne Çıkan
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-amber-700/80 block mt-0.5">
+                      {chefSpecialItems.length} özel spesiyal lezzet
+                    </span>
+                  </div>
+                </div>
+                <div className="size-8 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-2xs group-hover:scale-105 transition-transform shrink-0">
+                  <ChevronRightIcon className="size-4 stroke-[3]" />
+                </div>
+              </div>
+            )}
+
             {categories.map((c) => {
               const count = menu.items.filter((i) => i.categoryId === c.id && i.isActive).length;
+              const emoji = getCategoryEmoji(c.name);
               return (
                 <div
                   key={c.id}
@@ -1429,7 +1566,7 @@ export function Theme2QsrView({
                   className="bg-white rounded-3xl p-4 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex flex-col items-center text-center justify-between gap-2.5 cursor-pointer group active:scale-[0.98]"
                 >
                   <div className="size-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform shadow-inner">
-                    🍔
+                    {emoji}
                   </div>
 
                   <div>
@@ -2236,8 +2373,12 @@ export function Theme2QsrView({
 
             <Button
               size="lg"
-              disabled={busy || cartItems.length === 0}
+              disabled={busy || cartItems.length === 0 || tableSessionClosed}
               onClick={async () => {
+                if (tableSessionClosed) {
+                  toast.error("Masa hesabınız kapatıldı. Yeni sipariş verilemez.");
+                  return;
+                }
                 try {
                   const res = await onPlaceOrder();
                   if (res !== false) {
@@ -2247,10 +2388,14 @@ export function Theme2QsrView({
                   // Keep open on error
                 }
               }}
-              className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+              className="w-full h-12 rounded-2xl font-black text-sm text-white shadow-lg active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
               style={{ backgroundColor: primaryColor }}
             >
-              {busy ? "Sipariş Oluşturuluyor…" : "Sipariş Oluştur"}
+              {tableSessionClosed
+                ? "Masa Hesabı Kapandı"
+                : busy
+                  ? "Sipariş Oluşturuluyor…"
+                  : "Sipariş Oluştur"}
             </Button>
           </div>
         </SheetContent>
@@ -2701,6 +2846,18 @@ export function Theme2QsrView({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* GUEST AI ASSISTANT (Yapay Zeka Menü Danışmanı) */}
+      <GuestAiAssistant
+        username={username}
+        tableId={tableId}
+        restaurantName={restaurantName}
+        primaryColor={primaryColor}
+        secondaryColor={secondaryColor}
+        menu={menu}
+        onQuickAdd={onQuickAdd}
+        enabled={qrAiEnabled !== false}
+      />
     </div>
   );
 }

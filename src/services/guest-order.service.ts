@@ -1,7 +1,7 @@
 import type { GuestPlaceOrderInput } from "@/lib/validators/guest-order";
 import { prisma } from "@/lib/prisma";
 import { deriveKitchenStatus } from "@/lib/kitchen";
-import { checkTableDeviceLock } from "@/lib/table-device-lock";
+import { checkTableDeviceLock, type TableLockCheckResult } from "@/lib/table-device-lock";
 import {
   findOrdersForGuest,
   createOrder as createOrderRepo,
@@ -66,6 +66,7 @@ export interface GuestOrderActor {
   readonly tableId: string;
   readonly phone: string;
   readonly deviceId?: string;
+  readonly tableSessionId?: string | null;
 }
 
 /**
@@ -77,6 +78,17 @@ export const placeGuestOrder = async (
   actor: GuestOrderActor,
   input: GuestPlaceOrderInput,
 ): Promise<OrderDTO> => {
+  // Authoritative server-side TableSession validation
+  if (actor.tableSessionId) {
+    const session = await prisma.tableSession.findUnique({
+      where: { id: actor.tableSessionId },
+      select: { status: true, tableId: true },
+    });
+    if (!session || session.status !== "ACTIVE" || session.tableId !== actor.tableId) {
+      throw new Error("TABLE_SESSION_EXPIRED");
+    }
+  }
+
   const ctx: OrderContext = {
     restaurantId: actor.restaurantId,
     userId: actor.deviceId ?? null,
@@ -87,17 +99,24 @@ export const placeGuestOrder = async (
   const open = await listOrders(actor.restaurantId, ["OPEN"]);
   const existing = open.find((o) => o.tableId === actor.tableId);
   if (existing) {
+    const updateData: { placedById?: string; tableSessionId?: string } = {};
     if (actor.deviceId && !existing.placedById) {
+      updateData.placedById = actor.deviceId;
+    }
+    if (actor.tableSessionId && !existing.tableSessionId) {
+      updateData.tableSessionId = actor.tableSessionId;
+    }
+    if (Object.keys(updateData).length > 0) {
       await prisma.order.update({
         where: { id: existing.id },
-        data: { placedById: actor.deviceId },
+        data: updateData,
       });
     }
     await addItems(ctx, { orderId: existing.id, items: input.items });
     return fireOrder(ctx, existing.id);
   }
 
-  return createOrder(ctx, {
+  const created = await createOrder(ctx, {
     orderType: "DINE_IN",
     tableId: actor.tableId,
     idempotencyKey: input.idempotencyKey,
@@ -106,6 +125,15 @@ export const placeGuestOrder = async (
     note: input.note,
     items: input.items,
   });
+
+  if (actor.tableSessionId) {
+    await prisma.order.update({
+      where: { id: created.id },
+      data: { tableSessionId: actor.tableSessionId },
+    }).catch(() => undefined);
+  }
+
+  return created;
 };
 
 export interface GuestOrderPageData {
@@ -115,11 +143,13 @@ export interface GuestOrderPageData {
   readonly username: string;
   readonly tableId: string;
   readonly tableLabel: string;
+  readonly tableSessionId?: string | null;
   readonly menu: MenuDTO;
   readonly qrMenuTheme?: string | null;
   readonly qrPrimaryColor?: string | null;
   readonly qrSecondaryColor?: string | null;
   readonly qrSlidersEnabled?: boolean | null;
+  readonly qrAiEnabled?: boolean | null;
   readonly qrSliders?: readonly object[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
@@ -188,8 +218,9 @@ export const loadGuestOrderPage = async (
   }
 
   // Device Lock Check: If the table is active and occupied by another device
+  let lockCheck: TableLockCheckResult | null = null;
   if (tableId !== "preview" && deviceId) {
-    const lockCheck = await checkTableDeviceLock(
+    lockCheck = await checkTableDeviceLock(
       restaurant.id,
       table.id,
       deviceId,
@@ -241,14 +272,23 @@ export const loadGuestOrderPage = async (
           orderType: "DINE_IN",
           tableId: table.id,
           tableLabel: table.label,
+          tableSessionId: lockCheck?.tableSessionId || undefined,
           customerName: null,
           customerPhone: null,
           customerAddress: null,
-          placedById: null,
+          placedById: deviceId || null,
           placedByStaffId: null,
           items: [],
           note: "📱 Müşteri QR menüyü açtı (Masa Oturumu)",
         });
+      } else if (lockCheck?.tableSessionId && !existingOpen.tableSessionId) {
+        await prisma.order.update({
+          where: { id: existingOpen.id },
+          data: {
+            tableSessionId: lockCheck.tableSessionId,
+            placedById: existingOpen.placedById || deviceId || null,
+          },
+        }).catch(() => undefined);
       }
     } catch (e) {
       console.error("Failed to initialize table session on QR open:", e);
@@ -265,11 +305,13 @@ export const loadGuestOrderPage = async (
       username: restaurant.username ?? username,
       tableId: table.id,
       tableLabel: table.label,
+      tableSessionId: lockCheck?.tableSessionId || null,
       menu,
       qrMenuTheme: restaurant.qrMenuTheme || "MODERN",
       qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
       qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
       qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
+      qrAiEnabled: restaurant.qrAiEnabled ?? true,
       qrSliders: (restaurant.qrSliders as readonly object[]) ?? null,
       qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
       qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",

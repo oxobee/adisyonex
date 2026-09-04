@@ -14,8 +14,8 @@ export default async function AdminLayout({
   readonly children: ReactNode;
 }) {
   const adminCtx = await getAdminContextOrNull();
-  if (!adminCtx) {
-    redirect("/login");
+  if (!adminCtx || !adminCtx.isSuperAdmin) {
+    redirect("/dashboard/home");
   }
 
   const systemSettings = await getSystemSettings().catch(() => null);

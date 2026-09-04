@@ -31,8 +31,21 @@ export interface TableLockCheckResult {
   readonly isLocked: boolean;
   readonly activeDeviceId: string | null;
   readonly tableLabel: string;
+  readonly tableSessionId?: string | null;
 }
 
+/**
+ * Validates or initializes an authoritative server-side TableSession.
+ *
+ * Rules:
+ * 1. If table has an ACTIVE TableSession:
+ *    - If deviceId matches -> allow entry (same customer returning).
+ *    - If deviceId differs -> locked! Show table occupied warning.
+ * 2. If table has NO active TableSession and NO open orders:
+ *    - Table is AVAILABLE (fresh customer).
+ *    - Atomically generate a brand new ACTIVE TableSession.
+ *    - Bind deviceId to this session.
+ */
 export async function checkTableDeviceLock(
   restaurantId: string,
   tableId: string,
@@ -44,7 +57,17 @@ export async function checkTableDeviceLock(
   });
   const tableLabel = table?.label || "Masa";
 
-  // 1. Check if there is an active OPEN order on this table
+  // 1. Check for an active server-side TableSession
+  const activeSession = await prisma.tableSession.findFirst({
+    where: {
+      restaurantId,
+      tableId,
+      status: "ACTIVE",
+    },
+    orderBy: { startedAt: "desc" },
+  });
+
+  // 2. Check for an active OPEN order on this table
   const openOrder = await prisma.order.findFirst({
     where: {
       restaurantId,
@@ -55,99 +78,154 @@ export async function checkTableDeviceLock(
     orderBy: { createdAt: "desc" },
   });
 
-  if (openOrder) {
-    // If order has no bound device, bind it to current device
-    if (!openOrder.placedById) {
-      await prisma.order.update({
-        where: { id: openOrder.id },
-        data: { placedById: deviceId },
+  // CASE 1: ACTIVE SESSION EXISTS
+  if (activeSession) {
+    if (!activeSession.deviceId) {
+      // Unclaimed session (e.g. opened from POS), claim for this device
+      await prisma.tableSession.update({
+        where: { id: activeSession.id },
+        data: { deviceId },
       });
+      if (openOrder && !openOrder.placedById) {
+        await prisma.order.update({
+          where: { id: openOrder.id },
+          data: { placedById: deviceId, tableSessionId: activeSession.id },
+        });
+      }
       return {
         isLocked: false,
         activeDeviceId: deviceId,
-        tableLabel: openOrder.tableLabel || tableLabel,
+        tableLabel,
+        tableSessionId: activeSession.id,
       };
     }
 
-    // If order is bound to another device, it is LOCKED
-    if (openOrder.placedById !== deviceId) {
+    if (activeSession.deviceId === deviceId) {
+      // Same device is returning/refreshing
+      if (openOrder && !openOrder.tableSessionId) {
+        await prisma.order.update({
+          where: { id: openOrder.id },
+          data: { tableSessionId: activeSession.id },
+        });
+      }
+      return {
+        isLocked: false,
+        activeDeviceId: deviceId,
+        tableLabel,
+        tableSessionId: activeSession.id,
+      };
+    }
+
+    // Different device: LOCKED!
+    return {
+      isLocked: true,
+      activeDeviceId: activeSession.deviceId,
+      tableLabel,
+      tableSessionId: activeSession.id,
+    };
+  }
+
+  // CASE 2: NO ACTIVE SESSION, BUT OPEN ORDER EXISTS (e.g. Waiter opened tab on POS)
+  if (openOrder) {
+    const boundDeviceId = openOrder.placedById || deviceId;
+    const newSession = await prisma.tableSession.create({
+      data: {
+        restaurantId,
+        tableId,
+        deviceId: boundDeviceId,
+        status: "ACTIVE",
+        startedAt: openOrder.createdAt || new Date(),
+      },
+    });
+
+    await prisma.order.update({
+      where: { id: openOrder.id },
+      data: {
+        tableSessionId: newSession.id,
+        placedById: boundDeviceId,
+      },
+    });
+
+    if (openOrder.placedById && openOrder.placedById !== deviceId) {
       return {
         isLocked: true,
         activeDeviceId: openOrder.placedById,
-        tableLabel: openOrder.tableLabel || tableLabel,
+        tableLabel,
+        tableSessionId: newSession.id,
       };
     }
 
     return {
       isLocked: false,
       activeDeviceId: deviceId,
-      tableLabel: openOrder.tableLabel || tableLabel,
+      tableLabel,
+      tableSessionId: newSession.id,
     };
   }
 
-  // 2. Check active table session claim (when customer sits and opens menu before ordering)
+  // CASE 3: TABLE IS AVAILABLE & EMPTY -> CREATE NEW ACTIVE SESSION
+  // Clean up any stale legacy otpChallenge entries
   const sessionKey = `tbl_lock_${tableId}`;
-  const now = new Date();
-  const existingClaim = await prisma.otpChallenge.findFirst({
+  await prisma.otpChallenge.deleteMany({
     where: { phone: sessionKey },
+  }).catch(() => undefined);
+
+  const freshSession = await prisma.tableSession.create({
+    data: {
+      restaurantId,
+      tableId,
+      deviceId,
+      status: "ACTIVE",
+      startedAt: new Date(),
+    },
   });
-
-  if (existingClaim) {
-    if (existingClaim.expiresAt > now) {
-      // Session is active
-      if (existingClaim.codeHash !== deviceId) {
-        return {
-          isLocked: true,
-          activeDeviceId: existingClaim.codeHash,
-          tableLabel,
-        };
-      }
-      // Same device: refresh session for 90 minutes
-      await prisma.otpChallenge.update({
-        where: { id: existingClaim.id },
-        data: { expiresAt: new Date(Date.now() + 90 * 60 * 1000) },
-      });
-      return {
-        isLocked: false,
-        activeDeviceId: deviceId,
-        tableLabel,
-      };
-    }
-  }
-
-  // No active claim or expired: current device claims this table
-  const twoHoursLater = new Date(Date.now() + 90 * 60 * 1000);
-  if (existingClaim) {
-    await prisma.otpChallenge.update({
-      where: { id: existingClaim.id },
-      data: {
-        codeHash: deviceId,
-        expiresAt: twoHoursLater,
-        attempts: 0,
-      },
-    });
-  } else {
-    await prisma.otpChallenge.create({
-      data: {
-        phone: sessionKey,
-        codeHash: deviceId,
-        expiresAt: twoHoursLater,
-        attempts: 0,
-      },
-    });
-  }
 
   return {
     isLocked: false,
     activeDeviceId: deviceId,
     tableLabel,
+    tableSessionId: freshSession.id,
   };
 }
 
-/** Clear table device lock when table bill is settled or order is voided. */
+/**
+ * Atomically marks all active table sessions as CLOSED and clears table locks.
+ * Called when cashier settles bill, cancels order, or resets table.
+ */
 export async function clearTableDeviceLock(tableId: string): Promise<void> {
-  const sessionKey = `tbl_lock_${tableId}`;
-  await prisma.otpChallenge.deleteMany({
-    where: { phone: sessionKey },
+  const now = new Date();
+  await Promise.all([
+    // 1. Close all active TableSessions for this table
+    prisma.tableSession.updateMany({
+      where: {
+        tableId,
+        status: "ACTIVE",
+      },
+      data: {
+        status: "CLOSED",
+        closedAt: now,
+      },
+    }),
+    // 2. Clear legacy locks
+    prisma.otpChallenge.deleteMany({
+      where: { phone: `tbl_lock_${tableId}` },
+    }),
+    // 3. Clear table bill request state
+    prisma.diningTable.update({
+      where: { id: tableId },
+      data: { billRequestedAt: null },
+    }).catch(() => undefined),
+  ]);
+}
+
+/**
+ * Verifies if a specific table session is currently ACTIVE.
+ */
+export async function isTableSessionActive(tableSessionId: string): Promise<boolean> {
+  if (!tableSessionId) return false;
+  const session = await prisma.tableSession.findUnique({
+    where: { id: tableSessionId },
+    select: { status: true },
   });
+  return session?.status === "ACTIVE";
 }

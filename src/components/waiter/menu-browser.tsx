@@ -161,10 +161,19 @@ export function MenuBrowser({
     );
   };
 
+  const hasChefSpecials = useMemo(
+    () => menu.items.some((i) => i.isActive && i.isChefSpecial),
+    [menu.items],
+  );
+
   const items = useMemo(() => {
     let result = menu.items.filter((item) => {
       if (!item.isActive) return false;
-      if (categoryId && item.categoryId !== categoryId) return false;
+      if (categoryId === "CHEF_SPECIALS") {
+        if (!item.isChefSpecial) return false;
+      } else if (categoryId && item.categoryId !== categoryId) {
+        return false;
+      }
 
       // Search Query
       if (query.trim()) {
@@ -347,6 +356,25 @@ export function MenuBrowser({
               {menu.items.filter((i) => i.isActive).length}
             </span>
           </button>
+
+          {hasChefSpecials && (
+            <button
+              type="button"
+              onClick={() => setCategoryId(categoryId === "CHEF_SPECIALS" ? null : "CHEF_SPECIALS")}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-black transition-all duration-200 select-none active:scale-95 cursor-pointer shadow-xs",
+                categoryId === "CHEF_SPECIALS"
+                  ? "border-amber-500 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/30 scale-[1.03]"
+                  : "border-amber-400/60 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 text-amber-900 dark:text-amber-200 hover:border-amber-500",
+              )}
+            >
+              <span className="animate-pulse">👨‍🍳</span>
+              <span>Şefin Seçtikleri</span>
+              <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[10px] font-black text-amber-800 dark:text-amber-200">
+                {menu.items.filter((i) => i.isActive && i.isChefSpecial).length}
+              </span>
+            </button>
+          )}
 
           {categories.map((c) => {
             const count = categoryCounts[c.id] ?? 0;

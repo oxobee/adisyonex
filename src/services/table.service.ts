@@ -139,6 +139,9 @@ export const transferTableOrders = async (
     },
   });
 
+  const { clearTableDeviceLock } = await import("@/lib/table-device-lock");
+  await clearTableDeviceLock(fromTable.id).catch(() => undefined);
+
   return { count: updated.count, targetTableLabel: toTable.label };
 };
 
