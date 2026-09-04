@@ -1,23 +1,29 @@
 import { notFound, redirect } from "next/navigation";
 import { MenuDesignManager } from "@/components/menu-design/menu-design-manager";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { findRestaurantById } from "@/repositories/restaurant.repository";
 import { getMenu } from "@/services/menu-item.service";
 import { getQrMenuTheme, getQrThemeCustomization } from "@/services/restaurant-settings.service";
 import { getTables } from "@/services/table.service";
 
 export default async function MenuDesignPage() {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+
+  if (!restaurantId) {
     redirect("/dashboard/home");
   }
 
   const [restaurant, menu, currentTheme, tables, customization] = await Promise.all([
-    findRestaurantById(ctx.restaurantId),
-    getMenu(ctx.restaurantId),
-    getQrMenuTheme(ctx.restaurantId).catch(() => "MODERN"),
-    getTables(ctx.restaurantId).catch(() => []),
-    getQrThemeCustomization(ctx.restaurantId).catch(() => ({
+    findRestaurantById(restaurantId),
+    getMenu(restaurantId),
+    getQrMenuTheme(restaurantId).catch(() => "MODERN"),
+    getTables(restaurantId).catch(() => []),
+    getQrThemeCustomization(restaurantId).catch(() => ({
       qrPrimaryColor: "#FF5500",
       qrSecondaryColor: "#FFF7ED",
       qrSlidersEnabled: true,

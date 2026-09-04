@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { PrintButton } from "@/components/orders/print-button";
-import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { formatDateTime } from "@/lib/format";
+import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getOrder } from "@/services/order.service";
 
 export default async function KotPage({
@@ -10,12 +11,16 @@ export default async function KotPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+  if (!restaurantId) {
     notFound();
   }
   const { id } = await params;
-  const order = await getOrder(ctx.restaurantId, id).catch(() => null);
+  const order = await getOrder(restaurantId, id).catch(() => null);
   if (!order) {
     notFound();
   }

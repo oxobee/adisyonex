@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/orders/print-button";
 import { formatCurrency } from "@/lib/format";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { findRestaurantById } from "@/repositories/restaurant.repository";
 import { getOrder } from "@/services/order.service";
 import type { OrderLineDTO } from "@/types/order";
@@ -65,15 +66,19 @@ export default async function InvoicePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ copy?: string }>;
 }) {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+  if (!restaurantId) {
     notFound();
   }
   const { id } = await params;
   const { copy } = await searchParams;
   const [order, restaurant] = await Promise.all([
-    getOrder(ctx.restaurantId, id).catch(() => null),
-    findRestaurantById(ctx.restaurantId),
+    getOrder(restaurantId, id).catch(() => null),
+    findRestaurantById(restaurantId),
   ]);
   if (!order || !restaurant) {
     notFound();

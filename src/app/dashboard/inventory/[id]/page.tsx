@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/format";
 import { MOVEMENT_LABELS, UNIT_LABELS } from "@/lib/inventory";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { cn } from "@/lib/utils";
 import { getStockItem, listMovements } from "@/services/stock.service";
 
@@ -14,16 +15,25 @@ export default async function StockHistoryPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+  const stockCtx = ctx
+    ? { restaurantId: ctx.restaurantId, userId: ctx.userId }
+    : staffCtx
+      ? { restaurantId: staffCtx.restaurantId, userId: staffCtx.staffId }
+      : null;
+
+  if (!stockCtx) {
     notFound();
   }
   const { id } = await params;
-  const item = await getStockItem(ctx, id).catch(() => null);
+  const item = await getStockItem(stockCtx, id).catch(() => null);
   if (!item) {
     notFound();
   }
-  const movements = await listMovements(ctx, id);
+  const movements = await listMovements(stockCtx, id);
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">

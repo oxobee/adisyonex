@@ -38,6 +38,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
+import { getStaffContextOrNull } from "@/lib/staff-auth"
 import {
   getInvoiceFooterNote,
   getRestaurantProfile,
@@ -62,7 +63,10 @@ const NAV_TRIGGER =
 
 export default async function SettingsPage() {
   const ctx = await getManagerContextOrNull()
-  if (!ctx) {
+  const staffCtx = await getStaffContextOrNull()
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId
+
+  if (!restaurantId) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
@@ -78,13 +82,15 @@ export default async function SettingsPage() {
   }
 
   const [profile, taxProfile, licenseInfo] = await Promise.all([
-    getRestaurantProfile(ctx.restaurantId),
-    getTaxProfile(ctx.restaurantId),
-    getRestaurantLicenseInfo(ctx.restaurantId).catch(() => null),
+    getRestaurantProfile(restaurantId),
+    getTaxProfile(restaurantId),
+    getRestaurantLicenseInfo(restaurantId).catch(() => null),
   ])
-  const pinStatus = await getPinStatus(ctx.userId)
-  const selfOrderEnabled = await getSelfOrderEnabled(ctx.restaurantId)
-  const invoiceFooter = await getInvoiceFooterNote(ctx.restaurantId)
+  const pinStatus = ctx?.userId
+    ? await getPinStatus(ctx.userId)
+    : { hasPin: false, pinUpdatedAt: null }
+  const selfOrderEnabled = await getSelfOrderEnabled(restaurantId)
+  const invoiceFooter = await getInvoiceFooterNote(restaurantId)
 
   const essentials: (string | null)[] = [
     profile.name,

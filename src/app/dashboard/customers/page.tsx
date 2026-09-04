@@ -2,11 +2,17 @@ import { CustomersTable } from "@/components/customers/customers-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getBirthdayAutomation, listCustomers } from "@/services/customer.service";
 
 export default async function CustomersPage() {
-  const ctx = await getManagerContextOrNull();
-  if (!ctx) {
+  const [ctx, staffCtx] = await Promise.all([
+    getManagerContextOrNull().catch(() => null),
+    getStaffContextOrNull().catch(() => null),
+  ]);
+  const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
+
+  if (!restaurantId) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:p-6">
         <PageHeader
@@ -21,10 +27,13 @@ export default async function CustomersPage() {
     );
   }
 
-  const [{ items }, birthdayAutomation] = await Promise.all([listCustomers(ctx.restaurantId, {
-    page: 1,
-    pageSize: 100,
-  }), getBirthdayAutomation(ctx.restaurantId)]);
+  const [{ items }, birthdayAutomation] = await Promise.all([
+    listCustomers(restaurantId, {
+      page: 1,
+      pageSize: 100,
+    }),
+    getBirthdayAutomation(restaurantId),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">

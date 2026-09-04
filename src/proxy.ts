@@ -6,11 +6,46 @@ import {
   verifyMobileBearerToken,
 } from "@/lib/mobile-session";
 
-/** Routes reachable without an authenticated session (login + admin preview + public guest ordering). */
-const PUBLIC_ROUTES = ["/login", "/admin", "/order"];
+/** Routes reachable without an authenticated session (login + admin preview + public guest ordering + staff login). */
+const PUBLIC_ROUTES = [
+  "/login",
+  "/admin",
+  "/order",
+  "/personelgiris",
+  "/personel-giris",
+];
 
 /** Auth pages a signed-in user should be redirected away from. */
 const AUTH_ROUTES = ["/login"];
+
+/** Reserved root-level paths that are not restaurant slugs. */
+const RESERVED_SLUGS = new Set([
+  "dashboard",
+  "admin",
+  "api",
+  "login",
+  "order",
+  "u",
+  "personelgiris",
+  "personel-giris",
+  "manifest",
+  "favicon",
+  "robots",
+  "sitemap",
+  "orders",
+  "kitchen",
+  "pos",
+  "tables",
+  "menu",
+  "settings",
+  "inventory",
+  "customers",
+  "system",
+  "z-report",
+  "ai-studio",
+  "staff",
+  "home",
+]);
 
 /**
  * Session cookie name. The proxy only checks for presence — an optimistic
@@ -106,8 +141,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return handleStaffArea(request);
   }
 
-  // `/[username]/personals` — public staff login page (no manager session needed).
+  // `/[username]/personals` — new public staff login page (no manager session needed).
   if (PERSONALS_PATTERN.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Single-segment public restaurant slug (e.g. `/ugurburger` -> `/order/ugurburger`)
+  const slug = pathname.slice(1);
+  if (slug && !slug.includes("/") && !slug.includes(".") && !RESERVED_SLUGS.has(slug)) {
     return NextResponse.next();
   }
 
