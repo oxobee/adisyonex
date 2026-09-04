@@ -45,7 +45,6 @@ import { useOrderCart } from "./use-order-cart";
 export interface CashierSalesTerminalProps {
   readonly menu: MenuDTO;
   readonly tables: readonly TableDTO[];
-  readonly onSwitchToTables?: () => void;
   readonly cashierName?: string;
   readonly restaurantName?: string;
 }
@@ -71,7 +70,6 @@ const MEAL_VOUCHERS: readonly MealVoucherBrand[] = [
 export function CashierSalesTerminal({
   menu,
   tables,
-  onSwitchToTables,
   cashierName = "Kasa Personeli",
   restaurantName = "Adisyoon",
 }: CashierSalesTerminalProps) {
@@ -86,11 +84,8 @@ export function CashierSalesTerminal({
 
   // Discount State
   const [discount, setDiscount] = useState<DiscountInput>({ type: "NONE", value: 0 });
-  const [isDiscountOpen, setIsDiscountOpen] = useState(false);
 
-  // Order Details
-  const [orderType, setOrderType] = useState<"TAKEAWAY" | "DINE_IN">("TAKEAWAY");
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  // Customer Details (Optional)
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
@@ -102,9 +97,6 @@ export function CashierSalesTerminal({
   // Split Payment State
   const [splitCashStr, setSplitCashStr] = useState<string>("");
   const [splitCardStr, setSplitCardStr] = useState<string>("");
-
-  // Fullscreen state
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Success Modal State
   const [completedSale, setCompletedSale] = useState<{
@@ -165,16 +157,7 @@ export function CashierSalesTerminal({
     return counts;
   }, [cart]);
 
-  // Fullscreen Toggle
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
-    }
-  };
+
 
   // Tap Item Handler
   const handleTapItem = (item: MenuItemDTO) => {
@@ -318,8 +301,7 @@ export function CashierSalesTerminal({
 
     const payload = {
       idempotencyKey: uuid(),
-      orderType,
-      tableId: orderType === "DINE_IN" ? selectedTableId ?? undefined : undefined,
+      orderType: "TAKEAWAY" as const,
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
       discountType: discount.type,
@@ -351,7 +333,7 @@ export function CashierSalesTerminal({
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <h1 className="text-sm sm:text-base font-black text-gray-900 tracking-tight">
-                Hızlı Kasa Satış Terminali
+                POS Kasa Satış Terminali
               </h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
                 Canlı Satış
@@ -363,39 +345,8 @@ export function CashierSalesTerminal({
           </div>
         </div>
 
-        {/* Orta Mod Değiştirici: Kasa Satışı vs Masa Siparişi */}
-        <div className="hidden md:flex items-center bg-gray-100/90 p-1 rounded-2xl border border-gray-200 shadow-inner">
-          <button
-            type="button"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-gray-900 shadow-sm border border-gray-200/80 flex items-center gap-1.5 transition-all"
-          >
-            <SparklesIcon className="size-3.5 text-emerald-600" />
-            <span>⚡ Hızlı Kasa Satışı</span>
-          </button>
-
-          {onSwitchToTables && (
-            <button
-              type="button"
-              onClick={onSwitchToTables}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <UtensilsCrossedIcon className="size-3.5 text-gray-400" />
-              <span>🪑 Masalar & Salon</span>
-            </button>
-          )}
-        </div>
-
-        {/* Sağ Butonlar: Tam Ekran & Temizle */}
+        {/* Sağ Butonlar: Sepeti Boşalt */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran Yap"}
-            className="size-8 sm:size-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
-          >
-            {isFullscreen ? <Minimize2Icon className="size-4" /> : <Maximize2Icon className="size-4" />}
-          </button>
-
           {cart.length > 0 && (
             <button
               type="button"
@@ -483,55 +434,112 @@ export function CashierSalesTerminal({
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
-                {filteredItems.map((item) => {
+                {filteredItems.map((item, idx) => {
                   const cartCount = cartItemCounts[item.id] || 0;
                   const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
+                  const primaryImage = item.images?.find((img) => img.isPrimary)?.url || item.images?.[0]?.url;
+
+                  // 3D Material vibrant color themes matching reference Image 1
+                  const cardGradients = [
+                    "from-[#1d4ed8] via-[#2563eb] to-[#1e40af]", // Blue (Image 1, Card 01)
+                    "from-[#c2410c] via-[#ea580c] to-[#9a3412]", // Orange (Image 1, Card 02)
+                    "from-[#047857] via-[#059669] to-[#065f46]", // Emerald (Image 1, Card 03)
+                    "from-[#6d28d9] via-[#7c3aed] to-[#5b21b6]", // Purple (Image 1, Card 04)
+                    "from-[#be123c] via-[#e11d48] to-[#9f1239]", // Rose (Image 1, Card 05)
+                    "from-[#334155] via-[#475569] to-[#1e293b]", // Slate (Image 1, Card 06)
+                  ];
+                  const gradient = cardGradients[idx % cardGradients.length];
 
                   return (
                     <div
                       key={item.id}
                       onClick={() => handleTapItem(item)}
                       className={cn(
-                        "group relative rounded-2xl p-3 sm:p-3.5 bg-white flex flex-col justify-between cursor-pointer select-none",
-                        "border-t border-t-white border-x border-gray-200/90 border-b-[3.5px] border-b-gray-300/90",
-                        "shadow-[0_4px_12px_-2px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)]",
-                        "hover:-translate-y-1 hover:shadow-xl hover:border-b-[4px] hover:border-b-gray-400 transition-all duration-150",
-                        "active:translate-y-1 active:scale-[0.98] active:border-b-[2px]",
-                        "min-h-[120px] sm:min-h-[145px]"
+                        "group relative rounded-2xl overflow-hidden cursor-pointer select-none flex flex-col justify-between transition-all duration-150 transform-gpu",
+                        `bg-gradient-to-br ${gradient}`,
+                        "border-t border-t-white/50 border-x border-white/15 border-b-[3.5px] border-b-black/40",
+                        "shadow-[0_8px_20px_-4px_rgba(0,0,0,0.35),inset_0_1.5px_1px_rgba(255,255,255,0.4)]",
+                        "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
+                        "active:translate-y-1 active:scale-[0.98] active:border-b-[1.5px]",
+                        "min-h-[175px] sm:min-h-[195px]"
                       )}
                     >
-                      {/* Sepetteki Adet Rozeti (Varsa 3D kabartmalı rozet) */}
+                      {/* Subdued Eye-Friendly Texture Overlay & Concentric Rings */}
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
+                        {/* Concentric rings in corner */}
+                        <svg
+                          className="absolute -bottom-6 -right-6 w-32 h-32 opacity-15 text-white pointer-events-none"
+                          viewBox="0 0 160 160"
+                          fill="none"
+                        >
+                          <circle cx="80" cy="80" r="28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                          <circle cx="80" cy="80" r="50" stroke="currentColor" strokeWidth="1.5" />
+                          <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                        </svg>
+
+                        {/* Top Specular Bevel Highlight */}
+                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
+
+                        {/* Bottom Extrusion Shadow */}
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 via-black/15 to-transparent pointer-events-none" />
+                      </div>
+
+                      {/* Sepetteki Adet Rozeti (3D Tactile Pill) */}
                       {cartCount > 0 && (
-                        <div className="absolute -top-2 -right-2 z-10 flex size-6.5 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-black shadow-md border-2 border-white animate-in zoom-in-50">
+                        <div className="absolute top-2 right-2 z-20 flex size-7 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-lg border-2 border-white animate-in zoom-in-75">
                           {cartCount}
                         </div>
                       )}
 
-                      {/* Üst Kısım: Ürün Adı & Kategori */}
-                      <div className="flex flex-col">
-                        <span className="text-xs sm:text-sm font-black text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                          {item.name}
-                        </span>
-                        <span className="text-[10px] font-semibold text-gray-400 truncate mt-0.5">
-                          {categoryMap.get(item.categoryId)}
-                        </span>
-                      </div>
-
-                      {/* Alt Kısım: Fiyat & Varyant İpucu */}
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                        <span className="text-xs sm:text-sm font-black text-emerald-600 tabular-nums">
-                          {formatCurrency(item.price)}
-                        </span>
-
-                        {hasVariants ? (
-                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
-                            Seçenekli
-                          </span>
+                      {/* Üst Alan: Ürün Fotoğrafı veya 3D İkon Küresi */}
+                      <div className="relative w-full h-24 sm:h-28 overflow-hidden bg-black/25">
+                        {primaryImage ? (
+                          <img
+                            src={primaryImage}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+                          />
                         ) : (
-                          <div className="size-6 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                            <PlusIcon className="size-3.5" />
+                          <div className="size-full flex items-center justify-center">
+                            {/* 3D Tactile Sphere Icon from reference style */}
+                            <div className="size-12 rounded-full bg-white/20 backdrop-blur-xs border border-white/40 shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.3)] flex items-center justify-center text-white transition-transform group-hover:scale-110">
+                              <UtensilsCrossedIcon className="size-6" />
+                            </div>
                           </div>
                         )}
+
+                        {/* Gradient shade over image to seamlessly transition to card */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+                        {/* Category Label Chip */}
+                        <div className="absolute bottom-1.5 left-2 z-10">
+                          <span className="text-[10px] font-bold text-white/90 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/20">
+                            {categoryMap.get(item.categoryId) || "Genel"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Alt Alan: Ürün Adı & 3D Fiyat Paneli */}
+                      <div className="relative z-10 p-2.5 sm:p-3 flex flex-col justify-between flex-1">
+                        <span className="text-xs sm:text-sm font-black text-white leading-tight line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                          {item.name}
+                        </span>
+
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/20">
+                          <span className="text-xs sm:text-sm font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                            {formatCurrency(item.price)}
+                          </span>
+
+                          {hasVariants ? (
+                            <span className="text-[10px] font-black text-amber-200 bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-400/40">
+                              Seçenekli
+                            </span>
+                          ) : (
+                            <div className="size-6 rounded-full bg-white/25 backdrop-blur-xs text-white border border-white/40 flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-colors shadow-xs">
+                              <PlusIcon className="size-3.5 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -543,62 +551,18 @@ export function CashierSalesTerminal({
 
         {/* SAĞ ALAN: ADİSYON TİCKET + FİNANSAL HESAPLAMA + ÖDEME & PARAÜSTÜ */}
         <aside className="w-full lg:w-[420px] xl:w-[480px] shrink-0 flex flex-col bg-white overflow-hidden shadow-lg border-l border-gray-200">
-          {/* Adisyon Başlığı & Satış Tipi */}
+          {/* Adisyon Başlığı */}
           <div className="p-3 sm:p-3.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
-              <ReceiptIcon className="size-4 text-primary" />
+              <ReceiptIcon className="size-4 text-emerald-600" />
               <span className="text-xs sm:text-sm font-black text-gray-900">
                 Adisyon Fişi ({cart.reduce((s, l) => s + l.quantity, 0)} Ürün)
               </span>
             </div>
-
-            {/* Satış Türü Butonları */}
-            <div className="flex items-center gap-1 bg-white p-0.5 rounded-xl border border-gray-200 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setOrderType("TAKEAWAY")}
-                className={cn(
-                  "px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer",
-                  orderType === "TAKEAWAY"
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "text-gray-600 hover:text-gray-900"
-                )}
-              >
-                ⚡ Hızlı Kasa
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderType("DINE_IN")}
-                className={cn(
-                  "px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer",
-                  orderType === "DINE_IN"
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "text-gray-600 hover:text-gray-900"
-                )}
-              >
-                🪑 Masaya
-              </button>
-            </div>
+            <span className="text-[11px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+              ⚡ Hızlı Satış
+            </span>
           </div>
-
-          {/* Masa Seçimi (Eğer Masaya Satış seçilmişse) */}
-          {orderType === "DINE_IN" && (
-            <div className="p-2.5 bg-blue-50/70 border-b border-blue-200/60 flex items-center justify-between text-xs">
-              <span className="font-bold text-blue-950">Masa Seçimi:</span>
-              <select
-                value={selectedTableId ?? ""}
-                onChange={(e) => setSelectedTableId(e.target.value || null)}
-                className="bg-white border border-blue-300 rounded-lg px-2.5 py-1 text-xs font-bold text-blue-900 focus:outline-hidden"
-              >
-                <option value="">-- Masa Seçin --</option>
-                {tables.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label} {t.seats ? `(${t.seats} Kişilik)` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           {/* Sepet Ürün Satırları (Scrollable) */}
           <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 flex flex-col gap-2 min-h-[140px] max-h-[30vh] lg:max-h-[none]">
@@ -829,53 +793,36 @@ export function CashierSalesTerminal({
               </button>
             </div>
 
-            {/* A) NAKİT SEÇİLİYSE: HIZLI BANKNOTLAR + NUMPAD + CANLI PARAÜSTÜ */}
+            {/* A) NAKİT SEÇİLİYSE: 3D HIZLI BANKNOTLAR + 3D GÖMÜLÜ LCD PANEL + 3D TACTILE NUMPAD */}
             {paymentMethod === "CASH" && (
               <div className="flex flex-col gap-2.5">
-                {/* Hızlı Banknot Tuşları */}
+                {/* 3D Dokunsal Banknot Tuşları */}
                 <div className="grid grid-cols-5 gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleNumpad("EXACT")}
-                    className="py-1.5 rounded-xl bg-slate-900 text-white font-black text-xs shadow-2xs border border-slate-700 hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+                    className="py-2 rounded-xl bg-slate-900 text-white font-black text-xs border-t border-t-white/30 border-b-[3px] border-b-black shadow-md hover:bg-slate-800 active:translate-y-0.5 active:border-b transition-all cursor-pointer select-none"
                   >
                     Tam
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBanknote(100)}
-                    className="py-1.5 rounded-xl bg-gray-100 text-gray-800 font-bold text-xs border border-gray-200 hover:bg-gray-200 active:scale-95 transition-all cursor-pointer"
-                  >
-                    100 ₺
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBanknote(200)}
-                    className="py-1.5 rounded-xl bg-gray-100 text-gray-800 font-bold text-xs border border-gray-200 hover:bg-gray-200 active:scale-95 transition-all cursor-pointer"
-                  >
-                    200 ₺
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBanknote(500)}
-                    className="py-1.5 rounded-xl bg-gray-100 text-gray-800 font-bold text-xs border border-gray-200 hover:bg-gray-200 active:scale-95 transition-all cursor-pointer"
-                  >
-                    500 ₺
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBanknote(1000)}
-                    className="py-1.5 rounded-xl bg-gray-100 text-gray-800 font-bold text-xs border border-gray-200 hover:bg-gray-200 active:scale-95 transition-all cursor-pointer"
-                  >
-                    1000 ₺
-                  </button>
+                  {[100, 200, 500, 1000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => handleQuickBanknote(amt)}
+                      className="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border-t border-t-white/80 border-b-[3px] border-b-slate-300 shadow-xs active:translate-y-0.5 active:border-b transition-all cursor-pointer select-none font-mono"
+                    >
+                      {amt} ₺
+                    </button>
+                  ))}
                 </div>
 
-                {/* Alınan Nakit ve Canlı Paraüstü Kutusu */}
+                {/* 3D Gömülü LCD Alınan Nakit ve Paraüstü / Kalan Tutar Kutuları (Matching Image 2) */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="flex flex-col justify-center p-2 rounded-xl bg-gray-50 border border-gray-200">
-                    <span className="text-[10px] uppercase font-bold text-gray-500">
-                      Alınan Nakit:
+                  {/* ALINAN NAKİT KUTUSU */}
+                  <div className="flex flex-col justify-center p-2.5 rounded-2xl bg-white border border-gray-200/90 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]">
+                    <span className="text-[10px] uppercase font-black text-gray-500 tracking-wider">
+                      ALINAN NAKİT:
                     </span>
                     <input
                       type="text"
@@ -883,25 +830,25 @@ export function CashierSalesTerminal({
                       value={cashTenderedStr}
                       onChange={(e) => setCashTenderedStr(e.target.value)}
                       placeholder="0.00 ₺"
-                      className="text-base sm:text-lg font-black text-gray-900 bg-transparent focus:outline-hidden font-mono"
+                      className="text-base sm:text-lg font-black text-gray-900 bg-transparent focus:outline-hidden font-mono tracking-tight"
                     />
                   </div>
 
-                  {/* Canlı Paraüstü / Kalan Tutar Ekranı */}
+                  {/* KALAN TUTAR / PARA ÜSTÜ KUTUSU */}
                   <div
                     className={cn(
-                      "flex flex-col justify-center p-2 rounded-xl border transition-all",
+                      "flex flex-col justify-center p-2.5 rounded-2xl border transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]",
                       cashTendered >= bill.grandTotal && bill.grandTotal > 0
-                        ? "bg-emerald-50 border-emerald-300 text-emerald-900 shadow-inner"
-                        : "bg-amber-50 border-amber-300 text-amber-900"
+                        ? "bg-emerald-50/80 border-emerald-400 text-emerald-900"
+                        : "bg-amber-50/90 border-amber-300 text-amber-950"
                     )}
                   >
-                    <span className="text-[10px] uppercase font-black">
+                    <span className="text-[10px] uppercase font-black tracking-wider">
                       {cashTendered >= bill.grandTotal && bill.grandTotal > 0
-                        ? "Para Üstü:"
-                        : "Kalan Tutar:"}
+                        ? "PARA ÜSTÜ:"
+                        : "KALAN TUTAR:"}
                     </span>
-                    <span className="text-base sm:text-lg font-black tabular-nums font-mono">
+                    <span className="text-base sm:text-lg font-black tabular-nums font-mono tracking-tight">
                       {cashTendered >= bill.grandTotal && bill.grandTotal > 0
                         ? formatCurrency(changeDue)
                         : formatCurrency(cashRemaining)}
@@ -909,14 +856,14 @@ export function CashierSalesTerminal({
                   </div>
                 </div>
 
-                {/* Dokunmatik POS Numpad */}
-                <div className="grid grid-cols-6 gap-1 text-xs">
+                {/* 3D Tactile POS Numpad */}
+                <div className="grid grid-cols-6 gap-1.5 text-xs">
                   {["1", "2", "3", "4", "5", "6"].map((n) => (
                     <button
                       key={n}
                       type="button"
                       onClick={() => handleNumpad(n)}
-                      className="py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold border border-gray-200/80 active:scale-95 transition-all"
+                      className="py-2 sm:py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold border-t border-t-white border-x border-gray-200 border-b-[3px] border-b-gray-300 shadow-xs active:translate-y-0.5 active:border-b active:shadow-inner transition-all select-none cursor-pointer font-mono text-sm"
                     >
                       {n}
                     </button>
@@ -927,10 +874,10 @@ export function CashierSalesTerminal({
                       type="button"
                       onClick={() => handleNumpad(n)}
                       className={cn(
-                        "py-1.5 rounded-lg font-bold border transition-all active:scale-95",
+                        "py-2 sm:py-2.5 rounded-xl font-bold border-t border-x border-b-[3px] shadow-xs active:translate-y-0.5 active:border-b active:shadow-inner transition-all select-none cursor-pointer font-mono text-sm",
                         n === "BACK"
-                          ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200/80"
+                          ? "bg-red-50 text-red-700 border-t-red-200 border-x-red-200 border-b-red-300 hover:bg-red-100"
+                          : "bg-gray-50 hover:bg-gray-100 text-gray-900 border-t-white border-gray-200 border-b-gray-300"
                       )}
                     >
                       {n === "BACK" ? "⌫" : n}
@@ -1013,7 +960,7 @@ export function CashierSalesTerminal({
               </div>
             )}
 
-            {/* BÜYÜK 3D SATIŞI TAMAMLA & FİŞ KES BUTONU */}
+            {/* BÜYÜK 3D TACTILE 'Siparişi Tamamla' BUTONU */}
             <button
               type="button"
               onClick={handleCompleteSale}
@@ -1022,7 +969,7 @@ export function CashierSalesTerminal({
                 "w-full py-3.5 sm:py-4 px-4 rounded-2xl font-black text-sm sm:text-base text-white tracking-wide transition-all select-none cursor-pointer",
                 "bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600",
                 "border-t border-t-emerald-300/80 border-x border-emerald-600",
-                "border-b-[4px] border-b-emerald-900/60",
+                "border-b-[4px] border-b-emerald-950",
                 "shadow-[0_12px_24px_-4px_rgba(16,185,129,0.4),inset_0_1.5px_1px_rgba(255,255,255,0.6)]",
                 "hover:-translate-y-0.5 hover:shadow-xl hover:brightness-105",
                 "active:translate-y-1 active:scale-[0.985] active:border-b-[2px] active:shadow-md",
@@ -1033,12 +980,12 @@ export function CashierSalesTerminal({
               {submitSale.isPending ? (
                 <>
                   <RefreshCwIcon className="size-5 animate-spin" />
-                  <span>Satış İşleniyor...</span>
+                  <span>Sipariş Tamamlanıyor...</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2Icon className="size-5" />
-                  <span>SATIŞI TAMAMLA & FİŞ KES ({formatCurrency(bill.grandTotal)})</span>
+                  <span>Siparişi Tamamla</span>
                 </>
               )}
             </button>
