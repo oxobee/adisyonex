@@ -271,103 +271,115 @@ export function HomeScreen({
     };
   }, [operationalStats]);
 
-  // 6 Temel Aksiyon Kartı
+  // 6 Temel 3D Material Aksiyon Kartı
   const ALL_ACTION_CARDS = [
     {
       id: "masalar",
       badge: "01",
-      badgeColor: "text-blue-600 bg-blue-50/80 border-blue-200/60",
       title: "Masalar",
       description: "Masalar & Açık Adisyonlar",
       href: "/dashboard/orders",
-      circleBg: "bg-blue-50/80 border border-blue-100 text-blue-600",
       icon: ArmchairIcon,
       statLeftValue: `${stats.activeTables}`,
       statLeftLabel: "aktif masa",
       statRightValue: `%${stats.occupancyRate}`,
       statRightLabel: "doluluk",
-      statLeftColor: "text-blue-600",
-      statRightColor: "text-blue-600",
+      gradient: "bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8]",
+      shadow: "shadow-[0_16px_34px_-6px_rgba(37,99,235,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
+      border: "border-t border-t-blue-200/60 border-x border-blue-300/30 border-b-[3px] border-b-black/35",
+      insetHighlight: "shadow-[inset_0_1.5px_1px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
+      badgeBg: "bg-white/20 border border-white/40 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]",
+      circleBg: "bg-white/20 backdrop-blur-md border border-white/40 text-white shadow-[inset_0_2px_2px_rgba(255,255,255,0.7),0_8px_16px_rgba(0,0,0,0.25)]",
     },
     {
       id: "mutfak",
       badge: "02",
-      badgeColor: "text-orange-600 bg-orange-50/80 border-orange-200/60",
       title: "Mutfak",
       description: "KOT & Hazırlık Takibi",
       href: "/dashboard/kitchen",
-      circleBg: "bg-orange-50/80 border border-orange-100 text-orange-600",
       icon: ChefHatIcon,
       statLeftValue: `${stats.waitingItems}`,
       statLeftLabel: "bekleyen",
       statRightValue: `${stats.readyItems}`,
       statRightLabel: "servise hazır",
-      statLeftColor: "text-orange-600",
-      statRightColor: "text-orange-600",
+      gradient: "bg-gradient-to-br from-[#f97316] via-[#ea580c] to-[#c2410c]",
+      shadow: "shadow-[0_16px_34px_-6px_rgba(234,88,12,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
+      border: "border-t border-t-orange-200/60 border-x border-orange-300/30 border-b-[3px] border-b-black/35",
+      insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
+      badgeBg: "bg-white/20 border border-white/40 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]",
+      circleBg: "bg-white/20 backdrop-blur-md border border-white/40 text-white shadow-[inset_0_2px_2px_rgba(255,255,255,0.7),0_8px_16px_rgba(0,0,0,0.25)]",
     },
     {
       id: "pos",
       badge: "03",
-      badgeColor: "text-emerald-600 bg-emerald-50/80 border-emerald-200/60",
       title: "POS / Kasa",
       description: "Hızlı Sipariş & Tahsilat",
       href: "/dashboard/pos",
-      circleBg: "bg-emerald-50/80 border border-emerald-100 text-emerald-600",
       icon: CalculatorIcon,
       statLeftValue: `${stats.openOrders}`,
       statLeftLabel: "açık adisyon",
       statRightValue: "Hızlı Kasa",
       statRightLabel: "terminal hazır",
-      statLeftColor: "text-emerald-600",
-      statRightColor: "text-emerald-600",
+      gradient: "bg-gradient-to-br from-[#10b981] via-[#059669] to-[#047857]",
+      shadow: "shadow-[0_16px_34px_-6px_rgba(16,185,129,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
+      border: "border-t border-t-emerald-200/60 border-x border-emerald-300/30 border-b-[3px] border-b-black/35",
+      insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
+      badgeBg: "bg-white/20 border border-white/40 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]",
+      circleBg: "bg-white/20 backdrop-blur-md border border-white/40 text-white shadow-[inset_0_2px_2px_rgba(255,255,255,0.7),0_8px_16px_rgba(0,0,0,0.25)]",
     },
     {
       id: "analitik",
       badge: "04",
-      badgeColor: "text-purple-600 bg-purple-50/80 border-purple-200/60",
       title: "Analitik",
       description: "Operasyonel Günlük Raporlar",
       href: "/dashboard",
-      circleBg: "bg-purple-50/80 border border-purple-100 text-purple-600",
       icon: BarChart3Icon,
       statLeftValue: `${stats.todayOrders}`,
       statLeftLabel: "günlük sipariş",
       statRightValue: "Trendler",
       statRightLabel: "anlık analiz",
-      statLeftColor: "text-purple-600",
-      statRightColor: "text-purple-600",
+      gradient: "bg-gradient-to-br from-[#8b5cf6] via-[#7c3aed] to-[#5b21b6]",
+      shadow: "shadow-[0_16px_34px_-6px_rgba(124,58,237,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
+      border: "border-t border-t-purple-200/60 border-x border-purple-300/30 border-b-[3px] border-b-black/35",
+      insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
+      badgeBg: "bg-white/20 border border-white/40 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]",
+      circleBg: "bg-white/20 backdrop-blur-md border border-white/40 text-white shadow-[inset_0_2px_2px_rgba(255,255,255,0.7),0_8px_16px_rgba(0,0,0,0.25)]",
     },
     {
       id: "musteriler",
       badge: "05",
-      badgeColor: "text-rose-600 bg-rose-50/80 border-rose-200/60",
       title: "Müşteriler",
       description: "Sadakat & Müşteri Takibi",
       href: "/dashboard/customers",
-      circleBg: "bg-rose-50/80 border border-rose-100 text-rose-600",
       icon: TrendingUpIcon,
       statLeftValue: `${stats.totalCustomers.toLocaleString("tr-TR")}`,
       statLeftLabel: "toplam kayıt",
       statRightValue: `${stats.newCustomers}`,
       statRightLabel: "bugün yeni",
-      statLeftColor: "text-rose-600",
-      statRightColor: "text-rose-600",
+      gradient: "bg-gradient-to-br from-[#f43f5e] via-[#e11d48] to-[#9f1239]",
+      shadow: "shadow-[0_16px_34px_-6px_rgba(225,29,72,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
+      border: "border-t border-t-rose-200/60 border-x border-rose-300/30 border-b-[3px] border-b-black/35",
+      insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
+      badgeBg: "bg-white/20 border border-white/40 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]",
+      circleBg: "bg-white/20 backdrop-blur-md border border-white/40 text-white shadow-[inset_0_2px_2px_rgba(255,255,255,0.7),0_8px_16px_rgba(0,0,0,0.25)]",
     },
     {
       id: "sistem",
       badge: "06",
-      badgeColor: "text-slate-600 bg-slate-100 border-slate-200/60",
       title: "Sistem",
       description: "Menü, Masa, Stok, Z Raporu",
       href: "/dashboard/system",
-      circleBg: "bg-slate-100 border border-slate-200 text-slate-700",
       icon: Settings2Icon,
       statLeftValue: "Ayarlar",
       statLeftLabel: "yapılandırma",
       statRightValue: "Yönetim",
       statRightLabel: "sistem",
-      statLeftColor: "text-slate-800",
-      statRightColor: "text-slate-800",
+      gradient: "bg-gradient-to-br from-[#475569] via-[#334155] to-[#1e293b]",
+      shadow: "shadow-[0_16px_34px_-6px_rgba(51,65,85,0.45),0_4px_12px_rgba(0,0,0,0.18)]",
+      border: "border-t border-t-slate-300/60 border-x border-slate-400/30 border-b-[3px] border-b-black/40",
+      insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.25)]",
+      badgeBg: "bg-white/20 border border-white/40 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]",
+      circleBg: "bg-white/20 backdrop-blur-md border border-white/40 text-white shadow-[inset_0_2px_2px_rgba(255,255,255,0.7),0_8px_16px_rgba(0,0,0,0.25)]",
     },
   ];
 
@@ -612,7 +624,7 @@ export function HomeScreen({
         <aside className="w-full lg:w-[310px] xl:w-[330px] shrink-0 flex flex-col gap-3 sm:gap-4">
           {/* KART 1: SAAT & CANLI HAVA DURUMU */}
           <div
-            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex items-center justify-between"
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex items-center justify-between"
             style={{ animationDelay: "0ms" }}
           >
             <div className="flex flex-col">
@@ -640,7 +652,7 @@ export function HomeScreen({
 
           {/* KART 2: OPERASYON ÖZETİ (%100 GERÇEK CANLI DB) */}
           <div
-            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3"
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-3"
             style={{ animationDelay: "35ms" }}
           >
             <div className="flex items-center justify-between pb-1 border-b border-gray-100">
@@ -723,7 +735,7 @@ export function HomeScreen({
 
           {/* KART 3: BİLDİRİMLER (TIKLANINCA POPUP AÇILIR) */}
           <div
-            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-2.5"
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-2.5"
             style={{ animationDelay: "70ms" }}
           >
             <div
@@ -785,10 +797,11 @@ export function HomeScreen({
           </div>
         </aside>
 
-        {/* SAĞ TARAF: MOBİLDE 2 SÜTUNLU, MASAÜSTÜNDE 3 SÜTUNLU MENÜ KARTLARI */}
-        <section className="flex-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-4.5 w-full">
+        {/* SAĞ TARAF: MOBİLDE 2 SÜTUNLU, MASAÜSTÜNDE 3 SÜTUNLU 3D MATERIAL MENÜ KARTLARI */}
+        <section className="flex-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 w-full">
           {visibleCards.map((card, index) => {
             const Icon = card.icon;
+            const patternId = `home-pat-${card.id}`;
 
             return (
               <Link
@@ -796,63 +809,122 @@ export function HomeScreen({
                 href={card.href}
                 prefetch={true}
                 className={cn(
-                  "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl",
-                  "border border-gray-200/90 bg-white shadow-xs",
-                  "hover:shadow-lg hover:border-gray-300 hover:-translate-y-1 transition-all duration-200",
-                  "active:scale-[0.98] min-h-[175px] sm:min-h-[265px] cursor-pointer"
+                  "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl",
+                  "text-white overflow-hidden select-none cursor-pointer transition-all duration-200",
+                  card.gradient,
+                  card.shadow,
+                  card.border,
+                  card.insetHighlight,
+                  "transform-gpu will-change-transform",
+                  "hover:-translate-y-1.5 hover:shadow-2xl",
+                  "active:translate-y-1 active:scale-[0.985] active:border-b-2 active:shadow-md",
+                  "min-h-[195px] sm:min-h-[280px]"
                 )}
                 style={{
                   animationDelay: `${index * 35 + 90}ms`,
                 }}
               >
-                {/* 1. Üst: Rozet */}
-                <div className="flex items-center justify-between">
+                {/* 3D MATERIAL BACKGROUND TEXTURES & GÖZ YORMAYAN PATTERN */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
+                  {/* Göz yormayan Mikro-Grid & Dot Matrix SVG Deseni */}
+                  <svg
+                    className="absolute inset-0 size-full opacity-[0.07] mix-blend-overlay"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <defs>
+                      <pattern
+                        id={patternId}
+                        width="24"
+                        height="24"
+                        patternUnits="userSpaceOnUse"
+                      >
+                        <circle cx="2" cy="2" r="1.1" fill="white" />
+                        <circle cx="14" cy="14" r="0.9" fill="white" />
+                        <path
+                          d="M24 0H0V24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="0.5"
+                          strokeDasharray="2 4"
+                        />
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+                  </svg>
+
+                  {/* Sağ Alt Köşe: 3D Geometrik Konsantrik Halkalar */}
+                  <svg
+                    className="absolute -bottom-8 -right-8 w-44 h-44 opacity-[0.09] text-white pointer-events-none"
+                    viewBox="0 0 160 160"
+                    fill="none"
+                  >
+                    <circle cx="80" cy="80" r="30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                    <circle cx="80" cy="80" r="52" stroke="currentColor" strokeWidth="1.5" />
+                    <circle cx="80" cy="80" r="74" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                  </svg>
+
+                  {/* Üst Işık Evi: 3D Specular Light Bevel */}
+                  <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none rounded-t-[inherit]" />
+
+                  {/* Alt Kalınlık & Zemin Temas Gölgesi: 3D Bottom Depth Shadow */}
+                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 via-black/10 to-transparent pointer-events-none rounded-b-[inherit]" />
+
+                  {/* Sol-Üst Işıma / Ambient Specular Glow */}
+                  <div className="absolute -top-12 -left-12 size-40 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+                </div>
+
+                {/* 1. Üst Sıra: Kabartmalı Rozet (Embossed Medallion) & Sağ Yön Oku */}
+                <div className="relative z-10 flex items-center justify-between">
                   <span
                     className={cn(
-                      "inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black border",
-                      card.badgeColor
+                      "inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-black tracking-wider backdrop-blur-xs",
+                      card.badgeBg
                     )}
                   >
                     {card.badge}
                   </span>
+
+                  <div className="flex size-6 sm:size-7 items-center justify-center rounded-full bg-white/15 border border-white/30 text-white/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-200 group-hover:bg-white group-hover:text-gray-900 group-hover:translate-x-0.5">
+                    <span className="text-xs sm:text-sm font-black leading-none">→</span>
+                  </div>
                 </div>
 
-                {/* 2. Orta: Dairesel İkon & Başlık */}
-                <div className="flex flex-col items-center justify-center text-center my-auto py-1 sm:py-2">
+                {/* 2. Orta: 3D Kabartmalı Dairesel İkon & Başlık & Açıklama */}
+                <div className="relative z-10 flex flex-col items-center justify-center text-center my-auto py-2 sm:py-3">
                   <div
                     className={cn(
-                      "flex size-13 sm:size-20 items-center justify-center rounded-full shadow-2xs transition-transform duration-200 group-hover:scale-105",
+                      "flex size-14 sm:size-20 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
                       card.circleBg
                     )}
                   >
-                    <Icon className="size-6.5 sm:size-10" />
+                    <Icon className="size-7 sm:size-10 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
                   </div>
 
-                  <h3 className="text-sm sm:text-xl font-black text-gray-900 tracking-tight mt-2 sm:mt-3 group-hover:text-primary transition-colors">
+                  <h3 className="text-base sm:text-2xl font-black text-white tracking-tight mt-2.5 sm:mt-3.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] group-hover:brightness-110 transition-all">
                     {card.title}
                   </h3>
 
-                  <p className="text-[11px] sm:text-xs font-semibold text-gray-500 mt-0.5 line-clamp-1 hidden sm:block">
+                  <p className="text-[11px] sm:text-xs font-semibold text-white/85 mt-0.5 sm:mt-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] line-clamp-1 hidden sm:block">
                     {card.description}
                   </p>
                 </div>
 
-                {/* 3. Alt: 2 Kolonlu Canlı Metrikler */}
-                <div className="grid grid-cols-2 gap-1.5 pt-2 sm:pt-3 mt-1 sm:mt-2 border-t border-gray-100 text-center">
-                  <div className="flex flex-col">
-                    <span className={cn("text-xs sm:text-base font-black tabular-nums", card.statLeftColor)}>
+                {/* 3. Alt: Gömülü 3D LCD Metrik Paneli (Recessed LCD / Embedded Module) */}
+                <div className="relative z-10 grid grid-cols-2 gap-1.5 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/20 border border-white/15 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xs text-center mt-1 sm:mt-2">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-xs sm:text-base font-black text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                       {card.statLeftValue}
                     </span>
-                    <span className="text-[9px] sm:text-[11px] font-bold text-gray-400">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-wider">
                       {card.statLeftLabel}
                     </span>
                   </div>
 
-                  <div className="flex flex-col border-l border-gray-100">
-                    <span className={cn("text-xs sm:text-base font-black tabular-nums", card.statRightColor)}>
+                  <div className="flex flex-col items-center justify-center border-l border-white/15">
+                    <span className="text-xs sm:text-base font-black text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                       {card.statRightValue}
                     </span>
-                    <span className="text-[9px] sm:text-[11px] font-bold text-gray-400">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-wider">
                       {card.statRightLabel}
                     </span>
                   </div>
@@ -866,7 +938,7 @@ export function HomeScreen({
       {/* 
         3. SİSTEM DEĞİŞİKLİK VE İŞLEM GÜNLÜĞÜ (AUDIT LOG ÇUBUĞU - DAR, GENİŞ VE DİKKAT ÇEKMEYEN ZARİF ALAN)
       */}
-      <div className="w-full rounded-2xl p-2.5 sm:p-3 border border-gray-200/90 bg-white/95 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full rounded-2xl p-2.5 sm:p-3 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white/95 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex size-7 items-center justify-center rounded-xl bg-slate-900 text-white shadow-2xs shrink-0">
             <HistoryIcon className="size-3.5 text-indigo-400" />
@@ -895,7 +967,7 @@ export function HomeScreen({
         4. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DİŞ LINK YOK, KİLİT YOK, SIFIR FAZLA BOŞLUK)
       */}
       <footer
-        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0"
+        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0"
       >
         {/* Sol: Yatay Sistem Logosu + Slogan */}
         <div className="flex items-center gap-3">
