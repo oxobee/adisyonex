@@ -84,16 +84,8 @@ export default async function InvoicePage({
     notFound();
   }
 
-  if (order.status !== "COMPLETED") {
-    return (
-      <div className="mx-auto max-w-sm p-6 text-center text-sm">
-        <p>Bu sipariş henüz kapatılmadı.</p>
-        <Link href={`/dashboard/orders/${order.id}`} className="underline">
-          Siparişe Geri Dön
-        </Link>
-      </div>
-    );
-  }
+  const isVoid = order.status === "VOID";
+  const isOpen = order.status === "OPEN";
 
   const registered = restaurant.gstRegistrationType !== "UNREGISTERED";
   const lines = order.lines.filter((l) => l.state !== "VOID");
@@ -134,10 +126,26 @@ export default async function InvoicePage({
         <PrintButton label="Fatura Yazdır" />
       </div>
 
+      {/* Status Warning Banner if VOID or OPEN */}
+      {isVoid && (
+        <div className="mb-3 p-2 bg-red-100 border-2 border-dashed border-red-600 rounded text-center text-red-700 font-bold text-xs uppercase tracking-wider">
+          *** BU FİŞ İPTAL EDİLMİŞTİR (ÖDEME ALINMADI) ***
+        </div>
+      )}
+      {isOpen && (
+        <div className="mb-3 p-2 bg-amber-100 border-2 border-dashed border-amber-600 rounded text-center text-amber-800 font-bold text-xs uppercase tracking-wider">
+          *** ÖN HESAP / ADİSYON (ÖDEME BEKLİYOR) ***
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col items-center text-center">
         <p className="text-sm font-bold tracking-wide">
-          {registered ? "SATIŞ FATURASI" : "ADİSYON FİŞİ"}
+          {isVoid
+            ? "İPTAL EDİLEN ADİSYON FİŞİ"
+            : registered
+            ? "SATIŞ FATURASI"
+            : "ADİSYON FİŞİ"}
           {copy === "1" ? " (KOPYA)" : ""}
         </p>
         {restaurant.legalName ? (
@@ -233,6 +241,62 @@ export default async function InvoicePage({
         value={formatCurrency(order.grandTotal)}
         bold
       />
+
+      {/* İndirim ve İkram Bilgilendirmesi */}
+      {(order.discountTotal > 0 || order.compTotal > 0) && (
+        <>
+          <Hr />
+          <div className="flex flex-col gap-0.5 text-[11px] text-gray-700">
+            {order.discountTotal > 0 && (
+              <div className="flex justify-between">
+                <span>Uygulanan İndirim:</span>
+                <span className="font-bold tabular-nums">-{formatCurrency(order.discountTotal)}</span>
+              </div>
+            )}
+            {order.compTotal > 0 && (
+              <div className="flex justify-between">
+                <span>İkram Tutarı:</span>
+                <span className="font-bold tabular-nums">-{formatCurrency(order.compTotal)}</span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Ödeme Yöntemleri Dağılımı */}
+      <Hr />
+      <div className="flex flex-col gap-1 text-[11px]">
+        <span className="font-bold uppercase tracking-wider text-[10px] text-gray-800">ÖDEME BİLGİLERİ:</span>
+        {isVoid ? (
+          <span className="font-bold text-red-600">ÖDEME ALINMADI (SİPARİŞ İPTAL EDİLDİ)</span>
+        ) : order.payments.length === 0 ? (
+          <span className="text-gray-600 italic">Ödeme Kaydı Bulunmuyor</span>
+        ) : (
+          order.payments.map((p, idx) => {
+            let modeName = "Nakit";
+            if (p.mode === "CARD") modeName = "Kredi Kartı / POS";
+            else if (p.mode === "UPI") modeName = "FAST / QR Kod";
+            else if (p.mode === "OTHER") modeName = p.reference || "Yemek Çeki / Diğer";
+
+            return (
+              <div key={p.id || idx} className="flex justify-between">
+                <span>{p.reference ? `${modeName} (${p.reference})` : modeName}:</span>
+                <span className="font-bold tabular-nums">{formatCurrency(p.amount)}</span>
+              </div>
+            );
+          })
+        )}
+        {order.payments.some((p) => p.tendered != null && p.tendered > p.amount) && (
+          <div className="flex justify-between font-bold pt-0.5 border-t border-dotted border-gray-400">
+            <span>Para Üstü:</span>
+            <span className="tabular-nums">
+              {formatCurrency(
+                order.payments.reduce((acc, p) => acc + Math.max(0, (p.tendered || 0) - p.amount), 0)
+              )}
+            </span>
+          </div>
+        )}
+      </div>
 
       <Hr />
 

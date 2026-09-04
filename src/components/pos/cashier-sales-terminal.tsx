@@ -42,9 +42,13 @@ import { ItemConfigDialog } from "./item-config-dialog";
 import { toBillLine, type CartLine } from "./types";
 import { useOrderCart } from "./use-order-cart";
 
+import type { OrderDTO } from "@/types/order";
+
 export interface CashierSalesTerminalProps {
   readonly menu: MenuDTO;
   readonly tables: readonly TableDTO[];
+  readonly occupied?: Record<string, string>;
+  readonly openOrders?: readonly OrderDTO[];
   readonly cashierName?: string;
   readonly restaurantName?: string;
 }
@@ -70,12 +74,16 @@ const MEAL_VOUCHERS: readonly MealVoucherBrand[] = [
 export function CashierSalesTerminal({
   menu,
   tables,
+  occupied = {},
+  openOrders = [],
   cashierName = "Kasa Personeli",
   restaurantName = "Adisyoon",
 }: CashierSalesTerminalProps) {
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const router = useRouter();
   const orderCart = useOrderCart();
-  const { cart, quickAdd, addLine, changeQty, removeLine, toggleComp, clear } = orderCart;
+  const { cart, quickAdd, addLine, changeQty, removeLine, toggleComp, replaceAll, clear } = orderCart;
 
   // Search & Category Filtering
   const [searchQuery, setSearchQuery] = useState("");
@@ -158,6 +166,54 @@ export function CashierSalesTerminal({
   }, [cart]);
 
 
+
+  // Map of tableId -> active open order
+  const tableOrderMap = useMemo(() => {
+    const map = new Map<string, OrderDTO>();
+    for (const order of openOrders) {
+      if (order.tableId) {
+        map.set(order.tableId, order);
+      }
+    }
+    return map;
+  }, [openOrders]);
+
+  // Handle table selection & load items if table has open order
+  const handleSelectTable = (table: TableDTO) => {
+    setSelectedTableId(table.id);
+    const existingOrder = tableOrderMap.get(table.id) || (occupied[table.id] ? openOrders.find(o => o.id === occupied[table.id]) : undefined);
+    
+    if (existingOrder && existingOrder.lines.length > 0) {
+      // Map existing lines to CartLine
+      const mappedLines: CartLine[] = existingOrder.lines
+        .filter(l => l.state !== "VOID")
+        .map(l => ({
+          key: l.id || uuid(),
+          menuItemId: l.id,
+          name: l.name,
+          variantId: null,
+          variantName: l.variantName,
+          unitPrice: l.unitPrice,
+          taxRate: l.taxRate,
+          taxInclusive: l.taxInclusive,
+          modifiers: l.modifiers.map(m => ({
+            id: m.id,
+            name: m.name,
+            priceDelta: m.priceDelta,
+          })),
+          quantity: l.quantity,
+          lineNote: l.lineNote,
+          isComp: l.isComp,
+        }));
+      replaceAll(mappedLines);
+      toast.info(`${table.label} içeriği ve tutarı yüklendi!`, {
+        description: `Mevcut Tutar: ${formatCurrency(existingOrder.grandTotal)}`,
+      });
+    } else {
+      toast.success(`${table.label} seçildi.`);
+    }
+    setIsTableModalOpen(false);
+  };
 
   // Tap Item Handler
   const handleTapItem = (item: MenuItemDTO) => {
@@ -301,7 +357,8 @@ export function CashierSalesTerminal({
 
     const payload = {
       idempotencyKey: uuid(),
-      orderType: "TAKEAWAY" as const,
+      orderType: selectedTableId ? ("DINE_IN" as const) : ("TAKEAWAY" as const),
+      tableId: selectedTableId ?? undefined,
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
       discountType: discount.type,
@@ -491,57 +548,59 @@ export function CashierSalesTerminal({
                         </div>
                       )}
 
-                      {/* Üst Alan: Tam ve Net Görünen Görsel Alanı (Hafif Dikdörtgen, object-contain veya geniş kadraj) */}
-                      <div className="relative w-full h-36 sm:h-42 overflow-hidden bg-black/20 flex items-center justify-center p-2">
+                      {/* Üst Alan: Beyaz Arka Planlı & Köşeleri Yuvarlatılmış Görsel Alanı (Tam Olarak Kullanıcı Görseli 1 Gibi) */}
+                      <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 shadow-inner border border-white/30">
+                        {/* Kategori Rozeti (Üst Sol Pill) */}
+                        <div className="absolute top-2 left-2 z-10">
+                          <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20 shadow-xs">
+                            {categoryMap.get(item.categoryId) || "Menü"}
+                          </span>
+                        </div>
+
                         {primaryImage ? (
-                          <div className="relative w-full h-full">
+                          <div className="relative w-full h-full flex items-center justify-center">
                             <img
                               src={primaryImage}
                               alt={item.name}
-                              className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                              className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
                             />
                           </div>
                         ) : (
-                          <div className="size-full flex items-center justify-center">
+                          <div className="size-full flex items-center justify-center bg-gray-50">
                             {/* 3D Tactile Sphere Icon */}
-                            <div className="size-16 rounded-full bg-white/20 backdrop-blur-xs border border-white/40 shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.3)] flex items-center justify-center text-white transition-transform group-hover:scale-110">
-                              <UtensilsCrossedIcon className="size-8" />
+                            <div className="size-16 rounded-full bg-slate-800 text-white shadow-md flex items-center justify-center transition-transform group-hover:scale-110">
+                              <UtensilsCrossedIcon className="size-8 text-white/90" />
                             </div>
                           </div>
                         )}
-
-                        {/* Category Label Chip on Image */}
-                        <div className="absolute top-2.5 left-2.5 z-10">
-                          <span className="text-[10px] font-bold text-white/90 bg-black/45 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/25 shadow-xs">
-                            {categoryMap.get(item.categoryId) || "Genel"}
-                          </span>
-                        </div>
                       </div>
 
-                      {/* Alt Alan: Ürün Bilgileri, Adı, Fiyat ve Ekle Butonu */}
-                      <div className="relative z-10 p-3 sm:p-3.5 flex flex-col justify-between flex-1 bg-black/15 backdrop-blur-[2px] border-t border-white/15">
+                      {/* Alt Alan: Ürün Bilgileri, Adı, Açıklaması ve Fiyat Barı (Görsel 1 İle %100 Birebir) */}
+                      <div className="relative z-10 p-3.5 sm:p-4 flex flex-col justify-between flex-1">
                         <div className="flex flex-col">
-                          <span className="text-sm sm:text-base font-black text-white leading-snug line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                          <h3 className="text-base sm:text-lg font-black text-white leading-tight tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                             {item.name}
-                          </span>
-                          {item.shortDescription && (
-                            <span className="text-[11px] font-medium text-white/70 line-clamp-1 mt-0.5">
-                              {item.shortDescription}
-                            </span>
-                          )}
+                          </h3>
+                          <p className="text-xs font-medium text-white/70 line-clamp-1 mt-1">
+                            {item.shortDescription || (categoryMap.get(item.categoryId) ? `${categoryMap.get(item.categoryId)} Özel Menü` : "Taze Hazırlanmış Ürün")}
+                          </p>
                         </div>
 
-                        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/20">
+                        {/* Ayraç Çizgisi */}
+                        <div className="w-full h-px bg-white/20 my-2.5" />
+
+                        {/* Alt Fiyat ve Seçenekli / Ekle Rozeti */}
+                        <div className="flex items-center justify-between">
                           <span className="text-base sm:text-lg font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                             {formatCurrency(item.price)}
                           </span>
 
                           {hasVariants ? (
-                            <span className="text-xs font-black text-amber-200 bg-amber-950/70 px-2.5 py-1 rounded-xl border border-amber-400/40 shadow-xs">
+                            <span className="text-xs font-black text-[#fef08a] bg-black/45 hover:bg-black/60 px-3 py-1 rounded-full border border-amber-400/40 shadow-xs transition-all tracking-wide">
                               Seçenekli
                             </span>
                           ) : (
-                            <div className="size-8 rounded-xl bg-white/25 backdrop-blur-xs text-white border border-white/40 flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-all shadow-xs group-hover:scale-105 active:scale-95">
+                            <div className="size-8 rounded-full bg-black/40 hover:bg-white hover:text-slate-900 border border-white/30 text-white flex items-center justify-center transition-all shadow-xs group-hover:scale-105 active:scale-95">
                               <PlusIcon className="size-4 stroke-[3]" />
                             </div>
                           )}
@@ -557,17 +616,54 @@ export function CashierSalesTerminal({
 
         {/* SAĞ ALAN: ADİSYON TİCKET + FİNANSAL HESAPLAMA + ÖDEME & PARAÜSTÜ */}
         <aside className="w-full lg:w-[420px] xl:w-[480px] shrink-0 flex flex-col bg-white overflow-hidden shadow-lg border-l border-gray-200">
-          {/* Adisyon Başlığı */}
-          <div className="p-3 sm:p-3.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between shrink-0">
+          {/* Adisyon Başlığı & Masaya Ekleme Seçeneği */}
+          <div className="p-3 sm:p-3.5 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
             <div className="flex items-center gap-2">
-              <ReceiptIcon className="size-4 text-emerald-600" />
-              <span className="text-xs sm:text-sm font-black text-gray-900">
-                Adisyon Fişi ({cart.reduce((s, l) => s + l.quantity, 0)} Ürün)
+              <div className="size-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+                <ReceiptIcon className="size-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs sm:text-sm font-black text-gray-900">
+                  Adisyon Fişi ({cart.reduce((s, l) => s + l.quantity, 0)} Kalem)
+                </span>
+                {selectedTableId && (
+                  <span className="text-[10px] font-black text-blue-600">
+                    🪑 Seçili: {tables.find(t => t.id === selectedTableId)?.label || "Masa"}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Masaya Ata / Seç Butonu */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsTableModalOpen(true)}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-xl text-[11px] font-black transition-all border flex items-center gap-1 cursor-pointer select-none",
+                  selectedTableId
+                    ? "bg-blue-50 text-blue-800 border-blue-300 shadow-xs"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
+                )}
+              >
+                <span>🪑 {selectedTableId ? tables.find(t => t.id === selectedTableId)?.label : "Masaya Ekle"}</span>
+              </button>
+
+              {selectedTableId && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTableId(null)}
+                  title="Masayı Kaldır (Hızlı Satışa Çevir)"
+                  className="size-6 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+
+              <span className="hidden sm:inline-flex text-[10px] font-black text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+                ⚡ Hızlı Satış
               </span>
             </div>
-            <span className="text-[11px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-              ⚡ Hızlı Satış
-            </span>
           </div>
 
           {/* Sepet Ürün Satırları (Scrollable) */}
@@ -584,7 +680,7 @@ export function CashierSalesTerminal({
               cart.map((line) => (
                 <div
                   key={line.key}
-                  className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl border border-gray-200/80 bg-white shadow-2xs hover:border-gray-300 transition-colors gap-2"
+                  className="flex items-center justify-between p-2.5 rounded-2xl border border-gray-200/90 bg-white shadow-2xs hover:border-gray-300 transition-all gap-2"
                 >
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -592,57 +688,59 @@ export function CashierSalesTerminal({
                         {line.name}
                       </span>
                       {line.variantName && (
-                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-1 rounded border border-amber-200">
+                        <span className="text-[10px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
                           {line.variantName}
                         </span>
                       )}
                       {line.isComp && (
-                        <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-1 rounded border border-purple-200">
+                        <span className="text-[10px] font-black text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded-md border border-purple-200">
                           İkram
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 font-semibold">
-                      <span>{formatCurrency(line.unitPrice)}</span>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 font-semibold font-mono">
+                      <span>Birim: {formatCurrency(line.unitPrice)}</span>
                       {line.modifiers.length > 0 && (
-                        <span className="text-gray-400">
+                        <span className="text-gray-400 font-sans">
                           +{line.modifiers.map((m) => m.name).join(", ")}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Adet Kontrolleri */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => changeQty(line.key, -1)}
-                      className="size-7 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 active:scale-95 cursor-pointer font-bold"
-                    >
-                      <MinusIcon className="size-3" />
-                    </button>
+                  {/* Adet ve Tutar Kontrolleri */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => changeQty(line.key, -1)}
+                        className="size-6 sm:size-7 flex items-center justify-center rounded-lg bg-white hover:bg-gray-200 text-gray-800 shadow-2xs active:scale-95 cursor-pointer font-bold"
+                      >
+                        <MinusIcon className="size-3" />
+                      </button>
 
-                    <span className="w-7 text-center text-xs sm:text-sm font-black tabular-nums text-gray-900">
-                      {line.quantity}
-                    </span>
+                      <span className="w-6 sm:w-7 text-center text-xs sm:text-sm font-black tabular-nums text-gray-900 font-mono">
+                        {line.quantity}
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() => changeQty(line.key, 1)}
-                      className="size-7 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 active:scale-95 cursor-pointer font-bold"
-                    >
-                      <PlusIcon className="size-3" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => changeQty(line.key, 1)}
+                        className="size-6 sm:size-7 flex items-center justify-center rounded-lg bg-white hover:bg-gray-200 text-gray-800 shadow-2xs active:scale-95 cursor-pointer font-bold"
+                      >
+                        <PlusIcon className="size-3" />
+                      </button>
+                    </div>
 
-                    <span className="w-16 text-right text-xs sm:text-sm font-black tabular-nums text-gray-900 pl-1">
+                    <span className="w-18 text-right text-xs sm:text-sm font-black tabular-nums text-gray-900 font-mono pl-1">
                       {line.isComp ? "0.00 ₺" : formatCurrency(line.unitPrice * line.quantity)}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => removeLine(line.key)}
-                      className="size-7 ml-1 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      className="size-6 sm:size-7 ml-0.5 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                     >
                       <XIcon className="size-3.5" />
                     </button>
@@ -1084,6 +1182,98 @@ export function CashierSalesTerminal({
             >
               + Yeni Satışa Geç (Tamam)
             </button>
+          </div>
+        </div>
+      )}
+      {/* 6. MASAYA EKLEME VE İÇERİĞİ YÜKLEME MODALI */}
+      {isTableModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-gray-200 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center border border-blue-200">
+                  <UtensilsCrossedIcon className="size-5" />
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-base sm:text-lg font-black text-gray-900">Masaya Sipariş Bağla / İçeriği Çek</h3>
+                  <p className="text-xs text-gray-500">Dolu bir masa seçerseniz mevcut adisyonu satış ekranına yüklenir.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTableModalOpen(false)}
+                className="size-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center cursor-pointer"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+
+            {/* Masa Listesi */}
+            <div className="flex-1 overflow-y-auto py-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {tables.map((table) => {
+                const isOccupied = Boolean(occupied[table.id] || tableOrderMap.get(table.id));
+                const existingOrder = tableOrderMap.get(table.id) || (occupied[table.id] ? openOrders.find(o => o.id === occupied[table.id]) : undefined);
+                const isSelected = selectedTableId === table.id;
+
+                return (
+                  <button
+                    key={table.id}
+                    type="button"
+                    onClick={() => handleSelectTable(table)}
+                    className={cn(
+                      "p-3 rounded-2xl flex flex-col justify-between text-left transition-all border cursor-pointer select-none relative",
+                      isOccupied
+                        ? "bg-gradient-to-br from-red-500 to-red-700 text-white border-red-600 shadow-sm hover:brightness-105 active:scale-95"
+                        : "bg-white hover:bg-emerald-50 text-gray-900 border-gray-200 hover:border-emerald-300 shadow-2xs active:scale-95",
+                      isSelected && "ring-3 ring-blue-500 ring-offset-2"
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={cn("text-sm font-black truncate", isOccupied ? "text-white" : "text-gray-900")}>
+                        {table.label}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider",
+                          isOccupied
+                            ? "bg-black/30 text-white"
+                            : "bg-emerald-100 text-emerald-800"
+                        )}
+                      >
+                        {isOccupied ? "DOLU" : "BOŞ"}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-white/20 flex flex-col">
+                      {isOccupied && existingOrder ? (
+                        <>
+                          <span className="text-[10px] text-white/80 font-medium">
+                            {existingOrder.lines.filter(l => l.state !== "VOID").reduce((s, l) => s + l.quantity, 0)} Ürün
+                          </span>
+                          <span className="text-xs font-black text-white font-mono">
+                            {formatCurrency(existingOrder.grandTotal)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[11px] text-gray-400 font-semibold">
+                          {table.seats ? `${table.seats} Kişilik` : "Müsait"}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 border-t border-gray-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsTableModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
+              >
+                Vazgeç
+              </button>
+            </div>
           </div>
         </div>
       )}

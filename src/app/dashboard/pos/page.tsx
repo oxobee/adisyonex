@@ -54,6 +54,7 @@ export default async function PosPage() {
       menu={menu}
       tables={tables}
       occupied={occupied}
+      openOrders={openOrders}
       services={services}
       cashierName={staffCtx?.name || "Kasa Yetkilisi"}
       restaurantName={restaurant?.name || "Adisyoon"}
