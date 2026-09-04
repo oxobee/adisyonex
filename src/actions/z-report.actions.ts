@@ -55,6 +55,15 @@ export async function closeZReportAction(formData: {
     revalidatePath("/dashboard/home");
     revalidatePath("/dashboard");
 
+    const { logActivity } = await import("@/services/activity-log.service");
+    await logActivity({
+      restaurantId,
+      actor: { id: performerId, name: performerName, role: "YÖNETİCİ" },
+      category: "Z RAPORU",
+      action: "Gün Sonu Z Raporu Kapatıldı",
+      details: `${result.zNumberFormatted} raporu oluşturuldu. Sayılan Nakit: ₺${formData.countedCash}. Not: ${formData.notes || 'Yok'}`,
+    });
+
     return {
       success: true,
       message: `Gün sonu başarıyla kapatıldı. ${result.zNumberFormatted} oluşturuldu.`,
@@ -77,7 +86,7 @@ export async function createCashMovementAction(formData: {
   description?: string;
 }) {
   try {
-    const { restaurantId, performerName } = await getAuthContext();
+    const { restaurantId, performerName, performerId } = await getAuthContext();
 
     if (!formData.amount || formData.amount <= 0) {
       return { success: false, message: "Lütfen geçerli bir tutar girin." };
@@ -94,22 +103,48 @@ export async function createCashMovementAction(formData: {
       performedByName: performerName,
     });
 
+    const { logActivity } = await import("@/services/activity-log.service");
+    await logActivity({
+      restaurantId,
+      actor: { id: performerId, name: performerName, role: "KASA" },
+      category: "KASA",
+      action: formData.type === "IN" ? "Kasa Nakit Girişi Eklendi" : "Kasa Nakit Çıkışı Eklendi",
+      details: `Tutar: ₺${formData.amount}, Kategori: ${formData.category}. Açıklama: ${formData.description || 'Yok'}`,
+    });
+
     revalidatePath("/dashboard/z-report");
     return { success: true, message: "Kasa hareketi başarıyla işlendi." };
   } catch (error: any) {
     console.error("createCashMovementAction error:", error);
-    return { success: false, message: error?.message || "Kasa hareketi eklenemedi." };
+    return {
+      success: false,
+      message: error?.message || "Kasa hareketi işlenirken hata oluştu.",
+    };
   }
 }
 
-export async function deleteCashMovementAction(id: string) {
+export async function deleteCashMovementAction(movementId: string) {
   try {
-    const { restaurantId } = await getAuthContext();
-    await removeCashMovement(restaurantId, id);
+    const { restaurantId, performerName, performerId } = await getAuthContext();
+
+    await removeCashMovement(restaurantId, movementId);
+
+    const { logActivity } = await import("@/services/activity-log.service");
+    await logActivity({
+      restaurantId,
+      actor: { id: performerId, name: performerName, role: "KASA" },
+      category: "KASA",
+      action: "Kasa Nakit Hareketi Silindi",
+      details: `Kasa hareketi silindi (ID: ${movementId})`,
+    });
+
     revalidatePath("/dashboard/z-report");
     return { success: true, message: "Kasa hareketi silindi." };
   } catch (error: any) {
     console.error("deleteCashMovementAction error:", error);
-    return { success: false, message: error?.message || "Kasa hareketi silinemedi." };
+    return {
+      success: false,
+      message: error?.message || "Kasa hareketi silinirken hata oluştu.",
+    };
   }
 }

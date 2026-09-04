@@ -44,35 +44,90 @@ import {
   uploadVideoFile,
 } from "@/services/restaurant-video.service";
 import { failure, success, type ActionResult } from "@/types";
+import { logActivity } from "@/services/activity-log.service";
 
 export const updateTaxProfileAction = withManagerValidation(
   updateTaxProfileSchema,
-  (data, ctx) => updateTaxProfile(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateTaxProfile(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Vergi & KDV Profili Güncellendi",
+      details: `KDV dahil/hariç ve oran ayarları güncellendi.`,
+    });
+    return res;
+  },
 );
 
 export const updateRestaurantProfileAction = withManagerValidation(
   updateProfileSchema,
-  (data, ctx) => updateRestaurantProfile(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateRestaurantProfile(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "İşletme Profili Güncellendi",
+      details: `İşletme adı: '${data.name}', İletişim: ${data.phone || 'Yok'}`,
+    });
+    return res;
+  },
 );
 
 export const updateUsernameAction = withManagerValidation(
   updateUsernameSchema,
-  (data, ctx) => updateUsername(ctx.restaurantId, data.username),
+  async (data, ctx) => {
+    const res = await updateUsername(ctx.restaurantId, data.username);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Restoran URL (Kullanıcı Adı) Değiştirildi",
+      details: `Yeni QR Menü linki: /order/${data.username}`,
+    });
+    return res;
+  },
 );
 
 export const setSelfOrderEnabledAction = withManagerValidation(
   setSelfOrderSchema,
-  (data, ctx) => setSelfOrderEnabled(ctx.restaurantId, data.enabled),
+  async (data, ctx) => {
+    const res = await setSelfOrderEnabled(ctx.restaurantId, data.enabled);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Masadan Self-Order Ayarı Değiştirildi",
+      details: `Masadan sipariş verme: ${data.enabled ? 'Açık' : 'Kapalı'}`,
+    });
+    return res;
+  },
 );
 
 export const setInvoiceFooterAction = withManagerValidation(
   setInvoiceFooterSchema,
-  (data, ctx) => setInvoiceFooterNote(ctx.restaurantId, data.note),
+  async (data, ctx) => {
+    const res = await setInvoiceFooterNote(ctx.restaurantId, data.note);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Adisyon Dipnotu Güncellendi",
+      details: `Fiş altı mesajı güncellendi.`,
+    });
+    return res;
+  },
 );
 
 export const updateGeolocationAction = withManagerValidation(
   updateGeolocationSchema,
-  (data, ctx) => updateGeolocation(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateGeolocation(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Harita Konumu Güncellendi",
+      details: `Enlem/Boylam koordinatları güncellendi.`,
+    });
+    return res;
+  },
 );
 
 export const regenerateUsernameAction = async (): Promise<
@@ -202,8 +257,15 @@ export const clearGeolocationAction = async (): Promise<ActionResult<void>> =>
 export const updateQrMenuThemeAction = async (
   theme: string,
 ): Promise<ActionResult<void>> => {
+  const ctx = await getManagerContextOrNull();
   const res = await runOwned((restaurantId) => updateQrMenuTheme(restaurantId, theme));
-  if (res.success) {
+  if (res.success && ctx) {
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "QR Menü Teması Değiştirildi",
+      details: `Yeni Tema: ${theme}`,
+    });
     revalidatePath("/dashboard/menu-design");
     revalidatePath("/order/[username]", "page");
     revalidatePath("/", "layout");
@@ -214,8 +276,15 @@ export const updateQrMenuThemeAction = async (
 export const updateQrThemeCustomizationAction = async (
   data: Partial<QrThemeCustomizationDTO>,
 ): Promise<ActionResult<void>> => {
+  const ctx = await getManagerContextOrNull();
   const res = await runOwned((restaurantId) => updateQrThemeCustomization(restaurantId, data));
-  if (res.success) {
+  if (res.success && ctx) {
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "QR Menü Tasarım Ayarları Güncellendi",
+      details: `Renk, slider ve layout tercihleri güncellendi.`,
+    });
     revalidatePath("/dashboard/menu-design");
     revalidatePath("/order/[username]", "page");
     revalidatePath("/", "layout");
@@ -229,8 +298,15 @@ export const updateScreenLockPinAction = async (
   if (!/^\d{4}$/.test(pin)) {
     return failure("PIN kodu 4 haneli rakamlardan oluşmalıdır");
   }
+  const ctx = await getManagerContextOrNull();
   const res = await runOwned((restaurantId) => updateScreenLockPin(restaurantId, pin));
-  if (res.success) {
+  if (res.success && ctx) {
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Terminal Ekran Kilit PIN Kodu Değiştirildi",
+      details: `Yönetici ekran kilidi PIN kodu güncellendi.`,
+    });
     revalidatePath("/dashboard/settings");
     revalidatePath("/dashboard/home");
   }

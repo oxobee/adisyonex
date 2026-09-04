@@ -22,6 +22,7 @@ import {
   toggleCustomerDiscount,
   updateBirthdayAutomation,
 } from "@/services/customer.service";
+import { logActivity } from "@/services/activity-log.service";
 
 export const registerCustomerAction = withValidation(
   registerCustomerSchema,
@@ -58,6 +59,12 @@ export const deleteCustomerAction = withManagerValidation(
   z.object({ id: z.string().min(1) }),
   async (data, ctx) => {
     const res = await removeCustomer(ctx.restaurantId, data.id);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "PERSONEL",
+      action: "Müşteri Kaydı Silindi",
+      details: `Müşteri silindi (ID: ${data.id})`,
+    });
     revalidatePath("/dashboard/customers");
     return res;
   },
@@ -65,7 +72,16 @@ export const deleteCustomerAction = withManagerValidation(
 
 export const addCustomerDiscountAction = withManagerValidation(
   customerDiscountSchema,
-  async (data, ctx) => addCustomerDiscount(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await addCustomerDiscount(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "KASA",
+      action: "Müşteriye Sadakat İndirimi Tanımlandı",
+      details: `İndirim Türü: ${data.type}, Değer: ${data.value}, Kapsam: ${data.scope}`,
+    });
+    return res;
+  },
 );
 
 export const toggleCustomerDiscountAction = withManagerValidation(
@@ -75,5 +91,14 @@ export const toggleCustomerDiscountAction = withManagerValidation(
 
 export const updateBirthdayAutomationAction = withManagerValidation(
   birthdayAutomationSchema,
-  async (data, ctx) => updateBirthdayAutomation(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateBirthdayAutomation(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Doğum Günü Otomasyon Ayarları Güncellendi",
+      details: `Otomasyon: ${data.enabled ? 'Aktif' : 'Pasif'}, İndirim: ${data.discountValue} (${data.discountType})`,
+    });
+    return res;
+  },
 );

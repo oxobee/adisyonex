@@ -32,73 +32,179 @@ import {
 } from "@/services/menu-item.service";
 import { createGroup, deleteGroup, updateGroup } from "@/services/modifier.service";
 import { failure, success, type ActionResult } from "@/types";
+import { logActivity } from "@/services/activity-log.service";
 
 // ------------------------------------------------------------- categories ---
 
 export const createCategoryAction = withManagerValidation(
   createMenuCategorySchema,
-  (data, ctx) => createCategory(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await createCategory(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Yeni Kategori Eklendi",
+      details: `Kategori: '${data.name}' oluşturuldu.`,
+    });
+    return res;
+  },
 );
 
 export const updateCategoryAction = withManagerValidation(
   updateMenuCategorySchema,
-  (data, ctx) => updateCategory(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateCategory(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Kategori Güncellendi",
+      details: `Kategori: '${data.name}' bilgileri güncellendi.`,
+    });
+    return res;
+  },
 );
 
 export const deleteCategoryAction = withManagerValidation(
   idOnlySchema,
-  (data, ctx) => deleteCategory(ctx.restaurantId, data.id),
+  async (data, ctx) => {
+    await deleteCategory(ctx.restaurantId, data.id);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Kategori Silindi",
+      details: `Kategori silindi (ID: ${data.id})`,
+    });
+  },
 );
 
 // ------------------------------------------------------------------ items ---
 
 export const createItemAction = withManagerValidation(
   createMenuItemSchema,
-  (data, ctx) => createItem(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await createItem(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Yeni Ürün Eklendi",
+      details: `Menüye '${data.name}' eklendi. Fiyat: ₺${data.price}`,
+    });
+    return res;
+  },
 );
 
 export const updateItemAction = withManagerValidation(
   updateMenuItemSchema,
-  (data, ctx) => updateItem(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateItem(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Ürün Güncellendi",
+      details: `'${data.name || 'Ürün'}' güncellendi. Yeni Fiyat: ₺${data.price}`,
+    });
+    return res;
+  },
 );
 
 export const deleteItemAction = withManagerValidation(
   idOnlySchema,
-  (data, ctx) => deleteItem(ctx.restaurantId, data.id),
+  async (data, ctx) => {
+    await deleteItem(ctx.restaurantId, data.id);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Ürün Silindi",
+      details: `Ürün menüden silindi (ID: ${data.id})`,
+    });
+  },
 );
 
 export const duplicateItemAction = withManagerValidation(
   idOnlySchema,
-  (data, ctx) => duplicateItem(ctx.restaurantId, data.id),
+  async (data, ctx) => {
+    const res = await duplicateItem(ctx.restaurantId, data.id);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Ürün Kopyalandı",
+      details: `Ürün kopyası oluşturuldu (ID: ${data.id})`,
+    });
+    return res;
+  },
 );
 
 // -------------------------------------------------------- modifier groups ---
 
 export const createGroupAction = withManagerValidation(
   createModifierGroupSchema,
-  (data, ctx) => createGroup(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await createGroup(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Seçenek Grubu Eklendi",
+      details: `'${data.name}' seçenek grubu oluşturuldu.`,
+    });
+    return res;
+  },
 );
 
 export const updateGroupAction = withManagerValidation(
   updateModifierGroupSchema,
-  (data, ctx) => updateGroup(ctx.restaurantId, data),
+  async (data, ctx) => {
+    const res = await updateGroup(ctx.restaurantId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Seçenek Grubu Güncellendi",
+      details: `'${data.name}' grubu güncellendi.`,
+    });
+    return res;
+  },
 );
 
 export const deleteGroupAction = withManagerValidation(
   idOnlySchema,
-  (data, ctx) => deleteGroup(ctx.restaurantId, data.id),
+  async (data, ctx) => {
+    await deleteGroup(ctx.restaurantId, data.id);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Seçenek Grubu Silindi",
+      details: `Seçenek grubu silindi (ID: ${data.id})`,
+    });
+  },
 );
 
 // ----------------------------------------------------------- availability ---
 
 export const disableItemAction = withManagerValidation(
   disableItemSchema,
-  (data, ctx) => disableItem(ctx.restaurantId, ctx.userId, data),
+  async (data, ctx) => {
+    const res = await disableItem(ctx.restaurantId, ctx.userId, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Ürün Tükendi/Servis Dışı (86)",
+      details: `Ürün servis dışı bırakıldı. Neden: ${data.reason}`,
+    });
+    return res;
+  },
 );
 
 export const reenableItemAction = withManagerValidation(
   reenableItemSchema,
-  (data, ctx) => reenableItem(ctx.restaurantId, ctx.userId, data.itemId),
+  async (data, ctx) => {
+    const res = await reenableItem(ctx.restaurantId, ctx.userId, data.itemId);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Ürün Tekrar Satışa Açıldı",
+      details: `Ürün menüde yeniden aktif edildi.`,
+    });
+    return res;
+  },
 );
 
 // ----------------------------------------------------------------- images ---

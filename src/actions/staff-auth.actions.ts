@@ -168,6 +168,22 @@ export async function switchStaffAccountAction(data: {
         return failure("Hatalı PIN kodu / şifre girdiniz");
       }
       await destroyStaffSession();
+
+      const restId = user.ownedRestaurants[0]?.id;
+      if (restId) {
+        const { recordActivityLog } = await import("@/services/activity-log.service");
+        recordActivityLog({
+          restaurantId: restId,
+          actorId: user.id,
+          actorName: user.name || "Yönetici",
+          actorRole: "YÖNETİCİ",
+          actorEmail: user.email,
+          category: "PERSONEL",
+          action: "Yönetici Hesabına Geçiş Yapıldı",
+          details: `${user.name || 'Yönetici'} PIN ile yönetici moduna geçiş yaptı.`,
+        }).catch(() => {});
+      }
+
       return success(undefined);
     }
 
@@ -201,6 +217,16 @@ export async function updateStaffSelfProfileAction(data: {
           photoUrl: data.photoUrl?.trim() || null,
         },
       });
+
+      const { logActivity } = await import("@/services/activity-log.service");
+      await logActivity({
+        restaurantId: staff.restaurantId,
+        actor: { id: staff.id, name: staff.name, role: staff.jobTitle || staff.role },
+        category: "PERSONEL",
+        action: "Personel Kendi Profilini Güncelledi",
+        details: `${staff.name} profil iletişim ve kişisel bilgilerini güncelledi.`,
+      });
+
       return success(undefined);
     }
 

@@ -19,25 +19,59 @@ import {
   updateStaff,
 } from "@/services/staff.service";
 import { failure, success, type ActionResult } from "@/types";
+import { logActivity } from "@/services/activity-log.service";
 
 export const createStaffAction = withManagerValidation(
   createStaffSchema,
-  (data, ctx) => createStaff(ctx, data),
+  async (data, ctx) => {
+    const res = await createStaff(ctx, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "PERSONEL",
+      action: "Yeni Personel Eklendi",
+      details: `Personel: '${data.name}', Rol: ${data.role}, Görev: ${data.jobTitle || 'Belirtilmedi'}`,
+    });
+    return res;
+  },
 );
 
 export const updateStaffAction = withManagerValidation(
   updateStaffSchema,
-  (data, ctx) => updateStaff(ctx, data),
+  async (data, ctx) => {
+    const res = await updateStaff(ctx, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "PERSONEL",
+      action: "Personel Bilgileri Güncellendi",
+      details: `Personel: '${data.name || 'Personel'}' yetki ve görev bilgileri güncellendi.`,
+    });
+    return res;
+  },
 );
 
 export const deleteStaffAction = withManagerValidation(
   deleteStaffSchema,
-  (data, ctx) => deleteStaff(ctx, data),
+  async (data, ctx) => {
+    await deleteStaff(ctx, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "PERSONEL",
+      action: "Personel Silindi",
+      details: `Personel sistemden silindi (ID: ${data.id})`,
+    });
+  },
 );
 
-export const resetPinAction = withManagerValidation(resetPinSchema, (data, ctx) =>
-  resetPin(ctx, data),
-);
+export const resetPinAction = withManagerValidation(resetPinSchema, async (data, ctx) => {
+  const res = await resetPin(ctx, data);
+  await logActivity({
+    restaurantId: ctx.restaurantId,
+    category: "PERSONEL",
+    action: "Personel PIN Kodu Sıfırlandı",
+    details: `Personelin 4 haneli giriş PIN kodu güncellendi/sıfırlandı.`,
+  });
+  return res;
+});
 
 export const uploadStaffPhotoAction = async (
   formData: FormData,

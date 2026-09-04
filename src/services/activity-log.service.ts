@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { AUTHORIZED_SUPER_ADMIN_EMAIL } from "@/lib/admin-auth";
 
 export interface CreateActivityLogInput {
   restaurantId: string;
@@ -25,26 +24,76 @@ export interface ActivityLogRow {
   createdAt: Date;
 }
 
-/**
- * Records a categorized activity log for system events.
- * Strictly skips logging if the actor is Super Admin (Uğur UĞURLU).
- */
-export const recordActivityLog = async (input: CreateActivityLogInput) => {
-  try {
-    const email = (input.actorEmail ?? "").trim().toLowerCase();
-    const role = (input.actorRole ?? "").toUpperCase();
-    const name = (input.actorName ?? "").toLowerCase();
+import { getStaffContextOrNull } from "@/lib/staff-auth";
+import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { getCurrentUserId } from "@/lib/auth-helpers";
+import { getManagerById } from "@/services/user.service";
 
-    // Sadece superadmin'in yaptığı işlemler loglanmasın
-    if (
-      email === AUTHORIZED_SUPER_ADMIN_EMAIL ||
-      role === "SUPER_ADMIN" ||
-      name.includes("uğur uğurlu") ||
-      name.includes("ugur ugurlu")
-    ) {
-      return null;
+export interface CurrentActorInfo {
+  id: string;
+  name: string;
+  role: string;
+  email?: string | null;
+}
+
+export async function resolveCurrentActor(activeStaffId?: string | null): Promise<CurrentActorInfo> {
+  try {
+    const staff = await getStaffContextOrNull().catch(() => null);
+    const currentUserId = await getCurrentUserId().catch(() => null);
+
+    // 1. If explicit activeStaffId is passed or staff session exists
+    const targetStaffId = activeStaffId || staff?.staffId;
+    if (targetStaffId) {
+      const target = await prisma.staff.findUnique({
+        where: { id: targetStaffId },
+        select: { id: true, name: true, role: true, jobTitle: true, email: true },
+      });
+      if (target) {
+        return {
+          id: target.id,
+          name: target.name,
+          role: target.jobTitle || target.role,
+          email: target.email,
+        };
+      }
     }
 
+    // 2. Manager / User
+    if (currentUserId) {
+      const u = await getManagerById(currentUserId).catch(() => null);
+      if (u) {
+        return {
+          id: u.id,
+          name: u.name || "Yönetici",
+          role: u.role === "SUPER_ADMIN" ? "Süper Yönetici" : "Yönetici",
+          email: u.email,
+        };
+      }
+    }
+
+    return {
+      id: "system",
+      name: "Sistem Kullanıcısı",
+      role: "YÖNETİCİ",
+    };
+  } catch {
+    return {
+      id: "system",
+      name: "Sistem Kullanıcısı",
+      role: "YÖNETİCİ",
+    };
+  }
+}
+
+/**
+ * Records a categorized activity log for system events.
+ * Logs every action (create, update, delete, status change) with full actor and timestamp details.
+ */
+export const recordActivityLog = async (input: CreateActivityLogInput) => {
+  if (process.env.NODE_ENV === "test" || Boolean(process.env.VITEST)) {
+    return null;
+  }
+  try {
     return await prisma.systemActivityLog.create({
       data: {
         restaurantId: input.restaurantId,
@@ -62,6 +111,40 @@ export const recordActivityLog = async (input: CreateActivityLogInput) => {
     return null;
   }
 };
+
+/**
+ * Convenience logger that automatically resolves the current acting user/staff if not provided.
+ */
+export async function logActivity(input: {
+  restaurantId: string;
+  category: "SİPARİŞ" | "MENÜ" | "MASA" | "AYARLAR" | "PERSONEL" | "KASA" | "STOK" | "Z RAPORU" | string;
+  action: string;
+  details?: string | null;
+  actor?: { id?: string | null; name?: string | null; role?: string | null; email?: string | null } | null;
+}) {
+  if (process.env.NODE_ENV === "test" || Boolean(process.env.VITEST)) {
+    return null;
+  }
+  try {
+    let actor = input.actor;
+    if (!actor || !actor.name) {
+      actor = await resolveCurrentActor();
+    }
+    return await recordActivityLog({
+      restaurantId: input.restaurantId,
+      actorId: actor.id ?? null,
+      actorName: actor.name || "Kullanıcı",
+      actorRole: actor.role || "PERSONEL",
+      actorEmail: actor.email ?? null,
+      category: input.category,
+      action: input.action,
+      details: input.details ?? null,
+    });
+  } catch (err) {
+    console.error("logActivity error:", err);
+    return null;
+  }
+}
 
 /**
  * Fetches recent activity logs for a restaurant ordered by latest first.

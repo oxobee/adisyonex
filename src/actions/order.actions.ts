@@ -25,42 +25,112 @@ import {
 import { advanceLineStates, findOrdersByRestaurant } from "@/repositories/order.repository";
 import { settle, settleTable } from "@/services/settlement.service";
 import { success, failure, type ActionResult } from "@/types";
+import { logActivity } from "@/services/activity-log.service";
 
 export const createOrderAction = withManagerValidation(
   createOrderSchema,
-  (data, ctx) => createOrder(ctx, data),
+  async (data, ctx) => {
+    const order = await createOrder(ctx, data);
+    const tableInfo = data.tableLabel ? `Masa '${data.tableLabel}'` : (data.orderType === "TAKEAWAY" ? "Gel-Al" : "Paket");
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "SİPARİŞ",
+      action: "Yeni Sipariş Açıldı",
+      details: `${tableInfo} için yeni sipariş oluşturuldu. (${data.items?.length || 0} kalem ürün)`,
+    });
+    return order;
+  },
 );
 
-export const addItemsAction = withManagerValidation(addItemsSchema, (data, ctx) =>
-  addItems(ctx, data),
-);
+export const addItemsAction = withManagerValidation(addItemsSchema, async (data, ctx) => {
+  const res = await addItems(ctx, data);
+  await logActivity({
+    restaurantId: ctx.restaurantId,
+    category: "SİPARİŞ",
+    action: "Siparişe Ürün Eklendi",
+    details: `Siparişe ${data.items?.length || 0} yeni ürün kalemi eklendi.`,
+  });
+  return res;
+});
 
 export const fireOrderAction = withManagerValidation(
   fireOrderSchema,
-  (data, ctx) => fireOrder(ctx, data.orderId),
+  async (data, ctx) => {
+    const res = await fireOrder(ctx, data.orderId);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "SİPARİŞ",
+      action: "Sipariş Mutfağa İletildi",
+      details: `Sipariş mutfak ekranına (KDS) düşürüldü.`,
+    });
+    return res;
+  },
 );
 
 export const serveLineAction = withManagerValidation(
   serveLineSchema,
-  (data, ctx) => serveLine(ctx, data),
+  async (data, ctx) => {
+    const res = await serveLine(ctx, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "SİPARİŞ",
+      action: "Ürün Masaya Servis Edildi",
+      details: `Sipariş kalemi servis edildi olarak işaretlendi.`,
+    });
+    return res;
+  },
 );
 
-export const voidLineAction = withManagerValidation(voidLineSchema, (data, ctx) =>
-  voidLine(ctx, data),
-);
+export const voidLineAction = withManagerValidation(voidLineSchema, async (data, ctx) => {
+  const res = await voidLine(ctx, data);
+  await logActivity({
+    restaurantId: ctx.restaurantId,
+    category: "SİPARİŞ",
+    action: "Ürün Kalemi İptal Edildi (Void)",
+    details: `Gerekçe: "${data.reason}"`,
+  });
+  return res;
+});
 
 export const voidOrderAction = withManagerValidation(
   voidOrderSchema,
-  (data, ctx) => voidWholeOrder(ctx, data),
+  async (data, ctx) => {
+    const res = await voidWholeOrder(ctx, data);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "SİPARİŞ",
+      action: "Tüm Sipariş İptal Edildi (Adisyon İptali)",
+      details: `Gerekçe: "${data.reason}"`,
+    });
+    return res;
+  },
 );
 
-export const settleOrderAction = withManagerValidation(settleSchema, (data, ctx) =>
-  settle(ctx, data),
-);
+export const settleOrderAction = withManagerValidation(settleSchema, async (data, ctx) => {
+  const res = await settle(ctx, data);
+  const paymentModes = data.payments.map((p) => `${p.mode}: ₺${p.amount}`).join(", ");
+  await logActivity({
+    restaurantId: ctx.restaurantId,
+    category: "KASA",
+    action: "Hesap Tahsil Edildi",
+    details: `Tahsilat tamamlandı. Ödemeler: ${paymentModes}`,
+  });
+  return res;
+});
 
 export const settleTableAction = withManagerValidation(
   settleTableSchema,
-  (data, ctx) => settleTable(ctx, data),
+  async (data, ctx) => {
+    const res = await settleTable(ctx, data);
+    const paymentModes = data.payments.map((p) => `${p.mode}: ₺${p.amount}`).join(", ");
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "KASA",
+      action: "Masa Hesabı Kapatıldı",
+      details: `Masa hesabı kapatıldı. Ödemeler: ${paymentModes}`,
+    });
+    return res;
+  },
 );
 
 export const advanceOrderStateAction = withManagerValidation(

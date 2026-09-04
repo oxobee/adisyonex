@@ -43,7 +43,7 @@ export async function getActivityLogsAction(): Promise<{
       return { success: false, error: "Oturum bulunamadı veya yetkisiz istek." };
     }
 
-    const logs = await getRecentActivityLogs(restaurantId, 100);
+    const logs = await getRecentActivityLogs(restaurantId, 250);
 
     const serialized: SerializedActivityLog[] = logs.map((log) => {
       const d = new Date(log.createdAt);
@@ -61,11 +61,13 @@ export async function getActivityLogsAction(): Promise<{
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
+          timeZone: "Europe/Istanbul",
         }),
         dateFormatted: d.toLocaleDateString("tr-TR", {
           day: "numeric",
           month: "long",
           year: "numeric",
+          timeZone: "Europe/Istanbul",
         }),
       };
     });
