@@ -14,6 +14,27 @@ export interface AiMessage {
   readonly content: string;
 }
 
+export interface AiActionVariant {
+  readonly id: string;
+  readonly name: string;
+  readonly price: number;
+}
+
+export interface AiActionModifier {
+  readonly id: string;
+  readonly name: string;
+  readonly priceDelta: number;
+}
+
+export interface AiActionModifierGroup {
+  readonly id: string;
+  readonly name: string;
+  readonly isRequired: boolean;
+  readonly minSelect: number;
+  readonly maxSelect: number;
+  readonly modifiers: readonly AiActionModifier[];
+}
+
 export interface AiActionPreview {
   readonly type: "ADD_ORDER_ITEM";
   readonly tableId: string;
@@ -23,6 +44,12 @@ export interface AiActionPreview {
   readonly quantity: number;
   readonly unitPrice: number;
   readonly totalPrice: number;
+  readonly hasOptions?: boolean;
+  readonly variants?: readonly AiActionVariant[];
+  readonly modifierGroups?: readonly AiActionModifierGroup[];
+  readonly selectedVariantId?: string | null;
+  readonly selectedModifierIds?: readonly string[];
+  readonly lineNote?: string | null;
 }
 
 export interface AiRecommendedPage {
@@ -133,6 +160,127 @@ async function resolveUserAuthContext(activeStaffId?: string | null): Promise<Us
   return null;
 }
 
+function findBestMatchingTable(
+  query: string,
+  tables: Array<{ id: string; label: string; section?: string | null }>,
+  suggestedId?: string | null,
+  suggestedLabel?: string | null
+): { id: string; label: string } | null {
+  if (!tables || tables.length === 0) return null;
+
+  const cleanQuery = query.toLowerCase().trim();
+
+  // 1. Explicit number patterns: "masa 5", "masa - 5", "5 nolu masa", "5'e hamburger", "masa-3"
+  const numberPatterns = [
+    /(?:masa|table)\s*[-–—:]*\s*(\d+)/i,
+    /(\d+)\s*(?:nolu|numaralı|\.)?\s*(?:masa|table)/i,
+    /(?:^|\s)(\d+)\s*['’]?(?:e|a|ye|ya|de|da)\b/i,
+  ];
+
+  let targetNumber: string | null = null;
+  for (const pattern of numberPatterns) {
+    const match = cleanQuery.match(pattern);
+    if (match && match[1]) {
+      targetNumber = match[1];
+      break;
+    }
+  }
+
+  if (targetNumber) {
+    // Exact digit matching against table labels (e.g., target 5 matches "Masa - 5", "Masa 5", "5")
+    const exactMatch = tables.find((t) => {
+      const numMatch = t.label.match(/\d+/);
+      return numMatch && numMatch[0] === targetNumber;
+    });
+    if (exactMatch) return exactMatch;
+  }
+
+  // 2. Direct string match against full table labels (longest label first)
+  const sortedByLabelLength = [...tables].sort((a, b) => b.label.length - a.label.length);
+  for (const t of sortedByLabelLength) {
+    const normLabel = t.label.toLowerCase().replace(/[-–—\s]+/g, " ").trim();
+    const queryNorm = cleanQuery.replace(/[-–—\s]+/g, " ");
+    if (queryNorm.includes(normLabel)) {
+      return t;
+    }
+  }
+
+  // 3. Fallback to suggestedId or suggestedLabel from LLM if valid
+  if (suggestedId) {
+    const byId = tables.find((t) => t.id === suggestedId);
+    if (byId) return byId;
+  }
+
+  if (suggestedLabel) {
+    const cleanSuggested = suggestedLabel.toLowerCase().trim();
+    const byLabel = tables.find(
+      (t) =>
+        t.label.toLowerCase() === cleanSuggested ||
+        t.label.toLowerCase().replace(/[-–—\s]+/g, "") === cleanSuggested.replace(/[-–—\s]+/g, "")
+    );
+    if (byLabel) return byLabel;
+
+    const numMatch = suggestedLabel.match(/\d+/);
+    if (numMatch) {
+      const byNum = tables.find((t) => {
+        const tn = t.label.match(/\d+/);
+        return tn && tn[0] === numMatch[0];
+      });
+      if (byNum) return byNum;
+    }
+  }
+
+  return null;
+}
+
+function findBestMatchingMenuItem(
+  query: string,
+  menuItems: Array<any>,
+  suggestedId?: string | null,
+  suggestedName?: string | null
+): any | null {
+  if (!menuItems || menuItems.length === 0) return null;
+
+  // 1. If suggestedId is valid
+  if (suggestedId) {
+    const byId = menuItems.find((m) => m.id === suggestedId);
+    if (byId) return byId;
+  }
+
+  // 2. Exact or substring match with suggestedName
+  if (suggestedName) {
+    const cleanSuggested = suggestedName.toLowerCase().trim();
+    const exact = menuItems.find((m) => m.name.toLowerCase() === cleanSuggested);
+    if (exact) return exact;
+
+    const partial = menuItems.find(
+      (m) =>
+        m.name.toLowerCase().includes(cleanSuggested) ||
+        cleanSuggested.includes(m.name.toLowerCase())
+    );
+    if (partial) return partial;
+  }
+
+  // 3. Match against query text (longest dish name first)
+  const cleanQuery = query.toLowerCase();
+  const sortedByNameLength = [...menuItems].sort((a, b) => b.name.length - a.name.length);
+  for (const item of sortedByNameLength) {
+    if (cleanQuery.includes(item.name.toLowerCase())) {
+      return item;
+    }
+  }
+
+  // 4. Token overlap
+  for (const item of menuItems) {
+    const words = item.name.toLowerCase().split(/\s+/).filter((w: string) => w.length >= 3);
+    if (words.some((w: string) => cleanQuery.includes(w))) {
+      return item;
+    }
+  }
+
+  return null;
+}
+
 export async function askAiAssistantAction(
   userQuery: string,
   chatHistory: readonly AiMessage[] = [],
@@ -234,8 +382,33 @@ export async function askAiAssistantAction(
             name: true,
             price: true,
             category: { select: { name: true } },
+            variants: {
+              where: { deletedAt: null, isActive: true },
+              select: { id: true, name: true, price: true, sortOrder: true },
+              orderBy: { sortOrder: "asc" },
+            },
+            modifierGroups: {
+              select: {
+                sortOrder: true,
+                modifierGroup: {
+                  select: {
+                    id: true,
+                    name: true,
+                    isRequired: true,
+                    minSelect: true,
+                    maxSelect: true,
+                    modifiers: {
+                      where: { isActive: true },
+                      select: { id: true, name: true, priceDelta: true, sortOrder: true },
+                      orderBy: { sortOrder: "asc" },
+                    },
+                  },
+                },
+              },
+              orderBy: { sortOrder: "asc" },
+            },
           },
-          take: 120,
+          take: 150,
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]);
@@ -359,12 +532,12 @@ GENEL VE KESİN KURALLAR:
 3. MASAYA SİPARİŞ EKLEME İŞLEMİ:
    - Yalnızca sipariş yetkisi olan kullanıcılarda (${canManageOrders ? "VAR" : "YOK"}), "Masa 5'e 1 hamburger" gibi komutlarda:
      * Ürün ve masa tespit edildiğinde HER ZAMAN "actionPreview" nesnesi üret ve kullanıcıya karttan onaylamasını söyle.
-     * Karışıklık varsa "needsClarification": true ve "clarificationOptions" içine seçenekleri koy.
-     * Sipariş yetkisi olmayan kullanıcılar (örn. Aşçı) masaya ürün eklemek isterse: KESİNLİKLE REDDET!
+      * Karışıklık varsa "needsClarification": true ve "clarificationOptions" içine seçenekleri koy.
+      * Sipariş yetkisi olmayan kullanıcılar (örn. Aşçı) masaya ürün eklemek isterse: KESİNLİKLE REDDET!
 4. YANIT FORMATI:
    Yanıtını YALNIZCA geçerli bir JSON nesnesi olarak döndür:
    {
-     "reply": "Kullanıcıya gösterilecek Türkçe açıklama veya yetki uyarısı",
+     "reply": "Kullanıcıya gösterilecek Türkçe açıklama veya onay sorusu (Örn: Masa 5'e 1 adet Hamburger eklemek üzeresiniz. Onaylıyor musunuz?)",
      "needsClarification": false,
      "clarificationOptions": ["Seçenek 1", "Seçenek 2"],
      "recommendedPage": {
@@ -373,7 +546,16 @@ GENEL VE KESİN KURALLAR:
        "description": "Kısa açıklama",
        "icon": "table" | "kitchen" | "pos" | "menu" | "report" | "stock" | "staff" | "settings"
      } | null,
-     "actionPreview": { ... } | null
+     "actionPreview": {
+       "type": "ADD_ORDER_ITEM",
+       "tableId": "Verilen MEVCUT MASALAR listesindeki masanın gerçek id değeri",
+       "tableLabel": "Masanın tam etiketi (örn: Masa - 5)",
+       "menuItemId": "Verilen MENÜ ÜRÜNLERİ listesindeki ürünün gerçek id değeri",
+       "menuItemName": "Menüdeki tam ürün adı",
+       "quantity": 1,
+       "unitPrice": 150,
+       "totalPrice": 150
+     } | null
    }`;
 
     const formattedMessages = [
@@ -450,10 +632,71 @@ GENEL VE KESİN KURALLAR:
       }
     }
 
+    // Deterministic validation & normalization of actionPreview
+    let validatedActionPreview: AiActionPreview | null = null;
+    if (parsed.actionPreview && canManageOrders) {
+      const raw = parsed.actionPreview;
+      const matchedTable = findBestMatchingTable(
+        userQuery,
+        tables,
+        raw.tableId || raw.table_id,
+        raw.tableLabel || raw.table_label || raw.table || raw.tableName,
+      );
+      const matchedItem = findBestMatchingMenuItem(
+        userQuery,
+        menuItems,
+        raw.menuItemId || raw.menu_item_id || raw.itemId,
+        raw.menuItemName || raw.menu_item_name || raw.itemName || raw.name,
+      );
+
+      if (matchedTable && matchedItem) {
+        const qty = Math.max(1, Math.min(99, Number(raw.quantity) || 1));
+        const unitPrice = Number(matchedItem.price) || 0;
+        const totalPrice = unitPrice * qty;
+
+        const variants: AiActionVariant[] = (matchedItem.variants || []).map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          price: Number(v.price),
+        }));
+
+        const modifierGroups: AiActionModifierGroup[] = (matchedItem.modifierGroups || []).map(
+          (mg: any) => ({
+            id: mg.modifierGroup.id,
+            name: mg.modifierGroup.name,
+            isRequired: Boolean(mg.modifierGroup.isRequired),
+            minSelect: mg.modifierGroup.minSelect ?? 0,
+            maxSelect: mg.modifierGroup.maxSelect ?? 1,
+            modifiers: (mg.modifierGroup.modifiers || []).map((m: any) => ({
+              id: m.id,
+              name: m.name,
+              priceDelta: Number(m.priceDelta),
+            })),
+          }),
+        );
+
+        const hasOptions = variants.length > 0 || modifierGroups.length > 0;
+
+        validatedActionPreview = {
+          type: "ADD_ORDER_ITEM",
+          tableId: matchedTable.id,
+          tableLabel: matchedTable.label,
+          menuItemId: matchedItem.id,
+          menuItemName: matchedItem.name,
+          quantity: qty,
+          unitPrice,
+          totalPrice,
+          hasOptions,
+          variants,
+          modifierGroups,
+        };
+      }
+    }
+
     return success<AiAssistantResponse>({
       reply: parsed.reply || "İşleminiz tamamlandı.",
       recommendedPage: parsed.recommendedPage || null,
-      actionPreview: parsed.actionPreview || null,
+      actionPreview: validatedActionPreview,
       clarificationOptions: sanitizedOptions,
       userRole: jobTitle || role,
       userName: name,
@@ -470,7 +713,17 @@ GENEL VE KESİN KURALLAR:
 }
 
 export async function executeAiAssistantAction(
-  action: AiActionPreview,
+  action: {
+    type?: string;
+    tableId: string;
+    tableLabel?: string;
+    menuItemId: string;
+    menuItemName?: string;
+    quantity: number;
+    selectedVariantId?: string | null;
+    selectedModifierIds?: readonly string[];
+    lineNote?: string | null;
+  },
   activeStaffId?: string | null,
 ): Promise<ActionResult<{ orderId: string; message: string }>> {
   try {
@@ -509,7 +762,7 @@ export async function executeAiAssistantAction(
       where: { id: action.tableId, restaurantId, deletedAt: null },
     });
     if (!table) {
-      return failure(`Masa bulunamadı (${action.tableLabel}).`);
+      return failure(`Masa bulunamadı (${action.tableLabel || action.tableId}).`);
     }
 
     // Verify MenuItem
@@ -517,7 +770,7 @@ export async function executeAiAssistantAction(
       where: { id: action.menuItemId, restaurantId, deletedAt: null, isActive: true },
     });
     if (!menuItem) {
-      return failure(`Ürün bulunamadı veya şu anda satışta değil (${action.menuItemName}).`);
+      return failure(`Ürün bulunamadı veya şu anda satışta değil (${action.menuItemName || action.menuItemId}).`);
     }
 
     const orderCtx = {
@@ -539,6 +792,13 @@ export async function executeAiAssistantAction(
     });
 
     const quantity = Math.max(1, Math.min(99, action.quantity || 1));
+    const variantId = action.selectedVariantId || undefined;
+    const modifierIds = action.selectedModifierIds ? [...action.selectedModifierIds] : [];
+    const lineNote = action.lineNote?.trim() || undefined;
+
+    const formattedTableLabel = table.label.toLowerCase().startsWith("masa")
+      ? table.label
+      : `Masa ${table.label}`;
 
     if (openOrder) {
       await addItems(orderCtx, {
@@ -547,8 +807,10 @@ export async function executeAiAssistantAction(
           {
             menuItemId: menuItem.id,
             quantity,
+            variantId,
+            modifierIds,
+            lineNote,
             isComp: false,
-            modifierIds: [],
           },
         ],
       });
@@ -556,7 +818,7 @@ export async function executeAiAssistantAction(
 
       return success({
         orderId: openOrder.id,
-        message: `Masa ${table.label} siparişine ${quantity}x ${menuItem.name} başarıyla eklendi ve mutfağa iletildi.`,
+        message: `${formattedTableLabel} siparişine ${quantity}x ${menuItem.name} başarıyla eklendi ve mutfağa iletildi.`,
       });
     } else {
       const idempotencyKey = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -569,15 +831,17 @@ export async function executeAiAssistantAction(
           {
             menuItemId: menuItem.id,
             quantity,
+            variantId,
+            modifierIds,
+            lineNote,
             isComp: false,
-            modifierIds: [],
           },
         ],
       });
 
       return success({
         orderId: newOrder.id,
-        message: `Masa ${table.label} için yeni adisyon açıldı, ${quantity}x ${menuItem.name} eklendi ve mutfağa iletildi.`,
+        message: `${formattedTableLabel} için yeni adisyon açıldı, ${quantity}x ${menuItem.name} eklendi ve mutfağa iletildi.`,
       });
     }
   } catch (error) {

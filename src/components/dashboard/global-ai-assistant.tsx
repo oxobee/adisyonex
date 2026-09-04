@@ -24,6 +24,10 @@ import {
   RefreshCwIcon,
   ChevronDownIcon,
   FlameIcon,
+  MinusIcon,
+  PlusIcon,
+  SlidersHorizontalIcon,
+  CheckIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -161,6 +165,16 @@ export function GlobalAiAssistant() {
   const [inputQuery, setInputQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [executingActionId, setExecutingActionId] = useState<string | null>(null);
+
+  // Product Customization State for Optioned Items
+  const [customizingAction, setCustomizingAction] = useState<{
+    msgId: string;
+    action: AiActionPreview;
+  } | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({});
+  const [customQuantity, setCustomQuantity] = useState<number>(1);
+  const [customLineNote, setCustomLineNote] = useState<string>("");
 
   // Audio / Speech State
   const [isListening, setIsListening] = useState(false);
@@ -482,6 +496,78 @@ export function GlobalAiAssistant() {
     }
   };
 
+  const formatTableBadge = (label?: string) => {
+    if (!label) return "Masa";
+    const clean = label.trim();
+    if (/^masa/i.test(clean)) return clean;
+    return `Masa ${clean}`;
+  };
+
+  const handleOpenCustomize = (msgId: string, action: AiActionPreview) => {
+    setCustomizingAction({ msgId, action });
+    if (action.variants && action.variants.length > 0) {
+      setSelectedVariantId(action.variants[0].id);
+    } else {
+      setSelectedVariantId(null);
+    }
+    setSelectedModifiers({});
+    setCustomQuantity(action.quantity || 1);
+    setCustomLineNote("");
+  };
+
+  const calculateCustomTotal = () => {
+    if (!customizingAction) return 0;
+    const { action } = customizingAction;
+
+    let basePrice = action.unitPrice;
+    if (selectedVariantId && action.variants) {
+      const v = action.variants.find((x) => x.id === selectedVariantId);
+      if (v) basePrice = v.price;
+    }
+
+    let modifiersDelta = 0;
+    if (action.modifierGroups) {
+      for (const group of action.modifierGroups) {
+        const selectedIds = selectedModifiers[group.id] || [];
+        for (const modId of selectedIds) {
+          const m = group.modifiers.find((mod) => mod.id === modId);
+          if (m) modifiersDelta += m.priceDelta;
+        }
+      }
+    }
+
+    return (basePrice + modifiersDelta) * customQuantity;
+  };
+
+  const handleConfirmCustomize = async () => {
+    if (!customizingAction) return;
+    const { msgId, action } = customizingAction;
+
+    // Validate required modifier groups
+    if (action.modifierGroups && action.modifierGroups.length > 0) {
+      for (const group of action.modifierGroups) {
+        const selectedCount = (selectedModifiers[group.id] || []).length;
+        if (group.isRequired && selectedCount < Math.max(1, group.minSelect || 1)) {
+          toast.error(`Lütfen "${group.name}" grubundan en az ${Math.max(1, group.minSelect || 1)} seçim yapınız.`);
+          return;
+        }
+      }
+    }
+
+    const modifierIds = Object.values(selectedModifiers).flat();
+    const actionWithCustomization = {
+      ...action,
+      quantity: customQuantity,
+      selectedVariantId,
+      selectedModifierIds: modifierIds,
+      lineNote: customLineNote,
+      totalPrice: calculateCustomTotal(),
+    };
+
+    setCustomizingAction(null);
+    await handleExecuteAction(msgId, actionWithCustomization);
+  };
+
   const handleExecuteAction = async (msgId: string, action: AiActionPreview) => {
     setExecutingActionId(msgId);
     try {
@@ -709,7 +795,7 @@ export function GlobalAiAssistant() {
                           <span>SİPARİŞ ONAYI BEKLENİYOR</span>
                         </div>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                          Masa {msg.actionPreview.tableLabel}
+                          {formatTableBadge(msg.actionPreview.tableLabel)}
                         </span>
                       </div>
 
@@ -717,38 +803,50 @@ export function GlobalAiAssistant() {
                         <div className="bg-white/80 dark:bg-slate-900 p-2 rounded-xl border border-gray-100 dark:border-slate-800">
                           <span className="text-[10px] text-gray-500 block font-medium">Ürün Adı:</span>
                           <span className="font-bold text-gray-900 dark:text-white truncate block">
-                            {msg.actionPreview.menuItemName}
+                            {msg.actionPreview.menuItemName || "Ürün"}
                           </span>
                         </div>
 
                         <div className="bg-white/80 dark:bg-slate-900 p-2 rounded-xl border border-gray-100 dark:border-slate-800">
                           <span className="text-[10px] text-gray-500 block font-medium">Miktar & Tutar:</span>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 block">
-                            {msg.actionPreview.quantity} Adet · ₺{msg.actionPreview.totalPrice}
+                            {msg.actionPreview.quantity || 1} Adet · ₺{msg.actionPreview.totalPrice || msg.actionPreview.unitPrice}
                           </span>
                         </div>
                       </div>
 
-                      {/* ACTIONS: ONYALA VE EKLE / İPTAL */}
+                      {/* ACTIONS: EĞER SEÇENEKLİ ÜRÜNSE ÖNCE SEÇENEKLERİ GİRSİN */}
                       <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          disabled={executingActionId === msg.id}
-                          onClick={() => handleExecuteAction(msg.id, msg.actionPreview!)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                        >
-                          {executingActionId === msg.id ? (
-                            <>
-                              <RefreshCwIcon className="size-3.5 animate-spin" />
-                              <span>Ekleniyor...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2Icon className="size-3.5" />
-                              <span>Onayla ve Masaya Ekle</span>
-                            </>
-                          )}
-                        </button>
+                        {msg.actionPreview.hasOptions ? (
+                          <button
+                            type="button"
+                            disabled={executingActionId === msg.id}
+                            onClick={() => handleOpenCustomize(msg.id, msg.actionPreview!)}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            <SlidersHorizontalIcon className="size-3.5" />
+                            <span>Seçenekleri Belirle</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={executingActionId === msg.id}
+                            onClick={() => handleExecuteAction(msg.id, msg.actionPreview!)}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {executingActionId === msg.id ? (
+                              <>
+                                <RefreshCwIcon className="size-3.5 animate-spin" />
+                                <span>Ekleniyor...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2Icon className="size-3.5" />
+                                <span>Onayla ve Masaya Ekle</span>
+                              </>
+                            )}
+                          </button>
+                        )}
 
                         <button
                           type="button"
@@ -875,6 +973,215 @@ export function GlobalAiAssistant() {
               </button>
             </div>
           </div>
+
+          {/* 3. PRODUCT CUSTOMIZATION OVERLAY (SEÇENEKLİ ÜRÜN MODALI) */}
+          {customizingAction && (
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end rounded-3xl overflow-hidden animate-in fade-in duration-200">
+              <div className="w-full max-h-[85%] bg-white dark:bg-slate-900 rounded-t-3xl border-t border-purple-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
+                {/* Header */}
+                <div className="p-3.5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/80 dark:bg-slate-800/80">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-600 dark:text-purple-400">
+                      <SlidersHorizontalIcon className="size-3.5" />
+                      <span>Ürün Seçenekleri</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-extrabold ml-1">
+                        {formatTableBadge(customizingAction.action.tableLabel)}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white mt-0.5">
+                      {customizingAction.action.menuItemName}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCustomizingAction(null)}
+                    className="size-7 rounded-full bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 text-gray-700 dark:text-gray-300 flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <XIcon className="size-4" />
+                  </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+                  {/* Variants */}
+                  {customizingAction.action.variants && customizingAction.action.variants.length > 0 && (
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300 block mb-2">
+                        Porsiyon / Boyut Seçimi:
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {customizingAction.action.variants.map((v) => {
+                          const isSelected = selectedVariantId === v.id;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() => setSelectedVariantId(v.id)}
+                              className={cn(
+                                "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between",
+                                isSelected
+                                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold"
+                                  : "border-gray-200 dark:border-slate-700 hover:border-gray-300 text-gray-700 dark:text-gray-300"
+                              )}
+                            >
+                              <span>{v.name}</span>
+                              <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                                ₺{v.price}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Modifier Groups */}
+                  {customizingAction.action.modifierGroups &&
+                    customizingAction.action.modifierGroups.map((group) => {
+                      const currentSelected = selectedModifiers[group.id] || [];
+                      return (
+                        <div key={group.id} className="border-t border-gray-100 dark:border-slate-800 pt-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                              <span>{group.name}</span>
+                              {group.isRequired && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-extrabold">
+                                  Zorunlu
+                                </span>
+                              )}
+                            </label>
+                            <span className="text-[10px] text-gray-400">
+                              {group.maxSelect === 1 ? "Tek seçim" : `Maks ${group.maxSelect}`}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {group.modifiers.map((mod) => {
+                              const isChecked = currentSelected.includes(mod.id);
+                              return (
+                                <button
+                                  key={mod.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedModifiers((prev) => {
+                                      const list = prev[group.id] || [];
+                                      if (group.maxSelect === 1) {
+                                        return { ...prev, [group.id]: isChecked ? [] : [mod.id] };
+                                      }
+                                      if (isChecked) {
+                                        return { ...prev, [group.id]: list.filter((id) => id !== mod.id) };
+                                      }
+                                      if (list.length >= group.maxSelect) {
+                                        toast.info(`Bu gruptan en fazla ${group.maxSelect} seçim yapabilirsiniz.`);
+                                        return prev;
+                                      }
+                                      return { ...prev, [group.id]: [...list, mod.id] };
+                                    });
+                                  }}
+                                  className={cn(
+                                    "w-full p-2 rounded-xl border text-left text-xs transition-all cursor-pointer flex items-center justify-between",
+                                    isChecked
+                                      ? "border-purple-500 bg-purple-50/70 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 font-semibold"
+                                      : "border-gray-200 dark:border-slate-800 hover:border-gray-300 text-gray-700 dark:text-gray-300"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={cn(
+                                        "size-4 rounded-sm border flex items-center justify-center transition-colors",
+                                        isChecked
+                                          ? "bg-purple-600 border-purple-600 text-white"
+                                          : "border-gray-300 dark:border-slate-600"
+                                      )}
+                                    >
+                                      {isChecked && <CheckIcon className="size-3" />}
+                                    </div>
+                                    <span>{mod.name}</span>
+                                  </div>
+                                  {mod.priceDelta > 0 && (
+                                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                                      +₺{mod.priceDelta}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                  {/* Quantity & Note */}
+                  <div className="border-t border-gray-100 dark:border-slate-800 pt-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                        Sipariş Adedi:
+                      </span>
+                      <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setCustomQuantity((q) => Math.max(1, q - 1))}
+                          className="size-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-200 cursor-pointer shadow-xs"
+                        >
+                          <MinusIcon className="size-3.5" />
+                        </button>
+                        <span className="w-6 text-center font-black text-xs">{customQuantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => setCustomQuantity((q) => Math.min(99, q + 1))}
+                          className="size-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-200 cursor-pointer shadow-xs"
+                        >
+                          <PlusIcon className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                        Özel Not (İsteğe Bağlı):
+                      </label>
+                      <input
+                        type="text"
+                        value={customLineNote}
+                        onChange={(e) => setCustomLineNote(e.target.value)}
+                        placeholder="Örn: Az pişmiş olsun, sos ayrı gelsin..."
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-3 border-t border-gray-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setCustomizingAction(null)}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 font-bold text-xs hover:bg-gray-100 cursor-pointer"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="button"
+                    disabled={executingActionId === customizingAction.msgId}
+                    onClick={handleConfirmCustomize}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {executingActionId === customizingAction.msgId ? (
+                      <>
+                        <RefreshCwIcon className="size-3.5 animate-spin" />
+                        <span>Ekleniyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2Icon className="size-4" />
+                        <span>Masaya Ekle (₺{calculateCustomTotal()})</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
