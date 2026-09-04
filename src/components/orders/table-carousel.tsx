@@ -200,6 +200,18 @@ export function TableCarousel({
                 unservedLines.length > 0 &&
                 unservedLines.every((l) => l.state === "PREPARED");
 
+              // Reserved check
+              const isReserved =
+                tableOrders.some((o) => o.note?.toUpperCase().includes("REZERVE")) ||
+                table.label.toUpperCase().includes("REZERVE");
+
+              // Status color scheme: Green for Empty, Red for Occupied, Indigo for Reserved
+              const cardGradient = isReserved
+                ? "bg-gradient-to-r from-[#6366f1] via-[#4f46e5] to-[#3730a3] shadow-[0_12px_36px_rgba(79,70,229,0.35)]"
+                : isOccupied
+                  ? "bg-gradient-to-r from-[#fa4b6d] via-[#e53956] to-[#cc2847] shadow-[0_12px_36px_rgba(229,57,86,0.35)]"
+                  : "bg-gradient-to-r from-[#10b981] via-[#059669] to-[#047857] shadow-[0_12px_36px_rgba(5,150,105,0.35)]";
+
               // Coverflow relative offset
               let offset = index - activeIndex;
               // Wrap around for seamless appearance if tables list is large
@@ -233,15 +245,12 @@ export function TableCarousel({
                     "w-[340px] sm:w-[410px] select-none",
                   )}
                 >
-                  {/* Glowing Coral/Rose Card Frame matching Reference Image */}
+                  {/* Glowing Status Colored Card Frame (Green: Empty, Red: Occupied, Indigo: Reserved) */}
                   <div
                     className={cn(
                       "relative rounded-[28px] p-5 sm:p-6 text-white overflow-hidden shadow-2xl transition-all duration-300",
-                      // Gradient based on occupied vs empty
-                      isOccupied
-                        ? "bg-gradient-to-r from-[#fa4b6d] via-[#e53956] to-[#cc2847] shadow-[0_12px_36px_rgba(229,57,86,0.35)]"
-                        : "bg-gradient-to-r from-[#e85d75] via-[#d44862] to-[#b8334d] opacity-95 shadow-[0_10px_28px_rgba(212,72,98,0.25)]",
-                      isCurrent && "ring-4 ring-white/60 shadow-[0_18px_45px_rgba(229,57,86,0.5)] scale-[1.01]",
+                      cardGradient,
+                      isCurrent && "ring-4 ring-white/70 shadow-[0_18px_45px_rgba(0,0,0,0.35)] scale-[1.01]",
                     )}
                   >
                     {/* Subtle atmospheric background graphic overlay */}
@@ -303,7 +312,11 @@ export function TableCarousel({
 
                     {/* STATUS PILLS: Hazırlanıyor / Mutfakta / Hazır */}
                     <div className="relative flex items-center gap-2 mb-3">
-                      {isPreparing ? (
+                      {isReserved ? (
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-white/25 backdrop-blur-xs text-white px-3 py-0.5 text-[11px] font-bold border border-white/20">
+                          <span>Rezerve Masa</span>
+                        </div>
+                      ) : isPreparing ? (
                         <>
                           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#f8bc3c] text-amber-950 px-3 py-0.5 text-[11px] font-black shadow-xs">
                             <ChefHatIcon className="size-3 text-amber-950" />
@@ -315,7 +328,7 @@ export function TableCarousel({
                           </div>
                         </>
                       ) : isReady ? (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400 text-emerald-950 px-3 py-0.5 text-[11px] font-black shadow-xs">
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-300 text-emerald-950 px-3 py-0.5 text-[11px] font-black shadow-xs">
                           <span>HAZIR / TESLİM</span>
                         </div>
                       ) : isOccupied ? (
@@ -323,8 +336,8 @@ export function TableCarousel({
                           <span>Aktif Masa</span>
                         </div>
                       ) : (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-black/25 text-white/90 px-3 py-0.5 text-[11px] font-bold border border-white/10">
-                          <span>Yeni Siparişe Hazır</span>
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-white/25 backdrop-blur-xs text-white px-3 py-0.5 text-[11px] font-bold border border-white/20">
+                          <span>Boş / Müsait</span>
                         </div>
                       )}
                     </div>
