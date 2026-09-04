@@ -22,6 +22,7 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency } from "@/lib/format";
 import { computeBill, type BillLineInput, type DiscountKind } from "@/services/billing";
 import type { OrderDTO } from "@/types/order";
+import { enqueueOfflineAction } from "@/lib/offline-sync";
 
 const DISCOUNTS: readonly { value: DiscountKind; label: string }[] = [
   { value: "NONE", label: "Yok" },
@@ -71,7 +72,28 @@ export function SettleDialog({
       onOpenChange(false);
       onSettled(order.id);
     },
-    onError: (message) => toast.error(message),
+    onError: (message) => {
+      if (
+        message.toLowerCase().includes("fetch") ||
+        message.toLowerCase().includes("network") ||
+        (typeof navigator !== "undefined" && !navigator.onLine)
+      ) {
+        enqueueOfflineAction("settleOrder", {
+          orderId: order.id,
+          discountType,
+          discountValue: discountNum,
+          discountReason: discountReason.trim() || undefined,
+          payments: pay.toPayments(),
+        });
+        toast.success(
+          `Lokal Sunucu: #${order.orderNumber} nolu siparişin ödemesi yerel hafızaya kaydedildi. İnternet bağlandığında otomatik senkronize edilecek.`
+        );
+        onOpenChange(false);
+        onSettled(order.id);
+      } else {
+        toast.error(message);
+      }
+    },
   });
 
   const discountOk = discountType === "NONE" || discountNum > 0;
@@ -81,13 +103,25 @@ export function SettleDialog({
     if (!canSettle) {
       return;
     }
-    settle.execute({
+    const payload = {
       orderId: order.id,
       discountType,
       discountValue: discountNum,
       discountReason: discountReason.trim() || undefined,
       payments: pay.toPayments(),
-    });
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("settleOrder", payload);
+      toast.success(
+        `Lokal Sunucu: #${order.orderNumber} nolu siparişin ödemesi yerel hafızaya kaydedildi. İnternet bağlandığında otomatik senkronize edilecek.`
+      );
+      onOpenChange(false);
+      onSettled(order.id);
+      return;
+    }
+
+    settle.execute(payload);
   };
 
   return (

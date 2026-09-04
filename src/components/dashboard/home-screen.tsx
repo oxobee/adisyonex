@@ -15,7 +15,6 @@ import {
   CloudLightningIcon,
   CloudRainIcon,
   CloudSunIcon,
-  ExternalLinkIcon,
   HeadphonesIcon,
   LockIcon,
   MapPinIcon,
@@ -25,7 +24,6 @@ import {
   SnowflakeIcon,
   SunIcon,
   TrendingUpIcon,
-  UsersIcon,
   UtensilsCrossedIcon,
   WifiIcon,
 } from "lucide-react";
@@ -37,6 +35,10 @@ import {
   type HomeNotificationItem,
 } from "./home-notifications-modal";
 import { HomeScreenLockModal } from "./home-screen-lock-modal";
+import {
+  StaffAccountMenu,
+  type StaffAccount,
+} from "./staff-account-menu";
 
 export interface HomeOperationalStats {
   readonly restaurantName: string;
@@ -64,19 +66,19 @@ export interface HomeOperationalStats {
 function WeatherIcon({ iconType }: { readonly iconType: string }) {
   switch (iconType) {
     case "cloud-sun":
-      return <CloudSunIcon className="size-8 text-amber-500" />;
+      return <CloudSunIcon className="size-7 sm:size-8 text-amber-500" />;
     case "cloud":
-      return <CloudIcon className="size-8 text-slate-400" />;
+      return <CloudIcon className="size-7 sm:size-8 text-slate-400" />;
     case "rain":
-      return <CloudRainIcon className="size-8 text-blue-500 animate-pulse" />;
+      return <CloudRainIcon className="size-7 sm:size-8 text-blue-500" />;
     case "snow":
-      return <SnowflakeIcon className="size-8 text-sky-400 animate-spin" />;
+      return <SnowflakeIcon className="size-7 sm:size-8 text-sky-400" />;
     case "thunder":
-      return <CloudLightningIcon className="size-8 text-amber-600" />;
+      return <CloudLightningIcon className="size-7 sm:size-8 text-amber-600" />;
     case "fog":
-      return <CloudFogIcon className="size-8 text-gray-400" />;
+      return <CloudFogIcon className="size-7 sm:size-8 text-gray-400" />;
     default:
-      return <SunIcon className="size-8 text-amber-500 animate-[spin_24s_linear_infinite]" />;
+      return <SunIcon className="size-7 sm:size-8 text-amber-500" />;
   }
 }
 
@@ -84,12 +86,18 @@ export function HomeScreen({
   settings,
   isAdmin = false,
   isStaff = false,
-  staffRole,
+  staffRole = "MANAGER",
   allowedRoutes,
   restaurantUsername,
   operationalStats,
   restaurantName = "AdisyonEx",
   userName = "Yönetici",
+  userPhone,
+  userEmail,
+  userCity,
+  userState,
+  userPhotoUrl,
+  userId = "current-user",
 }: {
   readonly settings: Partial<SystemSettingsDTO>;
   readonly isAdmin?: boolean;
@@ -100,6 +108,12 @@ export function HomeScreen({
   readonly operationalStats?: HomeOperationalStats | null;
   readonly restaurantName?: string;
   readonly userName?: string;
+  readonly userPhone?: string | null;
+  readonly userEmail?: string | null;
+  readonly userCity?: string | null;
+  readonly userState?: string | null;
+  readonly userPhotoUrl?: string | null;
+  readonly userId?: string;
 }) {
   // Canlı Saat & Tarih State
   const [timeStr, setTimeStr] = useState("16:04");
@@ -109,6 +123,24 @@ export function HomeScreen({
   // Modals state
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+
+  // Active Account State (for fast switching and dynamic permission filtering)
+  const initialAccount: StaffAccount = useMemo(
+    () => ({
+      id: userId,
+      name: userName,
+      role: staffRole,
+      allowedRoutes,
+      phone: userPhone,
+      email: userEmail,
+      city: userCity,
+      state: userState,
+      photoUrl: userPhotoUrl,
+    }),
+    [userId, userName, staffRole, allowedRoutes, userPhone, userEmail, userCity, userState, userPhotoUrl]
+  );
+
+  const [activeAccount, setActiveAccount] = useState<StaffAccount>(initialAccount);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -209,8 +241,8 @@ export function HomeScreen({
     };
   }, [operationalStats]);
 
-  // 6 Temel Aksiyon Kartı (Finansal Veri İçermez)
-  const ACTION_CARDS = [
+  // 6 Temel Aksiyon Kartı
+  const ALL_ACTION_CARDS = [
     {
       id: "masalar",
       badge: "01",
@@ -237,7 +269,7 @@ export function HomeScreen({
       circleBg: "bg-orange-50/80 border border-orange-100 text-orange-600",
       icon: ChefHatIcon,
       statLeftValue: `${stats.waitingItems}`,
-      statLeftLabel: "bekleyen sipariş",
+      statLeftLabel: "bekleyen",
       statRightValue: `${stats.readyItems}`,
       statRightLabel: "servise hazır",
       statLeftColor: "text-orange-600",
@@ -283,7 +315,7 @@ export function HomeScreen({
       description: "Sadakat & Müşteri Takibi",
       href: "/dashboard/customers",
       circleBg: "bg-rose-50/80 border border-rose-100 text-rose-600",
-      icon: UsersIcon,
+      icon: TrendingUpIcon,
       statLeftValue: `${stats.totalCustomers.toLocaleString("tr-TR")}`,
       statLeftLabel: "toplam kayıt",
       statRightValue: `${stats.newCustomers}`,
@@ -296,22 +328,28 @@ export function HomeScreen({
       badge: "06",
       badgeColor: "text-slate-600 bg-slate-100 border-slate-200/60",
       title: "Sistem",
-      description: "Menü, Masa & QR, Personel, Stok, Z Raporu",
+      description: "Menü, Masa, Stok, Z Raporu",
       href: "/dashboard/system",
       circleBg: "bg-slate-100 border border-slate-200 text-slate-700",
       icon: Settings2Icon,
-      statLeftValue: "Tüm ayarlar",
+      statLeftValue: "Ayarlar",
       statLeftLabel: "yapılandırma",
-      statRightValue: "Sistem yönetimi",
-      statRightLabel: "yönetim",
+      statRightValue: "Yönetim",
+      statRightLabel: "sistem",
       statLeftColor: "text-slate-800",
       statRightColor: "text-slate-800",
     },
   ];
 
-  // Personel yetkisine göre filtreleme
+  // Personel yetkisine göre dinamik kart filtreleme
   const visibleCards = useMemo(() => {
-    if (!isStaff || !allowedRoutes) return ACTION_CARDS;
+    const role = activeAccount.role?.toUpperCase();
+    const isManagerRole = role === "MANAGER" || role === "ADMIN" || role === "SUPER_ADMIN";
+    if (isManagerRole || !activeAccount.allowedRoutes) {
+      return ALL_ACTION_CARDS;
+    }
+
+    const routes = activeAccount.allowedRoutes;
     const systemSubRoutes = [
       "/dashboard/menu",
       "/dashboard/menu-design",
@@ -322,93 +360,47 @@ export function HomeScreen({
       "/dashboard/settings",
       "/dashboard/system",
     ];
-    const hasSystemAccess = systemSubRoutes.some((r) => allowedRoutes.includes(r));
+    const hasSystemAccess = systemSubRoutes.some((r) => routes.includes(r));
 
-    return ACTION_CARDS.filter((card) => {
+    return ALL_ACTION_CARDS.filter((card) => {
       if (card.href === "/dashboard/system") {
         return hasSystemAccess;
       }
-      return allowedRoutes.includes(card.href);
+      return routes.includes(card.href);
     });
-  }, [isStaff, allowedRoutes]);
+  }, [activeAccount]);
 
   const displayBranch = operationalStats?.branchName || restaurantName;
+  const currentYear = new Date().getFullYear();
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-3 sm:p-5 lg:p-6 flex flex-col justify-between gap-5 selection:bg-primary/20">
-      {/* ELASTİK & MİKRO ANİMASYON STİLLERİ */}
+    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
+      {/* WORLD-CLASS MOTION DESIGN KEYFRAMES (FLUID & REFINED) */}
       <style jsx global>{`
-        @keyframes elasticCard {
+        @keyframes sleekFadeIn {
           0% {
             opacity: 0;
-            transform: scale(0.86) translateY(28px);
-          }
-          55% {
-            opacity: 1;
-            transform: scale(1.025) translateY(-5px);
-          }
-          75% {
-            transform: scale(0.992) translateY(2px);
+            transform: translateY(6px);
           }
           100% {
             opacity: 1;
-            transform: scale(1) translateY(0);
+            transform: translateY(0);
           }
         }
-        @keyframes elasticLeft {
-          0% {
-            opacity: 0;
-            transform: translateX(-35px) scale(0.94);
-          }
-          60% {
-            opacity: 1;
-            transform: translateX(5px) scale(1.015);
-          }
-          80% {
-            transform: translateX(-1px) scale(0.995);
-          }
-          100% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-          }
-        }
-        @keyframes elasticBottom {
-          0% {
-            opacity: 0;
-            transform: translateY(35px) scale(0.95);
-          }
-          60% {
-            opacity: 1;
-            transform: translateY(-5px) scale(1.015);
-          }
-          80% {
-            transform: translateY(1px) scale(0.995);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .anim-elastic-card {
-          animation: elasticCard 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
-        .anim-elastic-left {
-          animation: elasticLeft 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
-        .anim-elastic-bottom {
-          animation: elasticBottom 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        .anim-sleek {
+          animation: sleekFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
 
       {/* 
-        1. ÜST HEADER ALANI (LOGO + AĞ/SUNUCU DURUMU + ŞUBE + KİLİT BUTONU)
+        1. ÜST HEADER ALANI (BÜYÜK LOGO + MOBİLDE ADI/GÖREVİ & KİLİT)
       */}
-      <header className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 py-1">
-        {/* Sol: Logo + Alt Başlık */}
-        <div className="flex items-center gap-3">
+      <header className="w-full flex flex-col md:flex-row md:items-center justify-between gap-2.5 px-1 py-1">
+        {/* Sol: Logo + Alt Slogan */}
+        <div className="flex items-center justify-between md:justify-start gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2">
             {settings.logoUrl || settings.logoDarkUrl ? (
-              <div className="relative h-9 w-36 sm:w-44">
+              <div className="relative h-10 sm:h-12 w-48 sm:w-56">
                 <Image
                   src={settings.logoUrl || settings.logoDarkUrl || ""}
                   alt="Adisyoon"
@@ -418,24 +410,38 @@ export function HomeScreen({
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/30">
-                  <UtensilsCrossedIcon className="size-5" />
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-500/25">
+                  <UtensilsCrossedIcon className="size-5 sm:size-6" />
                 </div>
-                <span className="text-xl font-black tracking-tight text-gray-900">
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900">
                   {settings.systemName || "AdisyonEx"}
                 </span>
               </div>
             )}
           </div>
 
-          <span className="text-xs font-semibold text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
-            {settings.systemTagline || "Restoran yönetim sistemi"}
-          </span>
+          {/* Mobilde sağ üst: Profil Adı + Görevi + Ekranı Kilitle */}
+          <div className="flex md:hidden items-center gap-1.5">
+            <StaffAccountMenu
+              initialAccount={initialAccount}
+              onActiveAccountChange={setActiveAccount}
+              isMobile={true}
+            />
+
+            <button
+              type="button"
+              onClick={() => setIsLockModalOpen(true)}
+              className="flex size-8 items-center justify-center rounded-full bg-slate-900 text-amber-400 shadow-xs active:scale-90 transition-all cursor-pointer"
+              title="Ekranı Kilitle"
+            >
+              <LockIcon className="size-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Sağ: İnternet Bağlı + Sunucu/Lokal Bağlı + Şube + Kilit + Kullanıcı */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+        {/* Masaüstü Rozetler & Profil Alanı */}
+        <div className="hidden md:flex items-center gap-2.5 flex-wrap">
           {/* İnternet Durumu */}
           <div
             className={cn(
@@ -450,7 +456,7 @@ export function HomeScreen({
             <span>{isOnline ? "İnternet Bağlı" : "Bağlantı Yok"}</span>
           </div>
 
-          {/* Sunucu Durumu: İnternet kesilince "Lokal Sunucu", gelince "Sunucu Bağlı" */}
+          {/* Sunucu Durumu */}
           <div
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold shadow-2xs transition-all",
@@ -458,7 +464,7 @@ export function HomeScreen({
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-amber-50 text-amber-700 border-amber-200",
             )}
-            title={isOnline ? "Merkezi Bulut Sunucu Bağlantısı Aktif" : "Yerel Ağ / Lokal Sunucu Modu"}
+            title={isOnline ? "Merkezi Bulut Sunucu Aktif" : "Yerel Ağ / Lokal Sunucu"}
           >
             <ServerIcon className="size-3.5" />
             <span>{isOnline ? "Sunucu Bağlı" : "Lokal Sunucu"}</span>
@@ -484,138 +490,169 @@ export function HomeScreen({
             <span>Ekranı Kilitle</span>
           </button>
 
-          {/* Kullanıcı / Rol */}
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-gray-800 border border-gray-200 text-xs font-extrabold shadow-2xs cursor-default">
-            <UsersIcon className="size-3.5 text-gray-600" />
-            <span>{userName}</span>
-            <span className="text-gray-400 text-[10px]">⌄</span>
+          {/* Personel / Hesap Değiştirici Menüsü */}
+          <StaffAccountMenu
+            initialAccount={initialAccount}
+            onActiveAccountChange={setActiveAccount}
+            isMobile={false}
+          />
+        </div>
+
+        {/* Mobilde 2. Satır: Kompakt Durum Rozetleri */}
+        <div className="flex md:hidden items-center justify-between gap-1.5 overflow-x-auto no-scrollbar pt-1">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                isOnline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-rose-50 text-rose-700 border-rose-200"
+              )}
+            >
+              <WifiIcon className="size-2.5" />
+              <span>{isOnline ? "İnternet" : "Yok"}</span>
+            </span>
+
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                isOnline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              )}
+            >
+              <ServerIcon className="size-2.5" />
+              <span>{isOnline ? "Sunucu Bağlı" : "Lokal Sunucu"}</span>
+            </span>
           </div>
+
+          <span className="text-[10px] font-bold text-gray-500 truncate max-w-[140px]">
+            📍 {displayBranch}
+          </span>
         </div>
       </header>
 
       {/* 
-        2. ANA GÖVDE: SOL PANEL (SAAT & HAVA, OPERASYON, BİLDİRİMLER) + SAĞ 6'LI KART GRID'İ
+        2. ANA GÖVDE: SOL PANEL (SAAT, OPERASYON, BİLDİRİMLER) + SAĞ 2 SÜTUNLU KART GRID'İ
       */}
-      <main className="w-full flex flex-col lg:flex-row gap-5 items-start flex-1">
-        {/* ============================================================ */}
-        {/* SOL PANEL (W-FULL LG:W-[320px])                               */}
-        {/* ============================================================ */}
-        <aside className="w-full lg:w-[320px] xl:w-[340px] shrink-0 flex flex-col gap-4">
-          {/* KART 1: GÜNCEL SAAT & TARİH & CANLI HAVA DURUMU */}
+      <main className="w-full flex flex-col lg:flex-row gap-3.5 sm:gap-5 items-start flex-1">
+        {/* SOL PANEL (W-FULL LG:W-[310px]) */}
+        <aside className="w-full lg:w-[310px] xl:w-[330px] shrink-0 flex flex-col gap-3 sm:gap-4">
+          {/* KART 1: SAAT & CANLI HAVA DURUMU */}
           <div
-            className="anim-elastic-left rounded-3xl p-5 border border-gray-200/90 bg-white shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:border-gray-300"
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex items-center justify-between"
             style={{ animationDelay: "0ms" }}
           >
             <div className="flex flex-col">
-              <span className="text-[11px] font-bold text-gray-500 capitalize tracking-wide">
+              <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 capitalize tracking-wide">
                 {dateStr}
               </span>
-              <span className="text-5xl font-black tracking-tight text-gray-900 tabular-nums mt-1 font-mono">
+              <span className="text-4xl sm:text-5xl font-black tracking-tight text-gray-900 tabular-nums mt-0.5 font-mono">
                 {timeStr}
               </span>
             </div>
 
             <div className="flex flex-col items-end text-right">
               <WeatherIcon iconType={stats.weather.iconType} />
-              <span className="text-xl font-extrabold text-gray-900 mt-1 tabular-nums">
+              <span className="text-lg sm:text-xl font-extrabold text-gray-900 mt-0.5 tabular-nums">
                 {stats.weather.temperature}°
               </span>
-              <span className="text-[11px] font-medium text-gray-500">
+              <span className="text-[10px] sm:text-[11px] font-medium text-gray-500">
                 {stats.weather.description}
               </span>
-              <span className="text-[11px] font-bold text-gray-700 truncate max-w-[130px]">
+              <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate max-w-[120px]">
                 {stats.weather.cityName}
               </span>
             </div>
           </div>
 
-          {/* KART 2: OPERASYON ÖZETİ (FİNANSAL VERİLER YOKTUR - %100 GERÇEK CANLI DB) */}
+          {/* KART 2: OPERASYON ÖZETİ (%100 GERÇEK CANLI DB) */}
           <div
-            className="anim-elastic-left rounded-3xl p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3.5 transition-all hover:shadow-md hover:border-gray-300"
-            style={{ animationDelay: "100ms" }}
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3"
+            style={{ animationDelay: "35ms" }}
           >
             <div className="flex items-center justify-between pb-1 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <TrendingUpIcon className="size-4.5 text-primary" />
-                <h2 className="text-sm font-black text-gray-900">Operasyon Özeti</h2>
+                <TrendingUpIcon className="size-4 text-primary" />
+                <h2 className="text-xs sm:text-sm font-black text-gray-900">Operasyon Özeti</h2>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 Canlı
               </span>
             </div>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2.5">
               {/* Aktif Masalar */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-7.5 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                    <ArmchairIcon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <ArmchairIcon className="size-3.5" />
                   </div>
                   <span className="text-xs font-bold text-gray-700">Aktif Masalar</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 tabular-nums">
+                <span className="text-xs sm:text-sm font-black text-gray-900 tabular-nums">
                   {stats.activeTables}
                 </span>
               </div>
 
               {/* Açık Adisyonlar */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-7.5 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                    <CalculatorIcon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                    <CalculatorIcon className="size-3.5" />
                   </div>
-                  <span className="text-xs font-bold text-gray-700">Açık Adisyonlar</span>
+                  <span className="text-xs font-bold text-gray-700">Açık Adisyon</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 tabular-nums">
+                <span className="text-xs sm:text-sm font-black text-gray-900 tabular-nums">
                   {stats.openOrders}
                 </span>
               </div>
 
               {/* Mutfak Bekleyen */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-7.5 items-center justify-center rounded-xl bg-orange-50 text-orange-600 border border-orange-100">
-                    <ChefHatIcon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-orange-50 text-orange-600 border border-orange-100">
+                    <ChefHatIcon className="size-3.5" />
                   </div>
                   <span className="text-xs font-bold text-gray-700">Mutfak Bekleyen</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 tabular-nums">
+                <span className="text-xs sm:text-sm font-black text-gray-900 tabular-nums">
                   {stats.waitingItems}
                 </span>
               </div>
 
-              {/* Online / Paket Sipariş (CANLI DB VERİSİ) */}
+              {/* Online / Paket Sipariş */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-7.5 items-center justify-center rounded-xl bg-pink-50 text-pink-600 border border-pink-100">
-                    <ShoppingBagIcon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-pink-50 text-pink-600 border border-pink-100">
+                    <ShoppingBagIcon className="size-3.5" />
                   </div>
-                  <span className="text-xs font-bold text-gray-700">Paket & Online</span>
+                  <span className="text-xs font-bold text-gray-700">Paket Sipariş</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 tabular-nums">
+                <span className="text-xs sm:text-sm font-black text-gray-900 tabular-nums">
                   {stats.takeawayOrders}
                 </span>
               </div>
 
               {/* Hazır / Servis Bekleyen */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-7.5 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
-                    <CheckCircle2Icon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+                    <CheckCircle2Icon className="size-3.5" />
                   </div>
-                  <span className="text-xs font-bold text-gray-700">Hazır / Servis</span>
+                  <span className="text-xs font-bold text-gray-700">Hazır Servis</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 tabular-nums">
+                <span className="text-xs sm:text-sm font-black text-gray-900 tabular-nums">
                   {stats.readyItems}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* KART 3: BİLDİRİMLER (TIKLANINCA TAM EKRAN KATEGORİZE MODAL AÇILIR) */}
+          {/* KART 3: BİLDİRİMLER (TIKLANINCA POPUP AÇILIR) */}
           <div
-            className="anim-elastic-left rounded-3xl p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-3 transition-all hover:shadow-md hover:border-gray-300"
-            style={{ animationDelay: "200ms" }}
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col gap-2.5"
+            style={{ animationDelay: "70ms" }}
           >
             <div
               onClick={() => setIsNotifModalOpen(true)}
@@ -623,16 +660,16 @@ export function HomeScreen({
             >
               <div className="flex items-center gap-2">
                 <BellIcon className="size-4 text-gray-700 group-hover:text-primary transition-colors" />
-                <h2 className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">
+                <h2 className="text-xs sm:text-sm font-black text-gray-900 group-hover:text-primary transition-colors">
                   Bildirimler
                 </h2>
               </div>
-              <span className="flex size-5 items-center justify-center rounded-full bg-rose-500 text-white text-[11px] font-black">
+              <span className="flex size-5 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black">
                 {stats.notifications.length}
               </span>
             </div>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-1.5">
               {stats.notifications.slice(0, 3).map((n, i) => (
                 <div
                   key={n.id || i}
@@ -642,14 +679,14 @@ export function HomeScreen({
                   <div className="flex items-center gap-2 min-w-0">
                     <div
                       className={cn(
-                        "flex size-6 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-black",
+                        "flex size-5.5 shrink-0 items-center justify-center rounded-full text-white text-[9px] font-black",
                         n.type === "order"
                           ? "bg-emerald-500"
                           : n.type === "table"
                           ? "bg-blue-500"
                           : n.type === "kitchen"
                           ? "bg-orange-500"
-                          : "bg-rose-500",
+                          : "bg-rose-500"
                       )}
                     >
                       {n.type === "order" ? "S" : n.type === "table" ? "M" : n.type === "kitchen" ? "K" : "!"}
@@ -658,7 +695,7 @@ export function HomeScreen({
                       {n.title}
                     </span>
                   </div>
-                  <span className="text-[11px] font-medium text-gray-400 shrink-0">
+                  <span className="text-[10px] font-medium text-gray-400 shrink-0">
                     {n.timeAgo}
                   </span>
                 </div>
@@ -676,10 +713,8 @@ export function HomeScreen({
           </div>
         </aside>
 
-        {/* ============================================================ */}
-        {/* SAĞ TARAF: 6 TEMEL AKSİYON KARTI (3X2 GRID)                  */}
-        {/* ============================================================ */}
-        <section className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5 sm:gap-5 w-full">
+        {/* SAĞ TARAF: MOBİLDE 2 SÜTUNLU, MASAÜSTÜNDE 3 SÜTUNLU MENÜ KARTLARI */}
+        <section className="flex-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-4.5 w-full">
           {visibleCards.map((card, index) => {
             const Icon = card.icon;
 
@@ -689,63 +724,63 @@ export function HomeScreen({
                 href={card.href}
                 prefetch={true}
                 className={cn(
-                  "anim-elastic-card group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl",
+                  "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl",
                   "border border-gray-200/90 bg-white shadow-xs",
-                  "hover:shadow-xl hover:border-gray-300 hover:-translate-y-1.5 transition-all duration-300",
-                  "active:scale-[0.98] min-h-[260px] sm:min-h-[275px] cursor-pointer",
+                  "hover:shadow-lg hover:border-gray-300 hover:-translate-y-1 transition-all duration-200",
+                  "active:scale-[0.98] min-h-[175px] sm:min-h-[265px] cursor-pointer"
                 )}
                 style={{
-                  animationDelay: `${index * 70 + 60}ms`,
+                  animationDelay: `${index * 35 + 90}ms`,
                 }}
               >
-                {/* 1. Üst Kısım: Rozet Numarası (01, 02, ...) */}
+                {/* 1. Üst: Rozet */}
                 <div className="flex items-center justify-between">
                   <span
                     className={cn(
-                      "inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-black border",
-                      card.badgeColor,
+                      "inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black border",
+                      card.badgeColor
                     )}
                   >
                     {card.badge}
                   </span>
                 </div>
 
-                {/* 2. Orta Kısım: Büyük Dairesel İkon & Başlık */}
-                <div className="flex flex-col items-center justify-center text-center my-auto py-2">
+                {/* 2. Orta: Dairesel İkon & Başlık */}
+                <div className="flex flex-col items-center justify-center text-center my-auto py-1 sm:py-2">
                   <div
                     className={cn(
-                      "flex size-20 sm:size-22 items-center justify-center rounded-full shadow-2xs transition-transform duration-300 group-hover:scale-110",
-                      card.circleBg,
+                      "flex size-13 sm:size-20 items-center justify-center rounded-full shadow-2xs transition-transform duration-200 group-hover:scale-105",
+                      card.circleBg
                     )}
                   >
-                    <Icon className="size-10 sm:size-11" />
+                    <Icon className="size-6.5 sm:size-10" />
                   </div>
 
-                  <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-3.5 group-hover:text-primary transition-colors">
+                  <h3 className="text-sm sm:text-xl font-black text-gray-900 tracking-tight mt-2 sm:mt-3 group-hover:text-primary transition-colors">
                     {card.title}
                   </h3>
 
-                  <p className="text-xs sm:text-sm font-semibold text-gray-500 mt-1 line-clamp-1">
+                  <p className="text-[11px] sm:text-xs font-semibold text-gray-500 mt-0.5 line-clamp-1 hidden sm:block">
                     {card.description}
                   </p>
                 </div>
 
-                {/* 3. Alt Kısım: 2 Kolonlu Canlı Operasyonel Metrikler */}
-                <div className="grid grid-cols-2 gap-2 pt-3 mt-2 border-t border-gray-100 text-center">
+                {/* 3. Alt: 2 Kolonlu Canlı Metrikler */}
+                <div className="grid grid-cols-2 gap-1.5 pt-2 sm:pt-3 mt-1 sm:mt-2 border-t border-gray-100 text-center">
                   <div className="flex flex-col">
-                    <span className={cn("text-base sm:text-lg font-black tabular-nums", card.statLeftColor)}>
+                    <span className={cn("text-xs sm:text-base font-black tabular-nums", card.statLeftColor)}>
                       {card.statLeftValue}
                     </span>
-                    <span className="text-[11px] font-bold text-gray-400">
+                    <span className="text-[9px] sm:text-[11px] font-bold text-gray-400">
                       {card.statLeftLabel}
                     </span>
                   </div>
 
                   <div className="flex flex-col border-l border-gray-100">
-                    <span className={cn("text-base sm:text-lg font-black tabular-nums", card.statRightColor)}>
+                    <span className={cn("text-xs sm:text-base font-black tabular-nums", card.statRightColor)}>
                       {card.statRightValue}
                     </span>
-                    <span className="text-[11px] font-bold text-gray-400">
+                    <span className="text-[9px] sm:text-[11px] font-bold text-gray-400">
                       {card.statRightLabel}
                     </span>
                   </div>
@@ -757,77 +792,52 @@ export function HomeScreen({
       </main>
 
       {/* 
-        3. ALT BAR (SÜPER ADMİN YÖNETİMLİ SİSTEM BİLGİLERİ VE DESTEK FOOTER'I)
+        3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DIŞ LINK YOK, KİLİT YOK)
       */}
       <footer
-        className="anim-elastic-bottom w-full rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-semibold text-gray-600"
-        style={{ animationDelay: "380ms" }}
+        className="anim-sleek w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-200/90 bg-white shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600"
+        style={{ animationDelay: "280ms" }}
       >
-        {/* Sol: Logo + Sistem Adı & Açıklaması */}
+        {/* Sol: Yatay Sistem Logosu + Slogan */}
         <div className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
-            <UtensilsCrossedIcon className="size-4 text-amber-400" />
-          </div>
-          <div className="flex flex-col">
+          {settings.logoUrl || settings.logoDarkUrl ? (
+            <div className="relative h-7 w-28 sm:w-36">
+              <Image
+                src={settings.logoUrl || settings.logoDarkUrl || ""}
+                alt="Adisyoon"
+                fill
+                className="object-contain object-left"
+              />
+            </div>
+          ) : (
             <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
+                <UtensilsCrossedIcon className="size-3.5 text-amber-400" />
+              </div>
               <span className="text-sm font-black text-gray-900 tracking-tight">
                 {settings.systemName || "AdisyonEx"}
               </span>
-              <span className="px-2 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
-                v2.4 Online
-              </span>
             </div>
-            <span className="text-[11px] text-gray-400 line-clamp-1">
-              {settings.systemTagline || "Yeni Nesil Restoran & POS Otomasyon Platformu"}
-            </span>
-          </div>
-        </div>
-
-        {/* Orta: Telif Hakkı & Resmi Web Sitesi */}
-        <div className="flex items-center gap-3 text-[11px] text-gray-500">
-          <span>{settings.copyrightText || "© 2026 AdisyonEx. Tüm hakları saklıdır."}</span>
-          {settings.websiteUrl && (
-            <>
-              <span className="text-gray-300">·</span>
-              <a
-                href={settings.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
-              >
-                <span>Resmi Web Sitesi</span>
-                <ExternalLinkIcon className="size-3" />
-              </a>
-            </>
           )}
+
+          <span className="text-[11px] text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
+            {settings.systemTagline || "Restoran & POS Yönetim Platformu"}
+          </span>
         </div>
 
-        {/* Sağ: Destek Hattı + Hızlı Ekran Kilitleme */}
-        <div className="flex items-center gap-4">
-          <a
-            href={`tel:${(settings.supportPhone || "+908503099901").replace(/\s+/g, "")}`}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-800 transition-colors shadow-2xs group"
-          >
-            <HeadphonesIcon className="size-4 text-primary group-hover:scale-110 transition-transform" />
-            <div className="flex flex-col text-left">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                Destek Hattı
-              </span>
-              <span className="font-mono font-black text-xs text-gray-900">
-                {settings.supportPhone || "+90 850 309 9901"}
-              </span>
-            </div>
-          </a>
+        {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
+        <div className="text-center text-[11px] text-gray-500">
+          © {currentYear} OXONOM CORP. | {settings.systemName || "AdisyonEx"} Tüm hakları saklıdır.
+        </div>
 
-          <button
-            type="button"
-            onClick={() => setIsLockModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-2xs transition-all active:scale-95 cursor-pointer"
-            title="Terminal Ekranını Kilitle"
-          >
-            <LockIcon className="size-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Kilitle</span>
-          </button>
+        {/* Sağ: www.oxonom.com & Destek Hattı */}
+        <div className="flex items-center gap-4 text-xs font-mono font-bold text-gray-600">
+          <span className="text-gray-500">www.oxonom.com</span>
+
+          <div className="flex items-center gap-1.5 text-gray-700 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200">
+            <HeadphonesIcon className="size-3.5 text-primary" />
+            <span className="text-[11px] font-black">{settings.supportPhone || "+90 850 309 9901"}</span>
+          </div>
         </div>
       </footer>
 
@@ -838,7 +848,7 @@ export function HomeScreen({
         notifications={stats.notifications}
       />
 
-      {/* EKRAN KİLİDİ MODAL (NUMPAD + ŞİFRELEME) */}
+      {/* EKRAN KİLİDİ MODAL */}
       <HomeScreenLockModal
         isLocked={isLockModalOpen}
         onUnlock={() => setIsLockModalOpen(false)}

@@ -22,6 +22,8 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency } from "@/lib/format";
 import type { OrderDTO } from "@/types/order";
 
+import { enqueueOfflineAction } from "@/lib/offline-sync";
+
 const round2 = (n: number): number =>
   Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -52,7 +54,26 @@ export function TableSettleDialog({
       onOpenChange(false);
       onSettled();
     },
-    onError: (message) => toast.error(message),
+    onError: (message) => {
+      if (
+        message.toLowerCase().includes("fetch") ||
+        message.toLowerCase().includes("network") ||
+        (typeof navigator !== "undefined" && !navigator.onLine)
+      ) {
+        // Fallback to offline queue
+        enqueueOfflineAction("settleTable", {
+          orderIds: orders.map((o) => o.id),
+          payments: pay.toPayments(),
+        });
+        toast.success(
+          `Lokal Sunucu: ${tableLabel} masasının ödemesi yerel hafızaya kaydedildi. İnternet bağlandığında otomatik senkronize edilecek.`
+        );
+        onOpenChange(false);
+        onSettled();
+      } else {
+        toast.error(message);
+      }
+    },
   });
 
   const canSettle = pay.covered && !settle.isPending;
@@ -61,10 +82,22 @@ export function TableSettleDialog({
     if (!canSettle) {
       return;
     }
-    settle.execute({
+    const payload = {
       orderIds: orders.map((o) => o.id),
       payments: pay.toPayments(),
-    });
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("settleTable", payload);
+      toast.success(
+        `Lokal Sunucu: ${tableLabel} masasının ödemesi yerel hafızaya kaydedildi. İnternet bağlandığında otomatik senkronize edilecek.`
+      );
+      onOpenChange(false);
+      onSettled();
+      return;
+    }
+
+    settle.execute(payload);
   };
 
   return (

@@ -504,3 +504,20 @@ export function useOfflineSync() {
     syncNow,
   };
 }
+
+export type OfflineAction = OfflineMutation;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function enqueueOfflineAction(
+  type: "settleTable" | "settleOrder",
+  payload: any,
+): void {
+  const actionType: OfflineActionType =
+    type === "settleTable" ? "SETTLE_TABLE" : "SETTLE_ORDER";
+  enqueueOfflineMutation(actionType, payload);
+}
+
+export async function syncOfflineQueue(): Promise<{ syncedCount: number }> {
+  const result = await processOfflineSync();
+  return { syncedCount: result.synced };
+}

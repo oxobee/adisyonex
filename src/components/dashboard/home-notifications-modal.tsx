@@ -10,8 +10,10 @@ import {
   ChevronRightIcon,
   InboxIcon,
   ShoppingBagIcon,
+  Trash2Icon,
   XIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 
@@ -35,16 +37,19 @@ export function HomeNotificationsModal({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"all" | "order" | "table" | "kitchen" | "stock">("all");
+  const [cleared, setCleared] = useState(false);
 
   if (!isOpen) return null;
 
-  const filtered = notifications.filter((n) => {
+  const currentList = cleared ? [] : notifications;
+
+  const filtered = currentList.filter((n) => {
     if (activeTab === "all") return true;
     return n.type === activeTab;
   });
 
   const getCategoryCount = (type: "order" | "table" | "kitchen" | "stock") => {
-    return notifications.filter((n) => n.type === type).length;
+    return currentList.filter((n) => n.type === type).length;
   };
 
   const handleNavigate = (url: string) => {
@@ -116,14 +121,31 @@ export function HomeNotificationsModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-            aria-label="Kapat"
-          >
-            <XIcon className="size-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {currentList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCleared(true);
+                  toast.success("Tüm bildirimler başarıyla temizlendi");
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-xs font-bold text-gray-600 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                title="Tüm Bildirimleri Temizle"
+              >
+                <Trash2Icon className="size-3.5" />
+                <span className="hidden sm:inline">Temizle</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-9 items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+              aria-label="Kapat"
+            >
+              <XIcon className="size-5" />
+            </button>
+          </div>
         </div>
 
         {/* CATEGORY TABS */}
@@ -138,7 +160,7 @@ export function HomeNotificationsModal({
                 : "text-gray-600 hover:bg-gray-200/60"
             )}
           >
-            Tümü ({notifications.length})
+            Tümü ({currentList.length})
           </button>
 
           <button

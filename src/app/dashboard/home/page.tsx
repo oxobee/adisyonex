@@ -257,6 +257,22 @@ export default async function HomePage() {
   }
 
   if (staffCtx) {
+    const [staffRecord] = await Promise.all([
+      prisma.staff
+        .findUnique({
+          where: { id: staffCtx.staffId },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            city: true,
+            state: true,
+            photoUrl: true,
+          },
+        })
+        .catch(() => null),
+    ]);
     const effectiveRoutes = getStaffEffectiveRoutes(
       staffCtx.role,
       staffCtx.allowedRoutes,
@@ -271,7 +287,13 @@ export default async function HomePage() {
         restaurantUsername={null}
         operationalStats={operationalStats}
         restaurantName={restaurantName}
-        userName={staffCtx.name}
+        userName={staffRecord?.name || staffCtx.name}
+        userId={staffCtx.staffId}
+        userPhone={staffRecord?.phone ?? null}
+        userEmail={staffRecord?.email ?? null}
+        userCity={staffRecord?.city ?? null}
+        userState={staffRecord?.state ?? null}
+        userPhotoUrl={staffRecord?.photoUrl ?? null}
       />
     );
   }
@@ -306,6 +328,12 @@ export default async function HomePage() {
       operationalStats={operationalStats}
       restaurantName={restaurantName}
       userName={user?.name || "Yönetici"}
+      userId={managerCtx.userId}
+      userPhone={user?.phone ?? null}
+      userEmail={user?.email ?? null}
+      userCity={null}
+      userState={null}
+      userPhotoUrl={null}
     />
   );
 }
