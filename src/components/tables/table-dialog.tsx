@@ -17,6 +17,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useServerAction } from "@/hooks/use-server-action";
+import { cn } from "@/lib/utils";
 import type { TableDTO } from "@/types/table";
 
 export function TableDialog({
@@ -53,53 +54,124 @@ export function TableDialog({
     save.execute(table ? { ...payload, id: table.id } : payload);
   };
 
+  const QUICK_SEATS = ["2", "4", "6", "8", "10", "12"];
+  const QUICK_SECTIONS = ["Salon", "Bahçe", "Teras", "Balkon", "VIP"];
+
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md rounded-3xl p-6">
         <DialogHeader>
-          <DialogTitle>{table ? "Masayı Düzenle" : "Yeni Masa Ekle"}</DialogTitle>
+          <DialogTitle className="text-lg font-black text-gray-900">
+            {table ? "Masayı Düzenle" : "Yeni Masa Ekle"}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="flex flex-col gap-4">
+
+        <form onSubmit={submit} className="flex flex-col gap-4 mt-1">
           <div className="grid grid-cols-2 gap-3">
             <Field>
-              <FieldLabel htmlFor="t-label">Masa Adı / No</FieldLabel>
+              <FieldLabel htmlFor="t-label" className="text-xs font-bold text-gray-700">
+                Masa Adı / No
+              </FieldLabel>
               <Input
                 id="t-label"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder="Örn: M1, Masa 5"
+                placeholder="Örn: Masa 1"
+                className="rounded-xl"
                 autoFocus
               />
             </Field>
+
             <Field>
-              <FieldLabel htmlFor="t-seats">Kapasite</FieldLabel>
+              <FieldLabel htmlFor="t-seats" className="text-xs font-bold text-gray-700">
+                Kapasite (Kişi)
+              </FieldLabel>
               <Input
                 id="t-seats"
                 inputMode="numeric"
                 value={seats}
                 onChange={(e) => setSeats(e.target.value)}
                 placeholder="4"
+                className="rounded-xl"
               />
             </Field>
           </div>
+
+          {/* Hızlı Kapasite Seçici */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-gray-400 mr-1">Hızlı:</span>
+            {QUICK_SEATS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSeats(s)}
+                className={cn(
+                  "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                  seats === s
+                    ? "bg-blue-600 text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                {s} Kişilik
+              </button>
+            ))}
+          </div>
+
           <Field>
-            <FieldLabel htmlFor="t-section">Bölüm / Alan</FieldLabel>
+            <FieldLabel htmlFor="t-section" className="text-xs font-bold text-gray-700">
+              Bölüm / Alan
+            </FieldLabel>
             <Input
               id="t-section"
               value={section}
               onChange={(e) => setSection(e.target.value)}
               placeholder="Salon, Teras, Bahçe…"
+              className="rounded-xl"
             />
           </Field>
-          <div className="flex items-center gap-2">
+
+          {/* Hızlı Bölüm Seçici */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-gray-400 mr-1">Bölüm:</span>
+            {QUICK_SECTIONS.map((sec) => (
+              <button
+                key={sec}
+                type="button"
+                onClick={() => setSection(sec)}
+                className={cn(
+                  "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                  section === sec
+                    ? "bg-slate-900 text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                {sec}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2.5 pt-2 border-t border-gray-100">
             <Switch id="t-active" checked={isActive} onCheckedChange={setIsActive} />
-            <label htmlFor="t-active" className="text-sm">
-              Müşteri oturumuna açık (Aktif)
+            <label htmlFor="t-active" className="text-xs font-bold text-gray-700 cursor-pointer">
+              Müşteri oturumuna ve siparişe açık (Aktif)
             </label>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={save.isPending || !label.trim()}>
-              {save.isPending ? "Kaydediliyor…" : "Kaydet"}
+
+          <DialogFooter className="mt-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => onOpenChange(false)}
+            >
+              Vazgeç
+            </Button>
+            <Button
+              type="submit"
+              className="rounded-xl font-bold"
+              disabled={save.isPending || !label.trim()}
+            >
+              {save.isPending ? "Kaydediliyor…" : table ? "Güncelle" : "Masa Ekle"}
             </Button>
           </DialogFooter>
         </form>

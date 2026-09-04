@@ -106,15 +106,6 @@ export function DashboardView({
               Bu Ay
             </button>
           </div>
-
-          {/* Ana Ekrana Dön Butonu */}
-          <Link
-            href="/dashboard/home"
-            className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white transition-all shadow-md shadow-red-600/30 cursor-pointer select-none"
-            title="Ana Ekrana Dön"
-          >
-            <XIcon className="size-4.5 text-white stroke-[2.5]" />
-          </Link>
         </div>
       </header>
 

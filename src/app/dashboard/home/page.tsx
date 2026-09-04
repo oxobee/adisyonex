@@ -235,7 +235,7 @@ export default async function HomePage() {
       // 3. ÖNCELİKLİ: Mutfaktan Yeni Çıkan Hazır Ürünler (PREPARED)
       for (const item of preparedItemsList) {
         const tableTxt =
-          item.order.table?.label || item.order.tableLabel || `#${item.order.orderNumber}`;
+          item.order?.table?.label || item.order?.tableLabel || `#${item.order?.orderNumber || ""}`;
         notifications.push({
           id: `prep-${item.id}`,
           type: "kitchen",
