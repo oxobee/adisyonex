@@ -29,6 +29,8 @@ import { toast } from "sonner";
 import { deliverTableOrdersAction, voidOrderAction } from "@/actions/order.actions";
 import { PackagedDeliveryDialog } from "@/components/waiter/packaged-delivery-dialog";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
+import { TableCarousel } from "@/components/orders/table-carousel";
+import { TableActionWorkbench } from "@/components/orders/table-action-workbench";
 import { TableBillModal } from "@/components/orders/table-bill-modal";
 import { TableCard, type TableStatus } from "@/components/orders/table-card";
 import { TableDetailModal } from "@/components/orders/table-detail-modal";
@@ -479,75 +481,81 @@ export function OrdersBoard({
     return { empty, occupied, total: tables.length, billCount };
   }, [tables, ordersByTableId]);
 
-  const selectedTable = useMemo(
-    () => tables.find((t) => t.id === selectedTableId) ?? null,
-    [tables, selectedTableId],
+  const currentTable = useMemo(() => {
+    if (selectedTableId) {
+      const found = tables.find((t) => t.id === selectedTableId);
+      if (found) return found;
+    }
+    return filteredTables[0] ?? tables[0] ?? null;
+  }, [tables, filteredTables, selectedTableId]);
+
+  const selectedTable = currentTable;
+
+  const currentTableOrders = useMemo(
+    () => (currentTable ? ordersByTableId.get(currentTable.id) ?? [] : []),
+    [ordersByTableId, currentTable],
   );
 
-  const selectedTableOrders = useMemo(
-    () => (selectedTableId ? ordersByTableId.get(selectedTableId) ?? [] : []),
-    [ordersByTableId, selectedTableId],
-  );
+  const selectedTableOrders = currentTableOrders;
 
-  const selectedTableTotal = useMemo(
+  const currentTableTotal = useMemo(
     () =>
       round2(
-        selectedTableOrders.reduce(
+        currentTableOrders.reduce(
           (sum, o) => sum + orderRunningTotal(o),
           0,
         ),
       ),
-    [selectedTableOrders],
+    [currentTableOrders],
   );
 
-  const selectedTableHasBill = useMemo(
-    () => selectedTableOrders.some((o) => o.billRequestedAt !== null),
-    [selectedTableOrders],
-  );
+  const selectedTableTotal = currentTableTotal;
 
-  const selectedTableFirstOrderAt = useMemo(
+  const currentTableFirstOrderAt = useMemo(
     () =>
-      selectedTableOrders.length > 0 ? selectedTableOrders[0].createdAt : null,
-    [selectedTableOrders],
+      currentTableOrders.length > 0 ? currentTableOrders[0].createdAt : null,
+    [currentTableOrders],
   );
+
+  const selectedTableFirstOrderAt = currentTableFirstOrderAt;
 
   const selectedTableStatus: TableStatus =
-    selectedTableOrders.length > 0 ? "OCCUPIED" : "EMPTY";
+    currentTableOrders.length > 0 ? "OCCUPIED" : "EMPTY";
 
-  // Handlers for selected table actions
+  // Handlers for table actions (keep selection intact)
   const handlePrintBill = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setPrintBillTable({ table: t, orders: ords });
   };
 
   const handleAddProduct = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setPosModalTable({ table: t, orders: ords });
   };
 
   const handleSettle = (t: TableDTO, ords: readonly OrderDTO[]) => {
     if (ords.length === 0) return;
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setSettleTableModal({ table: t, orders: ords });
   };
 
   const handleTransfer = (t: TableDTO) => {
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setTransferDialog({ table: t, mode: "TRANSFER" });
   };
 
   const handleMerge = (t: TableDTO) => {
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setTransferDialog({ table: t, mode: "MERGE" });
   };
 
   const handleViewDetails = (t: TableDTO, ords: readonly OrderDTO[]) => {
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setDetailModalTable({ table: t, orders: ords });
   };
 
   const handleVoid = (t: TableDTO) => {
-    setSelectedTableId(null);
+    setSelectedTableId(t.id);
     setVoidConfirmTable(t);
   };
 
@@ -613,39 +621,6 @@ export function OrdersBoard({
           animation: elasticSlideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
-      {/* MODERN POS SLIDE-OVER DRAWER (RIGHT DOCKED, ELASTIC ENTRY, CRISP ZERO-BLUR BACKDROP) */}
-      {selectedTable && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Crisp, non-blurry subtle backdrop for click-away */}
-          <div
-            className="fixed inset-0 bg-black/25 dark:bg-black/50 transition-opacity animate-in fade-in duration-200 cursor-pointer"
-            onClick={() => setSelectedTableId(null)}
-          />
-
-          {/* Desktop Right Slide-Over / Mobile Bottom Sheet */}
-          <div className="fixed inset-x-0 bottom-0 sm:inset-y-0 sm:right-0 sm:left-auto max-w-full flex justify-end z-50 pointer-events-auto h-auto sm:h-full">
-            <div className="w-full sm:w-[420px] flex flex-col h-full max-h-[92vh] sm:max-h-full shadow-2xl animate-in slide-in-from-bottom sm:animate-drawer-elastic-right">
-              <TableActionMenu
-                table={selectedTable}
-                orders={selectedTableOrders}
-                total={selectedTableTotal}
-                status={selectedTableStatus}
-                firstOrderAt={selectedTableFirstOrderAt}
-                hasBillRequest={selectedTableHasBill}
-                onClose={() => setSelectedTableId(null)}
-                onPrintBill={() => handlePrintBill(selectedTable, selectedTableOrders)}
-                onAddProduct={() => handleAddProduct(selectedTable, selectedTableOrders)}
-                onSettleBill={() => handleSettle(selectedTable, selectedTableOrders)}
-                onTransferTable={() => handleTransfer(selectedTable)}
-                onMergeTable={() => handleMerge(selectedTable)}
-                onViewDetails={() => handleViewDetails(selectedTable, selectedTableOrders)}
-                onVoidTable={() => handleVoid(selectedTable)}
-                onDeliverTable={() => handleDeliverTable(selectedTable.id)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* TOP HEADER & ACTION BAR */}
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -720,252 +695,40 @@ export function OrdersBoard({
       ) : null}
 
       {/* ---------------------------------------------------- */}
-      {/* 1. MASA PLANI (VISUAL TABLE GRID WITH SPOTLIGHT)     */}
+      {/* 1. MASA PLANI (3D COVERFLOW & SABİT MASA İŞLEM MENÜSÜ) */}
       {/* ---------------------------------------------------- */}
       {viewMode === "TABLE_GRID" && (
-        <div className="flex flex-col gap-4">
-          {/* Salon / Section Tabs & Status Pill Summary */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Salon / Bölüm Chips */}
-            <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setSelectedSection("ALL")}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all select-none cursor-pointer",
-                  selectedSection === "ALL"
-                    ? "border-primary bg-primary text-primary-foreground shadow-xs scale-102"
-                    : "border-border/70 bg-card text-muted-foreground hover:bg-muted",
-                )}
-              >
-                <span>🏢</span>
-                <span>Tüm Masalar</span>
-                <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px]">
-                  {tables.length}
-                </span>
-              </button>
+        <div className="flex flex-col gap-6 w-full">
+          {/* 3D Coverflow Table Carousel & Search Bar & Salon Chips */}
+          <TableCarousel
+            tables={filteredTables}
+            ordersByTableId={ordersByTableId}
+            selectedTableId={currentTable?.id ?? null}
+            onSelectTable={(tableId) => setSelectedTableId(tableId)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sections={sections}
+            selectedSection={selectedSection}
+            onSelectSection={setSelectedSection}
+          />
 
-              {sections.map((sec) => {
-                const count = tables.filter((t) => t.section === sec).length;
-                return (
-                  <button
-                    key={sec}
-                    type="button"
-                    onClick={() => setSelectedSection(sec)}
-                    className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all select-none cursor-pointer",
-                      selectedSection === sec
-                        ? "border-primary bg-primary text-primary-foreground shadow-xs scale-102"
-                        : "border-border/70 bg-card text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    <span>{sec}</span>
-                    <span className="rounded-full bg-muted px-1.5 py-0.2 text-[10px]">
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Quick Status Legend / Counters */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 text-emerald-700 dark:text-emerald-400 font-bold">
-                <span className="size-2 rounded-full bg-emerald-500" />
-                <span>{tableStats.empty} Boş</span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-2.5 py-1 text-rose-700 dark:text-rose-400 font-bold">
-                <span className="size-2 rounded-full bg-rose-500 animate-pulse" />
-                <span>{tableStats.occupied} Dolu</span>
-              </div>
-              {tableStats.billCount > 0 && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-amber-800 dark:text-amber-300 font-black animate-bounce">
-                  <span>🚨</span>
-                  <span>{tableStats.billCount} Hesap İstendi</span>
-                </div>
-              )}
-
-              {/* Masa Oturma Süresi Gösterge Lejantı */}
-              <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-muted/60 border border-border/70 px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
-                <span className="text-[10px] uppercase font-black text-foreground mr-0.5">Süre:</span>
-                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Yeni Masa">
-                  <span className="size-2 rounded-full bg-emerald-500" />
-                  &lt;20dk
-                </span>
-                <span className="text-border">·</span>
-                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400" title="Orta Süre">
-                  <span className="size-2 rounded-full bg-amber-400" />
-                  20-45dk
-                </span>
-                <span className="text-border">·</span>
-                <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400" title="Uzun Süre">
-                  <span className="size-2 rounded-full bg-orange-500" />
-                  45-75dk
-                </span>
-                <span className="text-border">·</span>
-                <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400" title="Çok Uzun Süre">
-                  <span className="size-2 rounded-full bg-rose-500 animate-pulse" />
-                  &gt;75dk
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Search Bar & Subtle Sorting Filter */}
-          <div className="flex items-center gap-2 max-w-md w-full">
-            <div className="relative flex-1">
-              <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Masa adı veya salon ile ara…"
-                className="h-10 rounded-xl pl-9 text-xs"
+          {/* Sabit Masa İşlem Menüsü (Fixed POS Workbench) */}
+          {currentTable && (
+            <div className="w-full mt-1 animate-in fade-in slide-in-from-bottom-3 duration-300">
+              <TableActionWorkbench
+                table={currentTable}
+                orders={currentTableOrders}
+                total={currentTableTotal}
+                firstOrderAt={currentTableFirstOrderAt}
+                onPrintBill={() => handlePrintBill(currentTable, currentTableOrders)}
+                onAddProduct={() => handleAddProduct(currentTable, currentTableOrders)}
+                onSettleBill={() => handleSettle(currentTable, currentTableOrders)}
+                onTransferTable={() => handleTransfer(currentTable)}
+                onMergeTable={() => handleMerge(currentTable)}
+                onViewDetails={() => handleViewDetails(currentTable, currentTableOrders)}
+                onVoidTable={() => handleVoid(currentTable)}
+                onDeliverTable={() => handleDeliverTable(currentTable.id)}
               />
-            </div>
-
-            {/* Discreet Sort Filter Icon Button */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsSortMenuOpen((prev) => !prev)}
-                className={cn(
-                  "flex size-10 items-center justify-center rounded-xl border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-2xs cursor-pointer",
-                  sortMode !== "NAME_ASC" && "border-primary/50 text-primary bg-primary/10",
-                )}
-                title="Sıralama Seçenekleri"
-                aria-label="Masaları Sırala"
-              >
-                <ArrowUpDownIcon className="size-4" />
-              </button>
-
-              {isSortMenuOpen && (
-                <div
-                  className="absolute right-0 top-full mt-1.5 w-52 z-30 overflow-hidden rounded-2xl border border-border bg-popover/95 p-1 text-popover-foreground shadow-xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150"
-                  onMouseLeave={() => setIsSortMenuOpen(false)}
-                >
-                  <p className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-muted-foreground border-b border-border/50">
-                    Masa Sıralama
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortMode("NAME_ASC");
-                      setIsSortMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
-                      sortMode === "NAME_ASC" && "text-primary font-black bg-primary/10",
-                    )}
-                  >
-                    <span>Masa Numarası (1 → 9)</span>
-                    {sortMode === "NAME_ASC" && <CheckIcon className="size-3.5 text-primary" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortMode("NAME_DESC");
-                      setIsSortMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
-                      sortMode === "NAME_DESC" && "text-primary font-black bg-primary/10",
-                    )}
-                  >
-                    <span>Masa Numarası (9 → 1)</span>
-                    {sortMode === "NAME_DESC" && <CheckIcon className="size-3.5 text-primary" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortMode("OCCUPIED_FIRST");
-                      setIsSortMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
-                      sortMode === "OCCUPIED_FIRST" && "text-primary font-black bg-primary/10",
-                    )}
-                  >
-                    <span>Önce Dolu Masalar</span>
-                    {sortMode === "OCCUPIED_FIRST" && <CheckIcon className="size-3.5 text-primary" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortMode("EMPTY_FIRST");
-                      setIsSortMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors cursor-pointer text-left",
-                      sortMode === "EMPTY_FIRST" && "text-primary font-black bg-primary/10",
-                    )}
-                  >
-                    <span>Önce Boş Masalar</span>
-                    {sortMode === "EMPTY_FIRST" && <CheckIcon className="size-3.5 text-primary" />}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* TABLE GRID */}
-          {filteredTables.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed p-12 text-center">
-              <UtensilsIcon className="size-10 text-muted-foreground/50 mb-2" />
-              <p className="font-bold text-foreground text-sm">Masa bulunamadı</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Lütfen filtrelerinizi kontrol edin veya yeni masa tanımlayın.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4">
-              {filteredTables.map((table, index) => {
-                const tableOrders = ordersByTableId.get(table.id) ?? [];
-                const isOccupied = tableOrders.length > 0;
-                const total = round2(
-                  tableOrders.reduce((sum, o) => sum + orderRunningTotal(o), 0),
-                );
-                const hasBill = tableOrders.some((o) => o.billRequestedAt !== null);
-                const waiterCallOrder = tableOrders.find((o) => o.note?.includes("GARSON"));
-                const hasWaiterCall = Boolean(waiterCallOrder);
-                const firstOrderAt =
-                  tableOrders.length > 0 ? tableOrders[0].createdAt : null;
-
-                const status: TableStatus = isOccupied ? "OCCUPIED" : "EMPTY";
-
-                return (
-                  <div
-                    key={table.id}
-                    className="relative animate-table-card-elastic fill-mode-both"
-                    style={{
-                      animationDelay: `${index * 26}ms`,
-                    }}
-                  >
-                    <TableCard
-                      table={table}
-                      status={status}
-                      total={total}
-                      orders={tableOrders}
-                      firstOrderAt={firstOrderAt}
-                      hasBillRequest={hasBill}
-                      hasWaiterCall={hasWaiterCall}
-                      onDismissWaiterCall={
-                        waiterCallOrder
-                          ? () => handleDismissWaiterCall(waiterCallOrder.id)
-                          : undefined
-                      }
-                      isSelected={selectedTableId === table.id}
-                      onClick={() => {
-                        setSelectedTableId((prev) => (prev === table.id ? null : table.id));
-                      }}
-                      onDeliver={() => handleDeliverTable(table.id)}
-                    />
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>
