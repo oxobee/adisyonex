@@ -592,39 +592,39 @@ export function OrdersBoard({
           animation: tableCardElasticIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
 
-        @keyframes elasticSlideInLeft {
+        @keyframes elasticSlideInRight {
           0% {
             opacity: 0;
-            transform: translateX(-100%) scale(0.95);
+            transform: translateX(100%) scale(0.96);
           }
           60% {
             opacity: 1;
-            transform: translateX(12px) scale(1.012);
+            transform: translateX(-10px) scale(1.008);
           }
           85% {
-            transform: translateX(-3px) scale(0.996);
+            transform: translateX(2px) scale(0.998);
           }
           100% {
             opacity: 1;
             transform: translateX(0) scale(1);
           }
         }
-        .animate-drawer-elastic-left {
-          animation: elasticSlideInLeft 0.45s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+        .animate-drawer-elastic-right {
+          animation: elasticSlideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
-      {/* MODERN POS SLIDE-OVER DRAWER (LEFT DOCKED, ELASTIC ENTRY, CRISP ZERO-BLUR BACKDROP) */}
+      {/* MODERN POS SLIDE-OVER DRAWER (RIGHT DOCKED, ELASTIC ENTRY, CRISP ZERO-BLUR BACKDROP) */}
       {selectedTable && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Crisp, non-blurry subtle backdrop for click-away */}
           <div
-            className="fixed inset-0 bg-black/25 dark:bg-black/45 transition-opacity animate-in fade-in duration-200 cursor-pointer"
+            className="fixed inset-0 bg-black/25 dark:bg-black/50 transition-opacity animate-in fade-in duration-200 cursor-pointer"
             onClick={() => setSelectedTableId(null)}
           />
 
-          {/* Desktop Left Slide-Over / Mobile Bottom Sheet */}
-          <div className="fixed inset-x-0 bottom-0 sm:inset-y-0 sm:left-0 sm:right-auto max-w-full flex z-50 pointer-events-auto">
-            <div className="w-full sm:w-[380px] flex flex-col h-auto sm:h-full shadow-2xl animate-in slide-in-from-bottom sm:animate-drawer-elastic-left">
+          {/* Desktop Right Slide-Over / Mobile Bottom Sheet */}
+          <div className="fixed inset-x-0 bottom-0 sm:inset-y-0 sm:right-0 sm:left-auto max-w-full flex justify-end z-50 pointer-events-auto h-auto sm:h-full">
+            <div className="w-full sm:w-[420px] flex flex-col h-full max-h-[92vh] sm:max-h-full shadow-2xl animate-in slide-in-from-bottom sm:animate-drawer-elastic-right">
               <TableActionMenu
                 table={selectedTable}
                 orders={selectedTableOrders}

@@ -147,11 +147,11 @@ export function TableActionMenu({
     <aside
       aria-label={`${table.label} İşlemleri`}
       className={cn(
-        "relative flex w-full flex-col bg-card text-card-foreground border-border shadow-2xl",
-        // Desktop: Left slide-over drawer (380px golden ratio)
-        "sm:w-[380px] sm:h-full sm:border-r sm:border-l-0 sm:max-h-none sm:rounded-none sm:shadow-[10px_0_30px_rgba(0,0,0,0.12)]",
+        "relative flex w-full flex-col bg-card text-card-foreground border-border shadow-2xl overflow-hidden",
+        // Desktop: Right slide-over drawer (420px comfortable width)
+        "sm:w-[420px] sm:h-full sm:border-l sm:border-r-0 sm:border-y-0 sm:rounded-none sm:shadow-[-12px_0_35px_rgba(0,0,0,0.15)]",
         // Mobile: Bottom sheet
-        "max-h-[88vh] rounded-t-[32px] border-t sm:border-t-0 overflow-hidden",
+        "max-h-[92vh] rounded-t-[32px] border-t sm:border-t-0",
         "animate-in fade-in duration-200",
       )}
     >
@@ -161,7 +161,7 @@ export function TableActionMenu({
       </div>
 
       {/* 1. COMPACT UNIFIED HEADER */}
-      <div className="flex items-center justify-between border-b border-border/70 p-4 sm:px-5 sm:py-4 bg-muted/25">
+      <div className="flex items-center justify-between border-b border-border/70 p-4 sm:px-5 sm:py-4 bg-muted/25 shrink-0">
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight leading-none">
@@ -216,7 +216,7 @@ export function TableActionMenu({
           <button
             type="button"
             onClick={onClose}
-            className="size-8 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+            className="size-8.5 rounded-full bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
             title="Kapat"
           >
             <XIcon className="size-4.5" />
@@ -224,40 +224,40 @@ export function TableActionMenu({
         </div>
       </div>
 
-      {/* 2. PRIMARY ACTIONS BAR (UNIFIED, AIRY) */}
-      <div className="p-3.5 sm:px-5 sm:py-3.5 border-b border-border/60 bg-muted/10 flex flex-col gap-2">
+      {/* 2. PRIMARY ACTIONS BAR (SPACIOUS, TOUCH-FRIENDLY) */}
+      <div className="p-3.5 sm:px-5 sm:py-3.5 border-b border-border/60 bg-muted/10 flex flex-col gap-2.5 shrink-0">
         {/* Status / Deliver notification if cooking or ready */}
         {isDeliverable && onDeliverTable ? (
           <button
             type="button"
             onClick={onDeliverTable}
-            className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 rounded-xl h-11 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-[0.98] cursor-pointer"
           >
-            <CheckCircle2Icon className="size-4 shrink-0" />
+            <CheckCircle2Icon className="size-4.5 shrink-0" />
             <span>{canDeliverPackaged && hasCooking ? "Paketli Ürünleri Teslim Et" : "Hazır Siparişleri Teslim Et"}</span>
           </button>
         ) : isOnlyPreparing ? (
-          <div className="flex items-center justify-between rounded-xl px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-700 dark:text-orange-300">
+          <div className="flex items-center justify-between rounded-xl px-4 py-2 bg-orange-500/10 border border-orange-500/20 text-orange-700 dark:text-orange-300">
             <div className="flex items-center gap-2 text-xs font-bold">
-              <ChefHatIcon className="size-3.5 text-orange-500 animate-pulse" />
+              <ChefHatIcon className="size-4 text-orange-500 animate-pulse" />
               <span>Mutfakta Hazırlanıyor</span>
             </div>
-            <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-500/20">Mutfak</span>
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-orange-500/20">Mutfak</span>
           </div>
         ) : null}
 
         {/* Main Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Ürün Ekle */}
           <button
             type="button"
             onClick={onAddProduct}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-black transition-all active:scale-[0.98] cursor-pointer shadow-xs",
+              "flex-1 flex items-center justify-center gap-2 rounded-xl h-11 sm:h-12 px-4 text-xs sm:text-sm font-black transition-all active:scale-[0.98] cursor-pointer shadow-xs",
               "bg-emerald-600 hover:bg-emerald-700 text-white"
             )}
           >
-            <PlusCircleIcon className="size-4 shrink-0" />
+            <PlusCircleIcon className="size-4.5 shrink-0" />
             <span>{isOccupied ? "Ürün Ekle" : "+ Sipariş Başlat"}</span>
           </button>
 
@@ -266,9 +266,9 @@ export function TableActionMenu({
             <button
               type="button"
               onClick={onSettleBill}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-black transition-all active:scale-[0.98] cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-xs"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl h-11 sm:h-12 px-4 text-xs sm:text-sm font-black transition-all active:scale-[0.98] cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-xs"
             >
-              <CreditCardIcon className="size-4 shrink-0" />
+              <CreditCardIcon className="size-4.5 shrink-0" />
               <span>Hesap Al</span>
             </button>
           )}
@@ -277,16 +277,16 @@ export function TableActionMenu({
           <button
             type="button"
             onClick={onPrintBill}
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer shadow-xs"
             title="Fiş / Adisyon Yazdır"
           >
-            <PrinterIcon className="size-4 text-primary" />
+            <PrinterIcon className="size-4.5 text-primary" />
           </button>
         </div>
       </div>
 
       {/* 3. ORDER ITEMS LIST (SPACIOUS, SCROLLABLE) */}
-      <div className="flex-1 overflow-y-auto p-3.5 sm:px-5 sm:py-3.5 flex flex-col gap-2 min-h-40">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:px-5 sm:py-3.5 flex flex-col gap-2">
         <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
           <span className="flex items-center gap-1.5">
             <UtensilsCrossedIcon className="size-3" />
@@ -364,18 +364,18 @@ export function TableActionMenu({
         )}
       </div>
 
-      {/* 4. MANAGEMENT ACTIONS (CLEAN 4-BUTTON GRID AT BOTTOM) */}
-      <div className="p-3 sm:px-5 sm:py-3 border-t border-border/70 bg-card">
-        <div className="grid grid-cols-4 gap-1.5">
+      {/* 4. MANAGEMENT ACTIONS (CLEAN, AIRY 4-BUTTON DOCKED FOOTER) */}
+      <div className="shrink-0 p-3 sm:px-5 sm:py-3.5 border-t border-border/80 bg-card pb-[max(12px,env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-4 gap-2">
           {/* Transfer Table */}
           <button
             type="button"
             disabled={!isOccupied}
             onClick={onTransferTable}
-            className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-[10px] font-bold border border-border/70 bg-muted/20 hover:bg-muted transition-colors active:scale-[0.98] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-foreground"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold border border-border/70 bg-muted/20 hover:bg-muted transition-all active:scale-[0.97] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-foreground shadow-2xs"
             title="Masayı Taşı (Transfer)"
           >
-            <ArrowRightLeftIcon className="size-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+            <ArrowRightLeftIcon className="size-4 text-sky-600 dark:text-sky-400 shrink-0" />
             <span className="truncate">Taşı</span>
           </button>
 
@@ -384,10 +384,10 @@ export function TableActionMenu({
             type="button"
             disabled={!isOccupied}
             onClick={onMergeTable}
-            className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-[10px] font-bold border border-border/70 bg-muted/20 hover:bg-muted transition-colors active:scale-[0.98] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-foreground"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold border border-border/70 bg-muted/20 hover:bg-muted transition-all active:scale-[0.97] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-foreground shadow-2xs"
             title="Masaları Birleştir"
           >
-            <MergeIcon className="size-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+            <MergeIcon className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />
             <span className="truncate">Birleştir</span>
           </button>
 
@@ -395,10 +395,10 @@ export function TableActionMenu({
           <button
             type="button"
             onClick={onViewDetails}
-            className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-[10px] font-bold border border-border/70 bg-muted/20 hover:bg-muted transition-colors active:scale-[0.98] cursor-pointer text-foreground"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold border border-border/70 bg-muted/20 hover:bg-muted transition-all active:scale-[0.97] cursor-pointer text-foreground shadow-2xs"
             title="Adisyon Detayı"
           >
-            <ReceiptIcon className="size-3.5 text-muted-foreground shrink-0" />
+            <ReceiptIcon className="size-4 text-muted-foreground shrink-0" />
             <span className="truncate">Detay</span>
           </button>
 
@@ -407,19 +407,19 @@ export function TableActionMenu({
             <button
               type="button"
               onClick={onVoidTable}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-[10px] font-bold border border-destructive/30 bg-destructive/5 hover:bg-destructive/15 text-destructive transition-colors active:scale-[0.98] cursor-pointer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold border border-destructive/30 bg-destructive/5 hover:bg-destructive/15 text-destructive transition-all active:scale-[0.97] cursor-pointer shadow-2xs"
               title="Masayı Boşalt / İptal Et"
             >
-              <Trash2Icon className="size-3.5 shrink-0" />
+              <Trash2Icon className="size-4 shrink-0" />
               <span className="truncate">Boşalt</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={onClose}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-[10px] font-bold border border-border/70 hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold border border-border/70 hover:bg-muted text-muted-foreground transition-all cursor-pointer shadow-2xs"
             >
-              <XIcon className="size-3.5 shrink-0" />
+              <XIcon className="size-4 shrink-0" />
               <span>Kapat</span>
             </button>
           )}
