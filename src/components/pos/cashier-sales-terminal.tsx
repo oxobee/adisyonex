@@ -232,6 +232,17 @@ export function CashierSalesTerminal({
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, item: MenuItemDTO) => {
     e.dataTransfer.setData("application/json", JSON.stringify(item));
     e.dataTransfer.effectAllowed = "copy";
+    
+    // Always use the whole card element as the drag ghost image
+    const cardEl = e.currentTarget as HTMLElement;
+    if (cardEl && e.dataTransfer.setDragImage) {
+      const rect = cardEl.getBoundingClientRect();
+      // Center the drag image on pointer or use standard 40px offset
+      const offsetX = Math.min(e.clientX - rect.left, rect.width / 2);
+      const offsetY = Math.min(e.clientY - rect.top, 50);
+      e.dataTransfer.setDragImage(cardEl, offsetX, offsetY);
+    }
+
     setDraggedItem(item);
   };
 
@@ -624,11 +635,13 @@ export function CashierSalesTerminal({
                         </div>
 
                         {primaryImage ? (
-                          <div className="relative w-full h-full flex items-center justify-center">
+                          <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
                             <img
                               src={primaryImage}
                               alt={item.name}
-                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                              draggable={false}
+                              onDragStart={(e) => e.preventDefault()}
+                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 pointer-events-none select-none"
                             />
                           </div>
                         ) : (
