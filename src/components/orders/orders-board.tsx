@@ -277,6 +277,16 @@ export function OrdersBoard({
     return Array.from(set);
   }, [tables]);
 
+  const occupiedTablesCount = useMemo(() => {
+    return tables.filter((t) => (ordersByTableId.get(t.id) ?? []).length > 0).length;
+  }, [tables, ordersByTableId]);
+
+  const emptyTablesCount = Math.max(0, tables.length - occupiedTablesCount);
+
+  const totalActiveRevenue = useMemo(() => {
+    return openOrders.reduce((sum, o) => sum + orderRunningTotal(o), 0);
+  }, [openOrders]);
+
   // Track bill requests & announce new orders
   useEffect(() => {
     const toSignatures = (ords: readonly OrderDTO[]) =>
@@ -688,22 +698,50 @@ export function OrdersBoard({
       {/* ---------------------------------------------------- */}
       {viewMode === "TABLE_GRID" && (
         <div className="flex flex-col gap-5 w-full">
-          {/* Top Search & Material Segmented Filter Pills */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full max-w-5xl mx-auto">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md w-full">
-              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Masa adı veya salon ara…"
-                className="w-full h-11 pl-10 pr-4 rounded-full bg-card/90 dark:bg-card/70 border border-border/80 text-foreground text-xs sm:text-sm font-medium placeholder:text-muted-foreground shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-primary/40 transition-colors"
-              />
+          {/* Top Search & Filter Bar across full width */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 w-full">
+            {/* Left: Search Input & Quick Live Indicators */}
+            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Masa adı veya salon ara…"
+                  className="w-full h-11 pl-10 pr-9 rounded-full bg-card/90 dark:bg-card/70 border border-border/80 text-foreground text-xs sm:text-sm font-medium placeholder:text-muted-foreground shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-primary/40 transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 size-5 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <XIcon className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Live Indicators (SaaS Style) */}
+              <div className="flex items-center gap-2 shrink-0 text-xs font-semibold">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-2xs">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span>{emptyTablesCount} Boş</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 shadow-2xs">
+                  <span className="size-2 rounded-full bg-rose-500 animate-pulse" />
+                  <span>{occupiedTablesCount} Dolu</span>
+                </span>
+                {totalActiveRevenue > 0 && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-2xs font-bold tabular-nums">
+                    <span>Açık Masa Cirosu: {formatCurrency(totalActiveRevenue)}</span>
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Material Segmented Salon Pills (like Day | Week | Month in reference image) */}
-            <div className="no-scrollbar flex items-center p-1 bg-muted/70 dark:bg-muted/30 rounded-full border border-border/70 overflow-x-auto shadow-2xs">
+            {/* Right: Salon Segmented Pills */}
+            <div className="no-scrollbar flex items-center p-1 bg-muted/70 dark:bg-muted/30 rounded-full border border-border/70 overflow-x-auto shadow-2xs shrink-0">
               <button
                 type="button"
                 onClick={() => setSelectedSection("ALL")}
@@ -736,7 +774,7 @@ export function OrdersBoard({
             </div>
           </div>
 
-          {/* MATERIAL TABLE CARDS GRID (2 COLUMNS ON MOBILE, LIKE REFERENCE IMAGE) */}
+          {/* MATERIAL TABLE CARDS GRID (FULL-WIDTH SPATIAL CANVAS WITH COMFORTABLE RESPONSIVE COLUMNS) */}
           {filteredTables.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-border/80 bg-muted/10 w-full max-w-md mx-auto my-8">
               <SparklesIcon className="size-8 text-muted-foreground/60 mb-2" />
@@ -746,14 +784,14 @@ export function OrdersBoard({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5 w-full max-w-5xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4.5 lg:gap-5 w-full">
               {filteredTables.map((table, idx) => {
                 const tableOrders = ordersByTableId.get(table.id) ?? [];
                 return (
                   <div
                     key={table.id}
                     className="animate-in fade-in-0 zoom-in-95 duration-200"
-                    style={{ animationDelay: `${idx * 20}ms` }}
+                    style={{ animationDelay: `${idx * 15}ms` }}
                   >
                     <MaterialTableCard
                       table={table}
