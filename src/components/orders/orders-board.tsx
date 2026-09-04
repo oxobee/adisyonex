@@ -592,37 +592,25 @@ export function OrdersBoard({
           animation: tableCardElasticIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
       `}</style>
-      {/* SPOTLIGHT GLASSMORPHISM BACKDROP & CRISP ACTION MODAL */}
+      {/* MODERN POS SLIDE-OVER DRAWER (CRISP BACKGROUND, ZERO BLUR) */}
       {selectedTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          {/* Glass Blur Backdrop */}
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Crisp, subtle non-blurry backdrop for click-away */}
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200 cursor-pointer"
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 transition-opacity animate-in fade-in duration-200 cursor-pointer"
             onClick={() => setSelectedTableId(null)}
           />
 
-          {/* Centered Spotlight Card & Crisp Action Menu */}
-          <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-center gap-4 sm:gap-6 w-full max-w-2xl my-auto animate-in zoom-in-95 fade-in duration-200">
-            {/* Live Table Card Highlight */}
-            <div className="w-64 max-w-full shrink-0 shadow-2xl">
-              <TableCard
-                table={selectedTable}
-                status={selectedTableStatus}
-                total={selectedTableTotal}
-                orders={selectedTableOrders}
-                firstOrderAt={selectedTableFirstOrderAt}
-                hasBillRequest={selectedTableHasBill}
-                isSelected={true}
-                onClick={() => setSelectedTableId(null)}
-                onDeliver={() => handleDeliverTable(selectedTable.id)}
-              />
-            </div>
-
-            {/* Crisp Action Menu (Above blur, 100% sharp) */}
-            <div className="w-full max-w-sm shrink-0 shadow-2xl">
+          {/* Desktop Right Slide-Over / Mobile Bottom Sheet */}
+          <div className="fixed inset-x-0 bottom-0 sm:inset-y-0 sm:right-0 sm:left-auto max-w-full flex z-50 pointer-events-auto">
+            <div className="w-full sm:w-[420px] flex flex-col h-auto sm:h-full shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-right duration-300 ease-out">
               <TableActionMenu
                 table={selectedTable}
                 orders={selectedTableOrders}
+                total={selectedTableTotal}
+                status={selectedTableStatus}
+                firstOrderAt={selectedTableFirstOrderAt}
+                hasBillRequest={selectedTableHasBill}
                 onClose={() => setSelectedTableId(null)}
                 onPrintBill={() => handlePrintBill(selectedTable, selectedTableOrders)}
                 onAddProduct={() => handleAddProduct(selectedTable, selectedTableOrders)}
@@ -948,7 +936,7 @@ export function OrdersBoard({
                           ? () => handleDismissWaiterCall(waiterCallOrder.id)
                           : undefined
                       }
-                      isSelected={false}
+                      isSelected={selectedTableId === table.id}
                       onClick={() => {
                         setSelectedTableId(table.id);
                       }}

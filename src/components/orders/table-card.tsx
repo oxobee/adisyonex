@@ -229,9 +229,9 @@ function TableCardComponent({
         // Bill Request Alarm Animation:
         hasBillRequest &&
           "ring-4 ring-amber-400 ring-offset-2 ring-offset-background animate-pulse shadow-xl shadow-amber-500/40",
-        // Spotlight Selected State:
+        // Active Selected Table State:
         isSelected &&
-          "ring-4 ring-white/95 shadow-2xl scale-102",
+          "ring-4 ring-primary ring-offset-2 ring-offset-background shadow-2xl scale-[1.03] z-20",
       )}
     >
       {/* 
