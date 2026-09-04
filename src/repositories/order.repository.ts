@@ -157,10 +157,16 @@ export const findOrdersForGuest = (
     where: {
       restaurantId,
       deletedAt: null,
-      status: "OPEN",
       OR: [
-        ...(phone ? [{ customerPhone: phone }] : []),
-        { tableId },
+        ...(phone
+          ? [
+              {
+                customerPhone: phone,
+                status: { in: ["OPEN" as const, "COMPLETED" as const] },
+              },
+            ]
+          : []),
+        ...(tableId ? [{ tableId, status: "OPEN" as const }] : []),
       ],
     },
     include: ORDER_INCLUDE,

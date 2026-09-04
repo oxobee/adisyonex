@@ -109,6 +109,8 @@ export function GuestOrderPage({
   qrGreetingTitle = "Bugün Ne Yemek İstersiniz?",
   qrGreetingSubtitle = "Hoş Geldiniz 👋",
   qrHomeSections,
+  wifiSsid,
+  wifiPassword,
 }: {
   readonly username: string;
   readonly tableId: string;
@@ -122,12 +124,15 @@ export function GuestOrderPage({
   readonly initialOrders: readonly GuestOrderSummaryDTO[];
   readonly qrMenuTheme?: string;
   readonly qrPrimaryColor?: string;
+  readonly secondaryColor?: string;
   readonly qrSecondaryColor?: string;
   readonly qrSlidersEnabled?: boolean;
   readonly qrSliders?: readonly QrSliderItem[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
   readonly qrHomeSections?: readonly QrHomeSection[] | null;
+  readonly wifiSsid?: string | null;
+  readonly wifiPassword?: string | null;
 }) {
   const cart = useOrderCart();
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
@@ -417,6 +422,8 @@ export function GuestOrderPage({
         greetingTitle={qrGreetingTitle}
         greetingSubtitle={qrGreetingSubtitle}
         homeSections={qrHomeSections}
+        wifiSsid={wifiSsid}
+        wifiPassword={wifiPassword}
         cartItems={cart.cart}
         cartItemCount={itemCount}
         cartGrandTotal={bill.grandTotal}
@@ -947,6 +954,8 @@ export function GuestOrderPage({
               tableLabel={tableLabel}
               primaryColor={qrPrimaryColor || "#FF5500"}
               secondaryColor={qrSecondaryColor || "#FFF7ED"}
+              wifiSsid={wifiSsid}
+              wifiPassword={wifiPassword}
               activeOrders={myOrders}
               onRequestBill={async () => {
                 await requestBill.execute({ username, tableId });

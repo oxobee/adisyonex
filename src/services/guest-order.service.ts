@@ -122,6 +122,8 @@ export interface GuestOrderPageData {
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
   readonly qrHomeSections?: readonly object[] | null;
+  readonly wifiSsid?: string | null;
+  readonly wifiPassword?: string | null;
 }
 
 export interface EmptyTableDTO {
@@ -236,6 +238,8 @@ export const loadGuestOrderPage = async (
       qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
       qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
       qrHomeSections: (restaurant.qrHomeSections as readonly object[]) ?? null,
+      wifiSsid: restaurant.wifiSsid ?? null,
+      wifiPassword: restaurant.wifiPassword ?? null,
     },
   };
 };

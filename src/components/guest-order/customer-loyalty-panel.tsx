@@ -5,7 +5,9 @@ import Image from "next/image";
 import {
   ArrowLeftIcon,
   CalendarIcon,
+  CheckIcon,
   ChevronRightIcon,
+  CopyIcon,
   HeartIcon,
   KeyRoundIcon,
   LogInIcon,
@@ -20,6 +22,7 @@ import {
   UserIcon,
   UserPlusIcon,
   UtensilsCrossedIcon,
+  WifiIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +53,28 @@ import { guestCallWaiterAction } from "@/actions/guest-order.actions";
 import type { CustomerDTO, CustomerProfileDTO } from "@/services/customer.service";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 
+export interface CountryCodeOption {
+  code: string;
+  prefix: string;
+  name: string;
+  flag: string;
+  maxDigits: number;
+  placeholder: string;
+}
+
+export const COUNTRY_CODES: CountryCodeOption[] = [
+  { code: "TR", prefix: "+90", name: "Türkiye", flag: "🇹🇷", maxDigits: 11, placeholder: "05XX XXX XX XX" },
+  { code: "AZ", prefix: "+994", name: "Azerbaycan", flag: "🇦🇿", maxDigits: 9, placeholder: "50 XXX XX XX" },
+  { code: "DE", prefix: "+49", name: "Almanya", flag: "🇩🇪", maxDigits: 11, placeholder: "151 XXXX XXXX" },
+  { code: "GB", prefix: "+44", name: "İngiltere", flag: "🇬🇧", maxDigits: 10, placeholder: "7XXX XXXXXX" },
+  { code: "US", prefix: "+1", name: "ABD", flag: "🇺🇸", maxDigits: 10, placeholder: "XXX XXX XXXX" },
+  { code: "RU", prefix: "+7", name: "Rusya", flag: "🇷🇺", maxDigits: 10, placeholder: "XXX XXX XX XX" },
+  { code: "FR", prefix: "+33", name: "Fransa", flag: "🇫🇷", maxDigits: 9, placeholder: "6 XX XX XX XX" },
+  { code: "NL", prefix: "+31", name: "Hollanda", flag: "🇳🇱", maxDigits: 9, placeholder: "6 XXXX XXXX" },
+  { code: "SA", prefix: "+966", name: "Suudi Arabistan", flag: "🇸🇦", maxDigits: 9, placeholder: "5X XXX XXXX" },
+  { code: "AE", prefix: "+971", name: "BAE", flag: "🇦🇪", maxDigits: 9, placeholder: "50 XXX XXXX" },
+];
+
 export interface CustomerLoyaltyPanelProps {
   readonly username: string;
   readonly restaurantName: string;
@@ -58,6 +83,8 @@ export interface CustomerLoyaltyPanelProps {
   readonly tableLabel: string;
   readonly primaryColor?: string;
   readonly secondaryColor?: string;
+  readonly wifiSsid?: string | null;
+  readonly wifiPassword?: string | null;
   readonly activeOrders?: readonly GuestOrderSummaryDTO[];
   readonly onRequestBill?: () => Promise<void> | void;
   readonly onCallWaiter?: () => Promise<void> | void;
@@ -74,6 +101,8 @@ export function CustomerLoyaltyPanel({
   tableLabel,
   primaryColor = "#FF5500",
   secondaryColor = "#FFF7ED",
+  wifiSsid,
+  wifiPassword,
   activeOrders = [],
   onRequestBill,
   onCallWaiter,
@@ -81,6 +110,11 @@ export function CustomerLoyaltyPanel({
 }: CustomerLoyaltyPanelProps) {
   // Session storage key for persistent customer login
   const sessionKey = `adisyoon_customer_${username}`;
+
+  // Wi-Fi copied feedback
+  const [wifiCopied, setWifiCopied] = useState(false);
+  // Selected Country for phone input validation
+  const [selectedCountry, setSelectedCountry] = useState<CountryCodeOption>(COUNTRY_CODES[0]);
 
   // Customer Profile State
   const [profile, setProfile] = useState<CustomerProfileDTO | null>(null);
@@ -765,6 +799,18 @@ export function CustomerLoyaltyPanel({
                         <span className="text-[10px] text-zinc-400 font-medium">
                           • {formatDate(ord.createdAt)}
                         </span>
+                        {ord.tableLabel && (
+                          <span
+                            className="px-2 py-0.5 rounded-lg text-[10px] font-black border"
+                            style={{
+                              backgroundColor: secondaryColor,
+                              color: primaryColor,
+                              borderColor: `${primaryColor}30`,
+                            }}
+                          >
+                            🍽️ {ord.tableLabel}
+                          </span>
+                        )}
                       </div>
 
                       {ord.status === "OPEN" ? (
@@ -881,6 +927,69 @@ export function CustomerLoyaltyPanel({
         </button>
       </div>
 
+      {/* WI-FI BİLGİLERİ KARTI */}
+      {(wifiSsid || wifiPassword) && (
+        <div className="bg-white rounded-3xl p-4 border border-zinc-200/80 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="size-9 rounded-2xl flex items-center justify-center text-base shadow-inner shrink-0"
+                style={{ backgroundColor: secondaryColor, color: primaryColor }}
+              >
+                <WifiIcon className="size-4.5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-zinc-400 block uppercase tracking-wider">
+                  Misafir Wi-Fi Ağı
+                </span>
+                <span className="text-xs font-black text-zinc-900">
+                  {wifiSsid || "Restoran İnterneti"}
+                </span>
+              </div>
+            </div>
+
+            {wifiPassword && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(wifiPassword);
+                  setWifiCopied(true);
+                  toast.success("Wi-Fi şifresi panoya kopyalandı!");
+                  setTimeout(() => setWifiCopied(false), 2500);
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer",
+                  wifiCopied
+                    ? "bg-emerald-600 text-white"
+                    : "bg-zinc-100 hover:bg-zinc-200 text-zinc-800"
+                )}
+              >
+                {wifiCopied ? (
+                  <>
+                    <CheckIcon className="size-3.5 stroke-[3]" />
+                    <span>Kopyalandı!</span>
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon className="size-3.5" />
+                    <span>Kopyala</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {wifiPassword && (
+            <div className="flex items-center justify-between bg-zinc-50 rounded-2xl px-3.5 py-2 border border-zinc-100 text-xs">
+              <span className="text-[11px] font-bold text-zinc-500">Wi-Fi Şifresi:</span>
+              <span className="font-mono font-black text-zinc-900 tracking-wider">
+                {wifiPassword}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ============================================================ */}
       {/* 4. ALTTAN AÇILIR HIZLI GİRİŞ YAP (SMS DOĞRULAMA SİMÜLASYONU)  */}
       {/* ============================================================ */}
@@ -917,18 +1026,46 @@ export function CustomerLoyaltyPanel({
                   <SmartphoneIcon className="size-3.5" style={{ color: primaryColor }} />
                   <span>Telefon Numaranız</span>
                 </label>
-                <Input
-                  type="tel"
-                  value={loginPhone}
-                  onChange={(e) => setLoginPhone(e.target.value)}
-                  placeholder="05XX XXX XX XX"
-                  required
-                  autoFocus
-                  className="h-12 rounded-2xl text-xs font-bold border-zinc-200 bg-zinc-50/70"
-                />
-                <span className="text-[11px] text-zinc-400 block">
-                  Telefonunuza tek kullanımlık SMS doğrulama kodu gönderilecektir.
-                </span>
+
+                <div className="flex gap-2">
+                  <select
+                    value={selectedCountry.code}
+                    onChange={(e) => {
+                      const found = COUNTRY_CODES.find((c) => c.code === e.target.value);
+                      if (found) {
+                        setSelectedCountry(found);
+                        setLoginPhone((prev) => prev.slice(0, found.maxDigits));
+                      }
+                    }}
+                    className="h-12 px-2.5 rounded-2xl text-xs font-bold border border-zinc-200 bg-zinc-50/70 shrink-0 outline-none cursor-pointer"
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.prefix}
+                      </option>
+                    ))}
+                  </select>
+
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    value={loginPhone}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      setLoginPhone(digits.slice(0, selectedCountry.maxDigits));
+                    }}
+                    placeholder={selectedCountry.placeholder}
+                    maxLength={selectedCountry.maxDigits}
+                    required
+                    autoFocus
+                    className="h-12 flex-1 rounded-2xl text-xs font-bold border-zinc-200 bg-zinc-50/70"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                  <span>Maksimum {selectedCountry.maxDigits} hane ({selectedCountry.name})</span>
+                  <span className="font-mono">{loginPhone.length}/{selectedCountry.maxDigits}</span>
+                </div>
               </div>
 
               <Button
@@ -1070,17 +1207,45 @@ export function CustomerLoyaltyPanel({
                 <PhoneIcon className="size-3.5" style={{ color: primaryColor }} />
                 <span>İletişim Numaranız (Telefon)</span>
               </label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="05XX XXX XX XX"
-                required
-                className="h-12 rounded-2xl text-xs font-bold border-zinc-200 bg-zinc-50/70"
-              />
-              <span className="text-[10px] text-zinc-400 block">
-                Daha önce kayıt olduysanız telefon numaranızla profiliniz ve geçmişiniz otomatik eşleşir.
-              </span>
+
+              <div className="flex gap-2">
+                <select
+                  value={selectedCountry.code}
+                  onChange={(e) => {
+                    const found = COUNTRY_CODES.find((c) => c.code === e.target.value);
+                    if (found) {
+                      setSelectedCountry(found);
+                      setPhone((prev) => prev.slice(0, found.maxDigits));
+                    }
+                  }}
+                  className="h-12 px-2.5 rounded-2xl text-xs font-bold border border-zinc-200 bg-zinc-50/70 shrink-0 outline-none cursor-pointer"
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.prefix}
+                    </option>
+                  ))}
+                </select>
+
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  value={phone}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setPhone(digits.slice(0, selectedCountry.maxDigits));
+                  }}
+                  placeholder={selectedCountry.placeholder}
+                  maxLength={selectedCountry.maxDigits}
+                  required
+                  className="h-12 flex-1 rounded-2xl text-xs font-bold border-zinc-200 bg-zinc-50/70"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span>Maksimum {selectedCountry.maxDigits} hane ({selectedCountry.name})</span>
+                <span className="font-mono">{phone.length}/{selectedCountry.maxDigits}</span>
+              </div>
             </div>
 
             {/* Doğum Tarihi */}

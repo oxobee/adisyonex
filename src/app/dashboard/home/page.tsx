@@ -41,6 +41,8 @@ export default async function HomePage() {
         recentOrders,
         activeTablesList,
         stockItems,
+        urgentOrders,
+        preparedItemsList,
       ] = await Promise.all([
         prisma.restaurant.findUnique({
           where: { id: restaurantId },
@@ -144,6 +146,49 @@ export default async function HomePage() {
           },
           take: 5,
         }),
+        // Acil Garson Çağrısı ve Hesap İsteme Sorgusu
+        prisma.order.findMany({
+          where: {
+            restaurantId,
+            status: "OPEN",
+            OR: [
+              { note: { contains: "GARSON" } },
+              { billRequestedAt: { not: null } },
+            ],
+          },
+          select: {
+            id: true,
+            orderNumber: true,
+            tableLabel: true,
+            note: true,
+            billRequestedAt: true,
+            createdAt: true,
+            table: { select: { label: true } },
+          },
+          take: 8,
+        }),
+        // Mutfakta Hazır Olan Ürünler
+        prisma.orderItem.findMany({
+          where: {
+            order: { restaurantId, status: "OPEN" },
+            state: "PREPARED",
+          },
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+            order: {
+              select: {
+                id: true,
+                orderNumber: true,
+                tableLabel: true,
+                table: { select: { label: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
       ]);
 
       if (restaurant?.name) {
@@ -156,10 +201,64 @@ export default async function HomePage() {
         restaurant?.city || restaurant?.branchName,
       );
 
-      // Kategorize Edilmiş Gerçek Canlı Bildirimler
+      // Kategorize Edilmiş Gerçek Canlı Bildirimler (Öncelikli)
       const notifications: HomeNotificationItem[] = [];
 
-      // 1. Sipariş Bildirimleri
+      // 1. ÖNCELİKLİ: Garson Çağrıları ([GARSON_CAGIRILDI])
+      const waiterCalls = urgentOrders.filter((o) => o.note?.includes("GARSON"));
+      for (const o of waiterCalls) {
+        const tableTxt = o.table?.label || o.tableLabel || `#${o.orderNumber}`;
+        notifications.push({
+          id: `waiter-${o.id}`,
+          type: "table",
+          title: `🛎️ Masa ${tableTxt} Garson Çağırıyor!`,
+          description: "Müşteri servis personeli bekliyor. Lütfen masaya yönleniniz.",
+          timeAgo: "Acil",
+          targetUrl: "/dashboard/orders",
+        });
+      }
+
+      // 2. ÖNCELİKLİ: Hesap İsteme Bildirimleri (billRequestedAt)
+      const billRequests = urgentOrders.filter((o) => !!o.billRequestedAt);
+      for (const o of billRequests) {
+        const tableTxt = o.table?.label || o.tableLabel || `#${o.orderNumber}`;
+        notifications.push({
+          id: `bill-${o.id}`,
+          type: "order",
+          title: `💳 Masa ${tableTxt} Hesap İstiyor`,
+          description: "Müşteri hesap/pos fişi talep etti, adisyon kapatmaya hazır.",
+          timeAgo: "Hesap",
+          targetUrl: "/dashboard/orders",
+        });
+      }
+
+      // 3. ÖNCELİKLİ: Mutfaktan Yeni Çıkan Hazır Ürünler (PREPARED)
+      for (const item of preparedItemsList) {
+        const tableTxt =
+          item.order.table?.label || item.order.tableLabel || `#${item.order.orderNumber}`;
+        notifications.push({
+          id: `prep-${item.id}`,
+          type: "kitchen",
+          title: `🍽️ ${item.name} Servise Hazır!`,
+          description: `Masa ${tableTxt} için mutfaktan çıktı, masaya teslim ediniz.`,
+          timeAgo: "Hazır",
+          targetUrl: "/dashboard/kitchen",
+        });
+      }
+
+      // 4. Genel Mutfak Hazırlık Özeti Bildirimleri
+      if (waitingItems > 0 && notifications.length < 15) {
+        notifications.push({
+          id: "kitchen-waiting",
+          type: "kitchen",
+          title: `Mutfakta ${waitingItems} Ürün Hazırlanıyor`,
+          description: "KOT fişleri mutfak kuyruğunda beklemede",
+          timeAgo: "Canlı",
+          targetUrl: "/dashboard/kitchen",
+        });
+      }
+
+      // 5. Yeni Gelen Siparişler
       for (const o of recentOrders) {
         const diffMinutes = Math.max(
           1,
@@ -182,7 +281,7 @@ export default async function HomePage() {
         });
       }
 
-      // 2. Masa Bildirimleri
+      // 6. Masa Bildirimleri
       for (const t of activeTablesList) {
         const orderTime = t.orders[0]?.createdAt;
         const diffMinutes = orderTime
@@ -198,29 +297,7 @@ export default async function HomePage() {
         });
       }
 
-      // 3. Mutfak Bildirimleri
-      if (waitingItems > 0) {
-        notifications.push({
-          id: "kitchen-waiting",
-          type: "kitchen",
-          title: `Mutfakta ${waitingItems} Ürün Hazırlanıyor`,
-          description: "KOT fişleri mutfak kuyruğunda beklemede",
-          timeAgo: "Canlı",
-          targetUrl: "/dashboard/kitchen",
-        });
-      }
-      if (readyItems > 0) {
-        notifications.push({
-          id: "kitchen-ready",
-          type: "kitchen",
-          title: `${readyItems} Ürün Servise Hazır`,
-          description: "Mutfak hazırlığı tamamlandı, garson teslim alabilir",
-          timeAgo: "Hemen",
-          targetUrl: "/dashboard/kitchen",
-        });
-      }
-
-      // 4. Stok Uyarıları
+      // 7. Kritik Stok Uyarıları
       for (const item of stockItems) {
         if (Number(item.onHand) <= Number(item.reorderLevel)) {
           notifications.push({

@@ -63,6 +63,8 @@ export interface RestaurantProfileDTO {
   readonly addressLine2: string | null;
   readonly branchName: string | null;
   readonly branchAddress: string | null;
+  readonly wifiSsid: string | null;
+  readonly wifiPassword: string | null;
   readonly city: string | null;
   readonly state: string | null;
   readonly postalCode: string | null;

@@ -75,6 +75,8 @@ export const updateProfileSchema = z
     addressLine2: optionalText(160),
     branchName: optionalText(120),
     branchAddress: optionalText(300),
+    wifiSsid: optionalText(100),
+    wifiPassword: optionalText(100),
     city: optionalText(80),
     state: optionalText(80),
     postalCode: optionalText(12),

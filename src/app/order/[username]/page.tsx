@@ -73,9 +73,7 @@ export default async function OrderPage({
   }
 
   const { data } = result;
-  const verified =
-    session?.restaurantId === data.restaurantId &&
-    session?.tableId === data.tableId;
+  const verified = session?.restaurantId === data.restaurantId;
 
   const verifiedPhoneMasked =
     verified && session ? maskPhone(session.phone) : null;
@@ -107,6 +105,8 @@ export default async function OrderPage({
         qrGreetingTitle={data.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?"}
         qrGreetingSubtitle={data.qrGreetingSubtitle || "Hoş Geldiniz 👋"}
         qrHomeSections={data.qrHomeSections as never}
+        wifiSsid={data.wifiSsid}
+        wifiPassword={data.wifiPassword}
       />
     </main>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { KeyRoundIcon, WifiIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { updateRestaurantProfileAction } from "@/actions/settings.actions";
@@ -51,6 +52,8 @@ export function RestaurantProfileForm({
     brandColor: profile.brandColor ?? "",
     branchName: profile.branchName ?? "",
     branchAddress: profile.branchAddress ?? "",
+    wifiSsid: profile.wifiSsid ?? "",
+    wifiPassword: profile.wifiPassword ?? "",
     addressLine1: profile.addressLine1 ?? "",
     addressLine2: profile.addressLine2 ?? "",
     city: profile.city ?? "",
@@ -109,6 +112,8 @@ export function RestaurantProfileForm({
       brandColor: trimmed(form.brandColor),
       branchName: trimmed(form.branchName),
       branchAddress: trimmed(form.branchAddress),
+      wifiSsid: trimmed(form.wifiSsid),
+      wifiPassword: trimmed(form.wifiPassword),
       addressLine1: trimmed(form.addressLine1),
       addressLine2: trimmed(form.addressLine2),
       city: trimmed(form.city),
@@ -227,6 +232,39 @@ export function RestaurantProfileForm({
                 className="bg-background"
               />
               <span className="text-[11px] text-muted-foreground mt-1">Ana ekrandaki canlı hava durumunu doğrudan bu adrese göre çeker.</span>
+            </Field>
+          </div>
+
+          {/* Wi-Fi Bilgileri (QR Menü Müşteri Ekranı İçin) */}
+          <div className="grid gap-4 sm:grid-cols-2 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 p-3.5 border border-blue-200/60 dark:border-blue-900/40">
+            <Field>
+              <FieldLabel htmlFor="p-wifi-ssid" className="font-bold flex items-center gap-1.5 text-blue-950 dark:text-blue-200">
+                <WifiIcon className="size-4 text-blue-600" />
+                <span>Misafir Wi-Fi Adı (SSID)</span>
+              </FieldLabel>
+              <Input
+                id="p-wifi-ssid"
+                value={form.wifiSsid}
+                onChange={(e) => set("wifiSsid", e.target.value)}
+                placeholder="Örn: Restoran_Misafir_Wifi"
+                className="bg-background"
+              />
+              <span className="text-[11px] text-muted-foreground mt-1">Müşteriler QR menü profilinden bu Wi-Fi ağına bağlanabilir.</span>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="p-wifi-pass" className="font-bold flex items-center gap-1.5 text-blue-950 dark:text-blue-200">
+                <KeyRoundIcon className="size-4 text-blue-600" />
+                <span>Wi-Fi Şifresi</span>
+              </FieldLabel>
+              <Input
+                id="p-wifi-pass"
+                value={form.wifiPassword}
+                onChange={(e) => set("wifiPassword", e.target.value)}
+                placeholder="Örn: Lezzet2024!"
+                className="bg-background font-mono"
+              />
+              <span className="text-[11px] text-muted-foreground mt-1">QR menüde şifre yanında tek tıkla kopyalama butonu görüntülenir.</span>
             </Field>
           </div>
 

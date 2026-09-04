@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -147,6 +148,8 @@ export interface Theme2QsrViewProps {
   readonly myOrders: readonly GuestOrderSummaryDTO[];
   readonly busy?: boolean;
   readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
+  readonly wifiSsid?: string | null;
+  readonly wifiPassword?: string | null;
 }
 
 export function Theme2QsrView({
@@ -158,6 +161,8 @@ export function Theme2QsrView({
   menu,
   primaryColor = "#FF5500",
   secondaryColor = "#FFF7ED",
+  wifiSsid,
+  wifiPassword,
   slidersEnabled = true,
   sliders,
   greetingTitle = "Bugün Ne Yemek İstersiniz?",
@@ -311,7 +316,62 @@ export function Theme2QsrView({
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
   const [itemNote, setItemNote] = useState("");
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  
+  // Persistent Favorites State (LocalStorage + sync)
+  const favStorageKey = `adisyoon_fav_items_${username || "guest"}`;
+  const [favoriteItemsMap, setFavoriteItemsMap] = useState<Record<string, {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl?: string | null;
+    savedAt: number;
+  }>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = localStorage.getItem(`adisyoon_fav_items_${username || "guest"}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [favoritesDrawerOpen, setFavoritesDrawerOpen] = useState(false);
+  const [confirmRemoveFavId, setConfirmRemoveFavId] = useState<string | null>(null);
+
+  const favorites = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const id of Object.keys(favoriteItemsMap)) {
+      map[id] = true;
+    }
+    return map;
+  }, [favoriteItemsMap]);
+
+  const evaluatedFavorites = useMemo(() => {
+    const list = Object.values(favoriteItemsMap);
+    return list.map((fav) => {
+      const menuItem = menu.items.find((i) => i.id === fav.id);
+      const isAvailable = Boolean(menuItem && menuItem.isActive && menuItem.available !== false);
+      return {
+        ...fav,
+        menuItem: menuItem || null,
+        isAvailable,
+      };
+    });
+  }, [favoriteItemsMap, menu.items]);
+
+  const removeFavoriteById = (id: string, name?: string) => {
+    setFavoriteItemsMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      try {
+        localStorage.setItem(favStorageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    setConfirmRemoveFavId(null);
+    toast.success(`${name || "Ürün"} favorilerden kaldırıldı.`);
+  };
+
   const [orderSummarySheetOpen, setOrderSummarySheetOpen] = useState(false);
 
   const handleItemAddClick = (item: MenuItemDTO, e?: React.MouseEvent) => {
@@ -412,7 +472,27 @@ export function Theme2QsrView({
 
   const toggleFavorite = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    const item = menu.items.find((i) => i.id === id);
+    setFavoriteItemsMap((prev) => {
+      const next = { ...prev };
+      if (next[id]) {
+        delete next[id];
+        toast.info(`${item?.name || "Ürün"} favorilerden çıkarıldı.`);
+      } else if (item) {
+        next[id] = {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          imageUrl: item.images[0]?.url || null,
+          savedAt: Date.now(),
+        };
+        toast.success(`${item.name} favorilerinize eklendi! ❤️`);
+      }
+      try {
+        localStorage.setItem(favStorageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   const openMealDetails = (item: MenuItemDTO) => {
@@ -539,6 +619,22 @@ export function Theme2QsrView({
                   </button>
                 );
               })()}
+
+              {/* Favorilerim Butonu */}
+              <button
+                type="button"
+                onClick={() => setFavoritesDrawerOpen(true)}
+                className="relative p-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs hover:bg-zinc-50 cursor-pointer"
+                aria-label="Favorilerim"
+                title="Favorilerim"
+              >
+                <HeartIcon className={cn("size-4", evaluatedFavorites.length > 0 ? "fill-red-500 text-red-500" : "text-zinc-600")} />
+                {evaluatedFavorites.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-white text-[9px] font-black bg-red-500">
+                    {evaluatedFavorites.length}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -1540,6 +1636,8 @@ export function Theme2QsrView({
             tableLabel={tableLabel}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
+            wifiSsid={wifiSsid}
+            wifiPassword={wifiPassword}
             activeOrders={myOrders}
             onRequestBill={onRequestBill}
             onCallWaiter={onCallWaiter}
@@ -1552,7 +1650,10 @@ export function Theme2QsrView({
       {/* 5. MEAL DETAILS MODAL (Görseldeki Meal Details Ekranı)        */}
       {/* ============================================================ */}
       <Dialog open={Boolean(detailItem)} onOpenChange={(open) => !open && setDetailItem(null)}>
-        <DialogContent className="max-w-md max-h-[92vh] p-0 overflow-y-auto rounded-3xl border-2 border-zinc-200 shadow-2xl flex flex-col justify-between">
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-md max-h-[92vh] p-0 overflow-y-auto rounded-3xl border-2 border-zinc-200 shadow-2xl flex flex-col justify-between"
+        >
           {detailItem && (
             <>
               {/* Hero Image Container */}
@@ -1572,20 +1673,32 @@ export function Theme2QsrView({
                   </div>
                 )}
 
-                {/* Back & Heart Overlays */}
+                {/* Back, Heart & Close Action Buttons (Temizce Ayrılmış, Çakışmayan Düzen) */}
                 <button
                   type="button"
                   onClick={() => setDetailItem(null)}
-                  className="absolute top-4 left-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer"
+                  className="absolute top-4 left-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
+                  aria-label="Geri"
                 >
                   <ArrowLeftIcon className="size-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => toggleFavorite(detailItem.id)}
-                  className="absolute top-4 right-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer"
+                  className="absolute top-4 right-15 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
+                  aria-label="Favorilere Ekle"
+                  title="Favorilere Ekle / Çıkar"
                 >
                   <HeartIcon className={cn("size-4", favorites[detailItem.id] && "fill-red-500 text-red-500")} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDetailItem(null)}
+                  className="absolute top-4 right-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
+                  aria-label="Kapat"
+                  title="Kapat"
+                >
+                  <XIcon className="size-4" />
                 </button>
               </div>
 
@@ -2416,6 +2529,178 @@ export function Theme2QsrView({
         </SheetContent>
       </Sheet>
 
+      {/* ============================================================ */}
+      {/* FAVORİLERİM ÇEKMECESİ / PANELİ                               */}
+      {/* ============================================================ */}
+      <Sheet open={favoritesDrawerOpen} onOpenChange={setFavoritesDrawerOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[88vh] rounded-t-3xl p-0 overflow-hidden flex flex-col bg-zinc-50"
+        >
+          <SheetHeader className="p-4 pb-3 border-b text-left bg-white flex flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
+                <HeartIcon className="size-4.5 fill-red-500" />
+              </div>
+              <div>
+                <SheetTitle className="text-base font-black text-zinc-900">
+                  Favorilerim
+                </SheetTitle>
+                <SheetDescription className="text-xs text-zinc-400 font-medium">
+                  {evaluatedFavorites.length > 0
+                    ? `${evaluatedFavorites.length} kayıtlı lezzetiniz var`
+                    : "Henüz favori lezzet eklemediniz"}
+                </SheetDescription>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFavoritesDrawerOpen(false)}
+              className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-full cursor-pointer"
+            >
+              <XIcon className="size-5" />
+            </button>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {evaluatedFavorites.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                <div className="size-16 rounded-3xl bg-red-50 text-red-400 flex items-center justify-center text-2xl shadow-inner">
+                  ❤️
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-black text-sm text-zinc-900">Favori Listeniz Boş</h4>
+                  <p className="text-xs text-zinc-500 max-w-xs">
+                    Menüdeki ürünlerin yanındaki kalp ikonuna tıklayarak en sevdiğiniz lezzetleri buraya kaydedebilirsiniz.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              evaluatedFavorites.map((fav) => {
+                return (
+                  <div
+                    key={fav.id}
+                    className={cn(
+                      "bg-white rounded-3xl p-3.5 border transition-all flex items-center justify-between gap-3 shadow-2xs",
+                      !fav.isAvailable
+                        ? "opacity-75 bg-zinc-100/90 border-dashed border-red-200"
+                        : "border-zinc-200/80 hover:border-zinc-300"
+                    )}
+                  >
+                    {/* Item Image */}
+                    <div className="relative size-16 rounded-2xl overflow-hidden bg-zinc-100 shrink-0 border border-zinc-100">
+                      {fav.imageUrl ? (
+                        <Image
+                          src={fav.imageUrl}
+                          alt={fav.name}
+                          fill
+                          className={cn("object-cover", !fav.isAvailable && "grayscale")}
+                        />
+                      ) : (
+                        <div className="size-full flex items-center justify-center text-2xl">
+                          🍽️
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Item Info */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="font-black text-xs sm:text-sm text-zinc-900 truncate">
+                          {fav.name}
+                        </h4>
+                        {!fav.isAvailable && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-red-100 text-red-700 border border-red-200">
+                            ⚠️ Üzgünüz, artık mevcut değil
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-zinc-900 tabular-nums">
+                          {formatCurrency(fav.menuItem ? fav.menuItem.price : fav.price)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action: Add to Cart or Delete */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {fav.isAvailable && fav.menuItem ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleItemAddClick(fav.menuItem!);
+                            setFavoritesDrawerOpen(false);
+                          }}
+                          className="px-3 py-1.5 rounded-xl font-black text-xs text-white shadow-2xs active:scale-95 transition-transform cursor-pointer"
+                          style={{ backgroundColor: primaryColor }}
+                        >
+                          Ekle +
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemoveFavId(fav.id)}
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2Icon className="size-3.5" />
+                          <span>Kaldır</span>
+                        </button>
+                      )}
+
+                      {/* Remove from favorites heart button */}
+                      <button
+                        type="button"
+                        onClick={() => removeFavoriteById(fav.id, fav.name)}
+                        className="p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                        title="Favorilerden Çıkar"
+                      >
+                        <HeartIcon className="size-4 fill-red-500 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* FAVORİ SİLME ONAY MODALI */}
+      <Dialog open={Boolean(confirmRemoveFavId)} onOpenChange={(open) => !open && setConfirmRemoveFavId(null)}>
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-xs rounded-3xl p-5 text-center space-y-3 border border-zinc-200 shadow-2xl"
+        >
+          <div className="size-12 mx-auto rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-inner">
+            <Trash2Icon className="size-6" />
+          </div>
+          <DialogTitle className="text-base font-black text-zinc-900">
+            Favorilerden Kaldırılsın mı?
+          </DialogTitle>
+          <DialogDescription className="text-xs text-zinc-500">
+            Bu ürün artık mevcut değil veya menüden kaldırılmış. Favori listenizden kaldırmak istiyor musunuz?
+          </DialogDescription>
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmRemoveFavId(null)}
+              className="h-10 rounded-2xl font-bold text-xs cursor-pointer"
+            >
+              Vazgeç
+            </Button>
+            <Button
+              type="button"
+              onClick={() => confirmRemoveFavId && removeFavoriteById(confirmRemoveFavId)}
+              className="h-10 rounded-2xl font-black text-xs text-white bg-red-600 hover:bg-red-700 shadow-md cursor-pointer active:scale-95"
+            >
+              Evet, Kaldır
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

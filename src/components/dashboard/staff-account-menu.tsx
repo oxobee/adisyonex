@@ -94,6 +94,12 @@ export function StaffAccountMenu({
   const [accounts, setAccounts] = useState<StaffAccount[]>([initialAccount]);
   const [activeAccount, setActiveAccount] = useState<StaffAccount>(initialAccount);
 
+  // Switch account PIN dialog state
+  const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
+  const [switchTargetAccount, setSwitchTargetAccount] = useState<StaffAccount | null>(null);
+  const [switchPin, setSwitchPin] = useState("");
+  const [switchLoading, setSwitchLoading] = useState(false);
+
   // Add account dialog state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [staffList, setStaffList] = useState<TerminalStaffOption[]>([]);
@@ -168,40 +174,77 @@ export function StaffAccountMenu({
     }
   };
 
-  const handleSwitchAccount = async (target: StaffAccount) => {
+  const handleInitiateSwitch = (target: StaffAccount) => {
     if (target.id === activeAccount.id) {
       setIsOpen(false);
       return;
     }
+    setIsOpen(false);
+    setSwitchTargetAccount(target);
+    setSwitchPin("");
+    setIsSwitchDialogOpen(true);
+  };
 
+  const handleConfirmSwitchWithPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!switchTargetAccount) return;
+    if (!switchPin.trim()) {
+      toast.error("Lütfen PIN şifrenizi girin.");
+      return;
+    }
+
+    setSwitchLoading(true);
     try {
-      const res = await switchStaffAccountAction(target.id);
+      const res = await switchStaffAccountAction({
+        staffId: switchTargetAccount.id,
+        pin: switchPin.trim(),
+      });
+
       if (res.success) {
-        saveAccounts(accounts, target);
-        toast.success(`${target.name} hesabına geçiş yapıldı`);
-        setIsOpen(false);
+        // Switch active account; current accounts list is preserved!
+        saveAccounts(accounts, switchTargetAccount);
+        toast.success(`${switchTargetAccount.name} hesabına geçiş yapıldı`);
+        setIsSwitchDialogOpen(false);
+        setSwitchPin("");
+        setSwitchTargetAccount(null);
         router.refresh();
       } else {
-        saveAccounts(accounts, target);
-        toast.success(`Lokal: ${target.name} hesabına geçildi`);
-        setIsOpen(false);
+        toast.error(res.error || "Hatalı şifre veya PIN kodu.");
       }
     } catch {
-      saveAccounts(accounts, target);
-      setIsOpen(false);
+      toast.error("Hesap değiştirilirken bir hata oluştu.");
+    } finally {
+      setSwitchLoading(false);
     }
   };
 
-  const handleRemoveAccount = (id: string, e: React.MouseEvent) => {
+  const handleRemoveAccount = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (accounts.length <= 1) {
-      toast.error("En az bir hesap açık kalmalıdır.");
+    const targetToRemove = accounts.find((a) => a.id === id);
+    const filtered = accounts.filter((a) => a.id !== id);
+
+    if (activeAccount.id === id) {
+      // Exiting currently active account
+      if (filtered.length > 0) {
+        setAccounts(filtered);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+        } catch {}
+        toast.info(`${targetToRemove?.name || "Hesap"} listeden kaldırıldı. Kalan hesaba geçiş yapın.`);
+        handleInitiateSwitch(filtered[0]);
+      } else {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+        toast.info("Tüm hesaplardan çıkış yapıldı.");
+        router.push("/personelgiris");
+      }
       return;
     }
-    const filtered = accounts.filter((a) => a.id !== id);
-    const nextActive = activeAccount.id === id ? filtered[0] : activeAccount;
-    saveAccounts(filtered, nextActive);
-    toast.success("Hesap bu cihazdan kaldırıldı.");
+
+    // Removing another non-active account from the list
+    saveAccounts(filtered, activeAccount);
+    toast.success(`${targetToRemove?.name || "Hesap"} kayıtlı hesaplar listesinden silindi.`);
   };
 
   const handleOpenAddDialog = async () => {
@@ -450,7 +493,13 @@ export function StaffAccountMenu({
               return (
                 <div
                   key={acc.id}
-                  onClick={() => handleSwitchAccount(acc)}
+                  onClick={() => {
+                    if (!isActive) {
+                      handleInitiateSwitch(acc);
+                    } else {
+                      setIsOpen(false);
+                    }
+                  }}
                   className={cn(
                     "flex items-center justify-between p-2.5 rounded-xl transition-all cursor-pointer group",
                     isActive
@@ -482,7 +531,7 @@ export function StaffAccountMenu({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {isActive ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                         <CheckCircle2Icon className="size-3" />
@@ -494,16 +543,14 @@ export function StaffAccountMenu({
                       </span>
                     )}
 
-                    {accounts.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemoveAccount(acc.id, e)}
-                        className="p-1 rounded-md text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="Bu hesaptan çıkış yap"
-                      >
-                        <LogOutIcon className="size-3.5" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveAccount(acc.id, e)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Hesaptan çıkış yap ve bu listeden kaldır"
+                    >
+                      <LogOutIcon className="size-3.5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -918,6 +965,85 @@ export function StaffAccountMenu({
                 {settingsLoading ? "Kaydediliyor…" : "Değişiklikleri Kaydet"}
               </Button>
             </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* SEÇİLEN HESABA GEÇİŞ PIN DOĞRULAMA MODALI */}
+      <Dialog open={isSwitchDialogOpen} onOpenChange={(open) => !open && setIsSwitchDialogOpen(false)}>
+        <DialogContent className="max-w-sm rounded-3xl p-6 text-center border border-gray-200 shadow-2xl">
+          <DialogHeader className="flex flex-col items-center gap-2">
+            {switchTargetAccount?.photoUrl ? (
+              <div className="relative size-16 rounded-full overflow-hidden border-2 border-primary/30 shadow-md">
+                <Image
+                  src={switchTargetAccount.photoUrl}
+                  alt={switchTargetAccount.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-black shadow-inner">
+                {switchTargetAccount?.name.slice(0, 1).toUpperCase()}
+              </div>
+            )}
+
+            <DialogTitle className="text-base font-black text-gray-900 mt-1">
+              {switchTargetAccount?.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500 font-medium">
+              {switchTargetAccount && formatStaffRole(switchTargetAccount.role)} • Bu hesaba geçiş yapmak için lütfen şifrenizi / PIN kodunuzu girin.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleConfirmSwitchWithPin} className="space-y-4 mt-3">
+            <div className="space-y-1 text-left">
+              <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                <KeyRoundIcon className="size-3.5 text-primary" />
+                <span>PIN Şifresi</span>
+              </label>
+              <Input
+                type="password"
+                inputMode="numeric"
+                autoFocus
+                value={switchPin}
+                onChange={(e) => setSwitchPin(e.target.value)}
+                placeholder="PIN kodunuzu girin"
+                className="h-12 text-center text-lg font-mono tracking-widest rounded-2xl bg-gray-50 border-gray-200"
+                maxLength={8}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsSwitchDialogOpen(false);
+                  setSwitchTargetAccount(null);
+                  setSwitchPin("");
+                }}
+                className="h-11 rounded-2xl font-bold text-xs cursor-pointer"
+              >
+                Vazgeç
+              </Button>
+              <Button
+                type="submit"
+                disabled={switchLoading || !switchPin.trim()}
+                className="h-11 rounded-2xl font-black text-xs text-white bg-primary hover:bg-primary/90 shadow-md cursor-pointer active:scale-95 transition-transform"
+              >
+                {switchLoading ? (
+                  <>
+                    <Loader2Icon className="size-3.5 animate-spin mr-1.5" />
+                    Doğrulanıyor...
+                  </>
+                ) : (
+                  "Giriş Yap & Geç"
+                )}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
 
 const COOKIE_NAME = "restro_guest";
-const MAX_AGE_SECONDS = 60 * 60 * 2; // 2-hour seating; auto-expires after
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days persistent guest session
 
 const getSecret = (): Uint8Array => {
   const secret = process.env.AUTH_SECRET;

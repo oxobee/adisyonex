@@ -41,6 +41,7 @@ export const directStaffLogoutAction = async (): Promise<void> => {
 };
 
 import { prisma } from "@/lib/prisma";
+import { hashStaffPin } from "@/lib/staff-pin";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getStaffEffectiveRoutes } from "@/lib/staff";
@@ -104,22 +105,61 @@ export async function addStaffAccountAction(data: {
   }
 }
 
-export async function switchStaffAccountAction(staffId: string): Promise<ActionResult<void>> {
+export async function switchStaffAccountAction(data: {
+  staffId: string;
+  pin: string;
+}): Promise<ActionResult<void>> {
   try {
-    const staff = await prisma.staff.findUnique({
-      where: { id: staffId },
-    });
-    if (!staff || staff.deletedAt || staff.status !== "ACTIVE") {
-      return failure("Personel hesabı aktif değil");
+    const pin = data.pin.trim();
+    if (!pin) {
+      return failure("Lütfen PIN şifrenizi girin");
     }
 
-    await createStaffSession({
-      staffId: staff.id,
-      restaurantId: staff.restaurantId,
-      role: staff.role,
+    const staff = await prisma.staff.findUnique({
+      where: { id: data.staffId },
     });
+    if (staff) {
+      if (staff.deletedAt || staff.status !== "ACTIVE") {
+        return failure("Personel hesabı aktif değil");
+      }
+      if (staff.loginLockedUntil && staff.loginLockedUntil.getTime() > Date.now()) {
+        return failure("Hesap geçici olarak kilitlenmiştir, lütfen bekleyin");
+      }
+      if (!staff.pinHash) {
+        return failure("Bu personel için henüz PIN kodu belirlenmemiş");
+      }
 
-    return success(undefined);
+      if (hashStaffPin(pin, staff.restaurantId) !== staff.pinHash) {
+        return failure("Hatalı PIN kodu / şifre girdiniz");
+      }
+
+      // Logout existing session and switch to target staff
+      await destroyStaffSession();
+      await createStaffSession({
+        staffId: staff.id,
+        restaurantId: staff.restaurantId,
+        role: staff.role,
+      });
+
+      return success(undefined);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: data.staffId },
+      include: {
+        ownedRestaurants: { select: { id: true, screenLockPin: true } },
+      },
+    });
+    if (user) {
+      const validPin = user.ownedRestaurants[0]?.screenLockPin || "0000";
+      if (pin !== validPin) {
+        return failure("Hatalı PIN kodu / şifre girdiniz");
+      }
+      await destroyStaffSession();
+      return success(undefined);
+    }
+
+    return failure("Personel kaydı bulunamadı");
   } catch (e) {
     return failure(e instanceof Error ? e.message : "Hesap değiştirilemedi");
   }

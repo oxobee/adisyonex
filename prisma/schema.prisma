@@ -179,6 +179,8 @@ model Restaurant {
   branchName       String?
   branchAddress    String?
   screenLockPin    String?            @default("0000")
+  wifiSsid         String?
+  wifiPassword     String?
   latitude         Float?
   longitude        Float?
   website          String?
