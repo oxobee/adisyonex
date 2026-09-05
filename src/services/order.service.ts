@@ -50,31 +50,8 @@ const num = (v: unknown): number => Number(v);
 
 // ------------------------------------------------------------------ mapping ---
 
-export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
-  id: o.id,
-  orderNumber: o.orderNumber,
-  invoiceNumber: o.invoiceNumber,
-  orderType: o.orderType,
-  status: o.status,
-  tableLabel: o.tableLabel,
-  tableId: o.tableId,
-  customerName: o.customerName,
-  customerPhone: o.customerPhone,
-  customerAddress: o.customerAddress,
-  customerId: o.customerId,
-  note: o.note,
-  placedById: o.placedById,
-  tableSessionId: o.tableSessionId ?? null,
-  subtotal: num(o.subtotal),
-  taxTotal: num(o.taxTotal),
-  discountTotal: num(o.discountTotal),
-  compTotal: num(o.compTotal),
-  roundOff: num(o.roundOff),
-  grandTotal: num(o.grandTotal),
-  createdAt: o.createdAt.toISOString(),
-  settledAt: o.settledAt ? o.settledAt.toISOString() : null,
-  billRequestedAt: o.billRequestedAt ? o.billRequestedAt.toISOString() : null,
-  lines: o.items.map((i) => ({
+export const mapOrder = (o: OrderWithRelations): OrderDTO => {
+  const lines = o.items.map((i) => ({
     id: i.id,
     name: i.name,
     variantName: i.variantName,
@@ -92,15 +69,52 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => ({
       name: m.name,
       priceDelta: num(m.priceDelta),
     })),
-  })),
-  payments: o.payments.map((p) => ({
-    id: p.id,
-    mode: p.mode,
-    amount: num(p.amount),
-    tendered: p.tendered != null ? num(p.tendered) : null,
-    reference: p.reference,
-  })),
-});
+  }));
+
+  const activeLines = lines.filter((l) => l.state !== "VOID" && !l.isComp);
+  const computedLinesTotal = activeLines.reduce((sum, l) => {
+    const modDelta = l.modifiers.reduce((ms, m) => ms + m.priceDelta, 0);
+    return sum + (l.unitPrice + modDelta) * l.quantity;
+  }, 0);
+
+  const rawGrandTotal = num(o.grandTotal);
+  const effectiveGrandTotal = rawGrandTotal > 0 ? rawGrandTotal : computedLinesTotal;
+  const effectiveSubtotal = num(o.subtotal) > 0 ? num(o.subtotal) : computedLinesTotal;
+
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    invoiceNumber: o.invoiceNumber,
+    orderType: o.orderType,
+    status: o.status,
+    tableLabel: o.tableLabel,
+    tableId: o.tableId,
+    customerName: o.customerName,
+    customerPhone: o.customerPhone,
+    customerAddress: o.customerAddress,
+    customerId: o.customerId,
+    note: o.note,
+    placedById: o.placedById,
+    tableSessionId: o.tableSessionId ?? null,
+    subtotal: effectiveSubtotal,
+    taxTotal: num(o.taxTotal),
+    discountTotal: num(o.discountTotal),
+    compTotal: num(o.compTotal),
+    roundOff: num(o.roundOff),
+    grandTotal: effectiveGrandTotal,
+    createdAt: o.createdAt.toISOString(),
+    settledAt: o.settledAt ? o.settledAt.toISOString() : null,
+    billRequestedAt: o.billRequestedAt ? o.billRequestedAt.toISOString() : null,
+    lines,
+    payments: o.payments.map((p) => ({
+      id: p.id,
+      mode: p.mode,
+      amount: num(p.amount),
+      tendered: p.tendered != null ? num(p.tendered) : null,
+      reference: p.reference,
+    })),
+  };
+};
 
 /** Bill lines from a persisted order (voided lines excluded). */
 export const orderToBillLines = (o: OrderWithRelations): BillLineInput[] =>

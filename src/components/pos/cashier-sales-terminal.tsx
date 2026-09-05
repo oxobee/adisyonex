@@ -17,6 +17,7 @@ import {
   PlusIcon,
   PrinterIcon,
   ReceiptIcon,
+  ReceiptTextIcon,
   RefreshCwIcon,
   SearchIcon,
   SparklesIcon,
@@ -74,6 +75,38 @@ const MEAL_VOUCHERS: readonly MealVoucherBrand[] = [
   { id: "metropol", name: "Metropol Card", color: "text-purple-600", border: "border-purple-300", bg: "bg-purple-50" },
 ];
 
+export interface ParkedTicketState {
+  readonly id: string; // "1" .. "5"
+  readonly label: string; // "Fiş 01" .. "Fiş 05"
+  cart: CartLine[];
+  selectedTableId: string | null;
+  serviceType: OrderType;
+  discount: DiscountInput;
+  customerName: string;
+  customerPhone: string;
+  cashTenderedStr: string;
+  paymentMethod: PaymentMethodType;
+}
+
+const DEFAULT_TICKETS: ParkedTicketState[] = [
+  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+];
+
+export const getTableOrderTotal = (order?: OrderDTO): number => {
+  if (!order) return 0;
+  if (order.grandTotal > 0) return order.grandTotal;
+  return order.lines
+    .filter((l) => l.state !== "VOID" && !l.isComp)
+    .reduce((sum, l) => {
+      const modDelta = l.modifiers.reduce((ms, m) => ms + m.priceDelta, 0);
+      return sum + (l.unitPrice + modDelta) * l.quantity;
+    }, 0);
+};
+
 export function CashierSalesTerminal({
   menu,
   tables,
@@ -82,12 +115,144 @@ export function CashierSalesTerminal({
   cashierName = "Kasa Personeli",
   restaurantName = "Adisyoon",
 }: CashierSalesTerminalProps) {
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-  const [serviceType, setServiceType] = useState<OrderType>("TAKEAWAY");
+  // Çoklu Fiş Sistemi (Fiş 01 - Fiş 05)
+  const [tickets, setTickets] = useState<ParkedTicketState[]>(DEFAULT_TICKETS);
+  const [activeTicketId, setActiveTicketId] = useState<string>("1");
+  const isHydratedRef = useRef(false);
+
+  // Load tickets from localStorage on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem("pos_cashier_multi_tickets_v1");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTickets(parsed);
+        }
+      }
+      const savedActive = localStorage.getItem("pos_cashier_active_ticket_id");
+      if (savedActive) {
+        setActiveTicketId(savedActive);
+      }
+    } catch {
+      // ignore
+    } finally {
+      isHydratedRef.current = true;
+    }
+  }, []);
+
+  // Save tickets to localStorage on change
+  useEffect(() => {
+    if (typeof window === "undefined" || !isHydratedRef.current) return;
+    try {
+      localStorage.setItem("pos_cashier_multi_tickets_v1", JSON.stringify(tickets));
+      localStorage.setItem("pos_cashier_active_ticket_id", activeTicketId);
+    } catch {
+      // ignore
+    }
+  }, [tickets, activeTicketId]);
+
+  const currentTicket = tickets.find((t) => t.id === activeTicketId) || tickets[0];
+  const cart = currentTicket.cart;
+  const selectedTableId = currentTicket.selectedTableId;
+  const serviceType = currentTicket.serviceType;
+  const discount = currentTicket.discount;
+  const customerName = currentTicket.customerName;
+  const customerPhone = currentTicket.customerPhone;
+  const cashTenderedStr = currentTicket.cashTenderedStr;
+  const paymentMethod = currentTicket.paymentMethod;
+
+  const updateActiveTicket = (updater: Partial<ParkedTicketState> | ((prev: ParkedTicketState) => ParkedTicketState)) => {
+    setTickets((prev) =>
+      prev.map((t) => {
+        if (t.id !== activeTicketId) return t;
+        if (typeof updater === "function") {
+          return updater(t);
+        }
+        return { ...t, ...updater };
+      })
+    );
+  };
+
+  const setSelectedTableId = (id: string | null) => updateActiveTicket({ selectedTableId: id });
+  const setServiceType = (st: OrderType) => updateActiveTicket({ serviceType: st });
+  const setDiscount = (d: DiscountInput) => updateActiveTicket({ discount: d });
+  const setCustomerName = (n: string) => updateActiveTicket({ customerName: n });
+  const setCustomerPhone = (p: string) => updateActiveTicket({ customerPhone: p });
+  const setCashTenderedStr = (s: string | ((prev: string) => string)) => {
+    if (typeof s === "function") {
+      updateActiveTicket((t) => ({ ...t, cashTenderedStr: s(t.cashTenderedStr) }));
+    } else {
+      updateActiveTicket({ cashTenderedStr: s });
+    }
+  };
+  const setPaymentMethod = (pm: PaymentMethodType) => updateActiveTicket({ paymentMethod: pm });
+
+  const addLine = (line: CartLine) => updateActiveTicket((t) => ({ ...t, cart: [...t.cart, line] }));
+  const quickAdd = (item: MenuItemDTO) => {
+    updateActiveTicket((t) => {
+      const existing = t.cart.find(
+        (l) => l.menuItemId === item.id && !l.variantId && l.modifiers.length === 0 && !l.isComp
+      );
+      if (existing) {
+        return {
+          ...t,
+          cart: t.cart.map((l) => (l.key === existing.key ? { ...l, quantity: l.quantity + 1 } : l)),
+        };
+      }
+      const newLine: CartLine = {
+        key: uuid(),
+        menuItemId: item.id,
+        name: item.name,
+        variantId: null,
+        variantName: null,
+        unitPrice: item.price,
+        taxRate: item.tax.rate,
+        taxInclusive: item.tax.inclusive,
+        modifiers: [],
+        quantity: 1,
+        lineNote: null,
+        isComp: false,
+      };
+      return { ...t, cart: [...t.cart, newLine] };
+    });
+  };
+  const changeQty = (key: string, delta: number) => {
+    updateActiveTicket((t) => ({
+      ...t,
+      cart: t.cart
+        .map((l) => (l.key === key ? { ...l, quantity: l.quantity + delta } : l))
+        .filter((l) => l.quantity > 0),
+    }));
+  };
+  const removeLine = (key: string) => {
+    updateActiveTicket((t) => ({ ...t, cart: t.cart.filter((l) => l.key !== key) }));
+  };
+  const toggleComp = (key: string) => {
+    updateActiveTicket((t) => ({
+      ...t,
+      cart: t.cart.map((l) => (l.key === key ? { ...l, isComp: !l.isComp } : l)),
+    }));
+  };
+  const replaceAll = (lines: CartLine[]) => {
+    updateActiveTicket({ cart: lines });
+  };
+  const clear = () => {
+    updateActiveTicket({
+      cart: [],
+      selectedTableId: null,
+      serviceType: "TAKEAWAY",
+      discount: { type: "NONE", value: 0 },
+      customerName: "",
+      customerPhone: "",
+      cashTenderedStr: "",
+      paymentMethod: "CASH",
+    });
+  };
+
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const router = useRouter();
-  const orderCart = useOrderCart("pos_cashier_cart_persist");
-  const { cart, quickAdd, addLine, changeQty, removeLine, toggleComp, replaceAll, clear } = orderCart;
 
   // Main Tab State: "PRODUCTS" | "TABLES"
   const [activeMainTab, setActiveMainTab] = useState<"PRODUCTS" | "TABLES">("PRODUCTS");
@@ -101,20 +266,10 @@ export function CashierSalesTerminal({
 
   // Drag & Drop State
   const [draggedItem, setDraggedItem] = useState<MenuItemDTO | null>(null);
+  const [draggedTable, setDraggedTable] = useState<TableDTO | null>(null);
   const [isDragOverCart, setIsDragOverCart] = useState(false);
-
-  // Discount State
-  const [discount, setDiscount] = useState<DiscountInput>({ type: "NONE", value: 0 });
-
-  // Customer Details (Optional)
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-
-  // Payment State
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("CASH");
-  const [cashTenderedStr, setCashTenderedStr] = useState<string>("");
   const [selectedMealVoucher, setSelectedMealVoucher] = useState<string>(MEAL_VOUCHERS[0].name);
-  
+
   // Split Payment State
   const [splitCashStr, setSplitCashStr] = useState<string>("");
   const [splitCardStr, setSplitCardStr] = useState<string>("");
@@ -249,7 +404,7 @@ export function CashierSalesTerminal({
         }));
       replaceAll(mappedLines);
       toast.info(`${table.label} içeriği ve tutarı yüklendi!`, {
-        description: `Mevcut Tutar: ${formatCurrency(existingOrder.grandTotal)}`,
+        description: `Mevcut Tutar: ${formatCurrency(getTableOrderTotal(existingOrder))}`,
       });
     } else {
       toast.success(`${table.label} seçildi.`);
@@ -287,6 +442,7 @@ export function CashierSalesTerminal({
 
   const handleDragEnd = () => {
     setDraggedItem(null);
+    setDraggedTable(null);
     setIsDragOverCart(false);
   };
 
@@ -307,6 +463,29 @@ export function CashierSalesTerminal({
   const handleDropOnCart = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
     setIsDragOverCart(false);
+
+    // 1. Masa Sürükle-Bırak Kontrolü
+    const rawTable = e.dataTransfer.getData("application/pos-table");
+    if (rawTable || draggedTable) {
+      try {
+        const table: TableDTO = rawTable ? JSON.parse(rawTable) : draggedTable;
+        if (table) {
+          handleSelectTable(table);
+          toast.success(`${table.label} masası ve adisyonu yüklendi!`);
+          return;
+        }
+      } catch {
+        if (draggedTable) {
+          handleSelectTable(draggedTable);
+          toast.success(`${draggedTable.label} masası ve adisyonu yüklendi!`);
+          return;
+        }
+      } finally {
+        setDraggedTable(null);
+      }
+    }
+
+    // 2. Ürün Sürükle-Bırak Kontrolü
     try {
       const raw = e.dataTransfer.getData("application/json");
       const item: MenuItemDTO = raw ? JSON.parse(raw) : draggedItem;
@@ -333,6 +512,7 @@ export function CashierSalesTerminal({
       }
     } finally {
       setDraggedItem(null);
+      setDraggedTable(null);
     }
   };
 
@@ -547,14 +727,15 @@ export function CashierSalesTerminal({
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* SOL ALAN: TAB MENÜ (MASA | ÜRÜN) + İÇERİK */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#f8fafc] border-r border-gray-200/90 overflow-hidden">
-          {/* Üst Sekme Çubuğu: Masa | Ürün */}
-          <div className="p-2.5 sm:px-4 sm:py-3 bg-white border-b border-gray-200 shrink-0 shadow-2xs">
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-inner max-w-md">
+          {/* Üst Sekme Çubuğu: Masa | Ürün ve Fiş 01 - Fiş 05 Sekmeleri */}
+          <div className="p-2 sm:px-4 sm:py-2.5 bg-white border-b border-gray-200 shrink-0 shadow-2xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5">
+            {/* Sol: Masalar | Ürünler */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-inner shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveMainTab("TABLES")}
                 className={cn(
-                  "flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  "flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
                   activeMainTab === "TABLES"
                     ? "bg-white text-blue-700 shadow-sm border border-slate-200/80 scale-[1.01]"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
@@ -576,7 +757,7 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setActiveMainTab("PRODUCTS")}
                 className={cn(
-                  "flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  "flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
                   activeMainTab === "PRODUCTS"
                     ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80 scale-[1.01]"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
@@ -593,6 +774,50 @@ export function CashierSalesTerminal({
                   {menu.items.length} Ürün
                 </span>
               </button>
+            </div>
+
+            {/* Sağ / Yan: Fiş 01 - Fiş 05 Bekletilen Satış Tab Menüsü */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-inner overflow-x-auto no-scrollbar">
+              {tickets.map((ticket) => {
+                const isActive = ticket.id === activeTicketId;
+                const itemCount = ticket.cart.reduce((s, l) => s + l.quantity, 0);
+                const hasCart = itemCount > 0;
+                const hasTable = !!ticket.selectedTableId;
+                const tableName = hasTable ? tables.find(t => t.id === ticket.selectedTableId)?.label : null;
+
+                return (
+                  <button
+                    key={ticket.id}
+                    type="button"
+                    onClick={() => setActiveTicketId(ticket.id)}
+                    title={hasTable ? `${ticket.label} (${tableName})` : `${ticket.label} (${itemCount} Ürün)`}
+                    className={cn(
+                      "relative flex items-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap",
+                      isActive
+                        ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-sm border border-indigo-500/30 scale-[1.02]"
+                        : hasCart || hasTable
+                        ? "bg-indigo-50/80 text-indigo-900 hover:bg-indigo-100/90 border border-indigo-200/60"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent"
+                    )}
+                  >
+                    <ReceiptTextIcon className={cn("size-3.5", isActive ? "text-indigo-200" : hasCart ? "text-indigo-600" : "text-slate-400")} />
+                    <span>{ticket.label}</span>
+                    {(hasCart || hasTable) && (
+                      <span
+                        className={cn(
+                          "px-1.5 py-0.5 rounded-full text-[10px] font-black tracking-tight flex items-center gap-0.5",
+                          isActive
+                            ? "bg-white/20 text-white border border-white/30"
+                            : "bg-indigo-600 text-white shadow-2xs"
+                        )}
+                      >
+                        {hasTable && <span>🪑</span>}
+                        {hasCart ? `${itemCount}` : tableName || ""}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -701,9 +926,17 @@ export function CashierSalesTerminal({
                       return (
                         <div
                           key={table.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("application/pos-table", JSON.stringify(table));
+                            e.dataTransfer.effectAllowed = "copy";
+                            setDraggedTable(table);
+                            setDraggedItem(null);
+                          }}
+                          onDragEnd={handleDragEnd}
                           onClick={() => handleSelectTable(table)}
                           className={cn(
-                            "group relative rounded-3xl overflow-hidden cursor-pointer select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
+                            "group relative rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
                             `bg-gradient-to-br ${gradient}`,
                             "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
                             "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
@@ -759,7 +992,7 @@ export function CashierSalesTerminal({
                                     </span>
                                   </div>
                                   <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
-                                    {formatCurrency(existingOrder.grandTotal)}
+                                    {formatCurrency(getTableOrderTotal(existingOrder))}
                                   </div>
                                 </div>
 
@@ -1021,10 +1254,16 @@ export function CashierSalesTerminal({
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-base font-black text-emerald-950 bg-white/95 px-4 py-1.5 rounded-full shadow-md border border-emerald-200">
-                  {draggedItem ? `${draggedItem.name} Ürününü Ekle` : "Adisyona Eklemek İçin Bırakın"}
+                  {draggedTable
+                    ? `🪑 ${draggedTable.label} Masasını ve Adisyonunu Yükle`
+                    : draggedItem
+                    ? `${draggedItem.name} Ürününü Ekle`
+                    : "Adisyona Eklemek İçin Bırakın"}
                 </span>
                 <span className="text-xs font-bold text-emerald-800 mt-1">
-                  Ödeme alanına bırakınca sepete eklenecektir
+                  {draggedTable
+                    ? "Bırakınca masanın açık siparişi ödeme alanına aktarılacaktır"
+                    : "Ödeme alanına bırakınca sepete eklenecektir"}
                 </span>
               </div>
             </div>
@@ -1040,6 +1279,9 @@ export function CashierSalesTerminal({
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-black text-slate-900 tracking-tight">
                     Adisyon Fişi
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                    {currentTicket.label}
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 border border-slate-200">
                     {cart.reduce((s, l) => s + l.quantity, 0)} Kalem
@@ -1748,7 +1990,7 @@ export function CashierSalesTerminal({
                             {existingOrder.lines.filter(l => l.state !== "VOID").reduce((s, l) => s + l.quantity, 0)} Ürün
                           </span>
                           <span className="text-xs font-black text-white font-mono">
-                            {formatCurrency(existingOrder.grandTotal)}
+                            {formatCurrency(getTableOrderTotal(existingOrder))}
                           </span>
                         </>
                       ) : (
