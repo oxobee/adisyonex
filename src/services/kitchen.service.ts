@@ -32,7 +32,7 @@ const mapLine = (item: TicketItem): KitchenTicketLine => ({
 });
 
 const toTicket = (order: OrderWithRelations): KitchenTicketDTO | null => {
-  const active = order.items.filter((i) => isActive(i.state));
+  const active = order.items.filter((i) => isActive(i.state) || i.state === "UNSENT");
   if (active.length === 0) {
     return null;
   }
@@ -41,7 +41,9 @@ const toTicket = (order: OrderWithRelations): KitchenTicketDTO | null => {
   // original ticket; anything fired later is an add-on.
   const byBatch = new Map<string, TicketItem[]>();
   for (const line of active) {
-    const key = line.firedAt ? line.firedAt.toISOString() : "";
+    const key = line.firedAt
+      ? line.firedAt.toISOString()
+      : (line.createdAt ? line.createdAt.toISOString() : "");
     const bucket = byBatch.get(key) ?? [];
     bucket.push(line);
     byBatch.set(key, bucket);
@@ -73,6 +75,23 @@ const toTicket = (order: OrderWithRelations): KitchenTicketDTO | null => {
 export const listKitchenTickets = async (
   restaurantId: string,
 ): Promise<KitchenTicketDTO[]> => {
+  // Self-healing: Auto-fire any stranded UNSENT lines in active orders so kitchen never misses them
+  await prisma.orderItem.updateMany({
+    where: {
+      order: {
+        restaurantId,
+        status: "OPEN",
+      },
+      state: "UNSENT",
+    },
+    data: {
+      state: "FIRED",
+      firedAt: new Date(),
+    },
+  }).catch((err) => {
+    console.error("Failed to auto-fire UNSENT items in kitchen tickets:", err);
+  });
+
   const orders = await findOrdersByRestaurant(restaurantId, ["OPEN"]);
   return orders
     .map(toTicket)
@@ -91,6 +110,9 @@ export const advanceTicket = async (
   const order = await loadOwnedOrder(restaurantId, orderId);
   if (order.status !== "OPEN") {
     throw new Error(ORDER_NOT_OPEN);
+  }
+  if (order.items.some((i) => i.state === "UNSENT")) {
+    await advanceLineStates(orderId, "UNSENT", "PREPARING");
   }
   const hasFired = order.items.some((i) => i.state === "FIRED");
   await advanceLineStates(

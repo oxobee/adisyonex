@@ -269,10 +269,11 @@ export const addItems = async (
     menu,
     input.items,
     order.items.length,
-    "UNSENT",
+    "FIRED",
     ctx.source ?? "STAFF",
   );
   const updated = await addOrderItems(input.orderId, items);
+  await fireUnsentItems(input.orderId).catch(() => undefined);
   await depleteForLines(
     ctx,
     input.items.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),

@@ -336,7 +336,7 @@ const buildLine = (
   taxInclusive: false,
   isComp: false,
   compReason: null,
-  state: "UNSENT",
+  state: "FIRED",
   source: "STAFF",
   sortOrder,
   modifiers: (input.modifiers ?? []).map((m) => ({

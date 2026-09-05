@@ -44,11 +44,12 @@ export const createOrderAction = withManagerValidation(
 
 export const addItemsAction = withManagerValidation(addItemsSchema, async (data, ctx) => {
   const res = await addItems(ctx, data);
+  await fireOrder(ctx, data.orderId).catch(() => undefined);
   await logActivity({
     restaurantId: ctx.restaurantId,
     category: "SİPARİŞ",
     action: "Siparişe Ürün Eklendi",
-    details: `Siparişe ${data.items?.length || 0} yeni ürün kalemi eklendi.`,
+    details: `Siparişe ${data.items?.length || 0} yeni ürün kalemi eklendi ve mutfağa iletildi.`,
   });
   return res;
 });
