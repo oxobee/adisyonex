@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
+  ArrowRightIcon,
   CircleUserRoundIcon,
+  CrownIcon,
   HeadphonesIcon,
   InfinityIcon,
   LogOutIcon,
@@ -48,11 +50,15 @@ export function DashboardHeaderNav({
   user,
   license,
   systemSettings,
+  restaurantUsername,
 }: {
   readonly user: {
     readonly name: string;
     readonly contact: string;
+    readonly email?: string | null;
+    readonly phone?: string | null;
     readonly role?: string;
+    readonly isSuperAdmin?: boolean;
   };
   readonly license?: LicenseInfoDTO | null;
   readonly systemSettings?: Partial<SystemSettingsDTO> | null;
@@ -72,6 +78,14 @@ export function DashboardHeaderNav({
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
     user.role === "MANAGER";
+  const isSuperAdminAccount = Boolean(
+    user.isSuperAdmin ||
+      user.role === "SUPER_ADMIN" ||
+      user.email?.toLowerCase().trim() === "ugur@oxonom.com" ||
+      user.phone?.replace(/\D/g, "").endsWith("5550570368") ||
+      user.contact?.toLowerCase().includes("ugur@oxonom.com") ||
+      user.contact?.replace(/\D/g, "").endsWith("5550570368")
+  );
 
   const currentTitle =
     ROUTE_TITLES[pathname] ||
@@ -238,8 +252,11 @@ export function DashboardHeaderNav({
                     <span className="text-xs font-black text-foreground truncate max-w-[110px] leading-tight">
                       {user.name}
                     </span>
-                    <span className="text-[10px] font-bold text-muted-foreground truncate leading-none">
-                      Profilim
+                    <span className="text-[10px] font-bold text-muted-foreground truncate leading-none flex items-center gap-1">
+                      {isSuperAdminAccount && (
+                        <CrownIcon className="size-2.5 text-purple-600 shrink-0" />
+                      )}
+                      <span>Profilim</span>
                     </span>
                   </div>
                 </button>
@@ -264,14 +281,21 @@ export function DashboardHeaderNav({
                             {user.name}
                           </h4>
                           <div className="flex flex-wrap gap-1 mt-0.5">
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs",
-                                planBadge.color,
-                              )}
-                            >
-                              {planBadge.label}
-                            </span>
+                            {isSuperAdminAccount ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-black text-purple-700 dark:text-purple-300 shadow-2xs">
+                                <CrownIcon className="size-2.5 text-purple-600 dark:text-purple-400" />
+                                <span>Süper Admin</span>
+                              </span>
+                            ) : (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs",
+                                  planBadge.color,
+                                )}
+                              >
+                                {planBadge.label}
+                              </span>
+                            )}
                             <span
                               className={cn(
                                 "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold tabular-nums",
@@ -303,7 +327,37 @@ export function DashboardHeaderNav({
                     </div>
 
                     {/* Menü butonları */}
-                    <div className="flex flex-col gap-1 pt-1">
+                    <div className="flex flex-col gap-1 pt-1.5">
+                      {isSuperAdminAccount && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            router.push("/admin");
+                          }}
+                          className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-xs font-bold bg-gradient-to-r from-purple-500/15 via-indigo-500/10 to-transparent hover:from-purple-500/25 hover:via-indigo-500/20 text-purple-950 dark:text-purple-100 border border-purple-500/30 transition-all active:scale-98 cursor-pointer text-left group shadow-xs mb-1"
+                        >
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-xs group-hover:scale-110 transition-transform">
+                            <CrownIcon className="size-4" />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-black text-xs leading-tight text-purple-900 dark:text-purple-100">
+                                Süper Admin Paneli
+                              </span>
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded-md text-[9px] font-black bg-purple-600 text-white uppercase tracking-wider">
+                                Root
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-purple-700/80 dark:text-purple-300/80 font-medium truncate">
+                              Sistem ve Platform Yönetimi
+                            </span>
+                          </div>
+                          <span className="text-purple-600 dark:text-purple-400 font-black text-xs ml-auto shrink-0 group-hover:translate-x-0.5 transition-transform">
+                            →
+                          </span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {

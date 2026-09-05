@@ -1,4 +1,7 @@
+import Link from "next/link"
 import {
+  ArrowRightIcon,
+  CrownIcon,
   HeadphonesIcon,
   ImagesIcon,
   KeyRoundIcon,
@@ -39,6 +42,7 @@ import {
 } from "@/components/ui/tabs"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
 import { getStaffContextOrNull } from "@/lib/staff-auth"
+import { getAdminContextOrNull } from "@/lib/admin-auth"
 import {
   getInvoiceFooterNote,
   getRestaurantProfile,
@@ -81,11 +85,13 @@ export default async function SettingsPage() {
     )
   }
 
-  const [profile, taxProfile, licenseInfo] = await Promise.all([
+  const [profile, taxProfile, licenseInfo, adminCtx] = await Promise.all([
     getRestaurantProfile(restaurantId),
     getTaxProfile(restaurantId),
     getRestaurantLicenseInfo(restaurantId).catch(() => null),
+    getAdminContextOrNull().catch(() => null),
   ])
+  const isSuperAdminUser = Boolean(adminCtx && adminCtx.isSuperAdmin)
   const pinStatus = ctx?.userId
     ? await getPinStatus(ctx.userId)
     : { hasPin: false, pinUpdatedAt: null }
@@ -126,6 +132,35 @@ export default async function SettingsPage() {
         title="Ayarlar"
         description="Restoran profili, marka, konum, vergi ve erişim yapılandırması."
       />
+
+      {isSuperAdminUser && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4.5 rounded-3xl bg-gradient-to-r from-purple-500/15 via-indigo-500/10 to-transparent border border-purple-500/30 shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-xs shrink-0">
+              <CrownIcon className="size-5.5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-foreground">Süper Admin Yetkisi</h3>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-600 text-white uppercase tracking-wider">
+                  ROOT
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                Uğur UĞURLU hesabınız ile tüm restoranları ve sistem genelini Süper Admin Paneli üzerinden yönetebilirsiniz.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md shadow-purple-600/25 hover:shadow-lg hover:shadow-purple-600/35 transition-all active:scale-95 shrink-0"
+          >
+            <span>Süper Admin Paneline Git</span>
+            <ArrowRightIcon className="size-3.5" />
+          </Link>
+        </div>
+      )}
+
       <ProfileHeader profile={profile} completeness={completeness} />
 
       <Tabs

@@ -9,6 +9,7 @@ import { getRestaurantProfile, getSelfOrderShareInfo } from "@/services/restaura
 import { getStaffContextOrNull } from "@/lib/staff-auth"
 import { getSystemSettings, type SystemSettingsDTO } from "@/services/system-setting.service"
 import { getManagerById } from "@/services/user.service"
+import { isAuthorizedSuperAdminUser } from "@/lib/admin-auth"
 
 import { LicenseExpiredModal } from "@/components/license/license-expired-modal"
 import { GlobalEscNavigation } from "@/components/dashboard/global-esc-navigation"
@@ -114,7 +115,18 @@ export default async function DashboardLayout({
             user={{
               name: user?.name || "Manager",
               contact: user?.phone || user?.email || "",
+              email: user?.email ?? null,
+              phone: user?.phone ?? null,
               role: user?.role,
+              isSuperAdmin: Boolean(
+                user &&
+                  (user.role === "SUPER_ADMIN" ||
+                    isAuthorizedSuperAdminUser({
+                      email: user.email,
+                      phone: user.phone,
+                      name: user.name,
+                    }))
+              ),
             }}
             license={licenseInfo ? serializeForClient(licenseInfo) : null}
             systemSettings={systemSettings ? serializeForClient(systemSettings) : null}
