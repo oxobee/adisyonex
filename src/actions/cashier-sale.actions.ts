@@ -1,6 +1,7 @@
 "use server";
 
 import { withOperatorValidation } from "@/actions/helpers";
+import { prisma } from "@/lib/prisma";
 import { quickCashierSaleSchema } from "@/lib/validators/order";
 import { createOrder, type OrderContext } from "@/services/order.service";
 import { settle } from "@/services/settlement.service";
@@ -13,6 +14,49 @@ export const quickCashierSaleAction = withOperatorValidation(
       userId: ctx.userId ?? null,
       staffId: ctx.staffId ?? null,
     };
+
+    // Check if we are settling an existing open order (e.g. from an occupied table)
+    let targetOrderId = data.orderId;
+    if (!targetOrderId && data.tableId) {
+      const openOrder = await prisma.order.findFirst({
+        where: {
+          restaurantId: ctx.restaurantId,
+          tableId: data.tableId,
+          status: "OPEN",
+        },
+        select: { id: true },
+      });
+      if (openOrder) {
+        targetOrderId = openOrder.id;
+      }
+    }
+
+    if (targetOrderId) {
+      // Settle the existing open order
+      const settled = await settle(orderCtx, {
+        orderId: targetOrderId,
+        discountType: data.discountType,
+        discountValue: data.discountValue,
+        discountReason: data.discountReason,
+        payments: data.payments,
+      });
+
+      const paidAmount = data.payments.reduce((s, p) => s + p.amount, 0);
+      const tenderedAmount = data.payments.reduce((s, p) => s + (p.tendered ?? p.amount), 0);
+      const changeAmount = Math.max(0, tenderedAmount - settled.grandTotal);
+
+      return {
+        order: settled,
+        orderId: settled.id,
+        orderNumber: settled.orderNumber,
+        grandTotal: settled.grandTotal,
+        paidAmount,
+        tenderedAmount,
+        changeAmount,
+        invoiceUrl: `/dashboard/orders/${settled.id}/invoice`,
+        kotUrl: `/dashboard/orders/${settled.id}/kot`,
+      };
+    }
 
     // 1. Create order
     const order = await createOrder(orderCtx, {

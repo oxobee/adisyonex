@@ -12,12 +12,15 @@ export type OrderSource = "STAFF" | "SELF_ORDER";
 
 export interface OrderLineModifierDTO {
   readonly id: string;
+  readonly modifierId?: string | null;
   readonly name: string;
   readonly priceDelta: number;
 }
 
 export interface OrderLineDTO {
   readonly id: string;
+  readonly menuItemId?: string | null;
+  readonly variantId?: string | null;
   readonly name: string;
   readonly variantName: string | null;
   readonly unitPrice: number;

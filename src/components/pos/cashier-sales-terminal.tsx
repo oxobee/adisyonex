@@ -80,6 +80,7 @@ export interface ParkedTicketState {
   readonly label: string; // "Fiş 01" .. "Fiş 05"
   cart: CartLine[];
   selectedTableId: string | null;
+  existingOrderId: string | null;
   serviceType: OrderType;
   discount: DiscountInput;
   customerName: string;
@@ -89,11 +90,11 @@ export interface ParkedTicketState {
 }
 
 const DEFAULT_TICKETS: ParkedTicketState[] = [
-  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
-  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
-  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
-  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
-  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
+  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH" },
 ];
 
 export const getTableOrderTotal = (order?: OrderDTO): number => {
@@ -175,7 +176,12 @@ export function CashierSalesTerminal({
     );
   };
 
-  const setSelectedTableId = (id: string | null) => updateActiveTicket({ selectedTableId: id });
+  const setSelectedTableId = (id: string | null) =>
+    updateActiveTicket((t) => ({
+      ...t,
+      selectedTableId: id,
+      existingOrderId: id ? t.existingOrderId : null,
+    }));
   const setServiceType = (st: OrderType) => updateActiveTicket({ serviceType: st });
   const setDiscount = (d: DiscountInput) => updateActiveTicket({ discount: d });
   const setCustomerName = (n: string) => updateActiveTicket({ customerName: n });
@@ -242,6 +248,7 @@ export function CashierSalesTerminal({
     updateActiveTicket({
       cart: [],
       selectedTableId: null,
+      existingOrderId: null,
       serviceType: "TAKEAWAY",
       discount: { type: "NONE", value: 0 },
       customerName: "",
@@ -376,37 +383,61 @@ export function CashierSalesTerminal({
 
   // Handle table selection & load items if table has open order
   const handleSelectTable = (table: TableDTO) => {
-    setSelectedTableId(table.id);
-    setServiceType("DINE_IN");
     const existingOrder = tableOrderMap.get(table.id) || (occupied[table.id] ? openOrders.find(o => o.id === occupied[table.id]) : undefined);
     
     if (existingOrder && existingOrder.lines.length > 0) {
-      // Map existing lines to CartLine
+      // Map existing lines to CartLine with real menuItemId from menu
       const mappedLines: CartLine[] = existingOrder.lines
         .filter(l => l.state !== "VOID")
-        .map(l => ({
-          key: l.id || uuid(),
-          menuItemId: l.id,
-          name: l.name,
-          variantId: null,
-          variantName: l.variantName,
-          unitPrice: l.unitPrice,
-          taxRate: l.taxRate,
-          taxInclusive: l.taxInclusive,
-          modifiers: l.modifiers.map(m => ({
-            id: m.id,
-            name: m.name,
-            priceDelta: m.priceDelta,
-          })),
-          quantity: l.quantity,
-          lineNote: l.lineNote,
-          isComp: l.isComp,
-        }));
-      replaceAll(mappedLines);
+        .map(l => {
+          const matchedItem = menu.items.find(
+            mi => mi.id === l.menuItemId || mi.name.toLowerCase().trim() === l.name.toLowerCase().trim()
+          );
+          const resolvedMenuItemId = l.menuItemId || matchedItem?.id || (menu.items[0]?.id ?? l.id);
+          const matchedVariant = matchedItem?.variants.find(
+            v => v.id === l.variantId || (l.variantName && v.name.toLowerCase() === l.variantName.toLowerCase())
+          );
+
+          return {
+            key: l.id || uuid(),
+            menuItemId: resolvedMenuItemId,
+            name: l.name,
+            variantId: matchedVariant?.id ?? l.variantId ?? null,
+            variantName: l.variantName,
+            unitPrice: l.unitPrice,
+            taxRate: l.taxRate,
+            taxInclusive: l.taxInclusive,
+            modifiers: l.modifiers.map(m => {
+              const matchedMod = matchedItem?.modifierGroups.flatMap(g => g.modifiers).find(
+                mod => mod.id === m.modifierId || mod.name.toLowerCase() === m.name.toLowerCase()
+              );
+              return {
+                id: matchedMod?.id || m.modifierId || m.id,
+                name: m.name,
+                priceDelta: m.priceDelta,
+              };
+            }),
+            quantity: l.quantity,
+            lineNote: l.lineNote,
+            isComp: l.isComp,
+          };
+        });
+
+      updateActiveTicket({
+        selectedTableId: table.id,
+        existingOrderId: existingOrder.id,
+        serviceType: "DINE_IN",
+        cart: mappedLines,
+      });
       toast.info(`${table.label} içeriği ve tutarı yüklendi!`, {
         description: `Mevcut Tutar: ${formatCurrency(getTableOrderTotal(existingOrder))}`,
       });
     } else {
+      updateActiveTicket({
+        selectedTableId: table.id,
+        existingOrderId: null,
+        serviceType: "DINE_IN",
+      });
       toast.success(`${table.label} seçildi.`);
     }
     setIsTableModalOpen(false);
@@ -584,6 +615,7 @@ export function CashierSalesTerminal({
       toast.success(`Satış Tamamlandı! Fiş #${res.orderNumber}`, {
         description: `Tutar: ${formatCurrency(res.grandTotal)} | Paraüstü: ${formatCurrency(res.changeAmount)}`,
       });
+      router.refresh();
     },
     onError: (msg) => {
       toast.error(msg || "Satış işlemi sırasında bir hata oluştu");
@@ -658,6 +690,7 @@ export function CashierSalesTerminal({
 
     const payload = {
       idempotencyKey: uuid(),
+      orderId: currentTicket.existingOrderId ?? undefined,
       orderType: selectedTableId ? ("DINE_IN" as const) : serviceType,
       tableId: selectedTableId ?? undefined,
       customerName: customerName.trim() || undefined,

@@ -94,6 +94,7 @@ export type SettleTableInput = z.infer<typeof settleTableSchema>;
 
 export const quickCashierSaleSchema = z.object({
   idempotencyKey: z.string().trim().min(8).max(100),
+  orderId: idSchema.optional(),
   orderType: orderTypeSchema.default("TAKEAWAY"),
   tableId: idSchema.optional(),
   tableLabel: z.string().trim().max(40).optional(),

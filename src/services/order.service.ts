@@ -53,6 +53,8 @@ const num = (v: unknown): number => Number(v);
 export const mapOrder = (o: OrderWithRelations): OrderDTO => {
   const lines = o.items.map((i) => ({
     id: i.id,
+    menuItemId: i.menuItemId,
+    variantId: i.variantId,
     name: i.name,
     variantName: i.variantName,
     unitPrice: num(i.unitPrice),
@@ -66,6 +68,7 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => {
     itemType: (i.itemType as "SERVED" | "PACKAGED_GOODS" | "OTHER" | null) ?? "SERVED",
     modifiers: i.modifiers.map((m) => ({
       id: m.id,
+      modifierId: m.modifierId,
       name: m.name,
       priceDelta: num(m.priceDelta),
     })),
@@ -140,7 +143,12 @@ const snapshotLines = (
 ): OrderLineWriteData[] => {
   const itemsById = new Map(menu.items.map((i) => [i.id, i]));
   return lines.map((line, idx) => {
-    const item = itemsById.get(line.menuItemId);
+    let item = itemsById.get(line.menuItemId);
+    if (!item) {
+      item = menu.items.find(
+        (i) => i.name.toLowerCase().trim() === line.menuItemId.toLowerCase().trim(),
+      );
+    }
     if (!item) {
       throw new Error(MENU_ITEM_NOT_FOUND);
     }
