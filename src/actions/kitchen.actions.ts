@@ -44,5 +44,3 @@ export const markItemsServedAction = withOperatorValidation(
   async (data, ctx) => markItemsServed(ctx.restaurantId, data.itemIds),
 );
 
-export type { ReadyToServeItemDTO };
-

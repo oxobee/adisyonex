@@ -23,8 +23,8 @@ import { cn } from "@/lib/utils";
 import {
   getReadyToServeItemsAction,
   markItemsServedAction,
-  type ReadyToServeItemDTO,
 } from "@/actions/kitchen.actions";
+import type { ReadyToServeItemDTO } from "@/services/kitchen.service";
 
 interface WaiterReadyItemsPanelProps {
   readonly initialItems?: readonly ReadyToServeItemDTO[];

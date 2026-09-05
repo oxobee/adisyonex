@@ -47,7 +47,7 @@ import {
   type StaffAccount,
 } from "./staff-account-menu";
 import { WaiterReadyItemsPanel } from "./waiter-ready-items-panel";
-import type { ReadyToServeItemDTO } from "@/actions/kitchen.actions";
+import type { ReadyToServeItemDTO } from "@/services/kitchen.service";
 
 export interface HomeOperationalStats {
   readonly restaurantName: string;
