@@ -9,6 +9,7 @@ import { getManagerById } from "@/services/user.service";
 import { getLiveWeather } from "@/services/weather.service";
 import { prisma } from "@/lib/prisma";
 import { getTurkeyDayRange } from "@/services/z-report.service";
+import { getReadyToServeItems } from "@/services/kitchen.service";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export default async function HomePage() {
         stockItems,
         urgentOrders,
         preparedItemsList,
+        readyToServeItemsList,
       ] = await Promise.all([
         prisma.restaurant.findUnique({
           where: { id: restaurantId },
@@ -189,6 +191,7 @@ export default async function HomePage() {
           orderBy: { createdAt: "desc" },
           take: 5,
         }),
+        getReadyToServeItems(restaurantId).catch(() => []),
       ]);
 
       if (restaurant?.name) {
@@ -327,6 +330,7 @@ export default async function HomePage() {
         newCustomers: newCustomers || 0,
         weather,
         notifications,
+        readyToServeItems: readyToServeItemsList || [],
       };
     } catch (e) {
       console.error("Failed to load home operational stats:", e);

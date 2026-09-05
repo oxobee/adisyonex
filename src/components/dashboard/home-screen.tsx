@@ -46,6 +46,8 @@ import {
   StaffAccountMenu,
   type StaffAccount,
 } from "./staff-account-menu";
+import { WaiterReadyItemsPanel } from "./waiter-ready-items-panel";
+import type { ReadyToServeItemDTO } from "@/actions/kitchen.actions";
 
 export interface HomeOperationalStats {
   readonly restaurantName: string;
@@ -68,6 +70,7 @@ export interface HomeOperationalStats {
     readonly iconType: "sun" | "cloud-sun" | "cloud" | "fog" | "rain" | "snow" | "thunder";
   };
   readonly notifications?: readonly HomeNotificationItem[];
+  readonly readyToServeItems?: readonly ReadyToServeItemDTO[];
 }
 
 function WeatherIcon({ iconType }: { readonly iconType: string }) {
@@ -418,6 +421,10 @@ export function HomeScreen({
 
   const displayBranch = operationalStats?.branchName || restaurantName;
   const currentYear = new Date().getFullYear();
+
+  const isWaiter =
+    (activeAccount.role || staffRole || "").toUpperCase() === "WAITER" ||
+    (activeAccount.role || "").toLowerCase() === "garson";
 
   return (
     <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 pb-4 sm:pb-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
@@ -802,6 +809,7 @@ export function HomeScreen({
           {visibleCards.map((card, index) => {
             const Icon = card.icon;
             const patternId = `home-pat-${card.id}`;
+            const isSingleCardWaiter = visibleCards.length === 1 && isWaiter;
 
             return (
               <Link
@@ -815,6 +823,7 @@ export function HomeScreen({
                   card.shadow,
                   card.border,
                   card.insetHighlight,
+                  isSingleCardWaiter && "col-span-2 md:col-span-1 xl:col-span-1",
                   "transform-gpu will-change-transform",
                   "hover:-translate-y-1.5 hover:shadow-2xl",
                   "active:translate-y-1 active:scale-[0.985] active:border-b-2 active:shadow-md",
@@ -932,6 +941,11 @@ export function HomeScreen({
               </Link>
             );
           })}
+
+          {/* SADECE GARSON EKRANINDA GÖZÜKEN SERVİSE HAZIR ÜRÜNLER ALANI */}
+          {isWaiter && (
+            <WaiterReadyItemsPanel initialItems={operationalStats?.readyToServeItems} />
+          )}
         </section>
       </main>
 
