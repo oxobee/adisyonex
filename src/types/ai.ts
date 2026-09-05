@@ -38,6 +38,19 @@ export interface AiTaskDTO {
   readonly createdAt: string;
 }
 
+export interface AiDigitizedModifierDTO {
+  name: string;
+  priceDelta: number;
+}
+
+export interface AiDigitizedModifierGroupDTO {
+  name: string;
+  minSelect?: number;
+  maxSelect?: number;
+  isRequired?: boolean;
+  modifiers: AiDigitizedModifierDTO[];
+}
+
 export interface AiDigitizedItemDTO {
   name: string;
   price: number;
@@ -48,6 +61,7 @@ export interface AiDigitizedItemDTO {
   calories?: number;
   allergens?: string[];
   variants?: { name: string; price: number }[];
+  modifierGroups?: AiDigitizedModifierGroupDTO[];
   selected?: boolean;
 }
 

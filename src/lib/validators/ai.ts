@@ -108,6 +108,48 @@ const normalizeVariants = (value: unknown): Array<{ name: string; price: unknown
     .slice(0, 20);
 };
 
+const normalizeModifierGroups = (value: unknown) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((group) => {
+      if (!group || typeof group !== "object") return null;
+      const raw = group as {
+        name?: unknown;
+        minSelect?: unknown;
+        maxSelect?: unknown;
+        isRequired?: unknown;
+        modifiers?: unknown;
+      };
+      const name = typeof raw.name === "string" ? raw.name.trim() : "";
+      if (!name) return null;
+      const rawModifiers = Array.isArray(raw.modifiers) ? raw.modifiers : [];
+      const modifiers = rawModifiers
+        .map((m) => {
+          if (!m || typeof m !== "object") return null;
+          const mRaw = m as { name?: unknown; priceDelta?: unknown };
+          const mName = typeof mRaw.name === "string" ? mRaw.name.trim() : "";
+          if (!mName) return null;
+          return {
+            name: mName,
+            priceDelta: Number(mRaw.priceDelta) || 0,
+          };
+        })
+        .filter((m): m is { name: string; priceDelta: number } => m !== null);
+
+      if (modifiers.length === 0) return null;
+
+      return {
+        name,
+        minSelect: Number(raw.minSelect) || 0,
+        maxSelect: Number(raw.maxSelect) || Math.max(1, modifiers.length),
+        isRequired: Boolean(raw.isRequired),
+        modifiers,
+      };
+    })
+    .filter((g): g is NonNullable<typeof g> => g !== null)
+    .slice(0, 10);
+};
+
 export const aiCommitItemSchema = z.object({
   name: z.string().trim().min(1).max(100),
   categoryName: z.string().trim().min(1).max(100),
@@ -134,6 +176,23 @@ export const aiCommitItemSchema = z.object({
         price: z.preprocess(normalizeOptionalNumber, z.number().finite().min(0)),
       }),
     ).max(20),
+  ),
+  modifierGroups: z.preprocess(
+    normalizeModifierGroups,
+    z.array(
+      z.object({
+        name: z.string().trim().min(1).max(100),
+        minSelect: z.coerce.number().int().min(0).default(0),
+        maxSelect: z.coerce.number().int().min(1).default(1),
+        isRequired: z.boolean().default(false),
+        modifiers: z.array(
+          z.object({
+            name: z.string().trim().min(1).max(100),
+            priceDelta: z.coerce.number().default(0),
+          }),
+        ).min(1),
+      }),
+    ).optional(),
   ),
 });
 

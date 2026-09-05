@@ -9,6 +9,10 @@ import {
   createMenuCategory,
   findCategoriesByRestaurant,
 } from "@/repositories/menu-category.repository";
+import {
+  createModifierGroup,
+  findModifierGroupsByRestaurant,
+} from "@/repositories/modifier-group.repository";
 import { createItem } from "@/services/menu-item.service";
 import { addItemImageForRestaurant } from "@/services/menu-image.service";
 import type {
@@ -52,13 +56,28 @@ export const digitizeMenu = async (
   );
 
   try {
-    const systemPrompt = `Sen uzman bir restoran menü dijitalleştirme ve OCR yapay zekasısın.
+    const systemPrompt = `Sen uzman bir restoran menü dijitalleştirme, OCR ve gastronomi yapay zekasısın.
 Sana verilen menü görselini/metnini analiz et ve aşağıdaki kurallara harfiyen uy:
-1. Menüde yer almayan hiçbir ürün veya fiyat UYDURMA (Hallucination yapma).
-2. Fiyat okunamıyorsa 0 veya null bırak.
-3. Kategori isimlerini düzgün Türkçe başlıklar olarak belirle (Örn: "Burgerler", "Kebaplar", "Tatlılar", "İçecekler").
-4. Birden fazla sayfada veya bölümde aynı kategori tekrar ediyorsa tek bir kategori altında birleştir.
-5. Porsiyon veya gramaj bilgisi varsa açıklamaya veya varyantlara ekle.
+1. Menüde yer almayan hiçbir ürün veya temel fiyat UYDURMA. Fiyat okunamıyorsa 0 veya null bırak.
+2. KATEGORİLEME:
+   - Metinde açık bir kategori başlığı yoksa bile ürünleri içeriğine göre en uygun Türkçe kategoriye ata (Örn: Cheesecake ve Sufle -> "Tatlılar", Latte ve Çay -> "İçecekler", Burger ve Patates -> "Burgerler", Kebaplar -> "Kebaplar", vb.).
+3. EK SEÇENEK GRUPLARI (Modifier Groups / Soslar / Ekstralar / Seçimler):
+   - Ürünün altında yer alan "Sos Seçenekleri", "Ekstralar", "Seçenekler", "Malzemeler", "Pişme Derecesi" gibi seçimleri "modifierGroups" alanına çıkar.
+   - Her grup için:
+     - "name": Grubun adı (Örn: "Sos Seçenekleri", "Ekstralar", "Peynir Seçimi").
+     - "isRequired": Zorunlu seçim mi? (Sos veya temel seçim ise true, ekstra ekleme ise false).
+     - "minSelect": Minimum seçim adedi (Zorunlu ise 1, opsiyonel ise 0).
+     - "maxSelect": Maksimum seçim adedi (Tek seçim ise 1, birden fazla seçilebiliyorsa seçenek sayısı).
+     - "modifiers": Seçeneklerin listesi:
+       - "name": Seçenek adı (Örn: "Sade", "Çikolata Sos", "Lotus Sos", "Vanilyalı Dondurma").
+       - "priceDelta": Fiyat farkı (Örn: "Ücretsiz" veya "Bedava" -> 0, "+30 TL" -> 30, "+40 TL" -> 40, "30 TL" -> 30).
+4. VARYANTLAR (Porsiyon / Boyut Fiyatları):
+   - Eğer ürünün boyut/porsiyon fiyatları varsa "variants" dizisine ekle (Örn: "Tek Porsiyon": 220, "1.5 Porsiyon": 330).
+5. ALERJEN, BESLENME VE KALORİ TAHMİNİ:
+   - "dietaryType": Ürünün içeriğine göre "VEG" (Vejetaryen), "NON_VEG" (Et/Tavuk/Balık içeren) veya "EGG" (Yumurtalı/unlu tatlılar vb.) olarak belirle.
+   - "calories": Porsiyon başına tahmini kalori (Örn: San Sebastian Cheesecake -> 480, Sufle -> 520, Burger -> 750, vb.).
+   - "allergens": Üründe bulunması muhtemel alerjenleri Türkçe dizi olarak yaz (Örn: ["Gluten", "Süt/Laktoz", "Yumurta", "Fındık/Fıstık", "Soya"]).
+   - "prepTimeMinutes": Ortalama hazırlanma süresi (Örn: 10, 15, 20).
 6. Yanıtın SADECE geçerli bir JSON olmalıdır:
 {
   "restaurantName": "Restoran Adı",
@@ -69,16 +88,38 @@ Sana verilen menü görselini/metnini analiz et ve aşağıdaki kurallara harfiy
       "items": [
         {
           "name": "Ürün Adı",
-          "price": 250,
+          "price": 220,
           "shortDescription": "İçerik ve malzeme açıklaması",
           "categoryName": "Kategori Adı",
           "dietaryType": "VEG" | "NON_VEG" | "EGG" | null,
           "prepTimeMinutes": 15,
-          "calories": 450,
-          "allergens": ["Gluten", "Süt/Laktoz"],
+          "calories": 480,
+          "allergens": ["Gluten", "Süt/Laktoz", "Yumurta"],
           "variants": [
-            { "name": "Tek Porsiyon", "price": 250 },
-            { "name": "1.5 Porsiyon", "price": 350 }
+            { "name": "Tek Porsiyon", "price": 220 }
+          ],
+          "modifierGroups": [
+            {
+              "name": "Sos Seçenekleri",
+              "minSelect": 1,
+              "maxSelect": 1,
+              "isRequired": true,
+              "modifiers": [
+                { "name": "Sade", "priceDelta": 0 },
+                { "name": "Çikolata Sos", "priceDelta": 30 },
+                { "name": "Lotus Sos", "priceDelta": 35 }
+              ]
+            },
+            {
+              "name": "Ekstralar",
+              "minSelect": 0,
+              "maxSelect": 5,
+              "isRequired": false,
+              "modifiers": [
+                { "name": "Vanilyalı Dondurma", "priceDelta": 40 },
+                { "name": "Çilek", "priceDelta": 30 }
+              ]
+            }
           ]
         }
       ]
@@ -216,8 +257,8 @@ export const digitizeMenuFromUrl = async (
   );
 
   try {
-    const systemPrompt = `Sen web sitelerinden menü verisi çıkartan bir AI uzmanısın.
-Sana verilen web sitesi içeriğini analiz ederek kategorileri, ürünleri, açıklamaları ve fiyatları eksiksiz bir JSON olarak döndür.
+    const systemPrompt = `Sen web sitelerinden menü verisi çıkartan bir AI ve gastronomi uzmanısın.
+Sana verilen web sitesi içeriğini analiz ederek kategorileri, ürünleri, açıklamaları, fiyatları, ek seçenek gruplarını (modifierGroups), beslenme türünü, alerjenleri ve kaloriyi eksiksiz bir JSON olarak döndür.
 Uydurma veri üretme; sitede olmayan fiyatları null bırak.
 JSON formatı:
 {
@@ -230,7 +271,25 @@ JSON formatı:
           "name": "Ürün Adı",
           "price": 100,
           "shortDescription": "Açıklama",
-          "categoryName": "Kategori Adı"
+          "categoryName": "Kategori Adı",
+          "dietaryType": "VEG" | "NON_VEG" | "EGG" | null,
+          "prepTimeMinutes": 15,
+          "calories": 450,
+          "allergens": ["Gluten", "Süt/Laktoz"],
+          "variants": [
+            { "name": "Porsiyon", "price": 100 }
+          ],
+          "modifierGroups": [
+            {
+              "name": "Ek Seçenekler",
+              "minSelect": 0,
+              "maxSelect": 5,
+              "isRequired": false,
+              "modifiers": [
+                { "name": "Ekstra Peynir", "priceDelta": 20 }
+              ]
+            }
+          ]
         }
       ]
     }
@@ -543,8 +602,15 @@ export const commitDigitizedMenu = async (
     dietaryType?: any;
     allergens?: string[];
     variants?: Array<{ name: string; price: number }>;
+    modifierGroups?: Array<{
+      name: string;
+      minSelect?: number;
+      maxSelect?: number;
+      isRequired?: boolean;
+      modifiers: Array<{ name: string; priceDelta: number }>;
+    }>;
   }>,
-): Promise<{ importedCategoriesCount: number; importedItemsCount: number }> => {
+): Promise<{ importedCategoriesCount: number; importedItemsCount: number; importedModifierGroupsCount: number }> => {
   const existingCategories = await findCategoriesByRestaurant(restaurantId);
   const categoryMap = new Map<string, string>();
 
@@ -555,6 +621,7 @@ export const commitDigitizedMenu = async (
   let createdCategoriesCount = 0;
   for (const catName of categories) {
     const trimmed = catName.trim();
+    if (!trimmed) continue;
     if (!categoryMap.has(trimmed.toLowerCase())) {
       const created = await createMenuCategory(restaurantId, {
         name: trimmed,
@@ -567,10 +634,67 @@ export const commitDigitizedMenu = async (
     }
   }
 
+  // Pre-load existing modifier groups for restaurant
+  const existingModifierGroups = await findModifierGroupsByRestaurant(restaurantId);
+  const modifierGroupMap = new Map<string, string>();
+  for (const group of existingModifierGroups) {
+    modifierGroupMap.set(group.name.toLowerCase().trim(), group.id);
+  }
+
+  let createdModifierGroupsCount = 0;
   let createdItemsCount = 0;
+
   for (const item of items) {
-    const categoryId = categoryMap.get(item.categoryName.toLowerCase().trim());
-    if (!categoryId) continue;
+    let categoryId = categoryMap.get(item.categoryName.toLowerCase().trim());
+    if (!categoryId) {
+      // Auto-create category if missing
+      const catName = item.categoryName.trim() || "Genel";
+      const created = await createMenuCategory(restaurantId, {
+        name: catName,
+        description: undefined,
+        sortOrder: existingCategories.length + createdCategoriesCount,
+        isActive: true,
+      });
+      categoryId = created.id;
+      categoryMap.set(catName.toLowerCase(), categoryId);
+      createdCategoriesCount++;
+    }
+
+    // Process & create/link modifier groups (Soslar, Ekstralar, Seçimler)
+    const itemModifierGroupIds: string[] = [];
+    if (item.modifierGroups && item.modifierGroups.length > 0) {
+      for (const grp of item.modifierGroups) {
+        const trimmedGrpName = grp.name.trim();
+        if (!trimmedGrpName || !grp.modifiers || grp.modifiers.length === 0) continue;
+
+        let groupId = modifierGroupMap.get(trimmedGrpName.toLowerCase());
+        if (!groupId) {
+          try {
+            const createdGroup = await createModifierGroup(restaurantId, {
+              name: trimmedGrpName,
+              minSelect: grp.minSelect ?? (grp.isRequired ? 1 : 0),
+              maxSelect: grp.maxSelect ?? Math.max(1, grp.modifiers.length),
+              isRequired: grp.isRequired ?? false,
+              modifiers: grp.modifiers.map((m, mIdx) => ({
+                name: m.name.trim(),
+                priceDelta: Number(m.priceDelta) || 0,
+                sortOrder: mIdx,
+                isActive: true,
+              })),
+            });
+            groupId = createdGroup.id;
+            modifierGroupMap.set(trimmedGrpName.toLowerCase(), groupId);
+            createdModifierGroupsCount++;
+          } catch (e) {
+            console.error("Failed to create modifier group:", trimmedGrpName, e);
+          }
+        }
+
+        if (groupId && !itemModifierGroupIds.includes(groupId)) {
+          itemModifierGroupIds.push(groupId);
+        }
+      }
+    }
 
     const allergens = (item.allergens ?? []).map((name) => ({
       name,
@@ -593,7 +717,7 @@ export const commitDigitizedMenu = async (
       hsnSacCode: undefined,
       sortOrder: createdItemsCount,
       isActive: true,
-      modifierGroupIds: [],
+      modifierGroupIds: itemModifierGroupIds,
       variants: (item.variants ?? []).map((v, idx) => ({
         name: v.name,
         price: v.price,
@@ -608,6 +732,7 @@ export const commitDigitizedMenu = async (
   return {
     importedCategoriesCount: createdCategoriesCount,
     importedItemsCount: createdItemsCount,
+    importedModifierGroupsCount: createdModifierGroupsCount,
   };
 };
 

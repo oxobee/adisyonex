@@ -7,16 +7,19 @@ import {
   ArrowLeftIcon,
   CheckCircle2Icon,
   CheckIcon,
+  ClockIcon,
   CopyIcon,
   FileTextIcon,
   FlameIcon,
   GlobeIcon,
   ImageIcon,
+  LayersIcon,
   Link2Icon,
   Loader2Icon,
   PlusIcon,
   RotateCcwIcon,
   ScanLineIcon,
+  ShieldAlertIcon,
   SparklesIcon,
   Trash2Icon,
   UploadCloudIcon,
@@ -239,6 +242,130 @@ export function MenuImportView({ wallet }: { wallet: AiCreditWalletDTO }) {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const addModifierGroup = (itemIndex: number) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        const currentGroups = it.modifierGroups ?? [];
+        return {
+          ...it,
+          modifierGroups: [
+            ...currentGroups,
+            {
+              name: "Seçenek Grubu",
+              isRequired: false,
+              minSelect: 0,
+              maxSelect: 1,
+              modifiers: [{ name: "Seçenek 1", priceDelta: 0 }],
+            },
+          ],
+        };
+      }),
+    );
+  };
+
+  const removeModifierGroup = (itemIndex: number, groupIndex: number) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        return {
+          ...it,
+          modifierGroups: (it.modifierGroups ?? []).filter((_, gI) => gI !== groupIndex),
+        };
+      }),
+    );
+  };
+
+  const updateModifierGroupName = (itemIndex: number, groupIndex: number, name: string) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        return {
+          ...it,
+          modifierGroups: (it.modifierGroups ?? []).map((g, gI) =>
+            gI === groupIndex ? { ...g, name } : g,
+          ),
+        };
+      }),
+    );
+  };
+
+  const updateModifierGroupRequired = (itemIndex: number, groupIndex: number, isRequired: boolean) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        return {
+          ...it,
+          modifierGroups: (it.modifierGroups ?? []).map((g, gI) =>
+            gI === groupIndex ? { ...g, isRequired, minSelect: isRequired ? 1 : 0 } : g,
+          ),
+        };
+      }),
+    );
+  };
+
+  const addModifier = (itemIndex: number, groupIndex: number) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        return {
+          ...it,
+          modifierGroups: (it.modifierGroups ?? []).map((g, gI) => {
+            if (gI !== groupIndex) return g;
+            return {
+              ...g,
+              modifiers: [...g.modifiers, { name: "Yeni Seçenek", priceDelta: 0 }],
+            };
+          }),
+        };
+      }),
+    );
+  };
+
+  const removeModifier = (itemIndex: number, groupIndex: number, modIndex: number) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        return {
+          ...it,
+          modifierGroups: (it.modifierGroups ?? []).map((g, gI) => {
+            if (gI !== groupIndex) return g;
+            return {
+              ...g,
+              modifiers: g.modifiers.filter((_, mI) => mI !== modIndex),
+            };
+          }),
+        };
+      }),
+    );
+  };
+
+  const updateModifier = (
+    itemIndex: number,
+    groupIndex: number,
+    modIndex: number,
+    field: "name" | "priceDelta",
+    val: any,
+  ) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIndex) return it;
+        return {
+          ...it,
+          modifierGroups: (it.modifierGroups ?? []).map((g, gI) => {
+            if (gI !== groupIndex) return g;
+            return {
+              ...g,
+              modifiers: g.modifiers.map((m, mI) =>
+                mI === modIndex ? { ...m, [field]: val } : m,
+              ),
+            };
+          }),
+        };
+      }),
+    );
+  };
+
   const handleCommit = () => {
     const selectedItems = items.filter((it) => it.selected);
     if (selectedItems.length === 0) {
@@ -262,6 +389,7 @@ export function MenuImportView({ wallet }: { wallet: AiCreditWalletDTO }) {
         dietaryType: it.dietaryType,
         allergens: it.allergens ?? [],
         variants: it.variants ?? [],
+        modifierGroups: it.modifierGroups ?? [],
       })),
     });
   };
@@ -539,74 +667,270 @@ export function MenuImportView({ wallet }: { wallet: AiCreditWalletDTO }) {
           </div>
 
           {/* Staging Items List */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {items.map((item, idx) => (
               <div
                 key={idx}
                 className={cn(
-                  "flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 transition-all",
-                  item.selected ? "border-primary/40 bg-card shadow-xs" : "border-border/60 bg-muted/20 opacity-60",
+                  "flex flex-col gap-3 rounded-2xl border p-4 transition-all duration-200",
+                  item.selected ? "border-primary/40 bg-card shadow-sm" : "border-border/60 bg-muted/20 opacity-60",
                 )}
               >
-                <input
-                  type="checkbox"
-                  checked={item.selected}
-                  onChange={() => toggleItemSelection(idx)}
-                  className="size-4 rounded accent-primary cursor-pointer"
-                />
-
-                {/* Category */}
-                <div className="w-36 sm:w-44">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Kategori</span>
-                  <Input
-                    value={item.categoryName}
-                    onChange={(e) => updateItemField(idx, "categoryName", e.target.value)}
-                    className="h-8 text-xs font-semibold rounded-lg mt-0.5"
+                {/* 1. Üst Satır: Seçim, Kategori, Ürün Adı, Fiyat, Sil */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={item.selected}
+                    onChange={() => toggleItemSelection(idx)}
+                    className="size-4.5 rounded accent-primary cursor-pointer shrink-0"
                   />
+
+                  {/* Kategori */}
+                  <div className="w-36 sm:w-44 shrink-0">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                      📁 Kategori
+                    </span>
+                    <Input
+                      value={item.categoryName}
+                      onChange={(e) => updateItemField(idx, "categoryName", e.target.value)}
+                      placeholder="Örn: Tatlılar"
+                      className="h-8 text-xs font-bold rounded-lg mt-0.5 bg-primary/5 text-primary border-primary/20"
+                    />
+                  </div>
+
+                  {/* Ürün Adı */}
+                  <div className="min-w-44 flex-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                      Ürün Adı
+                    </span>
+                    <Input
+                      value={item.name}
+                      onChange={(e) => updateItemField(idx, "name", e.target.value)}
+                      className="h-8 text-xs sm:text-sm font-black rounded-lg mt-0.5"
+                    />
+                  </div>
+
+                  {/* Fiyat */}
+                  <div className="w-28 shrink-0">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                      Fiyat (₺)
+                    </span>
+                    <Input
+                      type="number"
+                      value={item.price}
+                      onChange={(e) => updateItemField(idx, "price", parseFloat(e.target.value) || 0)}
+                      className="h-8 text-xs sm:text-sm font-mono font-black tabular-nums rounded-lg mt-0.5 text-emerald-700 bg-emerald-50/50 border-emerald-200"
+                    />
+                  </div>
+
+                  {/* Sil */}
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => removeItem(idx)}
+                    className="text-muted-foreground hover:text-destructive rounded-lg shrink-0"
+                    title="Kaldır"
+                  >
+                    <Trash2Icon className="size-4" />
+                  </Button>
                 </div>
 
-                {/* Name */}
-                <div className="min-w-44 flex-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Ürün Adı</span>
-                  <Input
-                    value={item.name}
-                    onChange={(e) => updateItemField(idx, "name", e.target.value)}
-                    className="h-8 text-xs font-bold rounded-lg mt-0.5"
-                  />
-                </div>
-
-                {/* Price */}
-                <div className="w-24">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Fiyat (₺)</span>
-                  <Input
-                    type="number"
-                    value={item.price}
-                    onChange={(e) => updateItemField(idx, "price", parseFloat(e.target.value) || 0)}
-                    className="h-8 text-xs font-black tabular-nums rounded-lg mt-0.5"
-                  />
-                </div>
-
-                {/* Description */}
-                <div className="w-full sm:w-64">
+                {/* 2. Açıklama */}
+                <div>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">Açıklama</span>
                   <Input
-                    placeholder="Açıklama..."
+                    placeholder="Ürün içeriği ve açıklaması..."
                     value={item.shortDescription ?? ""}
                     onChange={(e) => updateItemField(idx, "shortDescription", e.target.value)}
                     className="h-8 text-xs text-muted-foreground rounded-lg mt-0.5"
                   />
                 </div>
 
-                {/* Remove */}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => removeItem(idx)}
-                  className="text-muted-foreground hover:text-destructive rounded-lg"
-                  title="Kaldır"
-                >
-                  <Trash2Icon className="size-4" />
-                </Button>
+                {/* 3. Beslenme, Kalori, Hazırlama Süresi, Alerjenler */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2 border-t border-border/40">
+                  {/* Beslenme Türü */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Beslenme Türü</span>
+                    <select
+                      value={item.dietaryType || ""}
+                      onChange={(e) => updateItemField(idx, "dietaryType", e.target.value || null)}
+                      className="h-8 text-xs font-semibold rounded-lg border border-input bg-background px-2.5 cursor-pointer"
+                    >
+                      <option value="">Belirtilmemiş</option>
+                      <option value="VEG">🌱 Vejetaryen</option>
+                      <option value="NON_VEG">🥩 Etli / Tavuk / Balık</option>
+                      <option value="EGG">🥚 Yumurtalı / Hamur İşi</option>
+                    </select>
+                  </div>
+
+                  {/* Kalori */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                      <FlameIcon className="size-3 text-orange-500" /> Tahmini Kalori
+                    </span>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        placeholder="Örn: 480"
+                        value={item.calories ?? ""}
+                        onChange={(e) => updateItemField(idx, "calories", parseInt(e.target.value) || null)}
+                        className="h-8 text-xs font-mono font-bold rounded-lg pr-10"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">
+                        kcal
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Hazırlama Süresi */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                      <ClockIcon className="size-3 text-blue-500" /> Hazırlama Süresi
+                    </span>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        placeholder="Örn: 15"
+                        value={item.prepTimeMinutes ?? ""}
+                        onChange={(e) => updateItemField(idx, "prepTimeMinutes", parseInt(e.target.value) || null)}
+                        className="h-8 text-xs font-mono font-bold rounded-lg pr-8"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">
+                        dk
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Alerjenler */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                      <ShieldAlertIcon className="size-3 text-amber-500" /> Alerjenler
+                    </span>
+                    <Input
+                      placeholder="Virgülle ayırın (Gluten, Süt...)"
+                      value={(item.allergens ?? []).join(", ")}
+                      onChange={(e) => {
+                        const list = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                        updateItemField(idx, "allergens", list);
+                      }}
+                      className="h-8 text-xs font-semibold rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Ek Seçenek & Sos Grupları (Modifier Groups) */}
+                <div className="mt-1 pt-2.5 border-t border-dashed border-border/60 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <LayersIcon className="size-3.5 text-indigo-500" />
+                      Ek Seçenek & Sos Grupları ({item.modifierGroups?.length || 0})
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      onClick={() => addModifierGroup(idx)}
+                      className="h-7 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg cursor-pointer"
+                    >
+                      <PlusIcon className="size-3 mr-1" /> Yeni Grup Ekle
+                    </Button>
+                  </div>
+
+                  {(!item.modifierGroups || item.modifierGroups.length === 0) ? (
+                    <span className="text-[11px] text-muted-foreground italic">
+                      Özel sos veya ekstra seçeneği bulunmuyor.
+                    </span>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {item.modifierGroups.map((group, gIdx) => (
+                        <div key={gIdx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                value={group.name}
+                                onChange={(e) => updateModifierGroupName(idx, gIdx, e.target.value)}
+                                placeholder="Grup Adı (örn: Sos Seçenekleri)"
+                                className="h-7 text-xs font-bold bg-white max-w-[200px]"
+                              />
+                              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={group.isRequired}
+                                  onChange={(e) => updateModifierGroupRequired(idx, gIdx, e.target.checked)}
+                                  className="size-3.5 rounded accent-indigo-600"
+                                />
+                                <span>Zorunlu Seçim</span>
+                              </label>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                type="button"
+                                onClick={() => addModifier(idx, gIdx)}
+                                className="h-6 px-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md cursor-pointer"
+                              >
+                                <PlusIcon className="size-2.5 mr-0.5" /> Seçenek Ekle
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                type="button"
+                                onClick={() => removeModifierGroup(idx, gIdx)}
+                                className="size-6 text-slate-400 hover:text-red-600 rounded-md"
+                              >
+                                <XIcon className="size-3" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Seçenek Rozetleri & Fiyat Farkları */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {group.modifiers.map((mod, mIdx) => (
+                              <div key={mIdx} className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-2xs text-xs font-semibold">
+                                <Input
+                                  value={mod.name}
+                                  onChange={(e) => updateModifier(idx, gIdx, mIdx, "name", e.target.value)}
+                                  className="h-5 text-[11px] font-bold w-24 p-0 border-0 shadow-none focus-visible:ring-0"
+                                  placeholder="Seçenek Adı"
+                                />
+                                <span className="text-slate-400 text-[10px] font-mono">+</span>
+                                <Input
+                                  type="number"
+                                  value={mod.priceDelta}
+                                  onChange={(e) => updateModifier(idx, gIdx, mIdx, "priceDelta", parseFloat(e.target.value) || 0)}
+                                  className="h-5 text-[11px] font-black w-12 p-0 border-0 shadow-none font-mono text-emerald-700 focus-visible:ring-0"
+                                  placeholder="0"
+                                />
+                                <span className="text-slate-400 text-[10px]">₺</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeModifier(idx, gIdx, mIdx)}
+                                  className="text-slate-400 hover:text-red-500 ml-0.5 cursor-pointer"
+                                  title="Sil"
+                                >
+                                  <XIcon className="size-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Porsiyonlar / Varyantlar (Varsa) */}
+                {item.variants && item.variants.length > 0 && (
+                  <div className="mt-1 pt-2 border-t border-dashed border-border/40 flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Porsiyonlar:</span>
+                    {item.variants.map((v, vIdx) => (
+                      <span key={vIdx} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">
+                        {v.name}: {v.price} ₺
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
