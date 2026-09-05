@@ -28,6 +28,7 @@ import type { ReadyToServeItemDTO } from "@/services/kitchen.service";
 
 interface WaiterReadyItemsPanelProps {
   readonly initialItems?: readonly ReadyToServeItemDTO[];
+  readonly className?: string;
 }
 
 /**
@@ -67,7 +68,10 @@ function playReadyChime() {
   }
 }
 
-export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPanelProps) {
+export function WaiterReadyItemsPanel({
+  initialItems = [],
+  className,
+}: WaiterReadyItemsPanelProps) {
   const [items, setItems] = useState<ReadyToServeItemDTO[]>([...initialItems]);
   const [isPending, startTransition] = useTransition();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -197,40 +201,40 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
       : items.filter((it) => it.tableLabel === selectedTableFilter);
 
   return (
-    <div className="col-span-1 md:col-span-1 xl:col-span-2 flex flex-col gap-3 sm:gap-4 anim-sleek">
+    <div className={cn("col-span-full flex flex-col gap-3 sm:gap-4 anim-sleek", className)}>
       {/* PANEL CONTAINER */}
-      <div className="w-full rounded-2xl sm:rounded-3xl border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] p-4 sm:p-5 flex flex-col gap-3.5">
+      <div className="w-full rounded-2xl sm:rounded-3xl border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] p-3.5 sm:p-5 flex flex-col gap-3 sm:gap-4">
         
         {/* PANEL HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-xs shrink-0">
-              <ChefHatIcon className="size-5.5 stroke-[2.2]" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-xs shrink-0 mt-0.5 sm:mt-0">
+              <ChefHatIcon className="size-5 sm:size-5.5 stroke-[2.2]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
                   Servise Hazır Ürünler
                 </h2>
-                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100/80 text-emerald-800 border border-emerald-300 shadow-2xs">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100/80 text-emerald-800 border border-emerald-300 shadow-2xs shrink-0">
                   <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
                   {items.length} Tabak Hazır
                 </span>
               </div>
-              <p className="text-xs text-gray-500 font-medium">
+              <p className="text-xs text-gray-500 font-medium line-clamp-1 sm:line-clamp-none mt-0.5">
                 Mutfaktan çıkan ve masaya servis bekleyen lezzetler (İşlem Sırasına Göre)
               </p>
             </div>
           </div>
 
           {/* Action Tools: Sound Chime & Refresh */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             {/* Sound Mute/Unmute Toggle */}
             <button
               type="button"
               onClick={() => setSoundEnabled((prev) => !prev)}
               className={cn(
-                "p-2 rounded-xl border text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95 flex items-center gap-1.5",
+                "px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95 flex items-center gap-1.5",
                 soundEnabled
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                   : "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100"
@@ -238,7 +242,7 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
               title={soundEnabled ? "Servis Zili Açık" : "Servis Zili Sessiz"}
             >
               {soundEnabled ? <Volume2Icon className="size-3.5" /> : <VolumeXIcon className="size-3.5" />}
-              <span className="text-[11px] hidden sm:inline">{soundEnabled ? "Zil Açık" : "Sessiz"}</span>
+              <span className="text-[11px] font-semibold">{soundEnabled ? "Zil Açık" : "Sessiz"}</span>
             </button>
 
             {/* Manual Refresh Button */}
@@ -246,11 +250,11 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
               type="button"
               onClick={() => fetchReadyItems(true)}
               disabled={isRefreshing}
-              className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 active:scale-95 text-gray-700 border border-gray-200 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 active:scale-95 text-gray-700 border border-gray-200 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               title="Listeyi Şimdi Yenile"
             >
               <RefreshCwIcon className={cn("size-3.5", isRefreshing && "animate-spin text-primary")} />
-              <span className="text-[11px] hidden sm:inline">Yenile</span>
+              <span className="text-[11px] font-semibold">Yenile</span>
             </button>
           </div>
         </div>
@@ -313,7 +317,7 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
           </div>
         ) : (
           /* CARDS GRID (İŞLEM SIRASI ÖNCELİĞİNE GÖRE SIRALI) */
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {displayedItems.map((item, index) => {
               const isUrgent = item.elapsedMinutes >= 5;
               const isDelivering = Boolean(deliveringIds[item.id]);
@@ -322,7 +326,7 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
                 <div
                   key={item.id}
                   className={cn(
-                    "anim-sleek group relative flex flex-col justify-between p-4 rounded-2xl sm:rounded-3xl border transition-all duration-200",
+                    "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all duration-200",
                     "bg-white shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)]",
                     isUrgent
                       ? "border-red-300/90 hover:border-red-400 ring-2 ring-red-500/15"
@@ -373,14 +377,14 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
                       }
                     >
                       <ClockIcon className="size-3" />
-                      <span>{item.elapsedMinutes === 0 ? "Az önce çıktı" : `${item.elapsedMinutes} dk önce`}</span>
+                      <span>{item.elapsedMinutes === 0 ? "Az önce" : `${item.elapsedMinutes} dk önce`}</span>
                     </div>
                   </div>
 
                   {/* ITEM BODY: ADET & İSİM & VARYANT & NOTLAR */}
-                  <div className="py-3 space-y-1.5 flex-1">
+                  <div className="py-2.5 sm:py-3 space-y-1.5 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 min-w-0">
                         <h4 className="text-sm sm:text-base font-black text-gray-900 leading-snug">
                           <span className="text-blue-600 mr-1.5 inline-block font-extrabold">
                             {item.quantity}x
@@ -429,12 +433,16 @@ export function WaiterReadyItemsPanel({ initialItems = [] }: WaiterReadyItemsPan
                   <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2">
                     {/* Masaya Git Linki */}
                     <Link
-                      href="/dashboard/tables"
-                      className="px-3 py-2 rounded-xl text-xs font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1"
-                      title="Masalar ekranını aç"
+                      href={
+                        item.tableId
+                          ? `/dashboard/orders?tableId=${encodeURIComponent(item.tableId)}`
+                          : `/dashboard/orders?tableLabel=${encodeURIComponent(item.tableLabel)}`
+                      }
+                      className="px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all flex items-center gap-1.5"
+                      title="Masa adisyonunu aç"
                     >
                       <span>Masaya Git</span>
-                      <ArrowRightIcon className="size-3" />
+                      <ArrowRightIcon className="size-3.5" />
                     </Link>
 
                     {/* Servis Edildi Butonu (Ana Aksiyon) */}

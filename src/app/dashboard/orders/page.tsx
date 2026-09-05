@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { OrdersBoard } from "@/components/orders/orders-board";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -48,14 +49,16 @@ export default async function OrdersPage() {
   ]);
 
   return (
-    <OrdersBoard
-      open={open}
-      completed={completed}
-      sales={sales}
-      tables={tables}
-      menu={menu}
-      restaurantName={profile?.name || "Restoran"}
-      restaurantTagline={profile?.tagline}
-    />
+    <Suspense fallback={null}>
+      <OrdersBoard
+        open={open}
+        completed={completed}
+        sales={sales}
+        tables={tables}
+        menu={menu}
+        restaurantName={profile?.name || "Restoran"}
+        restaurantTagline={profile?.tagline}
+      />
+    </Suspense>
   );
 }

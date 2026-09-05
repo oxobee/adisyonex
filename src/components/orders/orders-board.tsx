@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRightLeftIcon,
   ArrowUpDownIcon,
@@ -220,6 +220,38 @@ export function OrdersBoard({
 
   // Spotlight State
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const queryTableId = searchParams?.get("tableId");
+  const queryTableLabel = searchParams?.get("tableLabel");
+
+  // Auto-open table modal if tableId or tableLabel is present in URL (e.g. from Waiter Ready Items Panel)
+  useEffect(() => {
+    if (!tables || tables.length === 0) return;
+
+    if (queryTableId) {
+      const found = tables.find((t) => t.id === queryTableId);
+      if (found) {
+        setSelectedTableId(found.id);
+        setViewMode("TABLE_GRID");
+        return;
+      }
+    }
+
+    if (queryTableLabel) {
+      const cleanTarget = queryTableLabel.trim().toLowerCase();
+      const found = tables.find(
+        (t) =>
+          t.label.trim().toLowerCase() === cleanTarget ||
+          t.label.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() ===
+            cleanTarget.replace(/[^a-zA-Z0-9]/g, ""),
+      );
+      if (found) {
+        setSelectedTableId(found.id);
+        setViewMode("TABLE_GRID");
+      }
+    }
+  }, [queryTableId, queryTableLabel, tables]);
 
   // Dialog States
   const [printBillTable, setPrintBillTable] = useState<{
@@ -810,7 +842,17 @@ export function OrdersBoard({
               table={selectedTable}
               orders={selectedTableOrders}
               isOpen={Boolean(selectedTableId)}
-              onClose={() => setSelectedTableId(null)}
+              onClose={() => {
+                setSelectedTableId(null);
+                if (typeof window !== "undefined") {
+                  const url = new URL(window.location.href);
+                  if (url.searchParams.has("tableId") || url.searchParams.has("tableLabel")) {
+                    url.searchParams.delete("tableId");
+                    url.searchParams.delete("tableLabel");
+                    window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+                  }
+                }
+              }}
               onPrintBill={handlePrintBill}
               onAddProduct={handleAddProduct}
               onSettleBill={handleSettle}

@@ -944,7 +944,10 @@ export function HomeScreen({
 
           {/* SADECE GARSON EKRANINDA GÖZÜKEN SERVİSE HAZIR ÜRÜNLER ALANI */}
           {isWaiter && (
-            <WaiterReadyItemsPanel initialItems={operationalStats?.readyToServeItems} />
+            <WaiterReadyItemsPanel
+              initialItems={operationalStats?.readyToServeItems}
+              className="col-span-full"
+            />
           )}
         </section>
       </main>
