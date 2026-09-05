@@ -49,6 +49,41 @@ export interface CustomLineInput {
   notes?: string;
 }
 
+/**
+ * Ultra-modern, radiant AI Sparkle icon with organic 4-point star & satellite accent sparkles
+ */
+export function AiSparkleIcon({
+  className = "size-6",
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={style}
+      aria-hidden="true"
+    >
+      {/* Central 4-pointed radiant star with organic curved rays */}
+      <path d="M12 1.5C12 7.29899 7.29899 12 1.5 12C7.29899 12 12 16.701 12 22.5C12 16.701 16.701 12 22.5 12C16.701 12 12 7.29899 12 1.5Z" />
+      {/* Accent sparkle top right */}
+      <path
+        d="M19.5 1.5C19.5 3.70914 17.7091 5.5 15.5 5.5C17.7091 5.5 19.5 7.29086 19.5 9.5C19.5 7.29086 21.2909 5.5 23.5 5.5C21.2909 5.5 19.5 3.70914 19.5 1.5Z"
+        opacity="0.9"
+      />
+      {/* Satellite micro sparkle bottom left */}
+      <path
+        d="M5 16C5 17.3807 3.88071 18.5 2.5 18.5C3.88071 18.5 5 19.6193 5 21C5 19.6193 6.11929 18.5 7.5 18.5C6.11929 18.5 5 17.3807 5 16Z"
+        opacity="0.8"
+      />
+    </svg>
+  );
+}
+
 export interface GuestAiAssistantProps {
   readonly username: string;
   readonly tableId?: string;
@@ -59,6 +94,9 @@ export interface GuestAiAssistantProps {
   readonly onQuickAdd: (item: MenuItemDTO) => void;
   readonly onAddCustomLine?: (line: CustomLineInput) => void;
   readonly enabled?: boolean;
+  readonly isOpen?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
+  readonly hideFloatingTrigger?: boolean;
 }
 
 interface ChatMessage {
@@ -80,10 +118,21 @@ export function GuestAiAssistant({
   onQuickAdd,
   onAddCustomLine,
   enabled = true,
+  isOpen: externalIsOpen,
+  onOpenChange,
+  hideFloatingTrigger = false,
 }: GuestAiAssistantProps) {
   if (!enabled) return null;
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalOpen;
+  const setIsOpen = (open: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(open);
+    }
+    setInternalOpen(open);
+  };
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "initial-greeting",
@@ -111,82 +160,6 @@ export function GuestAiAssistant({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Draggable FAB state with touch & pointer capture
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const isDraggingRef = useRef(false);
-  const dragStartRef = useRef<{ startX: number; startY: number; posX: number; posY: number }>({
-    startX: 0,
-    startY: 0,
-    posX: 0,
-    posY: 0,
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const saved = sessionStorage.getItem("adisyon_guest_ai_fab_pos");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.x === "number" && typeof parsed.y === "number") {
-          const maxX = window.innerWidth - 64;
-          const maxY = window.innerHeight - 64;
-          setPosition({
-            x: Math.min(Math.max(12, parsed.x), maxX),
-            y: Math.min(Math.max(12, parsed.y), maxY),
-          });
-          return;
-        }
-      }
-    } catch {}
-
-    const defaultX = Math.max(12, window.innerWidth - 72);
-    const defaultY = Math.max(12, window.innerHeight - 150);
-    setPosition({ x: defaultX, y: defaultY });
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
-    isDraggingRef.current = false;
-    const currentX = position ? position.x : window.innerWidth - 72;
-    const currentY = position ? position.y : window.innerHeight - 150;
-    dragStartRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      posX: currentX,
-      posY: currentY,
-    };
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (dragStartRef.current.startX === 0 && dragStartRef.current.startY === 0) return;
-    const deltaX = e.clientX - dragStartRef.current.startX;
-    const deltaY = e.clientY - dragStartRef.current.startY;
-    if (Math.hypot(deltaX, deltaY) > 5) {
-      isDraggingRef.current = true;
-      const maxX = window.innerWidth - 64;
-      const maxY = window.innerHeight - 64;
-      const newX = Math.min(Math.max(12, dragStartRef.current.posX + deltaX), maxX);
-      const newY = Math.min(Math.max(12, dragStartRef.current.posY + deltaY), maxY);
-      setPosition({ x: newX, y: newY });
-    }
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {}
-    if (isDraggingRef.current) {
-      if (position) {
-        sessionStorage.setItem("adisyon_guest_ai_fab_pos", JSON.stringify(position));
-      }
-      isDraggingRef.current = false;
-    } else {
-      setIsOpen(true);
-    }
-    dragStartRef.current = { startX: 0, startY: 0, posX: 0, posY: 0 };
-  };
 
   useEffect(() => {
     if (isOpen) {
@@ -327,38 +300,49 @@ export function GuestAiAssistant({
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Yapay Zeka Menü Danışmanı"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        style={{
-          position: "fixed",
-          left: position ? `${position.x}px` : "auto",
-          top: position ? `${position.y}px` : "auto",
-          right: position ? "auto" : "18px",
-          bottom: position ? "auto" : "110px",
-          touchAction: "none",
-          zIndex: 49,
-        }}
-        className={cn(
-          "size-14 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing",
-          "shadow-xl hover:shadow-2xl active:scale-95 transition-shadow select-none",
-          "ring-4 ring-white/60 dark:ring-black/40",
-        )}
-      >
-        <div
-          className="size-full rounded-full flex items-center justify-center text-white relative overflow-hidden shadow-inner"
-          style={{
-            background: `linear-gradient(135deg, ${primaryColor} 0%, #ea580c 50%, #c2410c 100%)`,
-          }}
+      {/* FIXED FLOATING TRIGGER (Görsel ve Pozisyon Olarak Sabitlenmiş, Sürüklenmeyen Şık Buton) */}
+      {!hideFloatingTrigger && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          aria-label="Yapay Zeka Menü Danışmanı"
+          className={cn(
+            "fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-40 group",
+            "flex items-center gap-2.5 p-1.5 pr-4 rounded-full",
+            "bg-zinc-950/95 hover:bg-zinc-900 text-white backdrop-blur-xl",
+            "border border-white/15 shadow-2xl shadow-black/40",
+            "hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none",
+          )}
         >
-          <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-white" />
-          <SparklesIcon className="size-6 text-white stroke-[2.2] drop-shadow-xs relative z-10 animate-pulse" />
-        </div>
-      </div>
+          {/* Animated Glow Aura & Orb */}
+          <div className="relative size-11 rounded-full flex items-center justify-center overflow-hidden shrink-0 shadow-md ring-2 ring-white/20">
+            <div
+              className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+              style={{
+                background: `linear-gradient(135deg, ${primaryColor} 0%, #ec4899 50%, #8b5cf6 100%)`,
+              }}
+            />
+            {/* Ambient shimmer */}
+            <span className="absolute inset-0 bg-gradient-to-t from-transparent via-white/25 to-transparent animate-pulse" />
+            <AiSparkleIcon className="size-5.5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] relative z-10" />
+            {/* Live Indicator */}
+            <span className="absolute top-1 right-1 flex size-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full size-2.5 bg-emerald-500 border border-white/60" />
+            </span>
+          </div>
+
+          <div className="flex flex-col items-start text-left">
+            <span className="text-xs font-black tracking-tight text-white flex items-center gap-1">
+              <span>AI Asistan</span>
+              <span className="text-[10px] text-amber-300">✨</span>
+            </span>
+            <span className="text-[10px] font-medium text-zinc-400 leading-none">
+              Menü Rehberi
+            </span>
+          </div>
+        </button>
+      )}
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
@@ -377,12 +361,12 @@ export function GuestAiAssistant({
           <div className="sticky top-0 z-30 px-4 py-2.5 border-b bg-card/95 backdrop-blur-md flex flex-row items-center justify-between shrink-0 shadow-xs">
             <div className="flex items-center gap-3 min-w-0">
               <div
-                className="size-10 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0"
+                className="size-10 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0 relative overflow-hidden"
                 style={{
-                  background: `linear-gradient(135deg, ${primaryColor} 0%, #ea580c 100%)`,
+                  background: `linear-gradient(135deg, ${primaryColor} 0%, #ec4899 50%, #8b5cf6 100%)`,
                 }}
               >
-                <SparklesIcon className="size-5" />
+                <AiSparkleIcon className="size-5.5 text-white drop-shadow-xs relative z-10" />
               </div>
               <div className="text-left min-w-0">
                 <div className="text-sm font-black text-foreground flex items-center gap-1.5">

@@ -54,7 +54,7 @@ import type { DietaryType, MenuDTO, MenuItemDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO } from "@/types/order";
 import { linePrice, type CartLine } from "@/components/pos/types";
 import { CustomerLoyaltyPanel } from "@/components/guest-order/customer-loyalty-panel";
-import { GuestAiAssistant } from "./guest-ai-assistant";
+import { GuestAiAssistant, AiSparkleIcon } from "./guest-ai-assistant";
 import type { CustomerDTO } from "@/services/customer.service";
 
 const DIET_BADGES: Record<string, { label: string; icon: string }> = {
@@ -194,6 +194,7 @@ export function Theme2QsrView({
   const [activeTab, setActiveTab] = useState<"home" | "categories" | "cart" | "profile">("home");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   // Detailed Filter States (Diet, Allergens, Calories, Price Sort)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -2528,6 +2529,33 @@ export function Theme2QsrView({
             <span className="text-[10px]">Kategoriler</span>
           </button>
 
+          {/* AI Asistan Menu Tab (Menüye Sabitlenmiş Yapay Zeka Butonu) */}
+          {qrAiEnabled !== false && (
+            <button
+              type="button"
+              onClick={() => setAiAssistantOpen(true)}
+              className="group relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl transition-all cursor-pointer active:scale-95 select-none"
+              aria-label="Yapay Zeka Menü Danışmanı"
+            >
+              <div
+                className="relative size-10 rounded-2xl flex items-center justify-center text-white shadow-md shadow-primary/25 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ring-2 ring-white/90"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor} 0%, #ec4899 50%, #8b5cf6 100%)`,
+                }}
+              >
+                <span className="absolute inset-0 rounded-2xl bg-white/20 animate-pulse" />
+                <AiSparkleIcon className="size-5 text-white drop-shadow-sm relative z-10" />
+                <span className="absolute -top-0.5 -right-0.5 flex size-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full size-2.5 bg-emerald-500 border border-white" />
+                </span>
+              </div>
+              <span className="text-[10px] font-black text-zinc-800 tracking-tight flex items-center gap-0.5 mt-0.5">
+                <span>AI Asistan</span>
+              </span>
+            </button>
+          )}
+
           {/* Profile / Masa Tab */}
           <button
             type="button"
@@ -2953,6 +2981,9 @@ export function Theme2QsrView({
         onQuickAdd={onQuickAdd}
         onAddCustomLine={onAddCustomLine}
         enabled={qrAiEnabled !== false}
+        isOpen={aiAssistantOpen}
+        onOpenChange={setAiAssistantOpen}
+        hideFloatingTrigger={true}
       />
     </div>
   );
