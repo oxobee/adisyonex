@@ -89,6 +89,11 @@ export function CashierSalesTerminal({
   const orderCart = useOrderCart("pos_cashier_cart_persist");
   const { cart, quickAdd, addLine, changeQty, removeLine, toggleComp, replaceAll, clear } = orderCart;
 
+  // Main Tab State: "PRODUCTS" | "TABLES"
+  const [activeMainTab, setActiveMainTab] = useState<"PRODUCTS" | "TABLES">("PRODUCTS");
+  const [tableFilter, setTableFilter] = useState<"ALL" | "OCCUPIED" | "EMPTY">("ALL");
+  const [tableSearch, setTableSearch] = useState("");
+
   // Search & Category Filtering
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
@@ -187,6 +192,33 @@ export function CashierSalesTerminal({
     return map;
   }, [openOrders]);
 
+  // Occupied table count
+  const occupiedCount = useMemo(() => {
+    return tables.filter((t) => Boolean(occupied[t.id] || tableOrderMap.get(t.id))).length;
+  }, [tables, occupied, tableOrderMap]);
+
+  // Filtered & sorted tables for TABLES tab
+  const filteredTables = useMemo(() => {
+    return tables
+      .filter((table) => {
+        const isOccupied = Boolean(occupied[table.id] || tableOrderMap.get(table.id));
+        if (tableFilter === "OCCUPIED" && !isOccupied) return false;
+        if (tableFilter === "EMPTY" && isOccupied) return false;
+        if (tableSearch.trim()) {
+          const q = tableSearch.toLowerCase().trim();
+          return table.label.toLowerCase().includes(q);
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const aOcc = Boolean(occupied[a.id] || tableOrderMap.get(a.id));
+        const bOcc = Boolean(occupied[b.id] || tableOrderMap.get(b.id));
+        if (aOcc && !bOcc) return -1;
+        if (!aOcc && bOcc) return 1;
+        return a.label.localeCompare(b.label, undefined, { numeric: true });
+      });
+  }, [tables, occupied, tableOrderMap, tableFilter, tableSearch]);
+
   // Handle table selection & load items if table has open order
   const handleSelectTable = (table: TableDTO) => {
     setSelectedTableId(table.id);
@@ -223,6 +255,7 @@ export function CashierSalesTerminal({
       toast.success(`${table.label} seçildi.`);
     }
     setIsTableModalOpen(false);
+    setActiveMainTab("PRODUCTS");
   };
 
   // Tap Item Handler
@@ -512,200 +545,462 @@ export function CashierSalesTerminal({
 
       {/* 2. ANA GÖVDE: SOL ÜRÜN KATALOĞU (60%) + SAĞ ADİSYON & ÖDEME (40%) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* SOL ALAN: KATEGORİLER + ARAMA + 3D ÜRÜN KARTLARI */}
+        {/* SOL ALAN: TAB MENÜ (MASA | ÜRÜN) + İÇERİK */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#f8fafc] border-r border-gray-200/90 overflow-hidden">
-          {/* Arama ve Kategori Barı */}
-          <div className="p-3 sm:p-4 bg-white border-b border-gray-200 flex flex-col gap-2.5 shrink-0 shadow-2xs">
-            <div className="relative">
-              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Hızlı ürün ara veya barkod okutun..."
-                className="w-full pl-10 pr-9 py-2 rounded-xl border border-gray-200 bg-gray-50 text-xs sm:text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all shadow-inner"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5"
-                >
-                  <XIcon className="size-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Yatay Kategori Çubuğu (Scrollable Pills) */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+          {/* Üst Sekme Çubuğu: Masa | Ürün */}
+          <div className="p-2.5 sm:px-4 sm:py-3 bg-white border-b border-gray-200 shrink-0 shadow-2xs">
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-inner max-w-md">
               <button
                 type="button"
-                onClick={() => setSelectedCategory("ALL")}
+                onClick={() => setActiveMainTab("TABLES")}
                 className={cn(
-                  "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
-                  selectedCategory === "ALL"
-                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-102"
-                    : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
+                  "flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  activeMainTab === "TABLES"
+                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/80 scale-[1.01]"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
                 )}
               >
-                Tümü ({menu.items.length})
+                <ArmchairIcon className="size-4 text-blue-600 shrink-0" />
+                <span>Masalar</span>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-full text-[11px] font-black tracking-tight",
+                  activeMainTab === "TABLES"
+                    ? "bg-rose-100 text-rose-700 border border-rose-200"
+                    : "bg-slate-200 text-slate-600"
+                )}>
+                  {occupiedCount} Dolu
+                </span>
               </button>
 
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={cn(
-                    "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
-                    selectedCategory === cat.id
-                      ? "bg-primary text-primary-foreground border-primary shadow-md scale-102"
-                      : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
-                  )}
-                >
-                  {cat.name}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("PRODUCTS")}
+                className={cn(
+                  "flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  activeMainTab === "PRODUCTS"
+                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80 scale-[1.01]"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                )}
+              >
+                <UtensilsCrossedIcon className="size-4 text-emerald-600 shrink-0" />
+                <span>Ürünler</span>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-full text-[11px] font-black tracking-tight",
+                  activeMainTab === "PRODUCTS"
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                    : "bg-slate-200 text-slate-600"
+                )}>
+                  {menu.items.length} Ürün
+                </span>
+              </button>
             </div>
           </div>
 
-          {/* 3D Material Ürün Izgarası */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4.5">
-            {filteredItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-center text-gray-400">
-                <UtensilsCrossedIcon className="size-12 stroke-[1.5] mb-2 text-gray-300" />
-                <p className="text-sm font-bold text-gray-600">Aradığınız kriterde ürün bulunamadı</p>
-                <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir kategori seçin</span>
+          {/* TAB 1: MASALAR (DOLU & BOŞ MASA KARTLARI) */}
+          {activeMainTab === "TABLES" && (
+            <>
+              {/* Masa Arama ve Filtre Barı */}
+              <div className="p-3 sm:p-4 bg-white border-b border-gray-200 flex flex-col gap-2.5 shrink-0 shadow-2xs">
+                <div className="relative">
+                  <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={tableSearch}
+                    onChange={(e) => setTableSearch(e.target.value)}
+                    placeholder="Masa ara (örn: Masa 1, Bahçe 2)..."
+                    className="w-full pl-10 pr-9 py-2 rounded-xl border border-gray-200 bg-gray-50 text-xs sm:text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-blue-500/40 focus:bg-white transition-all shadow-inner"
+                  />
+                  {tableSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setTableSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Masa Filtre Sekmeleri */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => setTableFilter("ALL")}
+                    className={cn(
+                      "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
+                      tableFilter === "ALL"
+                        ? "bg-slate-900 text-white border-slate-900 shadow-md scale-102"
+                        : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
+                    )}
+                  >
+                    Tüm Masalar ({tables.length})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTableFilter("OCCUPIED")}
+                    className={cn(
+                      "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5",
+                      tableFilter === "OCCUPIED"
+                        ? "bg-rose-600 text-white border-rose-600 shadow-md scale-102"
+                        : "bg-gray-100/90 text-rose-700 hover:bg-rose-50 border-gray-200/80"
+                    )}
+                  >
+                    <span className="size-2 rounded-full bg-rose-500 animate-pulse" />
+                    <span>Dolu Masalar ({occupiedCount})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTableFilter("EMPTY")}
+                    className={cn(
+                      "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5",
+                      tableFilter === "EMPTY"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-102"
+                        : "bg-gray-100/90 text-emerald-700 hover:bg-emerald-50 border-gray-200/80"
+                    )}
+                  >
+                    <span className="size-2 rounded-full bg-emerald-500" />
+                    <span>Boş Masalar ({tables.length - occupiedCount})</span>
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5">
-                {filteredItems.map((item, idx) => {
-                  const cartCount = cartItemCounts[item.id] || 0;
-                  const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
-                  const primaryImage = item.images?.find((img) => img.isPrimary)?.url || item.images?.[0]?.url;
 
-                  // 3D Material vibrant color themes matching reference Image 1
-                  const cardGradients = [
-                    "from-[#1d4ed8] via-[#2563eb] to-[#1e40af]", // Blue (Image 1, Card 01)
-                    "from-[#c2410c] via-[#ea580c] to-[#9a3412]", // Orange (Image 1, Card 02)
-                    "from-[#047857] via-[#059669] to-[#065f46]", // Emerald (Image 1, Card 03)
-                    "from-[#6d28d9] via-[#7c3aed] to-[#5b21b6]", // Purple (Image 1, Card 04)
-                    "from-[#be123c] via-[#e11d48] to-[#9f1239]", // Rose (Image 1, Card 05)
-                    "from-[#334155] via-[#475569] to-[#1e293b]", // Slate (Image 1, Card 06)
-                  ];
-                  const gradient = cardGradients[idx % cardGradients.length];
+              {/* 3D Material Masa Kartları Izgarası */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4.5">
+                {filteredTables.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-center text-gray-400">
+                    <ArmchairIcon className="size-12 stroke-[1.5] mb-2 text-gray-300" />
+                    <p className="text-sm font-bold text-gray-600">Aradığınız kriterde masa bulunamadı</p>
+                    <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir filtre seçin</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5">
+                    {filteredTables.map((table, idx) => {
+                      const isOccupied = Boolean(occupied[table.id] || tableOrderMap.get(table.id));
+                      const existingOrder = tableOrderMap.get(table.id) || (occupied[table.id] ? openOrders.find(o => o.id === occupied[table.id]) : undefined);
+                      const isSelected = selectedTableId === table.id;
+                      const lineCount = existingOrder ? existingOrder.lines.filter(l => l.state !== "VOID").reduce((s, l) => s + l.quantity, 0) : 0;
+                      const activeLines = existingOrder ? existingOrder.lines.filter(l => l.state !== "VOID") : [];
 
-                  return (
-                    <div
-                      key={item.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, item)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => handleTapItem(item)}
+                      const occupiedGradients = [
+                        "from-[#be123c] via-[#e11d48] to-[#881337]",
+                        "from-[#c2410c] via-[#ea580c] to-[#9a3412]",
+                        "from-[#b91c1c] via-[#dc2626] to-[#7f1d1d]",
+                      ];
+                      const emptyGradients = [
+                        "from-[#047857] via-[#059669] to-[#065f46]",
+                        "from-[#1d4ed8] via-[#2563eb] to-[#1e40af]",
+                        "from-[#334155] via-[#475569] to-[#1e293b]",
+                      ];
+
+                      const gradient = isOccupied
+                        ? occupiedGradients[idx % occupiedGradients.length]
+                        : emptyGradients[idx % emptyGradients.length];
+
+                      return (
+                        <div
+                          key={table.id}
+                          onClick={() => handleSelectTable(table)}
+                          className={cn(
+                            "group relative rounded-3xl overflow-hidden cursor-pointer select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
+                            `bg-gradient-to-br ${gradient}`,
+                            "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
+                            "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
+                            "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
+                            "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
+                            isSelected && "ring-4 ring-blue-400/90",
+                            "min-h-[250px] sm:min-h-[275px]"
+                          )}
+                        >
+                          {/* 3D Specular Highlight & Texture */}
+                          <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
+                            <svg
+                              className="absolute -bottom-6 -right-6 w-36 h-36 opacity-15 text-white pointer-events-none"
+                              viewBox="0 0 160 160"
+                              fill="none"
+                            >
+                              <circle cx="80" cy="80" r="28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                              <circle cx="80" cy="80" r="50" stroke="currentColor" strokeWidth="1.5" />
+                              <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                            </svg>
+                            <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
+                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 via-black/15 to-transparent pointer-events-none" />
+                          </div>
+
+                          {/* Üst Kısım: Masa Adı & Durum Rozeti */}
+                          <div className="p-3.5 pb-2 flex items-center justify-between z-10">
+                            <span className="text-xs font-black text-white bg-black/45 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs flex items-center gap-1.5">
+                              <ArmchairIcon className="size-3.5" />
+                              <span>{table.label}</span>
+                            </span>
+
+                            {isOccupied ? (
+                              <span className="flex items-center gap-1 text-[10px] font-black text-white bg-red-950/80 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-red-400/40 shadow-xs">
+                                <span className="size-1.5 rounded-full bg-red-400 animate-ping" />
+                                <span>DOLU</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black text-white bg-emerald-950/70 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-emerald-400/40 shadow-xs">
+                                BOŞ
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Orta Beyaz Gövde Alanı */}
+                          <div className="relative m-2.5 my-0 rounded-2xl bg-white p-3.5 flex flex-col justify-between flex-1 border border-white/40 shadow-inner overflow-hidden">
+                            {isOccupied && existingOrder ? (
+                              <div className="flex flex-col justify-between h-full">
+                                <div>
+                                  <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
+                                    <span>Adisyon Tutarı</span>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-black border border-rose-200">
+                                      {lineCount} Kalem
+                                    </span>
+                                  </div>
+                                  <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
+                                    {formatCurrency(existingOrder.grandTotal)}
+                                  </div>
+                                </div>
+
+                                <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">İçerik:</span>
+                                  <p className="text-[11px] text-slate-600 line-clamp-2 leading-tight font-semibold">
+                                    {activeLines.map(l => `${l.quantity}x ${l.name}`).join(", ") || "Sipariş açık"}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full text-center py-4">
+                                <div className="size-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 border border-emerald-100">
+                                  <ArmchairIcon className="size-6 stroke-[1.5]" />
+                                </div>
+                                <span className="text-sm font-black text-slate-800">Masa Müsait</span>
+                                <span className="text-xs text-slate-400 font-semibold mt-0.5">
+                                  {table.seats ? `${table.seats} Kişilik` : "Sipariş Yok"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Alt Aksiyon Butonu */}
+                          <div className="p-3 pt-2 z-10">
+                            <div className={cn(
+                              "w-full py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md border border-white/20 transition-all",
+                              isOccupied
+                                ? "bg-white/25 text-white backdrop-blur-md group-hover:bg-white/35"
+                                : "bg-white/20 text-white backdrop-blur-md group-hover:bg-white/30"
+                            )}>
+                              <span>{isOccupied ? "Adisyonu Aç & Ürün Ekle" : "Masayı Seç & Başlat"}</span>
+                              <ChevronRightIcon className="size-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* TAB 2: ÜRÜNLER (MEVCUT ÜRÜN KATALOĞU) */}
+          {activeMainTab === "PRODUCTS" && (
+            <>
+              {/* Arama ve Kategori Barı */}
+              <div className="p-3 sm:p-4 bg-white border-b border-gray-200 flex flex-col gap-2.5 shrink-0 shadow-2xs">
+                <div className="relative">
+                  <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Hızlı ürün ara veya barkod okutun..."
+                    className="w-full pl-10 pr-9 py-2 rounded-xl border border-gray-200 bg-gray-50 text-xs sm:text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all shadow-inner"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Yatay Kategori Çubuğu (Scrollable Pills) */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory("ALL")}
+                    className={cn(
+                      "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
+                      selectedCategory === "ALL"
+                        ? "bg-slate-900 text-white border-slate-900 shadow-md scale-102"
+                        : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
+                    )}
+                  >
+                    Tümü ({menu.items.length})
+                  </button>
+
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat.id)}
                       className={cn(
-                        "group relative rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
-                        `bg-gradient-to-br ${gradient}`,
-                        "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
-                        "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
-                        "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
-                        "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
-                        draggedItem?.id === item.id && "opacity-50 scale-95 ring-4 ring-emerald-400/80",
-                        "min-h-[250px] sm:min-h-[275px]"
+                        "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
+                        selectedCategory === cat.id
+                          ? "bg-primary text-primary-foreground border-primary shadow-md scale-102"
+                          : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
                       )}
                     >
-                      {/* Subdued Eye-Friendly Texture Overlay & Concentric Rings */}
-                      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
-                        {/* Concentric geometric rings in bottom corner */}
-                        <svg
-                          className="absolute -bottom-6 -right-6 w-36 h-36 opacity-15 text-white pointer-events-none"
-                          viewBox="0 0 160 160"
-                          fill="none"
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3D Material Ürün Izgarası */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4.5">
+                {filteredItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-center text-gray-400">
+                    <UtensilsCrossedIcon className="size-12 stroke-[1.5] mb-2 text-gray-300" />
+                    <p className="text-sm font-bold text-gray-600">Aradığınız kriterde ürün bulunamadı</p>
+                    <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir kategori seçin</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5">
+                    {filteredItems.map((item, idx) => {
+                      const cartCount = cartItemCounts[item.id] || 0;
+                      const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
+                      const primaryImage = item.images?.find((img) => img.isPrimary)?.url || item.images?.[0]?.url;
+
+                      // 3D Material vibrant color themes matching reference Image 1
+                      const cardGradients = [
+                        "from-[#1d4ed8] via-[#2563eb] to-[#1e40af]", // Blue (Image 1, Card 01)
+                        "from-[#c2410c] via-[#ea580c] to-[#9a3412]", // Orange (Image 1, Card 02)
+                        "from-[#047857] via-[#059669] to-[#065f46]", // Emerald (Image 1, Card 03)
+                        "from-[#6d28d9] via-[#7c3aed] to-[#5b21b6]", // Purple (Image 1, Card 04)
+                        "from-[#be123c] via-[#e11d48] to-[#9f1239]", // Rose (Image 1, Card 05)
+                        "from-[#334155] via-[#475569] to-[#1e293b]", // Slate (Image 1, Card 06)
+                      ];
+                      const gradient = cardGradients[idx % cardGradients.length];
+
+                      return (
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, item)}
+                          onDragEnd={handleDragEnd}
+                          onClick={() => handleTapItem(item)}
+                          className={cn(
+                            "group relative rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
+                            `bg-gradient-to-br ${gradient}`,
+                            "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
+                            "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
+                            "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
+                            "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
+                            draggedItem?.id === item.id && "opacity-50 scale-95 ring-4 ring-emerald-400/80",
+                            "min-h-[250px] sm:min-h-[275px]"
+                          )}
                         >
-                          <circle cx="80" cy="80" r="28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                          <circle cx="80" cy="80" r="50" stroke="currentColor" strokeWidth="1.5" />
-                          <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
-                        </svg>
+                          {/* Subdued Eye-Friendly Texture Overlay & Concentric Rings */}
+                          <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
+                            {/* Concentric geometric rings in bottom corner */}
+                            <svg
+                              className="absolute -bottom-6 -right-6 w-36 h-36 opacity-15 text-white pointer-events-none"
+                              viewBox="0 0 160 160"
+                              fill="none"
+                            >
+                              <circle cx="80" cy="80" r="28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                              <circle cx="80" cy="80" r="50" stroke="currentColor" strokeWidth="1.5" />
+                              <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                            </svg>
 
-                        {/* Top Specular Bevel Highlight */}
-                        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
+                            {/* Top Specular Bevel Highlight */}
+                            <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
 
-                        {/* Bottom Extrusion Shadow */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 via-black/15 to-transparent pointer-events-none" />
-                      </div>
-
-                      {/* Sepetteki Adet Rozeti (3D Tactile Pill) */}
-                      {cartCount > 0 && (
-                        <div className="absolute top-2.5 right-2.5 z-20 flex size-7 sm:size-8 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-lg border-2 border-white animate-in zoom-in-75">
-                          {cartCount}
-                        </div>
-                      )}
-
-                      {/* Üst Alan: Beyaz Arka Planlı & Köşeleri Yuvarlatılmış Görsel Alanı (Gölgesiz net görünüm) */}
-                      <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 border border-white/40">
-                        {/* Kategori Rozeti (Üst Sol Pill) */}
-                        <div className="absolute top-2 left-2 z-10">
-                          <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
-                            {categoryMap.get(item.categoryId) || "Menü"}
-                          </span>
-                        </div>
-
-                        {primaryImage ? (
-                          <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
-                            <img
-                              src={primaryImage}
-                              alt={item.name}
-                              draggable={false}
-                              onDragStart={(e) => e.preventDefault()}
-                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 pointer-events-none select-none"
-                            />
+                            {/* Bottom Extrusion Shadow */}
+                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 via-black/15 to-transparent pointer-events-none" />
                           </div>
-                        ) : (
-                          <div className="size-full flex items-center justify-center bg-gray-50">
-                            {/* 3D Tactile Sphere Icon */}
-                            <div className="size-16 rounded-full bg-slate-800 text-white flex items-center justify-center transition-transform group-hover:scale-110">
-                              <UtensilsCrossedIcon className="size-8 text-white/90" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Alt Alan: Ürün Bilgileri, Adı, Açıklaması ve Fiyat Barı (Görsel 1 İle %100 Birebir) */}
-                      <div className="relative z-10 p-3.5 sm:p-4 flex flex-col justify-between flex-1">
-                        <div className="flex flex-col">
-                          <h3 className="text-base sm:text-lg font-black text-white leading-tight tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                            {item.name}
-                          </h3>
-                          <p className="text-xs font-medium text-white/70 line-clamp-1 mt-1">
-                            {item.shortDescription || (categoryMap.get(item.categoryId) ? `${categoryMap.get(item.categoryId)} Özel Menü` : "Taze Hazırlanmış Ürün")}
-                          </p>
-                        </div>
-
-                        {/* Ayraç Çizgisi */}
-                        <div className="w-full h-px bg-white/20 my-2.5" />
-
-                        {/* Alt Fiyat ve Seçenekli / Ekle Rozeti */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-base sm:text-lg font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                            {formatCurrency(item.price)}
-                          </span>
-
-                          {hasVariants ? (
-                            <span className="text-xs font-black text-[#fef08a] bg-black/45 hover:bg-black/60 px-3 py-1 rounded-full border border-amber-400/40 shadow-xs transition-all tracking-wide">
-                              Seçenekli
-                            </span>
-                          ) : (
-                            <div className="size-8 rounded-full bg-black/40 hover:bg-white hover:text-slate-900 border border-white/30 text-white flex items-center justify-center transition-all shadow-xs group-hover:scale-105 active:scale-95">
-                              <PlusIcon className="size-4 stroke-[3]" />
+                          {/* Sepetteki Adet Rozeti (3D Tactile Pill) */}
+                          {cartCount > 0 && (
+                            <div className="absolute top-2.5 right-2.5 z-20 flex size-7 sm:size-8 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-lg border-2 border-white animate-in zoom-in-75">
+                              {cartCount}
                             </div>
                           )}
+
+                          {/* Üst Alan: Beyaz Arka Planlı & Köşeleri Yuvarlatılmış Görsel Alanı (Gölgesiz net görünüm) */}
+                          <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 border border-white/40">
+                            {/* Kategori Rozeti (Üst Sol Pill) */}
+                            <div className="absolute top-2 left-2 z-10">
+                              <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
+                                {categoryMap.get(item.categoryId) || "Menü"}
+                              </span>
+                            </div>
+
+                            {/* Ürün Görseli */}
+                            {primaryImage ? (
+                              <div className="relative w-full h-full flex items-center justify-center">
+                                <Image
+                                  src={primaryImage}
+                                  alt={item.name}
+                                  fill
+                                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
+                                  className="object-contain p-1 transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                                />
+                              </div>
+                            ) : (
+                              <div className="size-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                <UtensilsCrossedIcon className="size-7 stroke-[1.5]" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Alt Metin ve Fiyat Alanı */}
+                          <div className="p-3.5 pt-2.5 flex flex-col justify-between flex-1 z-10">
+                            <div className="mb-2">
+                              <h3 className="font-extrabold text-sm sm:text-base text-white line-clamp-1 leading-snug drop-shadow-xs">
+                                {item.name}
+                              </h3>
+                              {item.shortDescription ? (
+                                <p className="text-[11px] text-white/80 line-clamp-1 mt-0.5 font-medium">
+                                  {item.shortDescription}
+                                </p>
+                              ) : (
+                                <p className="text-[11px] text-white/70 line-clamp-1 mt-0.5 font-medium">
+                                  {categoryMap.get(item.categoryId) || "Özel Menü"}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-base sm:text-lg font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+                                {formatCurrency(item.price)}
+                              </span>
+
+                              {hasVariants ? (
+                                <span className="text-xs font-black text-[#fef08a] bg-black/45 hover:bg-black/60 px-3 py-1 rounded-full border border-amber-400/40 shadow-xs transition-all tracking-wide">
+                                  Seçenekli
+                                </span>
+                              ) : (
+                                <div className="size-8 rounded-full bg-black/40 hover:bg-white hover:text-slate-900 border border-white/30 text-white flex items-center justify-center transition-all shadow-xs group-hover:scale-105 active:scale-95">
+                                  <PlusIcon className="size-4 stroke-[3]" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </section>
 
         {/* SAĞ ALAN: ADİSYON TİCKET + FİNANSAL HESAPLAMA + ÖDEME & PARAÜSTÜ */}
@@ -784,7 +1079,7 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => {
                   setServiceType("DINE_IN");
-                  setIsTableModalOpen(true);
+                  setActiveMainTab("TABLES");
                 }}
                 className={cn(
                   "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer shadow-xs select-none",
@@ -990,7 +1285,7 @@ export function CashierSalesTerminal({
                 onClick={() => {
                   setServiceType("DINE_IN");
                   if (!selectedTableId) {
-                    setIsTableModalOpen(true);
+                    setActiveMainTab("TABLES");
                   }
                 }}
                 className={cn(
