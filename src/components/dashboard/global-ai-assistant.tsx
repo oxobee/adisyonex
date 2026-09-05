@@ -749,16 +749,22 @@ export function GlobalAiAssistant() {
 
                   {/* 1. INTERACTIVE NAVIGATION RECOMMENDATION CARD */}
                   {msg.recommendedPage && (
-                    <div className="w-full bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200 dark:border-slate-750 shadow-xs flex items-center justify-between gap-2.5 mt-1">
+                    <div
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push(msg.recommendedPage!.url);
+                      }}
+                      className="w-full bg-slate-50 hover:bg-slate-100/90 dark:bg-slate-850 dark:hover:bg-slate-800 p-3 rounded-2xl border border-slate-200/90 dark:border-slate-750 shadow-xs flex items-center justify-between gap-3 mt-1.5 transition-all cursor-pointer group select-none animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+                    >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-2xs border border-slate-200/80 dark:border-slate-700">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-2xs border border-slate-200/80 dark:border-slate-700 group-hover:scale-105 transition-transform">
                           {getPageIcon(msg.recommendedPage.icon)}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-xs font-black text-slate-900 dark:text-white truncate">
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                             {msg.recommendedPage.title}
                           </h4>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                             {msg.recommendedPage.description}
                           </p>
                         </div>
@@ -766,14 +772,15 @@ export function GlobalAiAssistant() {
 
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setIsOpen(false);
                           router.push(msg.recommendedPage!.url);
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-[11px] shrink-0 shadow-xs transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs shrink-0 shadow-xs transition-all cursor-pointer"
                       >
                         <span>Sayfaya Git</span>
-                        <ArrowRightIcon className="size-3" />
+                        <ArrowRightIcon className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </button>
                     </div>
                   )}

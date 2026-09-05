@@ -7,6 +7,7 @@ import { getCurrentUserId } from "@/lib/auth-helpers";
 import { getManagerById } from "@/services/user.service";
 import { callOpenRouter } from "@/services/ai/openrouter.service";
 import { createOrder, addItems, fireOrder } from "@/services/order.service";
+import { getTurkeyDayRange } from "@/services/z-report.service";
 import { success, failure, type ActionResult } from "@/types";
 
 export interface AiMessage {
@@ -360,6 +361,8 @@ export async function askAiAssistantAction(
     const canManageSettings = isManager;
     const canManageStaff = isManager;
 
+    const { dayStart, dayEnd } = getTurkeyDayRange();
+
     // Fetch details according to permissions (PREVENTS DATA LEAKAGE TO LLM PROMPT)
     const restaurantPromise = prisma.restaurant.findUnique({
       where: { id: restaurantId },
@@ -369,9 +372,107 @@ export async function askAiAssistantAction(
     const tablesPromise = canManageOrders
       ? prisma.diningTable.findMany({
           where: { restaurantId, deletedAt: null },
-          select: { id: true, label: true, section: true, seats: true },
+          select: {
+            id: true,
+            label: true,
+            section: true,
+            seats: true,
+            orders: {
+              where: { status: "OPEN", deletedAt: null },
+              select: {
+                id: true,
+                orderNumber: true,
+                grandTotal: true,
+                billRequestedAt: true,
+                note: true,
+                items: {
+                  where: { state: { not: "VOID" } },
+                  select: { quantity: true, unitPrice: true, name: true },
+                },
+              },
+            },
+          },
           orderBy: { label: "asc" },
         })
+      : Promise.resolve([]);
+
+    const financialPromise = canViewFinancials
+      ? (async () => {
+          const [completedOrders, openOrders] = await Promise.all([
+            prisma.order.findMany({
+              where: {
+                restaurantId,
+                status: "COMPLETED",
+                createdAt: { gte: dayStart, lte: dayEnd },
+                deletedAt: null,
+              },
+              select: {
+                grandTotal: true,
+                payments: { select: { mode: true, amount: true } },
+              },
+            }),
+            prisma.order.findMany({
+              where: {
+                restaurantId,
+                status: "OPEN",
+                deletedAt: null,
+              },
+              select: {
+                grandTotal: true,
+              },
+            }),
+          ]);
+
+          let todayTotal = 0;
+          let cashTotal = 0;
+          let cardTotal = 0;
+          let otherTotal = 0;
+
+          for (const ord of completedOrders) {
+            const gt = Number(ord.grandTotal || 0);
+            todayTotal += gt;
+            for (const p of ord.payments) {
+              const amt = Number(p.amount || 0);
+              if (p.mode === "CASH") cashTotal += amt;
+              else if (p.mode === "CARD") cardTotal += amt;
+              else otherTotal += amt;
+            }
+          }
+
+          let openTablesTotal = 0;
+          for (const ord of openOrders) {
+            openTablesTotal += Number(ord.grandTotal || 0);
+          }
+
+          return {
+            todayCompletedRevenue: todayTotal,
+            todayCompletedOrdersCount: completedOrders.length,
+            cashTotal,
+            cardTotal,
+            otherTotal,
+            openOrdersCount: openOrders.length,
+            openTablesTotal,
+          };
+        })().catch(() => null)
+      : Promise.resolve(null);
+
+    const lowStockPromise = isManager
+      ? prisma.stockItem
+          .findMany({
+            where: {
+              restaurantId,
+              deletedAt: null,
+              reorderLevel: { not: null },
+            },
+            select: { name: true, onHand: true, reorderLevel: true, unit: true },
+            take: 20,
+          })
+          .then((items) =>
+            items.filter(
+              (i) => i.reorderLevel !== null && Number(i.onHand) <= Number(i.reorderLevel)
+            )
+          )
+          .catch(() => [])
       : Promise.resolve([]);
 
     const menuItemsPromise = canManageOrders
@@ -431,18 +532,24 @@ export async function askAiAssistantAction(
         })
       : Promise.resolve([]);
 
-    const [restaurant, tables, menuItems, kitchenTickets] = await Promise.all([
-      restaurantPromise,
-      tablesPromise,
-      menuItemsPromise,
-      kitchenTicketsPromise,
-    ]);
+    const [restaurant, tables, menuItems, kitchenTickets, financialData, lowStockItems] =
+      await Promise.all([
+        restaurantPromise,
+        tablesPromise,
+        menuItemsPromise,
+        kitchenTicketsPromise,
+        financialPromise,
+        lowStockPromise,
+      ]);
 
     const restaurantName = restaurant?.name || "Restoran";
     const currency = "₺";
 
     // Build role specific strict instructions
     let roleInstructions = "";
+
+    const occupiedTables = tables.filter((t) => t.orders && t.orders.length > 0);
+    const emptyTablesCount = tables.length - occupiedTables.length;
 
     if (isKitchenOnly) {
       roleInstructions = `
@@ -477,7 +584,19 @@ DİKKAT: KULLANICI GARSON PERSONELİDİR:
 - İsim: "${name}"
 - Görevi: "${jobTitle || "Garson"}"
 - Tanımlı Yetkisi: YALNIZCA Masalar ve Adisyonlar Ekranı (/dashboard/orders), masaya sipariş/ürün ekleme işlemi ve ana ekrandaki servis bildirimleri (garson çağrıları, hesap isteme, hazır tabaklar).
-- MEVCUT MASALAR: ${JSON.stringify(tables.map((t) => ({ id: t.id, label: t.label, section: t.section })))}
+- MASA DURUMU: Toplam ${tables.length} masa (${occupiedTables.length} Dolu, ${emptyTablesCount} Boş).
+${
+  occupiedTables.length > 0
+    ? `- DOLU MASALAR: ${JSON.stringify(
+        occupiedTables.map((t) => ({
+          masa: t.label,
+          salon: t.section,
+          kalemSayisi: t.orders.flatMap((o) => o.items).reduce((s, i) => s + i.quantity, 0),
+          hesapIstendiMi: t.orders.some((o) => o.billRequestedAt !== null) ? "Evet" : "Hayır",
+        }))
+      )}`
+    : "- Tüm masalar boş."
+}
 - MENÜ ÜRÜNLERİ: ${JSON.stringify(menuItems.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })))}
 
 KESİNLİKLE YASAK ALANLAR:
@@ -498,6 +617,13 @@ DİKKAT: KULLANICI KASİYER PERSONELİDİR:
 - İsim: "${name}"
 - Görevi: "${jobTitle || "Kasiyer"}"
 - Tanımlı Yetkisi: YALNIZCA Kasa ve POS Ekranı (/dashboard/pos), açık masa hesapları, ödemeler ve adisyon kapatma.
+${
+  financialData
+    ? `- BUGÜNKÜ TAMAMLANAN HASILAT: ${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} (Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })})
+- ŞU AN AÇIK HESAP TOPLAMI: ${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} (${financialData.openOrdersCount} açık masa)`
+    : ""
+}
+- MASA DURUMU: Toplam ${tables.length} masa (${occupiedTables.length} Dolu, ${emptyTablesCount} Boş).
 
 KESİNLİKLE YASAK ALANLAR:
 1. Firma ayarları, şube ayarları, Wi-Fi şifresi ve sistem konfigürasyonu (/dashboard/settings) KESİNLİKLE YASAKTIR.
@@ -511,6 +637,59 @@ KESİNLİKLE YASAK ALANLAR:
       roleInstructions = `
 KULLANICI: "${name}" (Tam Yetkili Yönetici).
 Tüm modüllere, finansal verilere, ciroya, Z raporuna, masalara, mutfağa, stoğa ve ayarlara tam erişim yetkisi vardır.
+
+CANLI RESTORAN VERİLERİ (GÜNCEL DURUM BİLGİLERİ):
+${
+  financialData
+    ? `- BUGÜNKÜ TAMAMLANAN TOPLAM CİRO: ${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+- BUGÜN TAMAMLANAN ADİSYON SAYISI: ${financialData.todayCompletedOrdersCount} adet
+- TAHSİLAT DETAYI: Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}${financialData.otherTotal > 0 ? `, Diğer: ${currency}${financialData.otherTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}` : ""}
+- ŞU AN MASALARDAKİ AÇIK HESAP TOPLAMI: ${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} (${financialData.openOrdersCount} açık masa/adisyon)`
+    : ""
+}
+- MASA DOLULUK DURUMU: Toplam ${tables.length} masa (${occupiedTables.length} Dolu, ${emptyTablesCount} Boş).
+${
+  occupiedTables.length > 0
+    ? `- DOLU MASALAR VE HESAPLARI: ${JSON.stringify(
+        occupiedTables.map((t) => ({
+          masa: t.label,
+          salon: t.section,
+          tutar:
+            t.orders
+              .reduce((s, o) => s + Number(o.grandTotal || 0), 0)
+              .toLocaleString("tr-TR", { minimumFractionDigits: 2 }) +
+            " " +
+            currency,
+          kalemSayisi: t.orders
+            .flatMap((o) => o.items)
+            .reduce((s, i) => s + i.quantity, 0),
+          hesapIstendiMi: t.orders.some((o) => o.billRequestedAt !== null)
+            ? "Evet (Hesap İstendi)"
+            : "Hayır",
+        }))
+      )}`
+    : "- Şu anda tüm masalar boştur."
+}
+${
+  lowStockItems.length > 0
+    ? `- KRİTİK SEVİYEDEKİ STOKLAR (AZALANLAR): ${JSON.stringify(
+        lowStockItems.map(
+          (s) =>
+            `${s.name}: ${s.onHand} ${s.unit || "adet"} kaldı (Kritik sınır: ${s.reorderLevel})`
+        )
+      )}`
+    : "- Kritik seviyede azalan stok bulunmuyor."
+}
+${
+  kitchenTickets.length > 0
+    ? `- MUTFAKTA BEKLEYEN / HAZIRLANAN SİPARİŞLER: ${JSON.stringify(
+        kitchenTickets.map(
+          (k) =>
+            `${k.quantity}x ${k.name} (${k.state === "FIRED" ? "Hazırlanıyor" : "Servise Hazır"}) - Masa: ${k.order?.tableLabel || `#${k.order?.orderNumber}`}`
+        )
+      )}`
+    : "- Mutfakta bekleyen sipariş yok."
+}
 MEVCUT MASALAR: ${JSON.stringify(tables.map((t) => ({ id: t.id, label: t.label, section: t.section })))}
 MENÜ ÜRÜNLERİ: ${JSON.stringify(menuItems.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })))}
 `;
@@ -526,18 +705,44 @@ ${roleInstructions}
 GENEL VE KESİN KURALLAR:
 1. YALNIZCA BU RESTORAN VE KULLANICININ YETKİLİ OLDUĞU ALANLAR HAKKINDA BİLGİ VER.
    - Restoran dışı konular (şiir, genel kültür vb.) sorulursa: "Ben AdisyonEx restoran asistanıyım, yalnızca yetkili olduğunuz restoran operasyonlarında yardımcı olabilirim." de.
-2. SAYFA YÖNLENDİRME YERİNE KART ÖNERİSİ:
-   - Kullanıcı yetkili olduğu bir ekranı veya işlemi nasıl yapacağını sorduğunda doğrudan sayfayı açma; soruyu açık ve anlaşılır şekilde yanıtla ve "recommendedPage" alanında ilgili sayfayı öner.
-   - KULLANICININ YETKİSİ OLMAYAN BİR EKRAN İÇİN ASLA recommendedPage DÖNDÜRME!
-3. MASAYA SİPARİŞ EKLEME İŞLEMİ:
+
+2. SORULAN SORUYU MUTLAKA ÖZET OLARAK CEVAPLA (EN ÖNEMLİ KURAL):
+   - Kullanıcı bir bilgi sorduğunda (örn: ciro, hasılat, masalar, doluluk, açık hesaplar, mutfak hazırlıkları, menü, stok vb.), ASLA "Şu sayfadan ulaşabilirsiniz", "Bu bilgiye oradan bakabilirsiniz" diyerek geçiştirme!
+   - Yukarıdaki canlı restoran verilerini kullanarak kullanıcının sorusuna DOĞRUDAN, NET, ÖZET VE RAKAMLARLA yanıt ver.
+   - Örnek: Kullanıcı "Bugünkü toplam ciro ne kadar?" diye sorduğunda:
+     "Bugünkü toplam tamamlanan ciro **₺7.875,00**'dir. Gün içinde 15 adisyon tamamlanmıştır (₺5.425,00 Kredi Kartı, ₺2.450,00 Nakit). Ayrıca şu an masalarda ₺1.450,00 tutarında açık hesap bulunmaktadır." şeklinde özet cevap ver.
+   - Örnek: Kullanıcı "Hangi masalar dolu?" diye sorduğunda:
+     "Şu an 5 masa dolu durumdadır: Masa 3 (₺5.940,00), Masa 5 (₺270,00), Masa 6 (₺770,00), Masa 7 (₺0,00) ve Masa 14 (₺440,00). Kalan 10 masa boştur." şeklinde özet ver.
+
+3. YANITIN ALTINA İLGİLİ ALANIN KARTINI (recommendedPage) MUTLAKA EKLE:
+   - Soru ve özet cevabın konusuna göre, kullanıcının tek tıkla ilgili sayfaya geçebilmesi için MUTLAKA "recommendedPage" kartı nesnesi oluştur:
+     * Ciro / Kasa hasılatı / Z Raporu / Ödemeler / Finans ->
+       recommendedPage: { "title": "Finansal Raporlar & Z Raporu", "url": "/dashboard/z-report", "description": "Günlük ciro, tahsilatlar, ödeme türleri ve Z raporu", "icon": "report" }
+     * Masalar / Doluluk / Açık Hesaplar / Salon ->
+       recommendedPage: { "title": "Masalar & Canlı Adisyonlar", "url": "/dashboard/orders", "description": "Canlı masa doluluğu, salon planı ve açık adisyon yönetimi", "icon": "table" }
+     * Kasa Satış / POS / Hızlı Satış ->
+       recommendedPage: { "title": "Kasa Satış Terminali (POS)", "url": "/dashboard/pos", "description": "Hızlı satış, adisyon tahsilatı ve masa ödemeleri", "icon": "pos" }
+     * Mutfak / Yemek Hazırlığı / KDS ->
+       recommendedPage: { "title": "Mutfak Hazırlık Ekranı (KDS)", "url": "/dashboard/kitchen", "description": "Sipariş hazırlık süreleri, bekleyen tabaklar ve mutfak akışı", "icon": "kitchen" }
+     * Menü / Ürünler / Fiyatlar / Kategoriler ->
+       recommendedPage: { "title": "Menü Yönetimi", "url": "/dashboard/menu", "description": "Ürünler, kategoriler, porsiyonlar ve fiyat güncellemeleri", "icon": "menu" }
+     * Stok / Depo / Kritik Malzemeler ->
+       recommendedPage: { "title": "Stok & Envanter Yönetimi", "url": "/dashboard/inventory", "description": "Hammadde sayımları, kritik stok uyarıları ve depo takibi", "icon": "stock" }
+     * Personel / Çalışanlar / Garsonlar ->
+       recommendedPage: { "title": "Personel Yönetimi", "url": "/dashboard/staff", "description": "Çalışan listesi, roller, PIN kodları ve yetkilendirme", "icon": "staff" }
+     * Ayarlar / Yazıcı / QR Menü / Genel ->
+       recommendedPage: { "title": "Restoran & Sistem Ayarları", "url": "/dashboard/settings", "description": "Restoran profili, yazıcılar, QR menü ve sistem tercihleri", "icon": "settings" }
+
+4. MASAYA SİPARİŞ EKLEME İŞLEMİ:
    - Yalnızca sipariş yetkisi olan kullanıcılarda (${canManageOrders ? "VAR" : "YOK"}), "Masa 5'e 1 hamburger" gibi komutlarda:
      * Ürün ve masa tespit edildiğinde HER ZAMAN "actionPreview" nesnesi üret ve kullanıcıya karttan onaylamasını söyle.
-      * Karışıklık varsa "needsClarification": true ve "clarificationOptions" içine seçenekleri koy.
-      * Sipariş yetkisi olmayan kullanıcılar (örn. Aşçı) masaya ürün eklemek isterse: KESİNLİKLE REDDET!
-4. YANIT FORMATI:
+     * Karışıklık varsa "needsClarification": true ve "clarificationOptions" içine seçenekleri koy.
+     * Sipariş yetkisi olmayan kullanıcılar (örn. Aşçı) masaya ürün eklemek isterse: KESİNLİKLE REDDET!
+
+5. YANIT FORMATI:
    Yanıtını YALNIZCA geçerli bir JSON nesnesi olarak döndür:
    {
-     "reply": "Kullanıcıya gösterilecek Türkçe açıklama veya onay sorusu (Örn: Masa 5'e 1 adet Hamburger eklemek üzeresiniz. Onaylıyor musunuz?)",
+     "reply": "Kullanıcıya gösterilecek Türkçe özet cevap veya onay açıklaması",
      "needsClarification": false,
      "clarificationOptions": ["Seçenek 1", "Seçenek 2"],
      "recommendedPage": {
@@ -693,9 +898,177 @@ GENEL VE KESİN KURALLAR:
       }
     }
 
+    // 1. Intelligently infer and safeguard recommendedPage
+    let finalRecommendedPage: AiRecommendedPage | null = parsed.recommendedPage || null;
+
+    if (finalRecommendedPage) {
+      const url = finalRecommendedPage.url || "";
+      if (url.includes("z-report") && !canViewFinancials) finalRecommendedPage = null;
+      if (url.includes("orders") && !canManageOrders) finalRecommendedPage = null;
+      if (url.includes("kitchen") && !canViewKitchen) finalRecommendedPage = null;
+      if (url.includes("inventory") && !isManager) finalRecommendedPage = null;
+      if (url.includes("staff") && !canManageStaff) finalRecommendedPage = null;
+      if (url.includes("settings") && !canManageSettings) finalRecommendedPage = null;
+    }
+
+    if (!finalRecommendedPage) {
+      const combined = `${userQuery} ${parsed.reply || ""}`.toLowerCase();
+
+      if (
+        canViewFinancials &&
+        (combined.includes("ciro") ||
+          combined.includes("hasılat") ||
+          combined.includes("kazanç") ||
+          combined.includes("gelir") ||
+          combined.includes("z rapor") ||
+          combined.includes("finans") ||
+          combined.includes("rapor") ||
+          combined.includes("kasa") ||
+          combined.includes("tahsilat"))
+      ) {
+        finalRecommendedPage = {
+          title: "Finansal Raporlar & Z Raporu",
+          url: "/dashboard/z-report",
+          description: "Günlük ciro, tahsilatlar, ödeme türleri ve Z raporu detayları",
+          icon: "report",
+        };
+      } else if (
+        canManageOrders &&
+        (combined.includes("masa") ||
+          combined.includes("adisyon") ||
+          combined.includes("salon") ||
+          combined.includes("dolu") ||
+          combined.includes("boş") ||
+          combined.includes("hesap iste") ||
+          combined.includes("garson çağrı"))
+      ) {
+        finalRecommendedPage = {
+          title: "Masalar & Canlı Adisyonlar",
+          url: "/dashboard/orders",
+          description: "Canlı masa doluluğu, salon planı ve açık adisyon yönetimi",
+          icon: "table",
+        };
+      } else if (
+        canViewKitchen &&
+        (combined.includes("mutfak") ||
+          combined.includes("aşçı") ||
+          combined.includes("hazır") ||
+          combined.includes("piş") ||
+          combined.includes("kds") ||
+          combined.includes("tabak"))
+      ) {
+        finalRecommendedPage = {
+          title: "Mutfak Hazırlık Ekranı (KDS)",
+          url: "/dashboard/kitchen",
+          description: "Sipariş hazırlık süreleri, bekleyen tabaklar ve mutfak akışı",
+          icon: "kitchen",
+        };
+      } else if (
+        canManageOrders &&
+        (combined.includes("pos") ||
+          combined.includes("hızlı satış") ||
+          combined.includes("barkod") ||
+          combined.includes("ödeme al"))
+      ) {
+        finalRecommendedPage = {
+          title: "Kasa Satış Terminali (POS)",
+          url: "/dashboard/pos",
+          description: "Hızlı satış, adisyon tahsilatı ve masa ödemeleri",
+          icon: "pos",
+        };
+      } else if (
+        canManageOrders &&
+        (combined.includes("menü") ||
+          combined.includes("fiyat") ||
+          combined.includes("ürün") ||
+          combined.includes("kategori") ||
+          combined.includes("porsiyon") ||
+          combined.includes("yemek"))
+      ) {
+        finalRecommendedPage = {
+          title: "Menü Yönetimi",
+          url: "/dashboard/menu",
+          description: "Ürünler, kategoriler, porsiyonlar ve fiyat güncellemeleri",
+          icon: "menu",
+        };
+      } else if (
+        isManager &&
+        (combined.includes("stok") ||
+          combined.includes("envanter") ||
+          combined.includes("depo") ||
+          combined.includes("hammadde") ||
+          combined.includes("kalan"))
+      ) {
+        finalRecommendedPage = {
+          title: "Stok & Envanter Yönetimi",
+          url: "/dashboard/inventory",
+          description: "Hammadde sayımları, kritik stok uyarıları ve depo takibi",
+          icon: "stock",
+        };
+      } else if (
+        canManageStaff &&
+        (combined.includes("personel") ||
+          combined.includes("garson") ||
+          combined.includes("çalışan") ||
+          combined.includes("maaş") ||
+          combined.includes("pin"))
+      ) {
+        finalRecommendedPage = {
+          title: "Personel Yönetimi",
+          url: "/dashboard/staff",
+          description: "Çalışan listesi, roller, PIN kodları ve yetkilendirme",
+          icon: "staff",
+        };
+      } else if (
+        canManageSettings &&
+        (combined.includes("ayar") ||
+          combined.includes("yazıcı") ||
+          combined.includes("qr") ||
+          combined.includes("wifi") ||
+          combined.includes("şube"))
+      ) {
+        finalRecommendedPage = {
+          title: "Restoran & Sistem Ayarları",
+          url: "/dashboard/settings",
+          description: "Restoran profili, yazıcılar, QR menü ve sistem tercihleri",
+          icon: "settings",
+        };
+      }
+    }
+
+    // 2. Safeguard: If user asked about revenue and reply was evasive or missing numbers, replace with accurate summary
+    let finalReply = parsed.reply || "İşleminiz tamamlandı.";
+    if (
+      financialData &&
+      userQuery.toLowerCase().includes("ciro") &&
+      (finalReply.includes("sayfasından ulaşabilirsiniz") ||
+        finalReply.includes("sayfasından görebilirsiniz") ||
+        finalReply.includes("sayfasından inceleyebilirsiniz") ||
+        !finalReply.includes("₺"))
+    ) {
+      finalReply = `Bugünkü toplam tamamlanan ciro **${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}**'dir. Gün içinde toplam ${financialData.todayCompletedOrdersCount} adisyon tamamlanmıştır (Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}). Ayrıca şu anda masalarda ${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} tutarında açık hesap bulunmaktadır.`;
+    }
+
+    if (
+      userQuery.toLowerCase().includes("hangi masalar") ||
+      (userQuery.toLowerCase().includes("masa") && userQuery.toLowerCase().includes("dolu"))
+    ) {
+      if (
+        finalReply.includes("sayfasından ulaşabilirsiniz") ||
+        finalReply.includes("sayfasından görebilirsiniz") ||
+        finalReply.includes("sayfasından inceleyebilirsiniz")
+      ) {
+        if (occupiedTables.length === 0) {
+          finalReply = `Şu anda restorandaki tüm masalar (${tables.length} masa) boştur.`;
+        } else {
+          finalReply = `Şu anda ${occupiedTables.length} masa doludur: ${occupiedTables.map((t) => `**${t.label}** (${t.orders.reduce((s, o) => s + Number(o.grandTotal || 0), 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ${currency})`).join(", ")}. Kalan ${emptyTablesCount} masa boştur.`;
+        }
+      }
+    }
+
     return success<AiAssistantResponse>({
-      reply: parsed.reply || "İşleminiz tamamlandı.",
-      recommendedPage: parsed.recommendedPage || null,
+      reply: finalReply,
+      recommendedPage: finalRecommendedPage,
       actionPreview: validatedActionPreview,
       clarificationOptions: sanitizedOptions,
       userRole: jobTitle || role,
