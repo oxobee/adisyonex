@@ -1312,79 +1312,95 @@ export function CashierSalesTerminal({
             </div>
           )}
 
-          {/* Adisyon Başlığı & Masa Seçimi */}
-          <div className="p-3.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="size-9 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center border border-slate-800 shadow-xs">
-                <ReceiptIcon className="size-4.5" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black text-slate-900 tracking-tight">
+          {/* Adisyon Başlığı & Masa Seçimi (Taşma ve İç İçe Geçmeleri Önleyen 2 Kademeli Modern Düzen) */}
+          <div className="p-3 sm:p-3.5 bg-white border-b border-slate-200 flex flex-col gap-2.5 shrink-0 shadow-2xs">
+            {/* Üst Satır: Fiş Başlığı, Fiş Numarası, Kalem Sayısı & Temizle */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-9 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center border border-slate-800 shadow-xs shrink-0">
+                  <ReceiptIcon className="size-4.5" />
+                </div>
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                  <span className="text-sm font-black text-slate-900 tracking-tight whitespace-nowrap">
                     Adisyon Fişi
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs whitespace-nowrap shrink-0">
                     {currentTicket.label}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap shrink-0">
                     {cart.reduce((s, l) => s + l.quantity, 0)} Kalem
                   </span>
                 </div>
-                {selectedTableId ? (
-                  <span className="text-[11px] font-bold text-blue-600 flex items-center gap-1">
-                    🪑 {tables.find(t => t.id === selectedTableId)?.label || "Masa"} Seçildi
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    {serviceType === "TAKEAWAY"
-                      ? "🛍️ Gel-Al / Paket Satışı"
-                      : serviceType === "DELIVERY"
-                      ? "🛵 Paket Servis / Kurye"
-                      : "🪑 Masada Servis"}
-                  </span>
-                )}
               </div>
-            </div>
 
-            {/* Masaya Ata / Seç Butonu & Sepet Temizle */}
-            <div className="flex items-center gap-1.5">
+              {/* Sepet Temizle Butonu */}
               {cart.length > 0 && (
                 <button
                   type="button"
                   onClick={() => clear()}
                   title="Sepeti Boşalt"
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition-colors cursor-pointer flex items-center gap-1"
+                  className="h-8 px-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 >
                   <Trash2Icon className="size-3.5" />
-                  <span className="hidden sm:inline">Temizle</span>
+                  <span>Temizle</span>
                 </button>
               )}
+            </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("DINE_IN");
-                  setActiveMainTab("TABLES");
-                }}
-                className={cn(
-                  "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer shadow-xs select-none",
-                  selectedTableId
-                    ? "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                    : "bg-white hover:bg-slate-50 text-slate-700 border-slate-300"
-                )}
-              >
-                <span>🪑 {selectedTableId ? tables.find(t => t.id === selectedTableId)?.label : "Masa Seç"}</span>
-              </button>
+            {/* Alt Satır: Masa Seçimi / Hizmet Türü Durumu */}
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/90 text-xs">
+              {selectedTableId ? (
+                <div className="flex items-center justify-between w-full gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="size-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+                    <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
+                      Seçili Masa:
+                    </span>
+                  </div>
 
-              {selectedTableId && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedTableId(null)}
-                  title="Masayı Kaldır (Hızlı Satışa Çevir)"
-                  className="size-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center border border-transparent hover:border-red-200 transition-colors"
-                >
-                  <XIcon className="size-4" />
-                </button>
+                  <div className="inline-flex items-center rounded-xl bg-blue-50 border border-blue-200/90 text-blue-700 h-7.5 pl-2.5 pr-1 text-xs font-black shadow-2xs shrink-0 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setServiceType("DINE_IN");
+                        setActiveMainTab("TABLES");
+                      }}
+                      title="Masayı Değiştir"
+                      className="flex items-center gap-1 hover:text-blue-900 cursor-pointer whitespace-nowrap"
+                    >
+                      <span>🪑 {tables.find(t => t.id === selectedTableId)?.label || "Masa"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTableId(null)}
+                      title="Masayı Kaldır (Hızlı Satışa Çevir)"
+                      className="size-5.5 ml-1 rounded-md text-blue-400 hover:text-red-600 hover:bg-blue-100 flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <XIcon className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span className="text-[11px] font-semibold text-slate-500 truncate">
+                    {serviceType === "TAKEAWAY"
+                      ? "🛍️ Gel-Al / Paket Satışı"
+                      : serviceType === "DELIVERY"
+                      ? "🛵 Paket Servis / Kurye"
+                      : "⚡ Hızlı Satış (Masasız)"}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServiceType("DINE_IN");
+                      setActiveMainTab("TABLES");
+                    }}
+                    className="h-7.5 px-2.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+                  >
+                    <span>🪑 Masaya Bağla</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>
