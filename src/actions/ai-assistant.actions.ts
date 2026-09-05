@@ -361,7 +361,9 @@ export async function askAiAssistantAction(
     const canManageSettings = isManager;
     const canManageStaff = isManager;
 
-    const { dayStart, dayEnd } = getTurkeyDayRange();
+    const { dayStart: todayStart, dayEnd: todayEnd, formattedDate: todayFormatted } = getTurkeyDayRange();
+    const yesterdayDate = new Date(todayStart.getTime() - 12 * 3600 * 1000);
+    const { dayStart: yesterdayStart, dayEnd: yesterdayEnd, formattedDate: yesterdayFormatted } = getTurkeyDayRange(yesterdayDate);
 
     // Fetch details according to permissions (PREVENTS DATA LEAKAGE TO LLM PROMPT)
     const restaurantPromise = prisma.restaurant.findUnique({
@@ -398,17 +400,21 @@ export async function askAiAssistantAction(
 
     const financialPromise = canViewFinancials
       ? (async () => {
-          const [completedOrders, openOrders] = await Promise.all([
+          const [completedOrders, openOrders, yesterdayOrders, yesterdayZReport] = await Promise.all([
             prisma.order.findMany({
               where: {
                 restaurantId,
                 status: "COMPLETED",
-                createdAt: { gte: dayStart, lte: dayEnd },
+                createdAt: { gte: todayStart, lte: todayEnd },
                 deletedAt: null,
               },
               select: {
                 grandTotal: true,
                 payments: { select: { mode: true, amount: true } },
+                items: {
+                  where: { state: { not: "VOID" } },
+                  select: { quantity: true, unitPrice: true },
+                },
               },
             }),
             prisma.order.findMany({
@@ -418,8 +424,36 @@ export async function askAiAssistantAction(
                 deletedAt: null,
               },
               select: {
+                id: true,
                 grandTotal: true,
+                items: {
+                  where: { state: { not: "VOID" } },
+                  select: { quantity: true, unitPrice: true },
+                },
               },
+            }),
+            prisma.order.findMany({
+              where: {
+                restaurantId,
+                status: "COMPLETED",
+                createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
+                deletedAt: null,
+              },
+              select: {
+                grandTotal: true,
+                payments: { select: { mode: true, amount: true } },
+                items: {
+                  where: { state: { not: "VOID" } },
+                  select: { quantity: true, unitPrice: true },
+                },
+              },
+            }),
+            prisma.zReport.findFirst({
+              where: {
+                restaurantId,
+                reportDate: { gte: yesterdayStart, lte: yesterdayEnd },
+              },
+              select: { netSales: true, grossSales: true, orderCount: true, cashSales: true },
             }),
           ]);
 
@@ -429,8 +463,12 @@ export async function askAiAssistantAction(
           let otherTotal = 0;
 
           for (const ord of completedOrders) {
-            const gt = Number(ord.grandTotal || 0);
-            todayTotal += gt;
+            const itemsSum = ord.items.reduce(
+              (s, it) => s + Number(it.unitPrice || 0) * (it.quantity || 1),
+              0
+            );
+            const amt = Number(ord.grandTotal) > 0 ? Number(ord.grandTotal) : itemsSum;
+            todayTotal += amt;
             for (const p of ord.payments) {
               const amt = Number(p.amount || 0);
               if (p.mode === "CASH") cashTotal += amt;
@@ -441,7 +479,38 @@ export async function askAiAssistantAction(
 
           let openTablesTotal = 0;
           for (const ord of openOrders) {
-            openTablesTotal += Number(ord.grandTotal || 0);
+            const itemsSum = ord.items.reduce(
+              (s, it) => s + Number(it.unitPrice || 0) * (it.quantity || 1),
+              0
+            );
+            openTablesTotal += itemsSum > 0 ? itemsSum : Number(ord.grandTotal || 0);
+          }
+
+          let yesterdayRevenue = 0;
+          let yesterdayCash = 0;
+          let yesterdayCard = 0;
+          let yesterdayCount = yesterdayOrders.length;
+
+          for (const ord of yesterdayOrders) {
+            const itemsSum = ord.items.reduce(
+              (s, it) => s + Number(it.unitPrice || 0) * (it.quantity || 1),
+              0
+            );
+            yesterdayRevenue += Number(ord.grandTotal) > 0 ? Number(ord.grandTotal) : itemsSum;
+
+            for (const p of ord.payments) {
+              const amt = Number(p.amount || 0);
+              if (p.mode === "CASH") yesterdayCash += amt;
+              else if (p.mode === "CARD") yesterdayCard += amt;
+            }
+          }
+
+          if (yesterdayZReport) {
+            const zAmt = Number(yesterdayZReport.netSales || yesterdayZReport.grossSales || 0);
+            if (zAmt > 0) {
+              yesterdayRevenue = zAmt;
+              yesterdayCount = yesterdayZReport.orderCount || yesterdayCount;
+            }
           }
 
           return {
@@ -452,6 +521,12 @@ export async function askAiAssistantAction(
             otherTotal,
             openOrdersCount: openOrders.length,
             openTablesTotal,
+            yesterdayRevenue,
+            yesterdayCount,
+            yesterdayCash,
+            yesterdayCard,
+            yesterdayFormatted,
+            todayFormatted,
           };
         })().catch(() => null)
       : Promise.resolve(null);
@@ -641,9 +716,9 @@ Tüm modüllere, finansal verilere, ciroya, Z raporuna, masalara, mutfağa, sto�
 CANLI RESTORAN VERİLERİ (GÜNCEL DURUM BİLGİLERİ):
 ${
   financialData
-    ? `- BUGÜNKÜ TAMAMLANAN TOPLAM CİRO: ${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
-- BUGÜN TAMAMLANAN ADİSYON SAYISI: ${financialData.todayCompletedOrdersCount} adet
-- TAHSİLAT DETAYI: Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}${financialData.otherTotal > 0 ? `, Diğer: ${currency}${financialData.otherTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}` : ""}
+    ? `- BUGÜNKÜ TAMAMLANAN TOPLAM CİRO (${financialData.todayFormatted}): ${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} (${financialData.todayCompletedOrdersCount} adet tamamlanan adisyon)
+  * Tahsilat Detayı: Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}${financialData.otherTotal > 0 ? `, Diğer: ${currency}${financialData.otherTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}` : ""}
+- DÜNKÜ TOPLAM CİRO (${financialData.yesterdayFormatted}): ${currency}${financialData.yesterdayRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} (${financialData.yesterdayCount} adet tamamlanan adisyon)
 - ŞU AN MASALARDAKİ AÇIK HESAP TOPLAMI: ${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} (${financialData.openOrdersCount} açık masa/adisyon)`
     : ""
 }
@@ -651,22 +726,26 @@ ${
 ${
   occupiedTables.length > 0
     ? `- DOLU MASALAR VE HESAPLARI: ${JSON.stringify(
-        occupiedTables.map((t) => ({
-          masa: t.label,
-          salon: t.section,
-          tutar:
-            t.orders
-              .reduce((s, o) => s + Number(o.grandTotal || 0), 0)
-              .toLocaleString("tr-TR", { minimumFractionDigits: 2 }) +
-            " " +
-            currency,
-          kalemSayisi: t.orders
-            .flatMap((o) => o.items)
-            .reduce((s, i) => s + i.quantity, 0),
-          hesapIstendiMi: t.orders.some((o) => o.billRequestedAt !== null)
-            ? "Evet (Hesap İstendi)"
-            : "Hayır",
-        }))
+        occupiedTables.map((t) => {
+          const tSum = t.orders.reduce((sum, o) => {
+            const itemsSum = o.items.reduce(
+              (s, it) => s + Number(it.unitPrice || 0) * it.quantity,
+              0
+            );
+            return sum + (itemsSum > 0 ? itemsSum : Number(o.grandTotal || 0));
+          }, 0);
+          return {
+            masa: t.label,
+            salon: t.section,
+            tutar: tSum.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) + " " + currency,
+            kalemSayisi: t.orders
+              .flatMap((o) => o.items)
+              .reduce((s, i) => s + i.quantity, 0),
+            hesapIstendiMi: t.orders.some((o) => o.billRequestedAt !== null)
+              ? "Evet (Hesap İstendi)"
+              : "Hayır",
+          };
+        })
       )}`
     : "- Şu anda tüm masalar boştur."
 }
@@ -706,18 +785,31 @@ GENEL VE KESİN KURALLAR:
 1. YALNIZCA BU RESTORAN VE KULLANICININ YETKİLİ OLDUĞU ALANLAR HAKKINDA BİLGİ VER.
    - Restoran dışı konular (şiir, genel kültür vb.) sorulursa: "Ben AdisyonEx restoran asistanıyım, yalnızca yetkili olduğunuz restoran operasyonlarında yardımcı olabilirim." de.
 
-2. SORULAN SORUYU MUTLAKA ÖZET OLARAK CEVAPLA (EN ÖNEMLİ KURAL):
-   - Kullanıcı bir bilgi sorduğunda (örn: ciro, hasılat, masalar, doluluk, açık hesaplar, mutfak hazırlıkları, menü, stok vb.), ASLA "Şu sayfadan ulaşabilirsiniz", "Bu bilgiye oradan bakabilirsiniz" diyerek geçiştirme!
-   - Yukarıdaki canlı restoran verilerini kullanarak kullanıcının sorusuna DOĞRUDAN, NET, ÖZET VE RAKAMLARLA yanıt ver.
-   - Örnek: Kullanıcı "Bugünkü toplam ciro ne kadar?" diye sorduğunda:
-     "Bugünkü toplam tamamlanan ciro **₺7.875,00**'dir. Gün içinde 15 adisyon tamamlanmıştır (₺5.425,00 Kredi Kartı, ₺2.450,00 Nakit). Ayrıca şu an masalarda ₺1.450,00 tutarında açık hesap bulunmaktadır." şeklinde özet cevap ver.
-   - Örnek: Kullanıcı "Hangi masalar dolu?" diye sorduğunda:
-     "Şu an 5 masa dolu durumdadır: Masa 3 (₺5.940,00), Masa 5 (₺270,00), Masa 6 (₺770,00), Masa 7 (₺0,00) ve Masa 14 (₺440,00). Kalan 10 masa boştur." şeklinde özet ver.
+2. SORULAN SORUYU MUTLAKA ÖZET OLARAK DOĞRU ZAMAN VE RAKAMLARLA CEVAPLA (EN ÖNEMLİ KURAL):
+   - Kullanıcı bir bilgi sorduğunda (örn: dünkü ciro, bugünkü ciro, masalardaki açık hesaplar, doluluk, mutfak, menü, stok vb.), ASLA "Şu sayfadan ulaşabilirsiniz", "Bu bilgiye oradan bakabilirsiniz" diyerek geçiştirme!
+   - SORUDAKİ ZAMAN VE KAPSAM KAVRAMINA (BUGÜN MÜ, DÜN MÜ, ŞU ANKİ AÇIK HESAPLAR MI) KESİNLİKLE DİKKAT ET:
+     * DÜNKÜ CİRO sorulduğunda ("dün ne kadar ciro", "dünkü ciro", "dünkü hasılat"): SADECE DÜNKÜ CİROYU (${financialData ? currency + financialData.yesterdayRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) : "bilgi"}) söyle! ASLA bugünkü ciroyla karıştırma!
+     * ŞU ANKİ AÇIK HESAPLAR / MASALARDAKİ TUTAR sorulduğunda: ŞU AN MASALARDAKİ AÇIK HESAP TOPLAMINI (${financialData ? currency + financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) : "bilgi"}) söyle! Masalarda açık hesap varken asla 0 TL deme!
+     * BUGÜNKÜ CİRO sorulduğunda ("bugünkü ciro", "bugün hasılat", "toplam ciro"): BUGÜNKÜ TAMAMLANAN CİROYU (${financialData ? currency + financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) : "bilgi"}) söyle ve masalardaki açık hesap tutarını (${financialData ? currency + financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) : "bilgi"}) ekle.
+   - Örnek: "dün ne kadar ciro" ->
+     "Dünkü (${financialData?.yesterdayFormatted || "Dün"}) toplam tamamlanan ciro **${currency}${financialData?.yesterdayRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) || "0,00"}**'dir (${financialData?.yesterdayCount || 0} adisyon tamamlandı)."
+   - Örnek: "masalarda ne kadar açık hesap var" ->
+     "Şu anda masalarda toplam **${currency}${financialData?.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 }) || "0,00"}** tutarında açık hesap bulunmaktadır (${financialData?.openOrdersCount || 0} açık masa)."
+   - Örnek: "Hangi masalar dolu?" ->
+     "Şu an ${occupiedTables.length} masa dolu durumdadır: ${occupiedTables
+       .map((t) => {
+         const tSum = t.orders.reduce((sum, o) => {
+           const itemsSum = o.items.reduce((s, it) => s + Number(it.unitPrice || 0) * it.quantity, 0);
+           return sum + (itemsSum > 0 ? itemsSum : Number(o.grandTotal || 0));
+         }, 0);
+         return `${t.label} (${tSum.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ${currency})`;
+       })
+       .join(", ")}. Kalan ${emptyTablesCount} masa boştur."
 
 3. YANITIN ALTINA İLGİLİ ALANIN KARTINI (recommendedPage) MUTLAKA EKLE:
    - Soru ve özet cevabın konusuna göre, kullanıcının tek tıkla ilgili sayfaya geçebilmesi için MUTLAKA "recommendedPage" kartı nesnesi oluştur:
      * Ciro / Kasa hasılatı / Z Raporu / Ödemeler / Finans ->
-       recommendedPage: { "title": "Finansal Raporlar & Z Raporu", "url": "/dashboard/z-report", "description": "Günlük ciro, tahsilatlar, ödeme türleri ve Z raporu", "icon": "report" }
+       recommendedPage: { "title": "Finansal Raporlar & Z Raporu", "url": "/dashboard/z-report", "description": "Günlük ve geçmiş ciro, tahsilatlar, ödeme türleri ve Z raporu", "icon": "report" }
      * Masalar / Doluluk / Açık Hesaplar / Salon ->
        recommendedPage: { "title": "Masalar & Canlı Adisyonlar", "url": "/dashboard/orders", "description": "Canlı masa doluluğu, salon planı ve açık adisyon yönetimi", "icon": "table" }
      * Kasa Satış / POS / Hızlı Satış ->
@@ -1036,32 +1128,94 @@ GENEL VE KESİN KURALLAR:
       }
     }
 
-    // 2. Safeguard: If user asked about revenue and reply was evasive or missing numbers, replace with accurate summary
+    // 2. Safeguard: If user asked about revenue / open balance / tables and reply was evasive or inaccurate, replace with accurate summary
     let finalReply = parsed.reply || "İşleminiz tamamlandı.";
-    if (
-      financialData &&
-      userQuery.toLowerCase().includes("ciro") &&
-      (finalReply.includes("sayfasından ulaşabilirsiniz") ||
-        finalReply.includes("sayfasından görebilirsiniz") ||
-        finalReply.includes("sayfasından inceleyebilirsiniz") ||
-        !finalReply.includes("₺"))
-    ) {
-      finalReply = `Bugünkü toplam tamamlanan ciro **${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}**'dir. Gün içinde toplam ${financialData.todayCompletedOrdersCount} adisyon tamamlanmıştır (Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}). Ayrıca şu anda masalarda ${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} tutarında açık hesap bulunmaktadır.`;
+    const qLower = userQuery.toLowerCase().trim();
+    const isYesterdayQuery =
+      qLower.includes("dün") ||
+      qLower.includes("dun") ||
+      qLower.includes("gecen gun") ||
+      qLower.includes("geçen gün") ||
+      qLower.includes("önceki gün") ||
+      qLower.includes("onceki gun");
+    const isOpenBalanceQuery =
+      qLower.includes("açık") ||
+      qLower.includes("acik") ||
+      qLower.includes("masada") ||
+      qLower.includes("masalarda") ||
+      qLower.includes("bekleyen hesap");
+
+    if (financialData) {
+      if (
+        isYesterdayQuery &&
+        (qLower.includes("ciro") ||
+          qLower.includes("hasılat") ||
+          qLower.includes("kazanç") ||
+          qLower.includes("kadar") ||
+          qLower.includes("ne"))
+      ) {
+        if (
+          finalReply.includes("sayfasından") ||
+          finalReply.toLowerCase().includes("bugün") ||
+          !finalReply.includes("₺")
+        ) {
+          finalReply = `Dünkü (${financialData.yesterdayFormatted}) toplam tamamlanan ciro **${currency}${financialData.yesterdayRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}**'dir (${financialData.yesterdayCount} adisyon tamamlandı).`;
+        }
+      } else if (
+        isOpenBalanceQuery &&
+        (qLower.includes("hesap") ||
+          qLower.includes("para") ||
+          qLower.includes("tutar") ||
+          qLower.includes("ciro") ||
+          qLower.includes("kadar") ||
+          qLower.includes("var"))
+      ) {
+        if (
+          finalReply.includes("0,00") ||
+          finalReply.includes("0 tl") ||
+          finalReply.includes("sayfasından") ||
+          !finalReply.includes("₺")
+        ) {
+          finalReply = `Şu anda masalarda toplam **${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}** tutarında açık hesap bulunmaktadır (${financialData.openOrdersCount} açık masa).`;
+        }
+      } else if (
+        qLower.includes("ciro") &&
+        !isYesterdayQuery &&
+        (finalReply.includes("sayfasından") ||
+          !finalReply.includes("₺") ||
+          finalReply.includes("0,00 tutarında açık hesap") ||
+          finalReply.includes("₺0,00 tutarında açık hesap"))
+      ) {
+        finalReply = `Bugünkü toplam tamamlanan ciro **${currency}${financialData.todayCompletedRevenue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}**'dir. Gün içinde toplam ${financialData.todayCompletedOrdersCount} adisyon tamamlanmıştır (Nakit: ${currency}${financialData.cashTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}, Kredi Kartı: ${currency}${financialData.cardTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}). Ayrıca şu anda masalarda ${currency}${financialData.openTablesTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} tutarında açık hesap bulunmaktadır.`;
+      }
     }
 
     if (
-      userQuery.toLowerCase().includes("hangi masalar") ||
-      (userQuery.toLowerCase().includes("masa") && userQuery.toLowerCase().includes("dolu"))
+      qLower.includes("hangi masalar") ||
+      (qLower.includes("masa") && qLower.includes("dolu"))
     ) {
       if (
         finalReply.includes("sayfasından ulaşabilirsiniz") ||
         finalReply.includes("sayfasından görebilirsiniz") ||
-        finalReply.includes("sayfasından inceleyebilirsiniz")
+        finalReply.includes("sayfasından inceleyebilirsiniz") ||
+        finalReply.includes("0,00 ₺") ||
+        finalReply.includes("₺0,00")
       ) {
         if (occupiedTables.length === 0) {
           finalReply = `Şu anda restorandaki tüm masalar (${tables.length} masa) boştur.`;
         } else {
-          finalReply = `Şu anda ${occupiedTables.length} masa doludur: ${occupiedTables.map((t) => `**${t.label}** (${t.orders.reduce((s, o) => s + Number(o.grandTotal || 0), 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ${currency})`).join(", ")}. Kalan ${emptyTablesCount} masa boştur.`;
+          finalReply = `Şu anda ${occupiedTables.length} masa doludur: ${occupiedTables
+            .map((t) => {
+              const tSum = t.orders.reduce((sum, o) => {
+                const itemsSum = o.items.reduce(
+                  (s, it) => s + Number(it.unitPrice || 0) * it.quantity,
+                  0
+                );
+                return sum + (itemsSum > 0 ? itemsSum : Number(o.grandTotal || 0));
+              }, 0);
+              return `**${t.label}** (${tSum.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ${currency})`;
+            })
+            .join(", ")}. Kalan ${emptyTablesCount} masa boştur.`;
         }
       }
     }
