@@ -52,14 +52,52 @@ export const aiPhotoProfessionalizeSchema = z.object({
 
 export type AiPhotoProfessionalizeInput = z.infer<typeof aiPhotoProfessionalizeSchema>;
 
-const normalizeOptionalNumber = (value: unknown): unknown => {
-  if (value === null || value === undefined || value === "") return value;
-  const numberValue = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(numberValue) ? numberValue : undefined;
+const parseNumericValue = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === "") return undefined;
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9,.-]/g, "").replace(",", ".");
+    const parsed = parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
 };
 
-const normalizeDietaryType = (value: unknown): unknown => {
-  if (value === null || value === undefined || value === "") return value;
+const parsePrice = (value: unknown): number => {
+  const n = parseNumericValue(value);
+  return n !== undefined && n >= 0 ? n : 0;
+};
+
+const parsePriceDelta = (value: unknown): number => {
+  if (value === null || value === undefined || value === "") return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const isNegative = value.includes("-");
+    const cleaned = value.replace(/[^0-9,.-]/g, "").replace(",", ".");
+    const parsed = parseFloat(cleaned);
+    if (!Number.isFinite(parsed)) return 0;
+    return isNegative ? -Math.abs(parsed) : Math.abs(parsed);
+  }
+  return 0;
+};
+
+const parseOptionalInt = (value: unknown): number | null | undefined => {
+  if (value === null) return null;
+  if (value === undefined || value === "") return undefined;
+  if (typeof value === "number") return Number.isFinite(value) ? Math.round(value) : undefined;
+  if (typeof value === "string") {
+    const match = value.match(/\d+/);
+    if (match) {
+      const parsed = parseInt(match[0], 10);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+  }
+  return undefined;
+};
+
+const normalizeDietaryType = (value: unknown): "VEG" | "NON_VEG" | "EGG" | null | undefined => {
+  if (value === null) return null;
+  if (value === undefined || value === "") return undefined;
   if (typeof value !== "string") return undefined;
 
   const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, "_");
@@ -79,14 +117,14 @@ const normalizeAllergens = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
   return value
     .map((allergen) => {
-      if (typeof allergen === "string") return allergen.trim();
+      if (typeof allergen === "string") return allergen.trim().slice(0, 50);
       if (
         allergen &&
         typeof allergen === "object" &&
         "name" in allergen &&
-        typeof allergen.name === "string"
+        typeof (allergen as { name?: unknown }).name === "string"
       ) {
-        return allergen.name.trim();
+        return (allergen as { name: string }).name.trim().slice(0, 50);
       }
       return "";
     })
@@ -94,17 +132,17 @@ const normalizeAllergens = (value: unknown): string[] => {
     .slice(0, 30);
 };
 
-const normalizeVariants = (value: unknown): Array<{ name: string; price: unknown }> => {
+const normalizeVariants = (value: unknown): Array<{ name: string; price: number }> => {
   if (!Array.isArray(value)) return [];
   return value
     .map((variant) => {
       if (!variant || typeof variant !== "object") return null;
       const raw = variant as { name?: unknown; price?: unknown };
-      const name = typeof raw.name === "string" ? raw.name.trim() : "";
+      const name = typeof raw.name === "string" ? raw.name.trim().slice(0, 100) : "";
       if (!name) return null;
-      return { name, price: normalizeOptionalNumber(raw.price) };
+      return { name, price: parsePrice(raw.price) };
     })
-    .filter((variant): variant is { name: string; price: unknown } => variant !== null)
+    .filter((variant): variant is { name: string; price: number } => variant !== null)
     .slice(0, 20);
 };
 
@@ -120,60 +158,97 @@ const normalizeModifierGroups = (value: unknown) => {
         isRequired?: unknown;
         modifiers?: unknown;
       };
-      const name = typeof raw.name === "string" ? raw.name.trim() : "";
+      const name = typeof raw.name === "string" ? raw.name.trim().slice(0, 100) : "";
       if (!name) return null;
       const rawModifiers = Array.isArray(raw.modifiers) ? raw.modifiers : [];
       const modifiers = rawModifiers
         .map((m) => {
           if (!m || typeof m !== "object") return null;
           const mRaw = m as { name?: unknown; priceDelta?: unknown };
-          const mName = typeof mRaw.name === "string" ? mRaw.name.trim() : "";
+          const mName = typeof mRaw.name === "string" ? mRaw.name.trim().slice(0, 100) : "";
           if (!mName) return null;
           return {
             name: mName,
-            priceDelta: Number(mRaw.priceDelta) || 0,
+            priceDelta: parsePriceDelta(mRaw.priceDelta),
           };
         })
         .filter((m): m is { name: string; priceDelta: number } => m !== null);
 
       if (modifiers.length === 0) return null;
 
+      const isRequired = Boolean(raw.isRequired);
+      let minSelect = parseOptionalInt(raw.minSelect) ?? (isRequired ? 1 : 0);
+      if (minSelect < 0) minSelect = 0;
+      let maxSelect = parseOptionalInt(raw.maxSelect) ?? Math.max(1, modifiers.length);
+      if (maxSelect < 1) maxSelect = 1;
+      if (maxSelect < minSelect) maxSelect = minSelect;
+
       return {
         name,
-        minSelect: Number(raw.minSelect) || 0,
-        maxSelect: Number(raw.maxSelect) || Math.max(1, modifiers.length),
-        isRequired: Boolean(raw.isRequired),
+        minSelect,
+        maxSelect,
+        isRequired,
         modifiers,
       };
     })
     .filter((g): g is NonNullable<typeof g> => g !== null)
-    .slice(0, 10);
+    .slice(0, 15);
+};
+
+const normalizeCategories = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return ["Genel"];
+  const set = new Set<string>();
+  for (const c of value) {
+    if (typeof c === "string") {
+      const trimmed = c.trim();
+      if (trimmed.length > 0) {
+        set.add(trimmed.slice(0, 100));
+      }
+    }
+  }
+  const result = Array.from(set);
+  return result.length > 0 ? result : ["Genel"];
 };
 
 export const aiCommitItemSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  categoryName: z.string().trim().min(1).max(100),
-  price: z.preprocess(normalizeOptionalNumber, z.number().finite().min(0)),
-  shortDescription: z.string().trim().max(500).optional(),
+  name: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() ? val.trim().slice(0, 100) : "İsimsiz Ürün"),
+    z.string().min(1).max(100),
+  ),
+  categoryName: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() ? val.trim().slice(0, 100) : "Genel"),
+    z.string().min(1).max(100),
+  ),
+  price: z.preprocess(parsePrice, z.number().finite().min(0)),
+  shortDescription: z.preprocess(
+    (val) => {
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        return trimmed.length > 0 ? trimmed.slice(0, 500) : undefined;
+      }
+      return undefined;
+    },
+    z.string().max(500).optional(),
+  ),
   calories: z.preprocess(
-    normalizeOptionalNumber,
+    parseOptionalInt,
     z.number().int().min(0).max(10000).optional().nullable(),
   ),
   prepTimeMinutes: z.preprocess(
-    normalizeOptionalNumber,
+    parseOptionalInt,
     z.number().int().min(0).max(300).optional().nullable(),
   ),
   dietaryType: z.preprocess(
     normalizeDietaryType,
     z.enum(["VEG", "NON_VEG", "EGG"]).optional().nullable(),
   ),
-  allergens: z.preprocess(normalizeAllergens, z.array(z.string().trim().min(1)).max(30)),
+  allergens: z.preprocess(normalizeAllergens, z.array(z.string().trim().min(1).max(50)).max(30)),
   variants: z.preprocess(
     normalizeVariants,
     z.array(
       z.object({
         name: z.string().trim().min(1).max(100),
-        price: z.preprocess(normalizeOptionalNumber, z.number().finite().min(0)),
+        price: z.number().finite().min(0),
       }),
     ).max(20),
   ),
@@ -182,13 +257,13 @@ export const aiCommitItemSchema = z.object({
     z.array(
       z.object({
         name: z.string().trim().min(1).max(100),
-        minSelect: z.coerce.number().int().min(0).default(0),
-        maxSelect: z.coerce.number().int().min(1).default(1),
+        minSelect: z.number().int().min(0).default(0),
+        maxSelect: z.number().int().min(1).default(1),
         isRequired: z.boolean().default(false),
         modifiers: z.array(
           z.object({
             name: z.string().trim().min(1).max(100),
-            priceDelta: z.coerce.number().default(0),
+            priceDelta: z.number().finite().default(0),
           }),
         ).min(1),
       }),
@@ -197,7 +272,10 @@ export const aiCommitItemSchema = z.object({
 });
 
 export const aiCommitMenuSchema = z.object({
-  categories: z.array(z.string().trim().min(1).max(100)),
+  categories: z.preprocess(
+    normalizeCategories,
+    z.array(z.string().trim().min(1).max(100)),
+  ),
   items: z.array(aiCommitItemSchema).min(1, "En az bir ürün seçilmelidir"),
 });
 

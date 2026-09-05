@@ -163,7 +163,16 @@ export function MenuImportView({ wallet }: { wallet: AiCreditWalletDTO }) {
       );
       router.push("/dashboard/menu");
     },
-    onError: (msg) => toast.error(msg || "Menü kaydedilemedi"),
+    onError: (msg, fieldErrors) => {
+      if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+        const details = Object.entries(fieldErrors)
+          .map(([f, errs]) => `${f}: ${errs.join(", ")}`)
+          .join(" | ");
+        toast.error(`Doğrulama hatası: ${details}`);
+      } else {
+        toast.error(msg || "Menü kaydedilemedi");
+      }
+    },
   });
 
   // Multi-file handler
@@ -374,19 +383,27 @@ export function MenuImportView({ wallet }: { wallet: AiCreditWalletDTO }) {
     }
 
     const uniqueCategories = Array.from(
-      new Set(selectedItems.map((it) => it.categoryName.trim())),
+      new Set(
+        selectedItems
+          .map((it) => (it.categoryName || "").trim())
+          .filter((name) => name.length > 0),
+      ),
     );
+
+    if (uniqueCategories.length === 0) {
+      uniqueCategories.push("Genel");
+    }
 
     commit.execute({
       categories: uniqueCategories,
       items: selectedItems.map((it) => ({
-        name: it.name,
-        categoryName: it.categoryName,
-        price: Number(it.price) || 0,
-        shortDescription: it.shortDescription,
-        calories: it.calories,
-        prepTimeMinutes: it.prepTimeMinutes,
-        dietaryType: it.dietaryType,
+        name: (it.name || "").trim() || "İsimsiz Ürün",
+        categoryName: (it.categoryName || "").trim() || "Genel",
+        price: typeof it.price === "number" ? it.price : (parseFloat(String(it.price).replace(/[^0-9,.-]/g, "").replace(",", ".")) || 0),
+        shortDescription: it.shortDescription?.trim() || undefined,
+        calories: it.calories != null ? Number(it.calories) || null : null,
+        prepTimeMinutes: it.prepTimeMinutes != null ? Number(it.prepTimeMinutes) || null : null,
+        dietaryType: it.dietaryType || undefined,
         allergens: it.allergens ?? [],
         variants: it.variants ?? [],
         modifierGroups: it.modifierGroups ?? [],

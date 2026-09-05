@@ -596,7 +596,7 @@ export const commitDigitizedMenu = async (
     name: string;
     categoryName: string;
     price: number;
-    shortDescription?: string;
+    shortDescription?: string | null;
     calories?: number | null;
     prepTimeMinutes?: number | null;
     dietaryType?: any;
