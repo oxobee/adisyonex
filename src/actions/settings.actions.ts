@@ -108,6 +108,9 @@ export const setShowItemImagesAction = withManagerValidation(
   setShowItemImagesSchema,
   async (data, ctx) => {
     const res = await setShowItemImages(ctx.restaurantId, data.enabled);
+    const { invalidateMenuCache } = await import("@/services/menu-item.service");
+    invalidateMenuCache(ctx.restaurantId);
+    revalidatePath("/", "layout");
     await logActivity({
       restaurantId: ctx.restaurantId,
       category: "MENÜ",

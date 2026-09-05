@@ -153,6 +153,7 @@ export interface Theme2QsrViewProps {
   readonly wifiPassword?: string | null;
   readonly tableSessionClosed?: boolean;
   readonly qrAiEnabled?: boolean;
+  readonly showItemImages?: boolean;
 }
 
 export function Theme2QsrView({
@@ -162,6 +163,7 @@ export function Theme2QsrView({
   tableId,
   tableLabel,
   menu,
+  showItemImages = true,
   primaryColor = "#FF5500",
   secondaryColor = "#FFF7ED",
   wifiSsid,
@@ -1102,34 +1104,54 @@ export function Theme2QsrView({
                             style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
                           >
                             <div>
-                              {/* Top Food Image */}
-                              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
-                                {photo ? (
-                                  <Image
-                                    src={photo.url}
-                                    alt={item.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 640px) 50vw, 200px"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <span className="text-4xl">{getCategoryEmoji(currentCategory?.name || "")}</span>
-                                )}
+                              {showItemImages ? (
+                                /* Top Food Image */
+                                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
+                                  {photo ? (
+                                    <Image
+                                      src={photo.url}
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover"
+                                      sizes="(max-width: 640px) 50vw, 200px"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <span className="text-4xl">{getCategoryEmoji(currentCategory?.name || "")}</span>
+                                  )}
 
-                                <button
-                                  type="button"
-                                  onClick={(e) => toggleFavorite(item.id, e)}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 backdrop-blur-xs shadow-xs text-zinc-400 hover:text-red-500 transition-colors z-10"
-                                >
-                                  <HeartIcon
-                                    className={cn(
-                                      "size-3.5",
-                                      isFav && "fill-red-500 text-red-500",
-                                    )}
-                                  />
-                                </button>
-                              </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite(item.id, e)}
+                                    className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 backdrop-blur-xs shadow-xs text-zinc-400 hover:text-red-500 transition-colors z-10"
+                                  >
+                                    <HeartIcon
+                                      className={cn(
+                                        "size-3.5",
+                                        isFav && "fill-red-500 text-red-500",
+                                      )}
+                                    />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
+                                    {currentCategory?.name || "Menü"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite(item.id, e)}
+                                    className="p-1 rounded-full text-zinc-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <HeartIcon
+                                      className={cn(
+                                        "size-3.5",
+                                        isFav && "fill-red-500 text-red-500",
+                                      )}
+                                    />
+                                  </button>
+                                </div>
+                              )}
 
                               <h4 className="font-black text-xs sm:text-sm text-zinc-900 truncate group-hover:text-primary transition-colors">
                                 {item.name}
@@ -1249,20 +1271,22 @@ export function Theme2QsrView({
                               style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
                             >
                               {/* Left Food Image */}
-                              <div className="relative size-20 sm:size-22 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
-                                {photo ? (
-                                  <Image
-                                    src={photo.url}
-                                    alt={item.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="90px"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <span className="text-3xl">🍔</span>
-                                )}
-                              </div>
+                              {showItemImages && (
+                                <div className="relative size-20 sm:size-22 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                  {photo ? (
+                                    <Image
+                                      src={photo.url}
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover"
+                                      sizes="90px"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <span className="text-3xl">🍔</span>
+                                  )}
+                                </div>
+                              )}
 
                               {/* Middle Info */}
                               <div className="min-w-0 flex-1 space-y-1">
@@ -1346,33 +1370,50 @@ export function Theme2QsrView({
                               style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
                             >
                               <div>
-                                {/* Top Food Image */}
-                                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
-                                  {photo ? (
-                                    <Image
-                                      src={photo.url}
-                                      alt={item.name}
-                                      fill
-                                      className="object-cover"
-                                      sizes="150px"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <span className="text-4xl">🍔</span>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => toggleFavorite(item.id, e)}
-                                    className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
-                                  >
-                                    <HeartIcon
-                                      className={cn(
-                                        "size-3.5",
-                                        isFav && "fill-red-500 text-red-500",
-                                      )}
-                                    />
-                                  </button>
-                                </div>
+                                {showItemImages ? (
+                                  /* Top Food Image */
+                                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
+                                    {photo ? (
+                                      <Image
+                                        src={photo.url}
+                                        alt={item.name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="150px"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <span className="text-4xl">🍔</span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleFavorite(item.id, e)}
+                                      className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
+                                    >
+                                      <HeartIcon
+                                        className={cn(
+                                          "size-3.5",
+                                          isFav && "fill-red-500 text-red-500",
+                                        )}
+                                      />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-end mb-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleFavorite(item.id, e)}
+                                      className="p-1 rounded-full text-zinc-400 hover:text-red-500 transition-colors"
+                                    >
+                                      <HeartIcon
+                                        className={cn(
+                                          "size-3.5",
+                                          isFav && "fill-red-500 text-red-500",
+                                        )}
+                                      />
+                                    </button>
+                                  </div>
+                                )}
 
                                 <h4 className="font-black text-xs text-zinc-900 truncate group-hover:text-primary transition-colors">
                                   {item.name}
@@ -1433,32 +1474,49 @@ export function Theme2QsrView({
                               className="w-38 sm:w-44 shrink-0 bg-white rounded-3xl p-3 shadow-xs border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group active:scale-[0.98]"
                             >
                               <div>
-                                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
-                                  {photo ? (
-                                    <Image
-                                      src={photo.url}
-                                      alt={item.name}
-                                      fill
-                                      className="object-cover"
-                                      sizes="140px"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <span className="text-4xl">🍔</span>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => toggleFavorite(item.id, e)}
-                                    className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
-                                  >
-                                    <HeartIcon
-                                      className={cn(
-                                        "size-3.5",
-                                        isFav && "fill-red-500 text-red-500",
-                                      )}
-                                    />
-                                  </button>
-                                </div>
+                                {showItemImages ? (
+                                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-105 transition-transform mb-2">
+                                    {photo ? (
+                                      <Image
+                                        src={photo.url}
+                                        alt={item.name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="140px"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <span className="text-4xl">🍔</span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleFavorite(item.id, e)}
+                                      className="absolute top-2 right-2 size-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-xs transition-colors"
+                                    >
+                                      <HeartIcon
+                                        className={cn(
+                                          "size-3.5",
+                                          isFav && "fill-red-500 text-red-500",
+                                        )}
+                                      />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-end mb-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleFavorite(item.id, e)}
+                                      className="p-1 rounded-full text-zinc-400 hover:text-red-500 transition-colors"
+                                    >
+                                      <HeartIcon
+                                        className={cn(
+                                          "size-3.5",
+                                          isFav && "fill-red-500 text-red-500",
+                                        )}
+                                      />
+                                    </button>
+                                  </div>
+                                )}
 
                                 <h4 className="font-black text-xs text-zinc-900 truncate group-hover:text-primary transition-colors">
                                   {item.name}
@@ -1644,13 +1702,15 @@ export function Theme2QsrView({
                       key={line.key}
                       className="bg-white rounded-3xl p-3.5 shadow-xs border border-zinc-200/80 flex items-center justify-between gap-3"
                     >
-                      <div className="relative size-16 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center">
-                        {photo ? (
-                          <Image src={photo.url} alt={line.name} fill className="object-cover" sizes="64px" />
-                        ) : (
-                          <span className="text-2xl">🍔</span>
-                        )}
-                      </div>
+                      {showItemImages && (
+                        <div className="relative size-16 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center">
+                          {photo ? (
+                            <Image src={photo.url} alt={line.name} fill className="object-cover" sizes="64px" />
+                          ) : (
+                            <span className="text-2xl">🍔</span>
+                          )}
+                        </div>
+                      )}
 
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <h4 className="font-black text-xs text-zinc-900 truncate">{line.name}</h4>
@@ -1793,51 +1853,84 @@ export function Theme2QsrView({
         >
           {detailItem && (
             <>
-              {/* Hero Image Container */}
-              <div className="relative w-full aspect-4/3 bg-zinc-900 shrink-0">
-                {detailItem.images[0] ? (
-                  <Image
-                    src={detailItem.images[0].url}
-                    alt={detailItem.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, 450px"
-                    priority
-                  />
-                ) : (
-                  <div className="size-full flex items-center justify-center text-7xl bg-zinc-100">
-                    🍔
-                  </div>
-                )}
+              {/* Hero Image Container or Header */}
+              {showItemImages ? (
+                <div className="relative w-full aspect-4/3 bg-zinc-900 shrink-0">
+                  {detailItem.images[0] ? (
+                    <Image
+                      src={detailItem.images[0].url}
+                      alt={detailItem.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, 450px"
+                      priority
+                    />
+                  ) : (
+                    <div className="size-full flex items-center justify-center text-7xl bg-zinc-100">
+                      🍔
+                    </div>
+                  )}
 
-                {/* Back, Heart & Close Action Buttons (Temizce Ayrılmış, Çakışmayan Düzen) */}
-                <button
-                  type="button"
-                  onClick={() => setDetailItem(null)}
-                  className="absolute top-4 left-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
-                  aria-label="Geri"
-                >
-                  <ArrowLeftIcon className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleFavorite(detailItem.id)}
-                  className="absolute top-4 right-15 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
-                  aria-label="Favorilere Ekle"
-                  title="Favorilere Ekle / Çıkar"
-                >
-                  <HeartIcon className={cn("size-4", favorites[detailItem.id] && "fill-red-500 text-red-500")} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDetailItem(null)}
-                  className="absolute top-4 right-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
-                  aria-label="Kapat"
-                  title="Kapat"
-                >
-                  <XIcon className="size-4" />
-                </button>
-              </div>
+                  {/* Back, Heart & Close Action Buttons */}
+                  <button
+                    type="button"
+                    onClick={() => setDetailItem(null)}
+                    className="absolute top-4 left-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
+                    aria-label="Geri"
+                  >
+                    <ArrowLeftIcon className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite(detailItem.id)}
+                    className="absolute top-4 right-15 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
+                    aria-label="Favorilere Ekle"
+                    title="Favorilere Ekle / Çıkar"
+                  >
+                    <HeartIcon className={cn("size-4", favorites[detailItem.id] && "fill-red-500 text-red-500")} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailItem(null)}
+                    className="absolute top-4 right-4 size-9 rounded-2xl bg-white/90 backdrop-blur-md text-zinc-900 flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer z-10"
+                    aria-label="Kapat"
+                    title="Kapat"
+                  >
+                    <XIcon className="size-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="p-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/70">
+                  <button
+                    type="button"
+                    onClick={() => setDetailItem(null)}
+                    className="p-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs hover:bg-zinc-100 active:scale-90 transition-transform cursor-pointer"
+                    aria-label="Geri"
+                  >
+                    <ArrowLeftIcon className="size-4" />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(detailItem.id)}
+                      className="p-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs hover:bg-zinc-100 active:scale-90 transition-transform cursor-pointer"
+                      aria-label="Favorilere Ekle"
+                      title="Favorilere Ekle / Çıkar"
+                    >
+                      <HeartIcon className={cn("size-4", favorites[detailItem.id] && "fill-red-500 text-red-500")} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDetailItem(null)}
+                      className="p-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs hover:bg-zinc-100 active:scale-90 transition-transform cursor-pointer"
+                      aria-label="Kapat"
+                      title="Kapat"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Details Body */}
               <div className="p-5 space-y-4">
@@ -2734,20 +2827,22 @@ export function Theme2QsrView({
                     )}
                   >
                     {/* Item Image */}
-                    <div className="relative size-16 rounded-2xl overflow-hidden bg-zinc-100 shrink-0 border border-zinc-100">
-                      {fav.imageUrl ? (
-                        <Image
-                          src={fav.imageUrl}
-                          alt={fav.name}
-                          fill
-                          className={cn("object-cover", !fav.isAvailable && "grayscale")}
-                        />
-                      ) : (
-                        <div className="size-full flex items-center justify-center text-2xl">
-                          🍽️
-                        </div>
-                      )}
-                    </div>
+                    {showItemImages && (
+                      <div className="relative size-16 rounded-2xl overflow-hidden bg-zinc-100 shrink-0 border border-zinc-100">
+                        {fav.imageUrl ? (
+                          <Image
+                            src={fav.imageUrl}
+                            alt={fav.name}
+                            fill
+                            className={cn("object-cover", !fav.isAvailable && "grayscale")}
+                          />
+                        ) : (
+                          <div className="size-full flex items-center justify-center text-2xl">
+                            🍽️
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Item Info */}
                     <div className="flex-1 min-w-0 space-y-1">

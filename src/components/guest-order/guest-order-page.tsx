@@ -494,6 +494,7 @@ export function GuestOrderPage({
         logoUrl={logoUrl}
         tableLabel={tableLabel}
         menu={menu}
+        showItemImages={showItemImages}
         primaryColor={qrPrimaryColor}
         secondaryColor={qrSecondaryColor}
         slidersEnabled={qrSlidersEnabled}

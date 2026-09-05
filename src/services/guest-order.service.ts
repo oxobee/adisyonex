@@ -296,7 +296,18 @@ export const loadGuestOrderPage = async (
     }
   }
 
-  const menu = await getMenu(restaurant.id);
+  const rawMenu = await getMenu(restaurant.id);
+  const showItemImages = restaurant.showItemImages ?? true;
+  const menu: MenuDTO = showItemImages
+    ? rawMenu
+    : {
+        ...rawMenu,
+        items: rawMenu.items.map((it) => ({
+          ...it,
+          images: [],
+        })),
+      };
+
   return {
     status: "ok",
     data: {
@@ -308,7 +319,7 @@ export const loadGuestOrderPage = async (
       tableLabel: table.label,
       tableSessionId: lockCheck?.tableSessionId || null,
       menu,
-      showItemImages: restaurant.showItemImages ?? true,
+      showItemImages,
       qrMenuTheme: restaurant.qrMenuTheme || "MODERN",
       qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
       qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
