@@ -961,13 +961,20 @@ export function CashierSalesTerminal({
                       return (
                         <div
                           key={table.id}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData("application/pos-table", JSON.stringify(table));
-                            e.dataTransfer.effectAllowed = "copy";
-                            setDraggedTable(table);
-                            setDraggedItem(null);
+                          className="animate-table-card-elastic"
+                          style={{
+                            animationDelay: `${Math.min(idx * 35, 700)}ms`,
+                            animationFillMode: "both",
                           }}
+                        >
+                          <div
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("application/pos-table", JSON.stringify(table));
+                              e.dataTransfer.effectAllowed = "copy";
+                              setDraggedTable(table);
+                              setDraggedItem(null);
+                            }}
                           onDragEnd={handleDragEnd}
                           onClick={() => handleSelectTable(table)}
                           className={cn(
@@ -1064,6 +1071,7 @@ export function CashierSalesTerminal({
                             </div>
                           </div>
                         </div>
+                      </div>
                       );
                     })}
                   </div>

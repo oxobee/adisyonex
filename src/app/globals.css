@@ -233,7 +233,38 @@
 
 @media (prefers-reduced-motion: reduce) {
   .home-screen-enter,
-  .home-menu-card {
-    animation: none;
+  .home-menu-card,
+  .animate-table-card-elastic {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
+
+/* Elastic staggered bounce entrance for table cards and interactive grid items */
+@keyframes tableCardElasticIn {
+  0% {
+    opacity: 0;
+    transform: translateY(36px) scale(0.82);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.035);
+  }
+  75% {
+    transform: translateY(3px) scale(0.988);
+  }
+  90% {
+    transform: translateY(-1px) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-table-card-elastic {
+  animation: tableCardElasticIn 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+

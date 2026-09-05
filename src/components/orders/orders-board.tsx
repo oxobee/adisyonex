@@ -616,11 +616,17 @@ export function OrdersBoard({
         @keyframes tableCardElasticIn {
           0% {
             opacity: 0;
-            transform: translateY(30px) scale(0.86);
+            transform: translateY(36px) scale(0.82);
           }
-          60% {
+          50% {
             opacity: 1;
-            transform: translateY(-4px) scale(1.02);
+            transform: translateY(-8px) scale(1.035);
+          }
+          75% {
+            transform: translateY(3px) scale(0.988);
+          }
+          90% {
+            transform: translateY(-1px) scale(1.004);
           }
           100% {
             opacity: 1;
@@ -628,8 +634,10 @@ export function OrdersBoard({
           }
         }
         .animate-table-card-elastic {
-          animation: tableCardElasticIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          animation: tableCardElasticIn 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          will-change: transform, opacity;
         }
+
 
         @keyframes elasticSlideInRight {
           0% {
@@ -816,14 +824,20 @@ export function OrdersBoard({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4.5 lg:gap-5 w-full">
+            <div
+              key={selectedSection}
+              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5 sm:gap-4.5 lg:gap-5 w-full"
+            >
               {filteredTables.map((table, idx) => {
                 const tableOrders = ordersByTableId.get(table.id) ?? [];
                 return (
                   <div
-                    key={table.id}
-                    className="animate-in fade-in-0 zoom-in-95 duration-200"
-                    style={{ animationDelay: `${idx * 15}ms` }}
+                    key={`${selectedSection}-${table.id}`}
+                    className="animate-table-card-elastic"
+                    style={{
+                      animationDelay: `${Math.min(idx * 45, 900)}ms`,
+                      animationFillMode: "both",
+                    }}
                   >
                     <MaterialTableCard
                       table={table}
