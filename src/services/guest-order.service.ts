@@ -145,6 +145,7 @@ export interface GuestOrderPageData {
   readonly tableLabel: string;
   readonly tableSessionId?: string | null;
   readonly menu: MenuDTO;
+  readonly showItemImages?: boolean | null;
   readonly qrMenuTheme?: string | null;
   readonly qrPrimaryColor?: string | null;
   readonly qrSecondaryColor?: string | null;
@@ -307,6 +308,7 @@ export const loadGuestOrderPage = async (
       tableLabel: table.label,
       tableSessionId: lockCheck?.tableSessionId || null,
       menu,
+      showItemImages: restaurant.showItemImages ?? true,
       qrMenuTheme: restaurant.qrMenuTheme || "MODERN",
       qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
       qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",

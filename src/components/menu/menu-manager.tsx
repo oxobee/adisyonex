@@ -12,6 +12,7 @@ import {
   CopyIcon,
   FolderPlusIcon,
   ImageIcon,
+  ImageOffIcon,
   PaletteIcon,
   PencilIcon,
   PlusIcon,
@@ -27,6 +28,7 @@ import {
   duplicateItemAction,
   reenableItemAction,
 } from "@/actions/menu.actions"
+import { setShowItemImagesAction } from "@/actions/settings.actions"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Badge } from "@/components/ui/badge"
@@ -76,15 +78,20 @@ export function MenuManager({
   gstRegistered,
   stockItems,
   recipes,
+  initialShowItemImages = true,
 }: {
   menu: MenuDTO
   groups: readonly MenuModifierGroupDTO[]
   gstRegistered: boolean
   stockItems: readonly StockItemDTO[]
   recipes: Record<string, readonly RecipeComponentDTO[]>
+  initialShowItemImages?: boolean
 }) {
   const router = useRouter()
   const refresh = () => router.refresh()
+
+  const [showImages, setShowImages] = useState(initialShowItemImages)
+  const [imageToggleModalOpen, setImageToggleModalOpen] = useState(false)
 
   const [itemDialog, setItemDialog] = useState<{
     open: boolean
@@ -101,6 +108,25 @@ export function MenuManager({
   }>({ open: false, item: null })
   const [recipeItem, setRecipeItem] = useState<MenuItemDTO | null>(null)
   const [duplicateTarget, setDuplicateTarget] = useState<MenuItemDTO | null>(null)
+
+  const toggleImages = useServerAction(setShowItemImagesAction, {
+    onSuccess: () => {
+      const nextState = !showImages
+      setShowImages(nextState)
+      setImageToggleModalOpen(false)
+      if (nextState) {
+        toast.success("🖼️ Görselli Menü Modu Aktif!", {
+          description: "QR menüde ve sistemde ürün görselleri gösterilmeye başlandı.",
+        })
+      } else {
+        toast.success("✨ Görselsiz Menü Modu Aktif!", {
+          description: "QR menüde ve sistemde görseller gizlendi, sade ve hızlı liste tasarımına geçildi.",
+        })
+      }
+      refresh()
+    },
+    onError: (message) => toast.error(message || "Ayar güncellenemedi"),
+  })
 
   const deleteCategory = useServerAction(deleteCategoryAction, {
     onSuccess: () => {
@@ -139,7 +165,46 @@ export function MenuManager({
           title="Menü Yönetimi"
           description="Kategoriler, ürünler, fiyatlar, porsiyonlar, ekstralar ve stok durumu."
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* NOTICEABLE IMAGE SHOW/HIDE TOGGLE BUTTON */}
+          <button
+            type="button"
+            onClick={() => setImageToggleModalOpen(true)}
+            className={cn(
+              "inline-flex items-center gap-2 h-9 px-3.5 rounded-xl font-black text-xs sm:text-sm shadow-xs hover:shadow-md transition-all duration-300 active:scale-95 cursor-pointer ring-2",
+              showImages
+                ? "bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 ring-emerald-500/20 hover:border-emerald-500/60"
+                : "bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 ring-amber-500/20 hover:border-amber-500/60"
+            )}
+            title="Görsel Gösterim Modu (Görselli / Görselsiz Menü)"
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span
+                className={cn(
+                  "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+                  showImages ? "bg-emerald-400" : "bg-amber-400"
+                )}
+              />
+              <span
+                className={cn(
+                  "relative inline-flex rounded-full h-2.5 w-2.5",
+                  showImages ? "bg-emerald-500" : "bg-amber-500"
+                )}
+              />
+            </span>
+            {showImages ? (
+              <>
+                <ImageIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Görseller: Açık</span>
+              </>
+            ) : (
+              <>
+                <ImageOffIcon className="size-4 text-amber-600 dark:text-amber-400" />
+                <span>Görseller: Gizli</span>
+              </>
+            )}
+          </button>
+
           <Button variant="outline" onClick={() => setGroupsOpen(true)}>
             <SlidersHorizontalIcon className="size-4" /> Ekstra Seçenekler
           </Button>
@@ -228,6 +293,7 @@ export function MenuManager({
                       <ItemCard
                         key={item.id}
                         item={item}
+                        showImages={showImages}
                         onEdit={() => setItemDialog({ open: true, item })}
                         onDuplicate={() => setDuplicateTarget(item)}
                         onDelete={() => {
@@ -332,12 +398,112 @@ export function MenuManager({
           </DialogContent>
         </Dialog>
       ) : null}
+
+      {/* ELASTIC BOUNCY IMAGE TOGGLE CONFIRMATION MODAL */}
+      {imageToggleModalOpen ? (
+        <Dialog open onOpenChange={setImageToggleModalOpen}>
+          <DialogContent className="max-w-md rounded-3xl p-6 overflow-hidden border-2 border-primary/30 shadow-2xl animate-in zoom-in-90 [animation-timing-function:cubic-bezier(0.34,1.56,0.64,1)] duration-400">
+            <div className="flex flex-col items-center text-center">
+              {/* Elastic Bouncy Icon Avatar */}
+              <div
+                className={cn(
+                  "relative size-20 rounded-3xl flex items-center justify-center mb-4 transition-transform animate-bounce duration-1000",
+                  showImages
+                    ? "bg-amber-500/15 border-2 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                    : "bg-emerald-500/15 border-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                )}
+              >
+                {showImages ? (
+                  <ImageOffIcon className="size-10 stroke-[2] animate-pulse" />
+                ) : (
+                  <ImageIcon className="size-10 stroke-[2] animate-pulse" />
+                )}
+                <span className="absolute -top-1 -right-1 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-black shadow-md">
+                  {showImages ? "✕" : "✓"}
+                </span>
+              </div>
+
+              <DialogTitle className="text-xl font-black text-foreground">
+                {showImages
+                  ? "Görselsiz Menü Moduna Geçilsin mi?"
+                  : "Görselli Menü Moduna Geçilsin mi?"}
+              </DialogTitle>
+
+              <div className="text-sm text-muted-foreground mt-3 leading-relaxed text-left bg-muted/40 p-4 rounded-2xl border border-border/50 w-full space-y-2">
+                {showImages ? (
+                  <>
+                    <p className="font-bold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
+                      <span>🚫</span>
+                      <span>Görseller ve Görsel Alanları Kapatılacak:</span>
+                    </p>
+                    <ul className="list-disc list-inside space-y-1.5 text-xs text-muted-foreground">
+                      <li>
+                        <strong className="text-foreground">Sistemde ve QR Menüde:</strong> Ürün görselleri ve boş görsel yer tutucuları tamamen gizlenir.
+                      </li>
+                      <li>
+                        <strong className="text-foreground">Sade ve Hızlı Liste:</strong> Tasarım hiçbir görsel boşluğu bırakmadan, akıcı ve hafif bir metin düzenine geçer.
+                      </li>
+                      <li>
+                        Fotoğrafı olmayan ürünler için veya hızlı, minimalist sipariş deneyimi için idealdir.
+                      </li>
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-bold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
+                      <span>✨</span>
+                      <span>Görseller ve Zengin Kartlar Açılacak:</span>
+                    </p>
+                    <ul className="list-disc list-inside space-y-1.5 text-xs text-muted-foreground">
+                      <li>
+                        <strong className="text-foreground">Zengin Görsel Kartlar:</strong> Ürün fotoğrafları hem yönetim panelinde hem de müşteri QR menüsünde şık kartlar olarak sergilenir.
+                      </li>
+                      <li>
+                        <strong className="text-foreground">Varsayılan Görsel:</strong> Fotoğrafı bulunmayan ürünlerde şık varsayılan menü ikonu gösterilir.
+                      </li>
+                    </ul>
+                  </>
+                )}
+              </div>
+
+              <div className="flex w-full items-center gap-3 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 rounded-xl h-11 font-bold cursor-pointer"
+                  onClick={() => setImageToggleModalOpen(false)}
+                >
+                  Vazgeç
+                </Button>
+                <Button
+                  type="button"
+                  className={cn(
+                    "flex-1 rounded-xl h-11 font-black shadow-md transition-all active:scale-95 text-white cursor-pointer",
+                    showImages
+                      ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-orange-500/20"
+                      : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-emerald-500/20"
+                  )}
+                  disabled={toggleImages.isPending}
+                  onClick={() => toggleImages.execute({ enabled: !showImages })}
+                >
+                  {toggleImages.isPending
+                    ? "Kaydediliyor..."
+                    : showImages
+                    ? "Evet, Görselleri Gizle"
+                    : "Evet, Görselleri Göster"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   )
 }
 
 function ItemCard({
   item,
+  showImages,
   onEdit,
   onDuplicate,
   onDelete,
@@ -346,6 +512,7 @@ function ItemCard({
   onRecipe,
 }: {
   item: MenuItemDTO
+  showImages: boolean
   onEdit: () => void
   onDuplicate: () => void
   onDelete: () => void
@@ -354,22 +521,24 @@ function ItemCard({
   onRecipe: () => void
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3">
-      <div className="flex gap-3">
-        {item.images[0] ? (
-          <div className="bg-muted relative size-16 shrink-0 aspect-square overflow-hidden rounded-md border">
-            <Image
-              src={item.images[0].url}
-              alt={item.name}
-              fill
-              className="object-cover object-center"
-              sizes="64px"
-            />
-          </div>
-        ) : (
-          <div className="bg-muted text-muted-foreground flex size-16 shrink-0 aspect-square items-center justify-center rounded-md border">
-            <ImageIcon className="size-5" />
-          </div>
+    <div className="flex flex-col gap-2 rounded-xl border p-3 bg-card hover:shadow-xs transition-shadow">
+      <div className="flex gap-3 items-center">
+        {showImages && (
+          item.images[0] ? (
+            <div className="bg-muted relative size-16 shrink-0 aspect-square overflow-hidden rounded-md border">
+              <Image
+                src={item.images[0].url}
+                alt={item.name}
+                fill
+                className="object-cover object-center"
+                sizes="64px"
+              />
+            </div>
+          ) : (
+            <div className="bg-muted text-muted-foreground flex size-16 shrink-0 aspect-square items-center justify-center rounded-md border">
+              <ImageIcon className="size-5" />
+            </div>
+          )
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-1.5">

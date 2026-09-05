@@ -39,10 +39,12 @@ const initialSelection = (
 
 export function ItemConfigDialog({
   item,
+  showItemImages = true,
   onAdd,
   onOpenChange,
 }: {
   readonly item: MenuItemDTO;
+  readonly showItemImages?: boolean;
   readonly onAdd: (line: CartLine) => void;
   readonly onOpenChange: (open: boolean) => void;
 }) {
@@ -141,7 +143,7 @@ export function ItemConfigDialog({
         {/* Scrollable Body Content */}
         <div className="no-scrollbar flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
           {/* Hero Photo / Carousel */}
-          {photos.length > 0 ? (
+          {showItemImages && photos.length > 0 ? (
             <div className="relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-2xl border border-border/40 bg-muted/10 p-2">
               <ImageCarousel images={photos} alt={item.name} />
             </div>

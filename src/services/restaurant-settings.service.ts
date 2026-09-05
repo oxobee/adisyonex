@@ -89,6 +89,24 @@ export const setSelfOrderEnabled = async (
   await updateRestaurant(restaurantId, { selfOrderEnabled: enabled });
 };
 
+export const getShowItemImages = async (
+  restaurantId: string,
+): Promise<boolean> => {
+  const restaurant = await findRestaurantById(restaurantId);
+  if (!restaurant || restaurant.deletedAt) {
+    throw new Error(RESTAURANT_NOT_FOUND);
+  }
+  return restaurant.showItemImages ?? true;
+};
+
+export const setShowItemImages = async (
+  restaurantId: string,
+  enabled: boolean,
+): Promise<void> => {
+  await updateRestaurant(restaurantId, { showItemImages: enabled });
+};
+
+
 export interface SelfOrderShareInfo {
   readonly username: string;
   readonly enabled: boolean;

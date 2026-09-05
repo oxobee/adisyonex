@@ -38,7 +38,7 @@ export default async function PosPage() {
     getServiceOptions(restaurantId),
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { name: true },
+      select: { name: true, showItemImages: true },
     }),
   ]);
 
@@ -58,6 +58,7 @@ export default async function PosPage() {
       services={services}
       cashierName={staffCtx?.name || "Kasa Yetkilisi"}
       restaurantName={restaurant?.name || "Adisyoon"}
+      showItemImages={restaurant?.showItemImages ?? true}
     />
   );
 }

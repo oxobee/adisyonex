@@ -206,6 +206,7 @@ model Restaurant {
 
   // Public guest self-ordering (`/order/[username]`); off until the owner opts in.
   selfOrderEnabled   Boolean            @default(false)
+  showItemImages     Boolean            @default(true)
   qrAiEnabled        Boolean?           @default(true)
   qrMenuTheme        String?            @default("MODERN")
   qrPrimaryColor     String?            @default("#FF5500")

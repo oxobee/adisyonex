@@ -98,6 +98,7 @@ export default async function OrderPage({
         verifiedPhoneMasked={verifiedPhoneMasked}
         verifiedExpiresAt={verifiedExpiresAt}
         initialOrders={initialOrders}
+        showItemImages={data.showItemImages ?? true}
         qrMenuTheme={previewTheme || data.qrMenuTheme || "MODERN"}
         qrPrimaryColor={data.qrPrimaryColor || "#FF5500"}
         qrSecondaryColor={data.qrSecondaryColor || "#FFF7ED"}

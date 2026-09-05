@@ -55,6 +55,7 @@ export interface CashierSalesTerminalProps {
   readonly openOrders?: readonly OrderDTO[];
   readonly cashierName?: string;
   readonly restaurantName?: string;
+  readonly showItemImages?: boolean;
 }
 
 type PaymentMethodType = "CASH" | "CARD" | "MEAL_VOUCHER" | "SPLIT" | "QR";
@@ -115,6 +116,7 @@ export function CashierSalesTerminal({
   openOrders = [],
   cashierName = "Kasa Personeli",
   restaurantName = "Adisyoon",
+  showItemImages = true,
 }: CashierSalesTerminalProps) {
   // Çoklu Fiş Sistemi (Fiş 01 - Fiş 05)
   const [tickets, setTickets] = useState<ParkedTicketState[]>(DEFAULT_TICKETS);
@@ -1169,7 +1171,7 @@ export function CashierSalesTerminal({
                             "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
                             "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
                             draggedItem?.id === item.id && "opacity-50 scale-95 ring-4 ring-emerald-400/80",
-                            "min-h-[250px] sm:min-h-[275px]"
+                            showItemImages ? "min-h-[250px] sm:min-h-[275px]" : "min-h-[120px] sm:min-h-[135px]"
                           )}
                         >
                           {/* Subdued Eye-Friendly Texture Overlay & Concentric Rings */}
@@ -1199,32 +1201,40 @@ export function CashierSalesTerminal({
                             </div>
                           )}
 
-                          {/* Üst Alan: Beyaz Arka Planlı & Köşeleri Yuvarlatılmış Görsel Alanı (Gölgesiz net görünüm) */}
-                          <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 border border-white/40">
-                            {/* Kategori Rozeti (Üst Sol Pill) */}
-                            <div className="absolute top-2 left-2 z-10">
-                              <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
+                          {/* Üst Alan: Görsel Alanı (showItemImages aktifse) veya Kompakt Rozet */}
+                          {showItemImages ? (
+                            <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 border border-white/40">
+                              {/* Kategori Rozeti (Üst Sol Pill) */}
+                              <div className="absolute top-2 left-2 z-10">
+                                <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
+                                  {categoryMap.get(item.categoryId) || "Menü"}
+                                </span>
+                              </div>
+
+                              {/* Ürün Görseli */}
+                              {primaryImage ? (
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                  <Image
+                                    src={primaryImage}
+                                    alt={item.name}
+                                    fill
+                                    sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
+                                    className="object-contain p-1 transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="size-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                  <UtensilsCrossedIcon className="size-7 stroke-[1.5]" />
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="pt-3 px-3.5 flex items-center justify-between z-10">
+                              <span className="text-[10px] font-bold text-white/95 bg-black/40 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
                                 {categoryMap.get(item.categoryId) || "Menü"}
                               </span>
                             </div>
-
-                            {/* Ürün Görseli */}
-                            {primaryImage ? (
-                              <div className="relative w-full h-full flex items-center justify-center">
-                                <Image
-                                  src={primaryImage}
-                                  alt={item.name}
-                                  fill
-                                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
-                                  className="object-contain p-1 transition-transform duration-300 group-hover:scale-105 pointer-events-none"
-                                />
-                              </div>
-                            ) : (
-                              <div className="size-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                                <UtensilsCrossedIcon className="size-7 stroke-[1.5]" />
-                              </div>
-                            )}
-                          </div>
+                          )}
 
                           {/* Alt Metin ve Fiyat Alanı */}
                           <div className="p-3.5 pt-2.5 flex flex-col justify-between flex-1 z-10">

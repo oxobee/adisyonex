@@ -104,6 +104,7 @@ export function GuestOrderPage({
   verifiedPhoneMasked,
   verifiedExpiresAt,
   initialOrders,
+  showItemImages = true,
   qrMenuTheme = "MODERN",
   qrPrimaryColor = "#FF5500",
   qrSecondaryColor = "#FFF7ED",
@@ -127,6 +128,7 @@ export function GuestOrderPage({
   readonly verifiedPhoneMasked: string | null;
   readonly verifiedExpiresAt: number | null;
   readonly initialOrders: readonly GuestOrderSummaryDTO[];
+  readonly showItemImages?: boolean;
   readonly qrMenuTheme?: string;
   readonly qrPrimaryColor?: string;
   readonly secondaryColor?: string;
@@ -662,6 +664,7 @@ export function GuestOrderPage({
         onQuickAdd={onQuickAdd}
         onOpenDetail={setConfigItem}
         qrMenuTheme={qrMenuTheme}
+        showItemImages={showItemImages}
       />
 
       {/* Floating Bottom Cart Pill */}
@@ -720,6 +723,7 @@ export function GuestOrderPage({
       {configItem ? (
         <ItemConfigDialog
           item={configItem}
+          showItemImages={showItemImages}
           onAdd={cart.addLine}
           onOpenChange={(open) => !open && setConfigItem(null)}
         />

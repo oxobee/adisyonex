@@ -9,6 +9,7 @@ import {
   removeVideoSchema,
   setInvoiceFooterSchema,
   setSelfOrderSchema,
+  setShowItemImagesSchema,
   updateGeolocationSchema,
   updateProfileSchema,
   updateTaxProfileSchema,
@@ -31,6 +32,7 @@ import {
   regenerateUsername,
   setInvoiceFooterNote,
   setSelfOrderEnabled,
+  setShowItemImages,
   updateGeolocation,
   clearGeolocation,
   updateQrMenuTheme,
@@ -97,6 +99,20 @@ export const setSelfOrderEnabledAction = withManagerValidation(
       category: "AYARLAR",
       action: "Masadan Self-Order Ayarı Değiştirildi",
       details: `Masadan sipariş verme: ${data.enabled ? 'Açık' : 'Kapalı'}`,
+    });
+    return res;
+  },
+);
+
+export const setShowItemImagesAction = withManagerValidation(
+  setShowItemImagesSchema,
+  async (data, ctx) => {
+    const res = await setShowItemImages(ctx.restaurantId, data.enabled);
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "MENÜ",
+      action: "Menü Görsel Gösterim Ayarı Değiştirildi",
+      details: `Ürün görselleri: ${data.enabled ? 'Açık (Görseller Gösteriliyor)' : 'Kapalı (Görselsiz Liste Modu)'}`,
     });
     return res;
   },

@@ -154,3 +154,7 @@ export const setInvoiceFooterSchema = z.object({
   note: z.string().trim().max(300),
 });
 export type SetInvoiceFooterInput = z.infer<typeof setInvoiceFooterSchema>;
+
+export const setShowItemImagesSchema = z.object({ enabled: z.boolean() });
+export type SetShowItemImagesInput = z.infer<typeof setShowItemImagesSchema>;
+

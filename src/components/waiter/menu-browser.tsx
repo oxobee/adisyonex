@@ -83,11 +83,13 @@ export function MenuBrowser({
   onQuickAdd,
   onOpenDetail,
   qrMenuTheme = "MODERN",
+  showItemImages = true,
 }: {
   menu: MenuDTO;
   onQuickAdd: (item: MenuItemDTO) => void;
   onOpenDetail: (item: MenuItemDTO) => void;
   qrMenuTheme?: string;
+  showItemImages?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -491,24 +493,26 @@ export function MenuBrowser({
                 )}
               >
                 {/* Left Photo */}
-                <div
-                  onClick={() => onOpenDetail(item)}
-                  className="bg-muted/20 relative size-26 sm:size-28 shrink-0 aspect-square cursor-pointer overflow-hidden rounded-xl border border-border/40 p-1"
-                >
-                  {photo ? (
-                    <Image
-                      src={photo.url}
-                      alt={item.name}
-                      fill
-                      className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
-                      sizes="120px"
-                    />
-                  ) : (
-                    <div className="bg-muted text-muted-foreground flex size-full items-center justify-center rounded-lg">
-                      <ImageIcon className="size-8 opacity-40" />
-                    </div>
-                  )}
-                </div>
+                {showItemImages ? (
+                  <div
+                    onClick={() => onOpenDetail(item)}
+                    className="bg-muted/20 relative size-26 sm:size-28 shrink-0 aspect-square cursor-pointer overflow-hidden rounded-xl border border-border/40 p-1"
+                  >
+                    {photo ? (
+                      <Image
+                        src={photo.url}
+                        alt={item.name}
+                        fill
+                        className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
+                        sizes="120px"
+                      />
+                    ) : (
+                      <div className="bg-muted text-muted-foreground flex size-full items-center justify-center rounded-lg">
+                        <ImageIcon className="size-8 opacity-40" />
+                      </div>
+                    )}
+                  </div>
+                ) : null}
 
                 {/* Right Content */}
                 <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-0.5">
@@ -619,20 +623,22 @@ export function MenuBrowser({
                   )}
                 >
                   {/* Food Photo Container */}
-                  <div className="relative size-24 sm:size-28 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
-                    {photo ? (
-                      <Image
-                        src={photo.url}
-                        alt={item.name}
-                        fill
-                        className="object-contain object-center"
-                        sizes="(max-width: 640px) 50vw, 200px"
-                        unoptimized
-                      />
-                    ) : (
-                      <span className="text-4xl">🍔</span>
-                    )}
-                  </div>
+                  {showItemImages ? (
+                    <div className="relative size-24 sm:size-28 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                      {photo ? (
+                        <Image
+                          src={photo.url}
+                          alt={item.name}
+                          fill
+                          className="object-contain object-center"
+                          sizes="(max-width: 640px) 50vw, 200px"
+                          unoptimized
+                        />
+                      ) : (
+                        <span className="text-4xl">🍔</span>
+                      )}
+                    </div>
+                  ) : null}
 
                   {/* Title & Desc */}
                   <div className="mt-2 flex flex-col items-center gap-1 w-full">
@@ -667,21 +673,23 @@ export function MenuBrowser({
               >
                 <div onClick={() => onOpenDetail(item)} className="cursor-pointer">
                   {/* Photo */}
-                  <div className="bg-muted/20 relative aspect-square w-full overflow-hidden rounded-xl border border-border/40 p-2">
-                    {photo ? (
-                      <Image
-                        src={photo.url}
-                        alt={item.name}
-                        fill
-                        className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 640px) 50vw, 200px"
-                      />
-                    ) : (
-                      <div className="bg-muted text-muted-foreground flex size-full items-center justify-center rounded-lg">
-                        <ImageIcon className="size-8 opacity-40" />
-                      </div>
-                    )}
-                  </div>
+                  {showItemImages ? (
+                    <div className="bg-muted/20 relative aspect-square w-full overflow-hidden rounded-xl border border-border/40 p-2">
+                      {photo ? (
+                        <Image
+                          src={photo.url}
+                          alt={item.name}
+                          fill
+                          className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 640px) 50vw, 200px"
+                        />
+                      ) : (
+                        <div className="bg-muted text-muted-foreground flex size-full items-center justify-center rounded-lg">
+                          <ImageIcon className="size-8 opacity-40" />
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
 
                   {/* Title & Desc */}
                   <div className="mt-2.5">

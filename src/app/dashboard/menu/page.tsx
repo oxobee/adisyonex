@@ -46,6 +46,7 @@ export default async function MenuPage() {
       gstRegistered={restaurant?.gstRegistrationType !== "UNREGISTERED"}
       stockItems={stockItems.filter((s) => s.isActive)}
       recipes={recipes}
+      initialShowItemImages={restaurant?.showItemImages ?? true}
     />
   )
 }
