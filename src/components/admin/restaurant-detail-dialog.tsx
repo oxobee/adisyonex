@@ -197,15 +197,26 @@ export function RestaurantDetailDialog({
 
   const handleImpersonate = () => {
     if (!restaurant) return;
+    const newTab = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     startTransition(async () => {
-      const res = await impersonateRestaurantAction({
-        restaurantId: restaurant.id,
-      });
-      if (res.success && res.data) {
-        toast.success(`"${res.data.restaurantName}" hesabına giriş yapılıyor...`);
-        window.location.href = res.data.redirectUrl;
-      } else {
-        toast.error(res.error || "Giriş başarısız oldu");
+      try {
+        const res = await impersonateRestaurantAction({
+          restaurantId: restaurant.id,
+        });
+        if (res.success && res.data) {
+          toast.success(`"${res.data.restaurantName}" hesabına yeni sekmede giriş yapılıyor...`);
+          if (newTab) {
+            newTab.location.href = res.data.redirectUrl;
+          } else {
+            window.open(res.data.redirectUrl, "_blank");
+          }
+        } else {
+          if (newTab) newTab.close();
+          toast.error(res.error || "Giriş başarısız oldu");
+        }
+      } catch {
+        if (newTab) newTab.close();
+        toast.error("Giriş sırasında bir hata oluştu");
       }
     });
   };

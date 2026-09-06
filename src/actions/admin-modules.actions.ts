@@ -127,12 +127,18 @@ export const listRestaurantNotificationsAction = withSuperAdminValidation(
   }
 );
 
+export interface ImpersonateResultDTO {
+  restaurantId: string;
+  restaurantName: string;
+  redirectUrl: string;
+}
+
 /**
  * Impersonate restaurant: log into restaurant's dashboard as SuperAdmin
  */
 export const impersonateRestaurantAction = withSuperAdminValidation(
   impersonateSchema,
-  async ({ restaurantId }) => {
+  async ({ restaurantId }): Promise<ImpersonateResultDTO> => {
     const restaurant = await findRestaurantById(restaurantId);
     if (!restaurant || restaurant.deletedAt) {
       throw new Error("Restoran bulunamadı veya silinmiş.");
@@ -147,7 +153,6 @@ export const impersonateRestaurantAction = withSuperAdminValidation(
     });
 
     return {
-      success: true,
       restaurantId,
       restaurantName: restaurant.name,
       redirectUrl: "/dashboard/home",
