@@ -115,6 +115,57 @@ const DEFAULT_MODULES = [
 ];
 
 /**
+ * Ensures all existing restaurants have RestaurantModule records for all system modules.
+ * Inserts missing records with isActive: true; does not overwrite existing records!
+ */
+export async function syncDefaultModulesForAllRestaurants(): Promise<void> {
+  try {
+    const [restaurants, systemModules] = await Promise.all([
+      prisma.restaurant.findMany({
+        where: { deletedAt: null },
+        select: { id: true },
+      }),
+      prisma.systemModule.findMany({
+        select: { id: true },
+      }),
+    ]);
+
+    if (restaurants.length === 0 || systemModules.length === 0) return;
+
+    const existingLinks = await prisma.restaurantModule.findMany({
+      select: { restaurantId: true, moduleId: true },
+    });
+
+    const existingSet = new Set(
+      existingLinks.map((l) => `${l.restaurantId}_${l.moduleId}`)
+    );
+
+    const missingToCreate: { restaurantId: string; moduleId: string; isActive: boolean }[] = [];
+
+    for (const r of restaurants) {
+      for (const m of systemModules) {
+        if (!existingSet.has(`${r.id}_${m.id}`)) {
+          missingToCreate.push({
+            restaurantId: r.id,
+            moduleId: m.id,
+            isActive: true,
+          });
+        }
+      }
+    }
+
+    if (missingToCreate.length > 0) {
+      await prisma.restaurantModule.createMany({
+        data: missingToCreate,
+        skipDuplicates: true,
+      });
+    }
+  } catch (error) {
+    console.error("Error syncing default modules for restaurants:", error);
+  }
+}
+
+/**
  * Ensures that all 8 core system modules exist in the database.
  */
 export async function ensureDefaultModulesExist(): Promise<void> {
@@ -136,6 +187,8 @@ export async function ensureDefaultModulesExist(): Promise<void> {
       },
     });
   }
+
+  await syncDefaultModulesForAllRestaurants();
 }
 
 /**
@@ -143,6 +196,7 @@ export async function ensureDefaultModulesExist(): Promise<void> {
  */
 export async function listSystemModulesWithStats(): Promise<readonly SystemModuleDTO[]> {
   await ensureDefaultModulesExist();
+  await syncDefaultModulesForAllRestaurants();
 
   const modules = await prisma.systemModule.findMany({
     orderBy: { sortOrder: "asc" },
@@ -150,7 +204,10 @@ export async function listSystemModulesWithStats(): Promise<readonly SystemModul
       _count: {
         select: {
           restaurantModules: {
-            where: { isActive: true },
+            where: {
+              isActive: true,
+              restaurant: { deletedAt: null },
+            },
           },
         },
       },
@@ -201,6 +258,7 @@ export async function getRestaurantModulesStatus(
   restaurantId: string
 ): Promise<readonly RestaurantModuleStatusDTO[]> {
   await ensureDefaultModulesExist();
+  await syncDefaultModulesForAllRestaurants();
 
   const [allModules, assignedModules] = await Promise.all([
     prisma.systemModule.findMany({
@@ -215,6 +273,7 @@ export async function getRestaurantModulesStatus(
 
   return allModules.map((m) => {
     const assigned = assignedMap.get(m.id);
+    const isRestaurantActive = assigned !== undefined ? assigned.isActive : true;
     return {
       moduleId: m.id,
       key: m.key,
@@ -224,8 +283,8 @@ export async function getRestaurantModulesStatus(
       currency: m.currency,
       icon: m.icon,
       isGloballyActive: m.isActive,
-      isAssignedToRestaurant: Boolean(assigned),
-      isRestaurantActive: Boolean(assigned?.isActive),
+      isAssignedToRestaurant: true,
+      isRestaurantActive,
       assignedAt: assigned ? assigned.assignedAt.toISOString() : null,
     };
   });

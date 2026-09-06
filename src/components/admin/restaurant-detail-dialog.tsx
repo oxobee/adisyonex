@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   BellIcon,
   BotMessageSquareIcon,
@@ -80,6 +81,7 @@ export function RestaurantDetailDialog({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<"info" | "modules" | "notification">("info");
 
   // Modules state
@@ -159,6 +161,7 @@ export function RestaurantDetailDialog({
               : m
           )
         );
+        router.refresh();
       } else {
         toast.error(res.error || "İşlem başarısız oldu");
       }
@@ -270,7 +273,9 @@ export function RestaurantDetailDialog({
               <BoxesIcon className="size-3.5" />
               <span>Modül Yönetimi</span>
               <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-primary-foreground/20">
-                {modules.filter((m) => m.isRestaurantActive).length}
+                {isModulesLoading && modules.length === 0
+                  ? "…"
+                  : modules.filter((m) => m.isRestaurantActive).length}
               </span>
             </button>
 
