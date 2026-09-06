@@ -38,6 +38,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { SystemSettingsDTO } from "@/services/system-setting.service";
+import { hasPermissionForRoute } from "@/lib/permission-matrix";
 import {
   HomeNotificationsModal,
   type HomeNotificationItem,
@@ -181,6 +182,19 @@ export function HomeScreen({
   );
 
   const [activeAccount, setActiveAccount] = useState<StaffAccount>(initialAccount);
+
+  useEffect(() => {
+    const handleAccountChange = (e: Event) => {
+      const customEvent = e as CustomEvent<StaffAccount>;
+      if (customEvent.detail) {
+        setActiveAccount(customEvent.detail);
+      }
+    };
+    window.addEventListener("active-account-changed", handleAccountChange);
+    return () => {
+      window.removeEventListener("active-account-changed", handleAccountChange);
+    };
+  }, []);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -368,32 +382,16 @@ export function HomeScreen({
     },
   ];
 
-  // Personel yetkisine göre dinamik kart filtreleme
+  // Personel / Kullanıcı yetkisine göre dinamik kart filtreleme
   const visibleCards = useMemo(() => {
-    const role = activeAccount.role?.toUpperCase();
-    const isManagerRole = role === "MANAGER" || role === "ADMIN" || role === "SUPER_ADMIN";
-    if (isManagerRole || !activeAccount.allowedRoutes) {
+    // Sadece serbest yetkili ana yönetici (allowedRoutes null olan) tüm kartları görür
+    if (!activeAccount.allowedRoutes) {
       return ALL_ACTION_CARDS;
     }
 
     const routes = activeAccount.allowedRoutes;
-    const systemSubRoutes = [
-      "/dashboard/menu",
-      "/dashboard/menu-design",
-      "/dashboard/tables",
-      "/dashboard/staff",
-      "/dashboard/inventory",
-      "/dashboard/z-report",
-      "/dashboard/settings",
-      "/dashboard/system",
-    ];
-    const hasSystemAccess = systemSubRoutes.some((r) => routes.includes(r));
-
     return ALL_ACTION_CARDS.filter((card) => {
-      if (card.href === "/dashboard/system") {
-        return hasSystemAccess;
-      }
-      return routes.includes(card.href);
+      return hasPermissionForRoute(routes, card.href);
     });
   }, [activeAccount]);
 
@@ -552,15 +550,17 @@ export function HomeScreen({
             <span>Şube: {displayBranch}</span>
           </div>
 
-          {/* Modüller Butonu */}
-          <Link
-            href="/dashboard/modules"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-black shadow-2xs transition-all cursor-pointer"
-            title="Sistem ve Yapay Zeka Modülleri"
-          >
-            <SparklesIcon className="size-3.5 text-purple-600" />
-            <span>Modüller</span>
-          </Link>
+          {/* Modüller Butonu (Yetki Kontrollü) */}
+          {hasPermissionForRoute(activeAccount.allowedRoutes, "/dashboard/modules") && (
+            <Link
+              href="/dashboard/modules"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-black shadow-2xs transition-all cursor-pointer"
+              title="Sistem ve Yapay Zeka Modülleri"
+            >
+              <SparklesIcon className="size-3.5 text-purple-600" />
+              <span>Modüller</span>
+            </Link>
+          )}
 
           {/* Ekranı Kilitle Butonu */}
           <button

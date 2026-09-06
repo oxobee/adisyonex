@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { createStaffAction, updateStaffAction } from "@/actions/staff.actions";
+import { createStaffAction, updateStaffAction, resetPinAction } from "@/actions/staff.actions";
 import { getZonesAndRolesAction } from "@/actions/zone-and-role.actions";
 import { PhoneInput } from "@/components/phone-input";
 import { StaffPhotoUploader } from "@/components/staff/staff-photo-uploader";
@@ -53,6 +53,11 @@ import {
   GENDER_OPTIONS,
   STAFF_STATUS_OPTIONS,
 } from "@/lib/staff";
+import {
+  PERMISSION_MATRIX_GROUPS,
+  ALL_PERMISSION_ROUTE_IDS,
+  getDefaultRoutesForRoleTitle,
+} from "@/lib/permission-matrix";
 import { cn } from "@/lib/utils";
 import type {
   EmploymentType,
@@ -65,22 +70,7 @@ import type {
 } from "@/types/staff";
 
 const trimmed = (value: string) => value.trim() || undefined;
-
-export const AVAILABLE_SCREENS = [
-  { id: "/dashboard/kitchen", title: "Mutfak", icon: ChefHatIcon, desc: "Aşçı ve mutfak sipariş ekranı" },
-  { id: "/dashboard/orders", title: "Masalar", icon: ReceiptTextIcon, desc: "Canlı masa ve sipariş yönetimi" },
-  { id: "/dashboard/pos", title: "POS / Kasa", icon: CalculatorIcon, desc: "Hızlı sipariş ve ödeme alma" },
-  { id: "/dashboard/menu", title: "Menü Yönetimi", icon: BookOpenIcon, desc: "Kategoriler ve ürünler" },
-  { id: "/dashboard/tables", title: "Masa ve QR Yönetimi", icon: ArmchairIcon, desc: "Masa yerleşimi ve QR kodlar" },
-  { id: "/dashboard/customers", title: "Kayıtlı Müşteriler", icon: GiftIcon, desc: "Müşteri listesi ve sadakat" },
-  { id: "/dashboard/inventory", title: "Stok & Envanter", icon: BoxesIcon, desc: "Hammadde ve kritik stoklar" },
-  { id: "/dashboard/staff", title: "Personel Yönetimi", icon: UsersIcon, desc: "Çalışan listesi ve yetkiler" },
-  { id: "/dashboard", title: "Analitik", icon: LayoutDashboardIcon, desc: "Satış analizleri ve grafikler" },
-  { id: "/dashboard/z-report", title: "Z Raporu / Gün Sonu", icon: FileSpreadsheetIcon, desc: "Kasa mutabakatı ve gün sonu raporu" },
-  { id: "/dashboard/system", title: "Sistem", icon: SlidersHorizontalIcon, desc: "Sistem merkezi ve genel ayarlar" },
-  { id: "/dashboard/settings", title: "Restoran Ayarları", icon: Settings2Icon, desc: "İşletme profili ve parametreler" },
-] as const;
-
+ 
 function deriveSystemEnumRole(roleName: string): StaffRole {
   const lower = roleName.toLowerCase();
   if (lower.includes("aşçı") || lower.includes("mutfak")) return "KITCHEN";
@@ -90,15 +80,7 @@ function deriveSystemEnumRole(roleName: string): StaffRole {
   return "OTHER";
 }
 
-function deriveDefaultRoutes(roleName: string): string[] {
-  const lower = roleName.toLowerCase();
-  if (lower.includes("aşçı") || lower.includes("şef")) return ["/dashboard/kitchen"];
-  if (lower.includes("kasiyer") || lower.includes("kasa")) return ["/dashboard/pos", "/dashboard/orders"];
-  if (lower.includes("garson") || lower.includes("komi")) return ["/dashboard/orders"];
-  if (lower.includes("barista")) return ["/dashboard/orders", "/dashboard/pos"];
-  if (lower.includes("müdür")) return AVAILABLE_SCREENS.map((s) => s.id);
-  return ["/dashboard/orders"];
-}
+
 
 export function StaffDialog({
   staff,
@@ -194,6 +176,15 @@ export function StaffDialog({
     );
   };
 
+  const toggleGroup = (itemIds: string[]) => {
+    const allSelected = itemIds.every((id) => allowedRoutes.includes(id));
+    if (allSelected) {
+      setAllowedRoutes((prev) => prev.filter((id) => !itemIds.includes(id)));
+    } else {
+      setAllowedRoutes((prev) => Array.from(new Set([...prev, ...itemIds])));
+    }
+  };
+
   const handleRoleChange = (roleId: string) => {
     setCustomRoleId(roleId);
     const selectedRole = roles.find((r) => r.id === roleId);
@@ -201,7 +192,7 @@ export function StaffDialog({
       setForm((prev) => ({ ...prev, jobTitle: selectedRole.name }));
       // If newly creating staff, suggest default routes for this role
       if (!staff) {
-        setAllowedRoutes(deriveDefaultRoutes(selectedRole.name));
+        setAllowedRoutes(getDefaultRoutesForRoleTitle(selectedRole.name));
       }
     }
   };
@@ -215,7 +206,7 @@ export function StaffDialog({
     onError: (message) => toast.error(message),
   });
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const selectedRole = roles.find((r) => r.id === customRoleId);
     const roleTitle = selectedRole?.name || form.jobTitle;
@@ -245,7 +236,14 @@ export function StaffDialog({
       emergencyContactPhone: trimmed(form.emergencyContactPhone),
       notes: trimmed(form.notes),
     };
-    save.execute(staff ? { ...base, id: staff.id } : { ...base, pin });
+    if (staff) {
+      save.execute({ ...base, id: staff.id });
+      if (pin && pinValid) {
+        await resetPinAction({ id: staff.id, pin });
+      }
+    } else {
+      save.execute({ ...base, pin });
+    }
   };
 
   const pinValid = /^\d{4,6}$/.test(pin);
@@ -283,15 +281,15 @@ export function StaffDialog({
               </div>
             ) : null}
 
-            {/* Temel Bilgiler */}
+            {/* Temel Bilgiler: Kullanıcı Kodu, Ad Soyad, Telefon, Adres */}
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <FieldLabel htmlFor="st-code">Personel Kodu / No</FieldLabel>
+                <FieldLabel htmlFor="st-code">Personel No / Kullanıcı Kodu</FieldLabel>
                 <Input
                   id="st-code"
                   value={form.employeeCode}
                   onChange={set("employeeCode")}
-                  placeholder="Örn: G-01"
+                  placeholder="Örn: M-01"
                   className="rounded-xl font-bold"
                   required
                 />
@@ -303,7 +301,7 @@ export function StaffDialog({
                   id="st-name"
                   value={form.name}
                   onChange={set("name")}
-                  placeholder="Örn: Uğur Uğurlu"
+                  placeholder="Örn: Ahmet Yılmaz"
                   className="rounded-xl font-bold"
                   required
                 />
@@ -315,6 +313,28 @@ export function StaffDialog({
                   id="st-phone"
                   initialValue={form.phone}
                   onChange={setPhone}
+                />
+              </Field>
+
+              <Field className="col-span-2 sm:col-span-1">
+                <FieldLabel htmlFor="st-address">Adres</FieldLabel>
+                <Input
+                  id="st-address"
+                  value={form.addressLine1}
+                  onChange={set("addressLine1")}
+                  placeholder="Örn: Kadıköy Mah. 12. Sk. No:4"
+                  className="rounded-xl font-medium"
+                />
+              </Field>
+
+              <Field className="col-span-2 sm:col-span-1">
+                <FieldLabel htmlFor="st-city">Şehir / İl</FieldLabel>
+                <Input
+                  id="st-city"
+                  value={form.city}
+                  onChange={set("city")}
+                  placeholder="Örn: İstanbul"
+                  className="rounded-xl font-medium"
                 />
               </Field>
             </div>
@@ -485,66 +505,129 @@ export function StaffDialog({
               )}
             </div>
 
-            {/* Ekran & Menü Yetkileri */}
-            <div className="rounded-2xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheckIcon className="size-4 text-primary" />
-                  <span className="text-xs font-bold text-foreground">
-                    Görüntülenecek Ekran & Menü Yetkileri
-                  </span>
+            {/* Ekran & Menü Yetkileri (Kategorize Matris) */}
+            <div className="rounded-2xl border border-border/80 bg-muted/20 p-3.5 sm:p-4 flex flex-col gap-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheckIcon className="size-4.5 text-primary shrink-0" />
+                  <div>
+                    <span className="text-sm font-black text-foreground block">
+                      Görüntülenecek Ekran & Menü Yetkileri
+                    </span>
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      {allowedRoutes.length} / {ALL_PERMISSION_ROUTE_IDS.length} Ekran Seçili
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setAllowedRoutes(AVAILABLE_SCREENS.map((s) => s.id))}
-                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                    onClick={() => setAllowedRoutes([...ALL_PERMISSION_ROUTE_IDS])}
+                    className="text-xs font-bold text-primary hover:underline px-2.5 py-1 rounded-lg bg-primary/10 cursor-pointer"
                   >
                     Tümünü Seç
                   </button>
-                  <span className="text-muted-foreground text-xs">·</span>
                   <button
                     type="button"
                     onClick={() => setAllowedRoutes([])}
-                    className="text-[11px] font-bold text-destructive hover:underline cursor-pointer"
+                    className="text-xs font-bold text-destructive hover:underline px-2.5 py-1 rounded-lg bg-destructive/10 cursor-pointer"
                   >
                     Temizle
                   </button>
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Personel giriş yaptığında sadece seçtiğiniz ekranlar sol menüde görünecek ve diğer sayfalara erişimi engellenecektir.
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Kullanıcı veya personel giriş yaptığında sadece tikli olan ekranlar görünür ve erişilebilir olur. Yetkilendirilmeyen diğer tüm ekranlar ve menü butonları tamamen gizlenir.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {AVAILABLE_SCREENS.map((screen) => {
-                  const isSelected = allowedRoutes.includes(screen.id);
-                  const Icon = screen.icon;
+              <div className="flex flex-col gap-3.5 pt-1">
+                {PERMISSION_MATRIX_GROUPS.map((group) => {
+                  const GroupIcon = group.icon;
+                  const groupItemIds = group.items.map((i) => i.id);
+                  const selectedCountInGroup = groupItemIds.filter((id) => allowedRoutes.includes(id)).length;
+                  const isAllGroupSelected = selectedCountInGroup === groupItemIds.length;
+
                   return (
                     <div
-                      key={screen.id}
-                      onClick={() => toggleRoute(screen.id)}
-                      className={cn(
-                        "flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none",
-                        isSelected
-                          ? "border-primary bg-primary/10 text-foreground font-bold shadow-xs"
-                          : "border-border/60 bg-background text-muted-foreground hover:bg-muted/50"
-                      )}
+                      key={group.id}
+                      className="rounded-xl border border-border/70 bg-background/80 p-3 flex flex-col gap-2.5 shadow-2xs"
                     >
-                      <div
-                        className={cn(
-                          "flex size-5 items-center justify-center rounded-md border shrink-0 transition-colors",
-                          isSelected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "border-muted-foreground/30 bg-background"
-                        )}
-                      >
-                        {isSelected && <CheckIcon className="size-3 stroke-[3]" />}
+                      {/* Grup Başlığı */}
+                      <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                        <div className="flex items-center gap-2">
+                          <GroupIcon className="size-4 text-primary shrink-0" />
+                          <div>
+                            <span className="text-xs font-black text-foreground">
+                              {group.title}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground block">
+                              {group.desc}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                            selectedCountInGroup > 0
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : "bg-muted text-muted-foreground border-border"
+                          )}>
+                            {selectedCountInGroup}/{groupItemIds.length}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(groupItemIds)}
+                            className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                          >
+                            {isAllGroupSelected ? "Kaldır" : "Grup Tümünü Seç"}
+                          </button>
+                        </div>
                       </div>
-                      <Icon className={cn("size-4 shrink-0", isSelected ? "text-primary" : "text-muted-foreground")} />
-                      <div className="min-w-0 flex-1 text-left">
-                        <div className="text-xs truncate">{screen.title}</div>
-                        <div className="text-[10px] text-muted-foreground truncate">{screen.desc}</div>
+
+                      {/* Grup İçi Kartlar */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {group.items.map((item) => {
+                          const isSelected = allowedRoutes.includes(item.id);
+                          const ItemIcon = item.icon;
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => toggleRoute(item.id)}
+                              className={cn(
+                                "flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none text-left",
+                                isSelected
+                                  ? "border-primary bg-primary/10 text-foreground font-bold shadow-xs"
+                                  : "border-border/60 bg-background text-muted-foreground hover:bg-muted/40"
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "flex size-4.5 items-center justify-center rounded-md border shrink-0 mt-0.5 transition-colors",
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "border-muted-foreground/30 bg-background"
+                                )}
+                              >
+                                {isSelected && <CheckIcon className="size-3 stroke-[3]" />}
+                              </div>
+                              <ItemIcon
+                                className={cn(
+                                  "size-4 shrink-0 mt-0.5",
+                                  isSelected ? "text-primary" : "text-muted-foreground"
+                                )}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs truncate font-bold text-foreground">
+                                  {item.title}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground line-clamp-1">
+                                  {item.desc}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -574,23 +657,31 @@ export function StaffDialog({
               </Select>
             </Field>
 
-            {staff ? null : (
-              <Field>
-                <FieldLabel htmlFor="st-pin">Giriş PIN Kodu (4–6 Haneli)</FieldLabel>
-                <Input
-                  id="st-pin"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••"
-                  className="rounded-xl font-bold tracking-widest text-center text-base"
-                />
-                <p className="text-muted-foreground text-xs mt-1">
-                  Personel Girişi ekranında oturum açmak için kullanılır.
-                </p>
-              </Field>
-            )}
+            {/* Giriş PIN Kodu / Şifre */}
+            <div className="rounded-2xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="st-pin" className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <KeyRoundIcon className="size-3.5 text-primary" />
+                  <span>{staff ? "Giriş PIN Kodu / Şifre Değiştir (İsteğe Bağlı)" : "Giriş PIN Kodu / Şifresi (4–6 Haneli)"}</span>
+                </FieldLabel>
+                <span className="text-[11px] font-semibold text-muted-foreground">Sadece rakam (0-9)</span>
+              </div>
+              <Input
+                id="st-pin"
+                inputMode="numeric"
+                autoComplete="off"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder={staff ? "Mevcut PIN'i korumak için boş bırakın" : "•••• (Örn: 1234)"}
+                className="rounded-xl font-bold tracking-widest text-center text-base bg-background"
+                required={!staff}
+              />
+              <p className="text-muted-foreground text-[11px]">
+                {staff
+                  ? "Yeni bir 4-6 haneli PIN girerseniz personelin mevcut şifresi güncellenir."
+                  : "Kullanıcı veya personel bu PIN / şifre ile sisteme ve yetkili ekranlarına giriş yapacaktır."}
+              </p>
+            </div>
 
             {/* İletişim & Kişisel Bilgiler Accordion */}
             <div className="border-border/60 flex flex-col gap-3 border-t pt-3">

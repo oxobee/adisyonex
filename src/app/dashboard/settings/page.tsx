@@ -51,6 +51,7 @@ import {
 } from "@/services/restaurant-settings.service"
 import { getPinStatus } from "@/services/pin-auth.service"
 import { getRestaurantLicenseInfo } from "@/services/license.service"
+import { prisma } from "@/lib/prisma"
 
 const TABS = [
   { value: "profile", label: "İşletme Profili", icon: StoreIcon },
@@ -83,6 +84,35 @@ export default async function SettingsPage() {
         />
       </div>
     )
+  }
+
+  const staff = staffCtx
+    ? await prisma.staff.findUnique({
+        where: { id: staffCtx.staffId },
+        select: { allowedRoutes: true },
+      })
+    : null;
+
+  const staffRoutes = staff?.allowedRoutes as string[] | null | undefined;
+  const visibleTabs = TABS.filter((tab) => {
+    if (!staffRoutes) return true;
+    if (staffRoutes.includes("/dashboard/settings")) return true;
+    return staffRoutes.includes(`/dashboard/settings#${tab.value}`);
+  });
+
+  if (visibleTabs.length === 0) {
+    return (
+      <div className="flex flex-col gap-6 p-4 lg:p-6">
+        <PageHeader
+          title="Ayarlar"
+          description="Restoran ayarlarını ve yapılandırmasını yönetin."
+        />
+        <EmptyState
+          title="Erişim Yetkiniz Bulunmuyor"
+          description="Bu ayarlar ekranına erişim yetkiniz bulunmamaktadır. Lütfen yöneticinizle iletişime geçin."
+        />
+      </div>
+    );
   }
 
   const [profile, taxProfile, licenseInfo, adminCtx] = await Promise.all([
@@ -164,12 +194,12 @@ export default async function SettingsPage() {
       <ProfileHeader profile={profile} completeness={completeness} />
 
       <Tabs
-        defaultValue="profile"
+        defaultValue={visibleTabs[0]?.value || "profile"}
         orientation="vertical"
         className="flex-col gap-6 lg:flex-row lg:items-start"
       >
         <TabsList className="h-fit w-full flex-col gap-1 rounded-xl border bg-card p-2 lg:w-60 lg:shrink-0">
-          {TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const Icon = tab.icon
             return (
               <TabsTrigger

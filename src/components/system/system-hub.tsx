@@ -12,6 +12,7 @@ import {
   FileSpreadsheetIcon,
   LockIcon,
   QrCodeIcon,
+  PaletteIcon,
   ReceiptTextIcon,
   Settings2Icon,
   ShieldCheckIcon,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { hasPermissionForRoute } from "@/lib/permission-matrix";
 
 export interface SystemStats {
   readonly tableCount: number;
@@ -55,6 +57,16 @@ export function SystemHub({
           : "Ürün & Kategori",
       tagColor: "bg-teal-100/80 text-teal-800 border-teal-200",
       secondaryIcon: UtensilsIcon,
+    },
+    {
+      title: "QR Menü Tasarımı",
+      description: "Görsel menü şablonları, tema renkleri ve dijital masa menü görünümü",
+      href: "/dashboard/menu-design",
+      icon: PaletteIcon,
+      iconBg: "bg-pink-50 text-pink-600 border border-pink-200",
+      tag: "Tasarım",
+      tagColor: "bg-pink-100/80 text-pink-800 border-pink-200",
+      secondaryIcon: PaletteIcon,
     },
     {
       title: "Masa ve QR Yönetimi",
@@ -100,6 +112,16 @@ export function SystemHub({
       secondaryIcon: SparklesIcon,
     },
     {
+      title: "Sistem Modülleri",
+      description: "Sistem ve yapay zeka eklenti paketleri ve modül vitrini",
+      href: "/dashboard/modules",
+      icon: SparklesIcon,
+      iconBg: "bg-purple-50 text-purple-600 border border-purple-200",
+      tag: "Modüller",
+      tagColor: "bg-purple-100/80 text-purple-800 border-purple-200",
+      secondaryIcon: SparklesIcon,
+    },
+    {
       title: "Restoran Ayarları",
       description: "İşletme adı, logo, iletişim, çalışma saatleri ve sistem parametreleri",
       href: "/dashboard/settings",
@@ -113,12 +135,10 @@ export function SystemHub({
 
   // Filtreleme (personel yetkilerine göre)
   const visibleCards = SYSTEM_CARDS.filter((card) => {
-    if (!allowedRoutes || allowedRoutes.length === 0) return true;
-    return allowedRoutes.includes(card.href);
+    return hasPermissionForRoute(allowedRoutes, card.href);
   });
 
-  const canAccessZReport =
-    !allowedRoutes || allowedRoutes.length === 0 || allowedRoutes.includes("/dashboard/z-report");
+  const canAccessZReport = hasPermissionForRoute(allowedRoutes, "/dashboard/z-report");
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full bg-[#fafafa] min-h-[calc(100vh-3.5rem)]">

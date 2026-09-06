@@ -26,6 +26,7 @@ import {
   updateStaffSelfProfileAction,
   type TerminalStaffOption,
 } from "@/actions/staff-auth.actions";
+import { StaffDialog } from "@/components/staff/staff-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -99,6 +100,9 @@ export function StaffAccountMenu({
   const [switchTargetAccount, setSwitchTargetAccount] = useState<StaffAccount | null>(null);
   const [switchPin, setSwitchPin] = useState("");
   const [switchLoading, setSwitchLoading] = useState(false);
+
+  // Create user dialog state
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
 
   // Add account dialog state
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -211,9 +215,10 @@ export function StaffAccountMenu({
       });
 
       if (res.success) {
-        // Switch active account; current accounts list is preserved!
-        saveAccounts(accounts, switchTargetAccount);
-        toast.success(`${switchTargetAccount.name} hesabına geçiş yapıldı`);
+        const switched = res.data ? { ...switchTargetAccount, ...res.data } : switchTargetAccount;
+        const updatedAccounts = accounts.map((a) => (a.id === switched.id ? switched : a));
+        saveAccounts(updatedAccounts, switched);
+        toast.success(`${switched.name} hesabına geçiş yapıldı`);
         setIsSwitchDialogOpen(false);
         setSwitchPin("");
         setSwitchTargetAccount(null);
@@ -434,6 +439,13 @@ export function StaffAccountMenu({
     );
   });
 
+  const isManager =
+    activeAccount.role === "ADMIN" ||
+    activeAccount.role === "SUPER_ADMIN" ||
+    activeAccount.role === "MANAGER" ||
+    !activeAccount.allowedRoutes ||
+    activeAccount.allowedRoutes.includes("/dashboard/staff");
+
   return (
     <div className="relative shrink-0" ref={menuRef}>
       {/* TRIGGER BUTTON */}
@@ -567,8 +579,22 @@ export function StaffAccountMenu({
             })}
           </div>
 
-          {/* ACTIONS: YENİ HESAP EKLE + HESAP AYARLARI */}
+          {/* ACTIONS: KULLANICI OLUŞTUR + YENİ HESAP EKLE + HESAP AYARLARI */}
           <div className="p-2 border-t border-gray-100 bg-gray-50/50 flex flex-col gap-1">
+            {isManager && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsCreateUserOpen(true);
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-black text-primary bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer shadow-2xs border border-primary/25"
+              >
+                <UserPlus2Icon className="size-4 text-primary" />
+                <span>Kullanıcı / Personel Oluştur</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={handleOpenAddDialog}
@@ -1057,6 +1083,18 @@ export function StaffAccountMenu({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* DIALOG 4: KULLANICI / PERSONEL OLUŞTUR */}
+      {isCreateUserOpen && (
+        <StaffDialog
+          staff={null}
+          onOpenChange={setIsCreateUserOpen}
+          onSaved={() => {
+            setIsCreateUserOpen(false);
+            toast.success("Yeni kullanıcı/personel oluşturuldu! Terminal hesabına ekleyebilirsiniz.");
+          }}
+        />
+      )}
     </div>
   );
 }

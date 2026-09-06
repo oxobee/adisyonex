@@ -108,7 +108,19 @@ export async function addStaffAccountAction(data: {
 export async function switchStaffAccountAction(data: {
   staffId: string;
   pin: string;
-}): Promise<ActionResult<void>> {
+}): Promise<ActionResult<{
+  id: string;
+  name: string;
+  role: string;
+  jobTitle: string | null;
+  employeeCode: string | null;
+  allowedRoutes: readonly string[] | null;
+  photoUrl: string | null;
+  phone: string | null;
+  email: string | null;
+  city: string | null;
+  state: string | null;
+}>> {
   try {
     const pin = data.pin.trim();
     if (!pin) {
@@ -153,7 +165,23 @@ export async function switchStaffAccountAction(data: {
         details: `${staff.name} (${staff.jobTitle || staff.role}) terminal oturumuna giriş yaptı.`,
       }).catch(() => {});
 
-      return success(undefined);
+      const effectiveRoutes = Array.isArray(staff.allowedRoutes)
+        ? (staff.allowedRoutes as string[])
+        : getStaffEffectiveRoutes(staff.role, null);
+
+      return success({
+        id: staff.id,
+        name: staff.name,
+        role: staff.role,
+        jobTitle: staff.jobTitle,
+        employeeCode: staff.employeeCode,
+        allowedRoutes: effectiveRoutes,
+        photoUrl: staff.photoUrl,
+        phone: staff.phone,
+        email: staff.email,
+        city: staff.city,
+        state: staff.state,
+      });
     }
 
     const user = await prisma.user.findUnique({
@@ -184,7 +212,19 @@ export async function switchStaffAccountAction(data: {
         }).catch(() => {});
       }
 
-      return success(undefined);
+      return success({
+        id: user.id,
+        name: user.name || "Yönetici",
+        role: "MANAGER",
+        jobTitle: "Yönetici",
+        employeeCode: "ADM-01",
+        allowedRoutes: null,
+        photoUrl: null,
+        phone: user.phone || null,
+        email: user.email || null,
+        city: null,
+        state: null,
+      });
     }
 
     return failure("Personel kaydı bulunamadı");
