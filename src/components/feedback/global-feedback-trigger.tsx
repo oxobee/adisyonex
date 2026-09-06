@@ -3,18 +3,14 @@
 import { useEffect, useState } from "react";
 import {
   CameraIcon,
-  CheckCircle2Icon,
   Loader2Icon,
-  MessageSquareQuoteIcon,
   SendIcon,
-  SparklesIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 
 import { FeedbackModal, type FeedbackCategoryType } from "./feedback-modal";
-import { cn } from "@/lib/utils";
 
 export function GlobalFeedbackTrigger() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +21,7 @@ export function GlobalFeedbackTrigger() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [flash, setFlash] = useState(false);
 
-  // Listen to custom global event to open feedback modal or capture bar from anywhere
+  // Listen to custom global event to open feedback modal or capture bar
   useEffect(() => {
     const handleOpen = (e: Event) => {
       const customEvent = e as CustomEvent<{
@@ -38,10 +34,11 @@ export function GlobalFeedbackTrigger() {
       }
 
       if (customEvent.detail?.captureScreen) {
-        // Activate capture bar mode
         setIsCaptureBarVisible(true);
         setIsOpen(false);
-        toast.info("Ekran görüntüsü çekme modu aktif. Çekmek istediğiniz ekranda 'Ekran Görüntüsü Çek' butonuna basınız.");
+        toast.info(
+          "Ekran görüntüsü çekme modu aktif. Ekranı yakalamak için alttaki butona basınız."
+        );
       } else {
         setIsOpen(true);
       }
@@ -51,55 +48,136 @@ export function GlobalFeedbackTrigger() {
     return () => window.removeEventListener("open-feedback-modal", handleOpen);
   }, []);
 
-  // Direct screen capture function using html2canvas with proper CORS & non-tainting settings
+  /**
+   * Browser-permission-based screen capture:
+   * Requests native browser display media (tab/window/screen selection & permission dialog),
+   * captures a high-resolution frame directly from the video stream, and stops all tracks immediately.
+   */
   const handleDirectCapture = async () => {
     setIsCapturing(true);
+
     const triggerEl = document.querySelector(".global-feedback-trigger") as HTMLElement;
     if (triggerEl) triggerEl.style.opacity = "0";
 
-    // Camera shutter flash effect
-    setFlash(true);
-    setTimeout(() => setFlash(false), 250);
-
-    await new Promise((r) => setTimeout(r, 200));
-
     try {
+      // 1. Primary: Browser getDisplayMedia with explicit user permission prompt
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getDisplayMedia) {
+        toast.info(
+          "Lütfen açılan tarayıcı penceresinden bu sekmeyi seçerek 'Paylaş'a basınız. 📸",
+          { duration: 4000 }
+        );
+
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            displaySurface: "browser",
+          } as MediaTrackConstraints,
+          audio: false,
+        });
+
+        // Flash effect
+        setFlash(true);
+        setTimeout(() => setFlash(false), 200);
+
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const video = document.createElement("video");
+          video.autoplay = true;
+          video.muted = true;
+          video.playsInline = true;
+          video.srcObject = stream;
+
+          video.onloadedmetadata = () => {
+            video
+              .play()
+              .then(() => {
+                setTimeout(() => {
+                  try {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = video.videoWidth || window.innerWidth;
+                    canvas.height = video.videoHeight || window.innerHeight;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                      const url = canvas.toDataURL("image/png");
+                      // Immediately stop stream to end screen sharing icon
+                      stream.getTracks().forEach((track) => track.stop());
+                      video.remove();
+                      canvas.remove();
+                      resolve(url);
+                    } else {
+                      stream.getTracks().forEach((track) => track.stop());
+                      reject(new Error("Canvas oluşturulamadı"));
+                    }
+                  } catch (err) {
+                    stream.getTracks().forEach((track) => track.stop());
+                    reject(err);
+                  }
+                }, 300);
+              })
+              .catch((err) => {
+                stream.getTracks().forEach((track) => track.stop());
+                reject(err);
+              });
+          };
+
+          video.onerror = (err) => {
+            stream.getTracks().forEach((track) => track.stop());
+            reject(err);
+          };
+        });
+
+        setCapturedScreenshots((prev) => [...prev, dataUrl]);
+        toast.success(
+          "Ekran görüntüsü alındı! 📸 Forma aktarmak için yanındaki 'Gönder' butonuna basabilirsiniz."
+        );
+        return;
+      }
+
+      // 2. Fallback: html2canvas for mobile browsers where getDisplayMedia is not supported
+      setFlash(true);
+      setTimeout(() => setFlash(false), 200);
+      await new Promise((r) => setTimeout(r, 180));
+
       const canvas = await html2canvas(document.body, {
         useCORS: true,
-        allowTaint: false, // Prevents tainted canvas SecurityError on toDataURL()
+        allowTaint: false,
         foreignObjectRendering: false,
         logging: false,
         scale: 1,
-        ignoreElements: (el) => {
-          return (
-            el.classList.contains("global-feedback-trigger") ||
-            el.classList.contains("feedback-dialog-content") ||
-            el.classList.contains("esc-modal-open")
-          );
-        },
+        ignoreElements: (el) =>
+          el.classList.contains("global-feedback-trigger") ||
+          el.classList.contains("feedback-dialog-content") ||
+          el.classList.contains("esc-modal-open"),
       });
 
       let dataUrl = "";
       try {
         dataUrl = canvas.toDataURL("image/png");
       } catch {
-        // Fallback to JPEG if PNG export encounters any tainted sub-elements
         dataUrl = canvas.toDataURL("image/jpeg", 0.9);
       }
 
       if (!dataUrl || dataUrl.length < 100) {
-        throw new Error("Görüntü verisi boş döndü");
+        throw new Error("Görüntü verisi alınamadı");
       }
 
       setCapturedScreenshots((prev) => [...prev, dataUrl]);
       toast.success(
-        `Ekran görüntüsü alındı! (${capturedScreenshots.length + 1}) — Göndermek için 'Gönder' butonuna basabilirsiniz.`
+        "Ekran görüntüsü alındı! 📸 Forma aktarmak için yanındaki 'Gönder' butonuna basabilirsiniz."
       );
-    } catch (err) {
-      console.error("Screenshot capture error:", err);
-      toast.error(
-        "Ekran görüntüsü alınırken bir kısıtlama oluştu. Geri bildirim formundan cihazınızdan görsel seçebilirsiniz."
-      );
+    } catch (err: any) {
+      console.error("Screen capture error:", err);
+      // If user cancelled the browser permission prompt
+      if (
+        err?.name === "NotAllowedError" ||
+        err?.name === "AbortError" ||
+        err?.message?.includes("Permission denied")
+      ) {
+        toast.info("Ekran paylaşım izni onaylanmadı veya iptal edildi.");
+      } else {
+        toast.error(
+          "Ekran görüntüsü alınamadı. Form içinden cihazınızdan görsel seçebilirsiniz."
+        );
+      }
     } finally {
       if (triggerEl) triggerEl.style.opacity = "1";
       setIsCapturing(false);
@@ -123,26 +201,25 @@ export function GlobalFeedbackTrigger() {
         <div className="pointer-events-none fixed inset-0 z-[9999] bg-white/75 animate-in fade-in duration-75" />
       )}
 
-      {/* FLOATING ACTION BAR */}
-      <aside
-        aria-label="Geri Bildirim ve Ekran Yakalama"
-        className="global-feedback-trigger fixed bottom-4 left-4 z-40 flex items-center gap-1.5 transition-all"
-      >
-        {isCaptureBarVisible ? (
-          /* 1. SCREENSHOT CAPTURE BAR (Yalnızca tıklandığında görünür) */
-          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-slate-900/95 text-white backdrop-blur-md border border-slate-700/80 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_8px_10px_-6px_rgba(0,0,0,0.2)] animate-in fade-in slide-in-from-bottom-3 duration-200">
+      {/* FLOATING ACTION BAR: SADECE EKRAN GÖRÜNTÜSÜ MODU TETİKLENDİĞİNDE GÖRÜNÜR */}
+      {isCaptureBarVisible && (
+        <aside
+          aria-label="Ekran Yakalama Çubuğu"
+          className="global-feedback-trigger fixed bottom-5 left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-50 flex items-center gap-1.5 transition-all"
+        >
+          <div className="flex items-center gap-2 p-2 rounded-full bg-slate-900/95 text-white backdrop-blur-md border border-slate-700/90 shadow-[0_12px_28px_-6px_rgba(0,0,0,0.4),0_8px_10px_-6px_rgba(0,0,0,0.3)] animate-in fade-in slide-in-from-bottom-3 duration-200">
             {/* Ekran Görüntüsü Çek Butonu */}
             <button
               type="button"
               onClick={handleDirectCapture}
               disabled={isCapturing}
-              title="Bu ekranın görüntüsünü çek"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all cursor-pointer group shrink-0 active:scale-95 disabled:opacity-50"
+              title="Tarayıcı izni ile bu ekranın görüntüsünü al"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all cursor-pointer group shrink-0 active:scale-95 disabled:opacity-50 shadow-xs"
             >
               {isCapturing ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
+                <Loader2Icon className="size-4 animate-spin" />
               ) : (
-                <CameraIcon className="size-3.5 transition-transform group-hover:scale-110" />
+                <CameraIcon className="size-4 transition-transform group-hover:scale-110" />
               )}
               <span>
                 {capturedScreenshots.length > 0
@@ -151,20 +228,20 @@ export function GlobalFeedbackTrigger() {
               </span>
             </button>
 
-            {/* Gönder / Forma Aktar Butonu (Eğer en az 1 görsel çekildiyse) */}
+            {/* Gönder / Forma Aktar Butonu (En az 1 görsel çekildiyse) */}
             {capturedScreenshots.length > 0 && (
               <button
                 type="button"
                 onClick={handleOpenModalWithScreenshots}
-                title="Çekilen ekran görüntülerini forma aktar ve geri bildirim gönder"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 animate-in zoom-in-95 duration-150"
+                title="Çekilen ekran görüntülerini forma aktar ve geri bildirim formunu aç"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 animate-in zoom-in-95 duration-150"
               >
                 <SendIcon className="size-3.5" />
                 <span>Gönder ({capturedScreenshots.length})</span>
               </button>
             )}
 
-            <div className="h-4 w-px bg-slate-700" />
+            <div className="h-4 w-px bg-slate-700 mx-0.5" />
 
             {/* Kapatma ('X') Butonu */}
             <button
@@ -172,29 +249,16 @@ export function GlobalFeedbackTrigger() {
               onClick={() => {
                 setIsCaptureBarVisible(false);
                 setCapturedScreenshots([]);
+                toast.info("Ekran görüntüsü yakalama çubuğu kapatıldı.");
               }}
               title="Ekran görüntüsü yakalama çubuğunu kapat"
-              className="size-7 rounded-full flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+              className="size-8 rounded-full flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
             >
               <XIcon className="size-4" />
             </button>
           </div>
-        ) : (
-          /* 2. DEFAULT COMPACT FEEDBACK PILL (Ekran görüntüsü butonu çıkmaz, sadece geri bildirim formu) */
-          <button
-            type="button"
-            onClick={() => {
-              setCategory("SUGGESTION");
-              setIsOpen(true);
-            }}
-            title="Öneri, istek, şikayet veya hata bildirin"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-indigo-700 backdrop-blur-md border border-gray-200/90 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] text-xs font-black transition-all hover:shadow-lg active:scale-95 cursor-pointer group shrink-0"
-          >
-            <MessageSquareQuoteIcon className="size-3.5 text-indigo-600 transition-transform group-hover:scale-110" />
-            <span>Geri Bildirim</span>
-          </button>
-        )}
-      </aside>
+        </aside>
+      )}
 
       {/* FEEDBACK MODAL */}
       <FeedbackModal
@@ -208,7 +272,9 @@ export function GlobalFeedbackTrigger() {
         onRequestScreenCapture={() => {
           setIsOpen(false);
           setIsCaptureBarVisible(true);
-          toast.info("Ekran görüntüsü çekmek için alttaki butonu kullanabilirsiniz.");
+          toast.info(
+            "Ekran görüntüsü çekmek için alttaki 'Ekran Görüntüsü Çek' butonuna basınız."
+          );
         }}
       />
     </>

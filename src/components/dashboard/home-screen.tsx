@@ -828,22 +828,7 @@ export function HomeScreen({
               Öneri, yeni özellik isteği, şikayet veya sistem hatalarını doğrudan ekibimize bildirin.
             </p>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent("open-feedback-modal", {
-                      detail: { category: "BUG", captureScreen: true },
-                    }),
-                  );
-                }}
-                className="flex items-center justify-center gap-1.5 h-9 px-2 rounded-xl bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-[11px] font-bold text-gray-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
-              >
-                <CameraIcon className="size-3.5 text-indigo-600" />
-                <span>Ekran Görüntüsü Çek</span>
-              </button>
-
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={() => {
@@ -853,10 +838,10 @@ export function HomeScreen({
                     }),
                   );
                 }}
-                className="flex items-center justify-center gap-1.5 h-9 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[11px] font-black text-white shadow-2xs transition-all active:scale-95 cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-black text-white shadow-xs transition-all active:scale-98 cursor-pointer"
               >
-                <SendIcon className="size-3 text-white" />
-                <span>Formu Aç</span>
+                <SendIcon className="size-3.5 text-white" />
+                <span>Geri Bildirim Gönder</span>
               </button>
             </div>
           </div>
