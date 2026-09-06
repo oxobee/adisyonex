@@ -214,19 +214,71 @@ export function CustomersTable({
       <div className="border border-border/80 bg-card p-4 rounded-lg space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-bold">Doğum Günü Otomasyonu</p>
-            <p className="text-xs text-muted-foreground">Mesaj gönderimi şu an simülasyon olarak kaydedilir.</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold">Doğum Günü Otomasyonu</p>
+              {birthday.isModuleAllowed === false && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  Modül Pasif (Süper Admin Yetkisi Gerekir)
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {birthday.isModuleAllowed === false
+                ? "Bu modül Süper Admin tarafından restoranınız için pasife alınmıştır."
+                : "Mesaj gönderimi şu an simülasyon olarak kaydedilir."}
+            </p>
           </div>
-          <Switch checked={birthday.enabled} onCheckedChange={(enabled) => setBirthday((prev) => ({ ...prev, enabled }))} />
+          <Switch
+            disabled={birthday.isModuleAllowed === false}
+            checked={birthday.enabled}
+            onCheckedChange={(enabled) => setBirthday((prev) => ({ ...prev, enabled }))}
+          />
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
-          <Input type="number" min="0" max="60" value={birthday.daysBefore} onChange={(e) => setBirthday((prev) => ({ ...prev, daysBefore: Number(e.target.value) }))} placeholder="Kaç gün önce" />
-          <Select value={birthday.discountType} onValueChange={(value) => value && setBirthday((prev) => ({ ...prev, discountType: value as "PERCENT" | "FLAT" }))}><SelectTrigger><span>{birthday.discountType === "PERCENT" ? "% indirim" : "Tutar indirimi"}</span></SelectTrigger><SelectContent><SelectItem value="PERCENT">% indirim</SelectItem><SelectItem value="FLAT">Tutar indirimi</SelectItem></SelectContent></Select>
-          <Input type="number" min="1" value={birthday.discountValue} onChange={(e) => setBirthday((prev) => ({ ...prev, discountValue: Number(e.target.value) }))} placeholder="İndirim" />
-          <Button onClick={() => saveBirthday.execute(birthday)} disabled={saveBirthday.isPending}>{saveBirthday.isPending ? "Kaydediliyor..." : "Ayarları Kaydet"}</Button>
+          <Input
+            disabled={birthday.isModuleAllowed === false}
+            type="number"
+            min="0"
+            max="60"
+            value={birthday.daysBefore}
+            onChange={(e) => setBirthday((prev) => ({ ...prev, daysBefore: Number(e.target.value) }))}
+            placeholder="Kaç gün önce"
+          />
+          <Select
+            disabled={birthday.isModuleAllowed === false}
+            value={birthday.discountType}
+            onValueChange={(value) => value && setBirthday((prev) => ({ ...prev, discountType: value as "PERCENT" | "FLAT" }))}
+          >
+            <SelectTrigger><span>{birthday.discountType === "PERCENT" ? "% indirim" : "Tutar indirimi"}</span></SelectTrigger>
+            <SelectContent><SelectItem value="PERCENT">% indirim</SelectItem><SelectItem value="FLAT">Tutar indirimi</SelectItem></SelectContent>
+          </Select>
+          <Input
+            disabled={birthday.isModuleAllowed === false}
+            type="number"
+            min="1"
+            value={birthday.discountValue}
+            onChange={(e) => setBirthday((prev) => ({ ...prev, discountValue: Number(e.target.value) }))}
+            placeholder="İndirim"
+          />
+          <Button
+            onClick={() => saveBirthday.execute(birthday)}
+            disabled={birthday.isModuleAllowed === false || saveBirthday.isPending}
+          >
+            {saveBirthday.isPending ? "Kaydediliyor..." : "Ayarları Kaydet"}
+          </Button>
         </div>
-        <Input value={birthday.messageTitle} onChange={(e) => setBirthday((prev) => ({ ...prev, messageTitle: e.target.value }))} placeholder="Mesaj başlığı" />
-        <Textarea value={birthday.messageContent} onChange={(e) => setBirthday((prev) => ({ ...prev, messageContent: e.target.value }))} placeholder="Mesaj içeriği. Müşteri adı için {name} kullanın." />
+        <Input
+          disabled={birthday.isModuleAllowed === false}
+          value={birthday.messageTitle}
+          onChange={(e) => setBirthday((prev) => ({ ...prev, messageTitle: e.target.value }))}
+          placeholder="Mesaj başlığı"
+        />
+        <Textarea
+          disabled={birthday.isModuleAllowed === false}
+          value={birthday.messageContent}
+          onChange={(e) => setBirthday((prev) => ({ ...prev, messageContent: e.target.value }))}
+          placeholder="Mesaj içeriği. Müşteri adı için {name} kullanın."
+        />
       </div>
 
       {/* FILTER AND SEARCH BAR */}

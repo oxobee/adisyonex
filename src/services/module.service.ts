@@ -318,6 +318,78 @@ export async function toggleRestaurantModule(
 }
 
 /**
+ * Check if a specific module is active for a restaurant (both globally and restaurant-level).
+ */
+export async function isRestaurantModuleActive(
+  restaurantId: string,
+  moduleKey: string
+): Promise<boolean> {
+  try {
+    const mod = await prisma.systemModule.findUnique({
+      where: { key: moduleKey },
+      select: {
+        id: true,
+        isActive: true,
+        restaurantModules: {
+          where: { restaurantId },
+          select: { isActive: true },
+        },
+      },
+    });
+
+    // If module does not exist or is globally inactive
+    if (!mod || !mod.isActive) return false;
+
+    // If there's an explicit record for this restaurant, respect it
+    if (mod.restaurantModules.length > 0) {
+      return mod.restaurantModules[0].isActive;
+    }
+
+    // Default is active
+    return true;
+  } catch {
+    // If table doesn't exist (e.g. test environment) or query fails, default to active
+    return true;
+  }
+}
+
+/**
+ * Returns a record mapping moduleKey -> boolean (isActive) for a given restaurant.
+ */
+export async function getRestaurantActiveModulesMap(
+  restaurantId: string
+): Promise<Record<string, boolean>> {
+  try {
+    const [allModules, assignedModules] = await Promise.all([
+      prisma.systemModule.findMany({
+        select: { id: true, key: true, isActive: true },
+      }),
+      prisma.restaurantModule.findMany({
+        where: { restaurantId },
+        select: { moduleId: true, isActive: true },
+      }),
+    ]);
+
+    const assignedMap = new Map(assignedModules.map((a) => [a.moduleId, a.isActive]));
+    const result: Record<string, boolean> = {};
+
+    for (const m of allModules) {
+      if (!m.isActive) {
+        result[m.key] = false;
+        continue;
+      }
+      const assignedActive = assignedMap.get(m.id);
+      result[m.key] = assignedActive !== undefined ? assignedActive : true;
+    }
+
+    return result;
+  } catch {
+    // If table doesn't exist (e.g. test environment) or query fails, return empty
+    return {};
+  }
+}
+
+/**
  * Send a notification from SuperAdmin to a restaurant.
  */
 export async function sendRestaurantNotification(

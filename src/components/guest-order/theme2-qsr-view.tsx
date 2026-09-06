@@ -153,6 +153,7 @@ export interface Theme2QsrViewProps {
   readonly wifiPassword?: string | null;
   readonly tableSessionClosed?: boolean;
   readonly qrAiEnabled?: boolean;
+  readonly qrCustomerAuthEnabled?: boolean;
   readonly showItemImages?: boolean;
 }
 
@@ -189,6 +190,7 @@ export function Theme2QsrView({
   onCustomerIdentified,
   tableSessionClosed = false,
   qrAiEnabled = true,
+  qrCustomerAuthEnabled = true,
 }: Theme2QsrViewProps) {
   // Navigation Tabs: 'home' | 'categories' | 'cart' | 'profile'
   const [activeTab, setActiveTab] = useState<"home" | "categories" | "cart" | "profile">("home");
@@ -1840,6 +1842,7 @@ export function Theme2QsrView({
             onRequestBill={onRequestBill}
             onCallWaiter={onCallWaiter}
             onCustomerIdentified={onCustomerIdentified}
+            qrCustomerAuthEnabled={qrCustomerAuthEnabled}
           />
         </div>
       )}
@@ -2567,7 +2570,7 @@ export function Theme2QsrView({
             style={{ color: activeTab === "profile" ? primaryColor : undefined }}
           >
             <UserIcon className="size-5" />
-            <span className="text-[10px]">Profil</span>
+            <span className="text-[10px]">{qrCustomerAuthEnabled ? "Profil" : "Masa"}</span>
           </button>
 
         </div>

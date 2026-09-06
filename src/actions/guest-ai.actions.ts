@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { callOpenRouter } from "@/services/ai/openrouter.service";
+import { isRestaurantModuleActive } from "@/services/module.service";
 import { success, failure, type ActionResult } from "@/types";
 
 export interface GuestAiMessage {
@@ -73,8 +74,13 @@ export const askGuestAiAction = async ({
       },
     });
 
-    if (!restaurant) {
-      return failure("Restoran bilgisi bulunamadı.");
+    if (!restaurant || restaurant.deletedAt || !restaurant.isActive) {
+      return failure("Restoran bulunamadı veya pasif durumda.");
+    }
+
+    const isAiActive = await isRestaurantModuleActive(restaurant.id, "qr_ai");
+    if (!isAiActive) {
+      return failure("QR Menü Yapay Zeka servisi bu restoran için aktif değildir.");
     }
 
     if (restaurant.qrAiEnabled === false) {

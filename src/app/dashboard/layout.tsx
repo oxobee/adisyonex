@@ -17,6 +17,7 @@ import { OfflineSyncManager } from "@/components/shared/offline-sync-manager"
 import { GlobalAiAssistant } from "@/components/dashboard/global-ai-assistant"
 import { GlobalRealtimeAlerts } from "@/components/shared/global-realtime-alerts"
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner"
+import { getRestaurantActiveModulesMap } from "@/services/module.service"
 
 export const dynamic = "force-dynamic";
 
@@ -41,19 +42,22 @@ export default async function DashboardLayout({
   let share = null
   let licenseInfo: LicenseInfoDTO | null = null
   let brandColor: string | null = null
+  let activeModules: Record<string, boolean> = {}
 
   const restaurantId = staffCtx?.restaurantId || ctx?.restaurantId;
 
   if (restaurantId) {
     try {
-      const [s, l, p] = await Promise.all([
+      const [s, l, p, m] = await Promise.all([
         getSelfOrderShareInfo(restaurantId).catch(() => null),
         getRestaurantLicenseInfo(restaurantId).catch(() => null),
         getRestaurantProfile(restaurantId).catch(() => null),
+        getRestaurantActiveModulesMap(restaurantId).catch(() => ({})),
       ])
       share = s
       licenseInfo = l
       brandColor = p?.brandColor ?? null
+      activeModules = m || {}
     } catch (e) {
       console.error("Failed to load restaurant context in layout:", e)
     }
@@ -66,7 +70,7 @@ export default async function DashboardLayout({
       )}
       <GlobalEscNavigation />
       <OfflineSyncManager />
-      <GlobalAiAssistant />
+      {activeModules.admin_ai !== false && <GlobalAiAssistant />}
       <GlobalRealtimeAlerts />
       {brandColor && (
         <style

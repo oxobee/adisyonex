@@ -89,6 +89,7 @@ export interface CustomerLoyaltyPanelProps {
   readonly onRequestBill?: () => Promise<void> | void;
   readonly onCallWaiter?: () => Promise<void> | void;
   readonly onCustomerIdentified?: (customer: CustomerDTO) => void;
+  readonly qrCustomerAuthEnabled?: boolean;
 }
 
 const KVKK_TEXT = `Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca; Adisyoon ve işletmemiz tarafından sunulan sadakat programı, doğum günü indirimleri ve sipariş geçmişi takibi hizmetlerinden faydalanabilmeniz amacıyla; adınız, soyadınız, telefon numaranız ve doğum tarihi bilgileriniz 6698 sayılı Kanun'a uygun olarak işlenmekte ve güvenle saklanmaktadır. Verileriniz üçüncü şahıslara ticari amaçla aktarılmaz.`;
@@ -107,6 +108,7 @@ export function CustomerLoyaltyPanel({
   onRequestBill,
   onCallWaiter,
   onCustomerIdentified,
+  qrCustomerAuthEnabled = true,
 }: CustomerLoyaltyPanelProps) {
   // Session storage key for persistent customer login
   const sessionKey = `adisyoon_customer_${username}`;
@@ -648,7 +650,7 @@ export function CustomerLoyaltyPanel({
       {/* ============================================================ */}
       {/* 3. EN ÜSTTE DİKKAT ÇEKİCİ HIZLI HESAP OLUŞTUR / GİRİŞ ALANI */}
       {/* ============================================================ */}
-      {!profile ? (
+      {qrCustomerAuthEnabled && (!profile ? (
         <div className="relative overflow-hidden rounded-3xl p-5 border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-white shadow-md space-y-3">
           {/* Background Glows */}
           <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-amber-400/25 blur-xl" />
@@ -908,7 +910,7 @@ export function CustomerLoyaltyPanel({
             </div>
           )}
         </div>
-      )}
+      ))}
 
       {/* ============================================================ */}
       {/* 3. ANA İŞLEM BUTONLARI (GARSON, HESAP, DEĞERLENDİR, SOSYAL)  */}

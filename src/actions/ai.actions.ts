@@ -54,6 +54,7 @@ import type {
 } from "@/types/ai";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getAdminContextOrNull } from "@/lib/admin-auth";
+import { isRestaurantModuleActive } from "@/services/module.service";
 
 /** Get or create AI credit wallet for the current restaurant */
 export const getAiWalletAction = async (): Promise<
@@ -90,37 +91,67 @@ export const getAiTransactionsAction = async (): Promise<
 /** Digitize menu from image, multiple images, PDF or raw text */
 export const digitizeMenuAction = withManagerValidation(
   aiMenuDigitizeInputSchema,
-  (data, ctx) => digitizeMenu(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_menu_import"))) {
+      throw new Error("Yapay Zeka ile Menü İçe Aktar modülü bu restoran için aktif değildir.");
+    }
+    return digitizeMenu(ctx.restaurantId, data);
+  }
 );
 
 /** Digitize menu from URL */
 export const digitizeMenuFromUrlAction = withManagerValidation(
   aiMenuUrlInputSchema,
-  (data, ctx) => digitizeMenuFromUrl(ctx.restaurantId, data.url),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_menu_import"))) {
+      throw new Error("Yapay Zeka ile Menü İçe Aktar modülü bu restoran için aktif değildir.");
+    }
+    return digitizeMenuFromUrl(ctx.restaurantId, data.url);
+  }
 );
 
 /** Generate food images with 4 quality tiers (Ekonomik, Standart, Profesyonel, Ultra) */
 export const generateFoodImageAction = withManagerValidation(
   aiImageGenInputSchema,
-  (data, ctx) => generateFoodImage(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_image_generation"))) {
+      throw new Error("Yapay Zeka ile Görsel Oluştur modülü bu restoran için aktif değildir.");
+    }
+    return generateFoodImage(ctx.restaurantId, data);
+  }
 );
 
 /** Professionalize / Enhance amateur food photo (Image-to-Image) */
 export const professionalizePhotoAction = withManagerValidation(
   aiPhotoProfessionalizeSchema,
-  (data, ctx) => professionalizeFoodPhoto(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_photo_enhance"))) {
+      throw new Error("Fotoğrafları Profesyonelleştir modülü bu restoran için aktif değildir.");
+    }
+    return professionalizeFoodPhoto(ctx.restaurantId, data);
+  }
 );
 
 /** Generate appetizing product descriptions & nutrition */
 export const generateItemCopywritingAction = withManagerValidation(
   aiCopywriterInputSchema,
-  (data, ctx) => generateItemCopywriting(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_copywriter_nutrition"))) {
+      throw new Error("Metin Yazarı ve Besin Analizi modülü bu restoran için aktif değildir.");
+    }
+    return generateItemCopywriting(ctx.restaurantId, data);
+  }
 );
 
 /** Commit digitized items and categories into actual menu */
 export const commitAiMenuAction = withManagerValidation(
   aiCommitMenuSchema,
-  (data, ctx) => commitDigitizedMenu(ctx.restaurantId, data.categories, data.items),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_menu_import"))) {
+      throw new Error("Yapay Zeka ile Menü İçe Aktar modülü bu restoran için aktif değildir.");
+    }
+    return commitDigitizedMenu(ctx.restaurantId, data.categories, data.items);
+  }
 );
 
 /** List history of AI tasks */
@@ -216,37 +247,67 @@ export const adminRechargeAiCreditAction = withAdminValidation(
 /** Quick Short Description Generator (2 Credits) */
 export const generateQuickShortDescAction = withManagerValidation(
   quickShortDescSchema,
-  (data, ctx) => generateQuickShortDesc(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_copywriter_nutrition"))) {
+      throw new Error("Metin Yazarı ve Besin Analizi modülü bu restoran için aktif değildir.");
+    }
+    return generateQuickShortDesc(ctx.restaurantId, data);
+  }
 );
 
 /** Quick Long Description Generator (2 Credits) */
 export const generateQuickLongDescAction = withManagerValidation(
   quickLongDescSchema,
-  (data, ctx) => generateQuickLongDesc(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_copywriter_nutrition"))) {
+      throw new Error("Metin Yazarı ve Besin Analizi modülü bu restoran için aktif değildir.");
+    }
+    return generateQuickLongDesc(ctx.restaurantId, data);
+  }
 );
 
 /** Estimate Item Calories (2 Credits) */
 export const estimateItemCaloriesAction = withManagerValidation(
   estimateCaloriesSchema,
-  (data, ctx) => estimateItemCalories(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_copywriter_nutrition"))) {
+      throw new Error("Metin Yazarı ve Besin Analizi modülü bu restoran için aktif değildir.");
+    }
+    return estimateItemCalories(ctx.restaurantId, data);
+  }
 );
 
 /** Auto-Detect Item Allergens (2 Credits) */
 export const detectItemAllergensAction = withManagerValidation(
   detectAllergensSchema,
-  (data, ctx) => detectItemAllergens(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_copywriter_nutrition"))) {
+      throw new Error("Metin Yazarı ve Besin Analizi modülü bu restoran için aktif değildir.");
+    }
+    return detectItemAllergens(ctx.restaurantId, data);
+  }
 );
 
 /** Generate and Attach Image to Menu Item (20 Credits) */
 export const generateAndAttachItemImageAction = withManagerValidation(
   attachItemImageSchema,
-  (data, ctx) => generateAndAttachItemImage(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_image_generation"))) {
+      throw new Error("Yapay Zeka ile Görsel Oluştur modülü bu restoran için aktif değildir.");
+    }
+    return generateAndAttachItemImage(ctx.restaurantId, data);
+  }
 );
 
 /** Enhance and Attach Image to Menu Item (40 Credits) */
 export const enhanceAndAttachItemImageAction = withManagerValidation(
   enhanceAttachItemImageSchema,
-  (data, ctx) => enhanceAndAttachItemImage(ctx.restaurantId, data),
+  async (data, ctx) => {
+    if (!(await isRestaurantModuleActive(ctx.restaurantId, "ai_photo_enhance"))) {
+      throw new Error("Fotoğrafları Profesyonelleştir modülü bu restoran için aktif değildir.");
+    }
+    return enhanceAndAttachItemImage(ctx.restaurantId, data);
+  }
 );
 
 /** Save an already generated image URL directly to a MenuItem */

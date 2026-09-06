@@ -110,6 +110,7 @@ export function GuestOrderPage({
   qrSecondaryColor = "#FFF7ED",
   qrSlidersEnabled = true,
   qrAiEnabled = true,
+  qrCustomerAuthEnabled = true,
   qrSliders,
   qrGreetingTitle = "Bugün Ne Yemek İstersiniz?",
   qrGreetingSubtitle = "Hoş Geldiniz 👋",
@@ -135,6 +136,7 @@ export function GuestOrderPage({
   readonly qrSecondaryColor?: string;
   readonly qrSlidersEnabled?: boolean;
   readonly qrAiEnabled?: boolean;
+  readonly qrCustomerAuthEnabled?: boolean;
   readonly qrSliders?: readonly QrSliderItem[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
@@ -532,6 +534,7 @@ export function GuestOrderPage({
         onCustomerIdentified={(c) => setCurrentCustomer(c)}
         tableSessionClosed={tableSessionClosed}
         qrAiEnabled={qrAiEnabled}
+        qrCustomerAuthEnabled={qrCustomerAuthEnabled}
       />
     );
   }
@@ -1045,6 +1048,7 @@ export function GuestOrderPage({
                 await guestCallWaiterAction({ username, tableId });
               }}
               onCustomerIdentified={(c) => setCurrentCustomer(c)}
+              qrCustomerAuthEnabled={qrCustomerAuthEnabled}
             />
           </div>
         </SheetContent>

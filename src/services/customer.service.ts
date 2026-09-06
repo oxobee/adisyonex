@@ -11,6 +11,7 @@ import {
 import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
 import { findRestaurantById, updateRestaurant } from "@/repositories/restaurant.repository";
 import { simulateBirthdayMessages } from "@/repositories/customer.repository";
+import { isRestaurantModuleActive } from "@/services/module.service";
 import type { CustomerListQuery, RegisterCustomerInput } from "@/lib/validators/customer";
 import type { Paginated } from "@/types";
 
@@ -47,6 +48,7 @@ export interface BirthdayAutomationDTO {
   discountValue: number;
   messageTitle: string;
   messageContent: string;
+  isModuleAllowed?: boolean;
 }
 
 export interface CustomerOrderLineDTO {
@@ -107,6 +109,11 @@ export const registerCustomer = async (
     throw new Error("RESTAURANT_NOT_FOUND");
   }
 
+  const isModuleActive = await isRestaurantModuleActive(restaurant.id, "qr_customer_auth");
+  if (!isModuleActive) {
+    throw new Error("Müşteri kayıt ve sadakat modülü bu restoranda aktif değildir.");
+  }
+
   let birthDateObj: Date | null = null;
   if (input.birthDate && input.birthDate.trim()) {
     const d = new Date(input.birthDate);
@@ -150,6 +157,11 @@ export const getCustomerProfile = async (
   const restaurant = await findRestaurantByUsername(username);
   if (!restaurant || restaurant.deletedAt) {
     throw new Error("RESTAURANT_NOT_FOUND");
+  }
+
+  const isModuleActive = await isRestaurantModuleActive(restaurant.id, "qr_customer_auth");
+  if (!isModuleActive) {
+    return null;
   }
 
   const raw = await findCustomerWithOrders(restaurant.id, {
@@ -353,28 +365,36 @@ export const toggleCustomerDiscount = async (
 };
 
 export const getBirthdayAutomation = async (restaurantId: string): Promise<BirthdayAutomationDTO> => {
-  const restaurant = await findRestaurantById(restaurantId);
+  const [restaurant, isModuleActive] = await Promise.all([
+    findRestaurantById(restaurantId),
+    isRestaurantModuleActive(restaurantId, "birthday_automation"),
+  ]);
   if (!restaurant) throw new Error("RESTAURANT_NOT_FOUND");
   return {
-    enabled: restaurant.birthdayAutomationEnabled,
+    enabled: isModuleActive ? restaurant.birthdayAutomationEnabled : false,
     daysBefore: restaurant.birthdayDaysBefore,
     discountType: restaurant.birthdayDiscountType === "FLAT" ? "FLAT" : "PERCENT",
     discountValue: Number(restaurant.birthdayDiscountValue),
     messageTitle: restaurant.birthdayMessageTitle,
     messageContent: restaurant.birthdayMessageContent,
+    isModuleAllowed: isModuleActive,
   };
 };
 
 export const updateBirthdayAutomation = async (restaurantId: string, input: BirthdayAutomationDTO): Promise<void> => {
+  const isModuleActive = await isRestaurantModuleActive(restaurantId, "birthday_automation");
+  if (!isModuleActive && input.enabled) {
+    throw new Error("Doğum günü otomasyonu modülü bu restoran için aktif değildir.");
+  }
   await updateRestaurant(restaurantId, {
-    birthdayAutomationEnabled: input.enabled,
+    birthdayAutomationEnabled: isModuleActive ? input.enabled : false,
     birthdayDaysBefore: input.daysBefore,
     birthdayDiscountType: input.discountType,
     birthdayDiscountValue: input.discountValue,
     birthdayMessageTitle: input.messageTitle.trim(),
     birthdayMessageContent: input.messageContent.trim(),
   });
-  if (input.enabled) {
+  if (isModuleActive && input.enabled) {
     await simulateBirthdayMessages(restaurantId, new Date(), input.daysBefore, input.messageTitle.trim(), input.messageContent.trim());
   }
 };

@@ -11,6 +11,7 @@ import {
   ORDER_NOT_OPEN,
   type OrderContext,
 } from "@/services/order.service";
+import { isRestaurantModuleActive } from "@/services/module.service";
 import type { OrderDTO } from "@/types/order";
 
 export const PAYMENT_SHORT = "PAYMENT_SHORT";
@@ -26,12 +27,13 @@ const birthdayIsApproaching = (birthMonth: number | null, birthDay: number | nul
 
 const resolveAutomaticDiscount = async (ctx: OrderContext, order: Awaited<ReturnType<typeof loadOwnedOrder>>) => {
   if (!order.customerId) return null;
-  const [discount, restaurant] = await Promise.all([
+  const [discount, restaurant, isBirthdayModuleActive] = await Promise.all([
     findActiveCustomerDiscount(order.customerId, new Date()),
     findRestaurantById(ctx.restaurantId),
+    isRestaurantModuleActive(ctx.restaurantId, "birthday_automation"),
   ]);
   if (discount) return { type: discount.type, value: Number(discount.value), reason: "Müşteri indirimi" } as const;
-  if (restaurant?.birthdayAutomationEnabled && birthdayIsApproaching(order.customer?.birthMonth ?? null, order.customer?.birthDay ?? null, restaurant.birthdayDaysBefore)) {
+  if (isBirthdayModuleActive && restaurant?.birthdayAutomationEnabled && birthdayIsApproaching(order.customer?.birthMonth ?? null, order.customer?.birthDay ?? null, restaurant.birthdayDaysBefore)) {
     return { type: restaurant.birthdayDiscountType, value: Number(restaurant.birthdayDiscountValue), reason: "Doğum günü indirimi" } as const;
   }
   return null;

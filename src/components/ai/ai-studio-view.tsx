@@ -13,6 +13,7 @@ import {
   SlidersHorizontalIcon,
   SparklesIcon,
   Wand2Icon,
+  LockIcon,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
@@ -30,13 +31,16 @@ export function AiStudioView({
   wallet,
   transactions,
   tasks,
+  activeModules = {},
 }: {
   wallet: AiCreditWalletDTO;
   transactions: AiCreditTransactionDTO[];
   tasks: AiTaskDTO[];
+  activeModules?: Record<string, boolean>;
 }) {
   const tools = [
     {
+      moduleKey: "ai_menu_import",
       title: "Yapay Zeka ile Menü İçe Aktar",
       description: "Menü fotoğrafınızı, çok sayfalı PDF dosyanızı veya menü bağlantınızı yükleyin. Yapay zeka kategorileri, ürünleri, açıklamaları ve fiyatları otomatik olarak analiz etsin.",
       icon: BookOpenIcon,
@@ -46,6 +50,7 @@ export function AiStudioView({
       color: "from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-500",
     },
     {
+      moduleKey: "ai_image_generation",
       title: "AI ile Yemek Görseli Oluştur",
       description: "Menü ürünleriniz için gerçekçi ve profesyonel yemek fotoğrafları oluşturun. Ekonomik, Standart, Profesyonel ve Ultra HD kalitelerinden dilediğinizi seçin.",
       icon: ImageIcon,
@@ -55,6 +60,7 @@ export function AiStudioView({
       color: "from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-500",
     },
     {
+      moduleKey: "ai_photo_enhance",
       title: "Fotoğrafı Profesyonelleştir",
       description: "Amatör olarak çekilmiş yemek fotoğraflarınızı yemeğin kimliğini ve porsiyonunu bozmadan profesyonel restoran fotoğrafına dönüştürün. (Önce / Sonra Karşılaştırmalı)",
       icon: SlidersHorizontalIcon,
@@ -64,6 +70,7 @@ export function AiStudioView({
       color: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-500",
     },
     {
+      moduleKey: "ai_copywriter_nutrition",
       title: "AI Menü Metin Yazarı & Besin Analizi",
       description: "Ürünleriniz için iştah kabartan açıklamalar, otomatik kalori ve alerjen tahminleri ve pazarlama etiketleri üretin.",
       icon: PenToolIcon,
@@ -109,42 +116,86 @@ export function AiStudioView({
 
       {/* Grid of AI Tools */}
       <div className="grid gap-4 md:grid-cols-2">
-        {tools.map((tool) => (
-          <Link key={tool.href} href={tool.href} className="group">
-            <Card className="h-full rounded-2xl border border-border/80 transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:scale-[1.01]">
-              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex size-12 items-center justify-center rounded-2xl border bg-gradient-to-br ${tool.color} shadow-xs`}
-                  >
-                    <tool.icon className="size-6" />
+        {tools.map((tool) => {
+          const isEnabled = activeModules[tool.moduleKey] !== false;
+
+          if (!isEnabled) {
+            return (
+              <div key={tool.href} className="opacity-60 cursor-not-allowed">
+                <Card className="h-full rounded-2xl border border-dashed border-border/80 bg-muted/40 shadow-xs">
+                  <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-12 items-center justify-center rounded-2xl border bg-muted text-muted-foreground shadow-xs">
+                        <LockIcon className="size-6" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold text-muted-foreground">
+                          {tool.title}
+                        </CardTitle>
+                        <span className="text-xs text-muted-foreground/80 font-medium">
+                          Modül Pasif Durumda
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] font-bold text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10">
+                      Süper Admin Yetkisi Gerekli
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-xs text-muted-foreground leading-relaxed">
+                      {tool.description}
+                    </CardDescription>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-muted-foreground">
+                        Bu özellik restoranınız için pasife alınmıştır.
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground">
+                        Kullanılamıyor 🔒
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          }
+
+          return (
+            <Link key={tool.href} href={tool.href} className="group">
+              <Card className="h-full rounded-2xl border border-border/80 transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:scale-[1.01]">
+                <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex size-12 items-center justify-center rounded-2xl border bg-gradient-to-br ${tool.color} shadow-xs`}
+                    >
+                      <tool.icon className="size-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                        {tool.title}
+                      </CardTitle>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Maliyet: {tool.cost}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                      {tool.title}
-                    </CardTitle>
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Maliyet: {tool.cost}
+                  <Badge variant="secondary" className="text-[10px] font-bold">
+                    {tool.badge}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-xs text-muted-foreground leading-relaxed">
+                    {tool.description}
+                  </CardDescription>
+                  <div className="mt-4 flex items-center justify-end">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+                      Stüdyoya Başla ➔
                     </span>
                   </div>
-                </div>
-                <Badge variant="secondary" className="text-[10px] font-bold">
-                  {tool.badge}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-xs text-muted-foreground leading-relaxed">
-                  {tool.description}
-                </CardDescription>
-                <div className="mt-4 flex items-center justify-end">
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
-                    Stüdyoya Başla ➔
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Recent AI Tasks Overview */}

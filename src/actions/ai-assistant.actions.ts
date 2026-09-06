@@ -8,6 +8,7 @@ import { getManagerById } from "@/services/user.service";
 import { callOpenRouter } from "@/services/ai/openrouter.service";
 import { createOrder, addItems, fireOrder } from "@/services/order.service";
 import { getTurkeyDayRange } from "@/services/z-report.service";
+import { isRestaurantModuleActive } from "@/services/module.service";
 import { success, failure, type ActionResult } from "@/types";
 
 export interface AiMessage {
@@ -294,6 +295,11 @@ export async function askAiAssistantAction(
     }
 
     const { restaurantId, role, name, jobTitle, allowedRoutes, isManager } = auth;
+
+    const isAiActive = await isRestaurantModuleActive(restaurantId, "admin_ai");
+    if (!isAiActive) {
+      return failure("Admin Yapay Zeka asistanı modülü bu restoran için aktif değildir.");
+    }
 
     const roleUpper = (role || "").toUpperCase();
     const jobTitleLower = (jobTitle || "").toLowerCase();
@@ -1260,6 +1266,11 @@ export async function executeAiAssistantAction(
     }
 
     const { restaurantId, role, name, jobTitle, allowedRoutes, isManager, userId, staffId } = auth;
+
+    const isAiActive = await isRestaurantModuleActive(restaurantId, "admin_ai");
+    if (!isAiActive) {
+      return failure("Admin Yapay Zeka asistanı modülü bu restoran için aktif değildir.");
+    }
 
     // Strict Permission check: Aşçı masaya sipariş ekleyemez
     const isKitchenOnly =

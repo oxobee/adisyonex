@@ -20,6 +20,7 @@ import {
   type OrderContext,
 } from "@/services/order.service";
 import { resolveTableForOrder } from "@/services/table.service";
+import { isRestaurantModuleActive } from "@/services/module.service";
 import type { MenuDTO } from "@/types/menu";
 import type { GuestOrderSummaryDTO, OrderDTO } from "@/types/order";
 
@@ -151,6 +152,7 @@ export interface GuestOrderPageData {
   readonly qrSecondaryColor?: string | null;
   readonly qrSlidersEnabled?: boolean | null;
   readonly qrAiEnabled?: boolean | null;
+  readonly qrCustomerAuthEnabled?: boolean | null;
   readonly qrSliders?: readonly object[] | null;
   readonly qrGreetingTitle?: string | null;
   readonly qrGreetingSubtitle?: string | null;
@@ -296,7 +298,11 @@ export const loadGuestOrderPage = async (
     }
   }
 
-  const rawMenu = await getMenu(restaurant.id);
+  const [rawMenu, isQrAiActive, isQrCustomerAuthActive] = await Promise.all([
+    getMenu(restaurant.id),
+    isRestaurantModuleActive(restaurant.id, "qr_ai"),
+    isRestaurantModuleActive(restaurant.id, "qr_customer_auth"),
+  ]);
   const showItemImages = restaurant.showItemImages ?? true;
   const menu: MenuDTO = showItemImages
     ? rawMenu
@@ -324,7 +330,8 @@ export const loadGuestOrderPage = async (
       qrPrimaryColor: restaurant.qrPrimaryColor || "#FF5500",
       qrSecondaryColor: restaurant.qrSecondaryColor || "#FFF7ED",
       qrSlidersEnabled: restaurant.qrSlidersEnabled ?? true,
-      qrAiEnabled: restaurant.qrAiEnabled ?? true,
+      qrAiEnabled: (restaurant.qrAiEnabled ?? true) && isQrAiActive,
+      qrCustomerAuthEnabled: isQrCustomerAuthActive,
       qrSliders: (restaurant.qrSliders as readonly object[]) ?? null,
       qrGreetingTitle: restaurant.qrGreetingTitle || "Bugün Ne Yemek İstersiniz?",
       qrGreetingSubtitle: restaurant.qrGreetingSubtitle || "Hoş Geldiniz 👋",
