@@ -269,6 +269,8 @@ export function CashierSalesTerminal({
       cashTenderedStr: "",
       paymentMethod: "CASH",
     });
+    setSplitPayments([]);
+    setSplitInputAmount("");
   };
 
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
@@ -290,9 +292,17 @@ export function CashierSalesTerminal({
   const [isDragOverCart, setIsDragOverCart] = useState(false);
   const [selectedMealVoucher, setSelectedMealVoucher] = useState<string>(MEAL_VOUCHERS[0].name);
 
-  // Split Payment State
-  const [splitCashStr, setSplitCashStr] = useState<string>("");
-  const [splitCardStr, setSplitCardStr] = useState<string>("");
+  // Enhanced Multi-Tender Split Payment State
+  const [splitPayments, setSplitPayments] = useState<{
+    id: string;
+    mode: "CASH" | "CARD" | "OTHER";
+    methodLabel: string;
+    amount: number;
+    reference?: string;
+  }[]>([]);
+  const [splitInputAmount, setSplitInputAmount] = useState<string>("");
+  const [splitSelectedMethod, setSplitSelectedMethod] = useState<"CASH" | "CARD" | "OTHER">("CASH");
+  const [splitMealVoucher, setSplitMealVoucher] = useState<string>(MEAL_VOUCHERS[0].name);
 
   // Cancel Receipt State
   const [cancelReceiptOpen, setCancelReceiptOpen] = useState(false);
@@ -323,6 +333,70 @@ export function CashierSalesTerminal({
   const cashTendered = Number(cashTenderedStr) || 0;
   const changeDue = Math.max(0, cashTendered - bill.grandTotal);
   const cashRemaining = Math.max(0, bill.grandTotal - cashTendered);
+
+  // Split payments calculations
+  const totalPaidSplit = useMemo(
+    () => Math.round((splitPayments.reduce((s, p) => s + p.amount, 0) + Number.EPSILON) * 100) / 100,
+    [splitPayments],
+  );
+  const remainingSplit = useMemo(
+    () => Math.max(0, Math.round(((bill.grandTotal - totalPaidSplit) + Number.EPSILON) * 100) / 100),
+    [bill.grandTotal, totalPaidSplit],
+  );
+  const changeSplit = useMemo(
+    () => Math.max(0, Math.round(((totalPaidSplit - bill.grandTotal) + Number.EPSILON) * 100) / 100),
+    [bill.grandTotal, totalPaidSplit],
+  );
+  const isSplitComplete = totalPaidSplit >= bill.grandTotal && bill.grandTotal > 0;
+
+  const handleAddSplitPayment = (customAmt?: number) => {
+    const rawAmt = customAmt !== undefined ? customAmt : (Number(splitInputAmount) || remainingSplit);
+    const amt = Math.round((rawAmt + Number.EPSILON) * 100) / 100;
+    if (amt <= 0) {
+      toast.error("Lütfen 0'dan büyük bir ödeme tutarı girin!");
+      return;
+    }
+
+    const label =
+      splitSelectedMethod === "CASH"
+        ? "Nakit"
+        : splitSelectedMethod === "CARD"
+          ? "Kredi Kartı"
+          : `Yemek Kartı (${splitMealVoucher})`;
+
+    const ref =
+      splitSelectedMethod === "OTHER"
+        ? `Yemek Kartı: ${splitMealVoucher}`
+        : splitSelectedMethod === "CASH"
+          ? "Parçalı Nakit"
+          : "Parçalı Kart";
+
+    const newItem = {
+      id: uuid(),
+      mode: splitSelectedMethod,
+      methodLabel: label,
+      amount: amt,
+      reference: ref,
+    };
+
+    setSplitPayments((prev) => {
+      const updated = [...prev, newItem];
+      const newTotal = updated.reduce((s, p) => s + p.amount, 0);
+      const newRem = Math.max(0, Math.round(((bill.grandTotal - newTotal) + Number.EPSILON) * 100) / 100);
+      setSplitInputAmount(newRem > 0 ? String(newRem) : "");
+      return updated;
+    });
+  };
+
+  const handleRemoveSplitPayment = (id: string) => {
+    setSplitPayments((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      const newTotal = updated.reduce((s, p) => s + p.amount, 0);
+      const newRem = Math.max(0, Math.round(((bill.grandTotal - newTotal) + Number.EPSILON) * 100) / 100);
+      setSplitInputAmount(newRem > 0 ? String(newRem) : "");
+      return updated;
+    });
+  };
 
   const categoryMap = useMemo(
     () => new Map(menu.categories.map((c) => [c.id, c.name])),
@@ -600,7 +674,11 @@ export function CashierSalesTerminal({
       let modeLabel = "Nakit";
       if (paymentMethod === "CARD") modeLabel = "Kredi Kartı";
       else if (paymentMethod === "MEAL_VOUCHER") modeLabel = `Yemek Kartı (${selectedMealVoucher})`;
-      else if (paymentMethod === "SPLIT") modeLabel = "Parçalı Ödeme";
+      else if (paymentMethod === "SPLIT") {
+        modeLabel = splitPayments.length > 0
+          ? `Parçalı Ödeme (${splitPayments.map((p) => `${p.methodLabel}: ${formatCurrency(p.amount)}`).join(", ")})`
+          : "Parçalı Ödeme";
+      }
       else if (paymentMethod === "QR") modeLabel = "FAST / QR Kod";
 
       let currentServiceTypeLabel = "Gel-Al / Paket";
@@ -626,6 +704,8 @@ export function CashierSalesTerminal({
 
       // Clear terminal state for next sale
       clear();
+      setSplitPayments([]);
+      setSplitInputAmount("");
       setDiscount({ type: "NONE", value: 0 });
       setCashTenderedStr("");
       setCustomerName("");
@@ -648,8 +728,8 @@ export function CashierSalesTerminal({
       setSelectedTableId(null);
       setDiscount({ type: "NONE", value: 0 });
       setCashTenderedStr("");
-      setSplitCashStr("");
-      setSplitCardStr("");
+      setSplitPayments([]);
+      setSplitInputAmount("");
       setCustomerName("");
       setCustomerPhone("");
       setCancelReceiptOpen(false);
@@ -740,16 +820,21 @@ export function CashierSalesTerminal({
         },
       ];
     } else if (paymentMethod === "SPLIT") {
-      const cAmount = Number(splitCashStr) || 0;
-      const kAmount = Number(splitCardStr) || 0;
-      if (cAmount + kAmount < bill.grandTotal) {
-        toast.error("Parçalı ödemeler toplamı hesap tutarını karşılamıyor!");
+      if (splitPayments.length === 0) {
+        toast.error("Henüz parçalı ödeme kalemi eklenmedi! Lütfen en az bir ödeme parçası ekleyin.");
         return;
       }
-      payments = [
-        { mode: "CASH", amount: cAmount, reference: "Parçalı Nakit" },
-        { mode: "CARD", amount: kAmount, reference: "Parçalı Kart" },
-      ];
+      if (totalPaidSplit < bill.grandTotal) {
+        toast.error(
+          `Parçalı ödemeler toplamı (${formatCurrency(totalPaidSplit)}) hesap tutarını (${formatCurrency(bill.grandTotal)}) karşılamıyor! Kalan: ${formatCurrency(bill.grandTotal - totalPaidSplit)}`
+        );
+        return;
+      }
+      payments = splitPayments.map((p) => ({
+        mode: p.mode,
+        amount: p.amount,
+        reference: p.reference || p.methodLabel,
+      }));
     }
 
     const payload = {
@@ -1922,37 +2007,235 @@ export function CashierSalesTerminal({
               </div>
             )}
 
-            {/* D) PARÇALI ÖDEME SEÇİLİYSE */}
+            {/* D) GELİŞMİŞ ÇOKLU PARÇALI ÖDEME SEÇİLİYSE */}
             {paymentMethod === "SPLIT" && (
-              <div className="flex flex-col gap-2 p-3 rounded-2xl bg-purple-50/60 border border-purple-200">
-                <span className="text-[11px] font-bold text-purple-900">
-                  Nakit ve Kredi Kartı Bölüştürme:
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500">Nakit Tutar:</label>
-                    <input
-                      type="number"
-                      value={splitCashStr}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSplitCashStr(val);
-                        const num = Number(val) || 0;
-                        setSplitCardStr(String(Math.max(0, bill.grandTotal - num)));
-                      }}
-                      placeholder="0"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono"
-                    />
+              <div className="flex flex-col gap-2.5 p-3 rounded-2xl bg-purple-50/70 border border-purple-200">
+                {/* 1. Üst Durum & Alınan/Toplam Özeti */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1 rounded-lg bg-purple-100 text-purple-700">
+                      <PercentIcon className="size-3.5" />
+                    </div>
+                    <span className="text-xs font-black text-purple-950">
+                      Parça Parça Ödeme
+                    </span>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500">Kart Tutar:</label>
-                    <input
-                      type="number"
-                      value={splitCardStr}
-                      onChange={(e) => setSplitCardStr(e.target.value)}
-                      placeholder="0"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono"
-                    />
+
+                  <div className="flex items-center gap-1.5 text-xs font-mono">
+                    <span className="text-[11px] text-purple-700 font-sans font-semibold">Alınan:</span>
+                    <span className="font-black text-purple-950 tabular-nums">
+                      {formatCurrency(totalPaidSplit)}
+                    </span>
+                    <span className="text-purple-300 font-sans">/</span>
+                    <span className="font-bold text-slate-500 tabular-nums">
+                      {formatCurrency(bill.grandTotal)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. Kalan Tutar Bildirim Rozeti */}
+                <div
+                  className={cn(
+                    "flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs font-bold",
+                    isSplitComplete
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-900 shadow-2xs"
+                      : "bg-amber-50 border-amber-300 text-amber-900 shadow-2xs"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {isSplitComplete ? (
+                      <CheckCircle2Icon className="size-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <span className="size-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                    )}
+                    <span>{isSplitComplete ? "Hesap Tutarı Karşılandı" : "Kalan Ödeme Tutarı:"}</span>
+                  </div>
+                  <span className="font-mono text-sm font-black tabular-nums">
+                    {isSplitComplete
+                      ? (changeSplit > 0 ? `Paraüstü: ${formatCurrency(changeSplit)}` : "Tamamlandı")
+                      : formatCurrency(remainingSplit)}
+                  </span>
+                </div>
+
+                {/* 3. Eklenen Parçalı Ödemeler Listesi */}
+                {splitPayments.length > 0 && (
+                  <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
+                    {splitPayments.map((p, idx) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between p-2 rounded-xl bg-white border border-purple-200/80 shadow-2xs text-xs animate-in fade-in slide-in-from-top-1 duration-150"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="size-5 rounded-md bg-purple-100 text-purple-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {p.mode === "CASH" ? (
+                              <BanknoteIcon className="size-3.5 text-emerald-600 shrink-0" />
+                            ) : p.mode === "CARD" ? (
+                              <CreditCardIcon className="size-3.5 text-blue-600 shrink-0" />
+                            ) : (
+                              <WalletIcon className="size-3.5 text-amber-600 shrink-0" />
+                            )}
+                            <span className="font-bold text-slate-800 truncate">
+                              {p.methodLabel}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-mono font-black text-slate-900 tabular-nums">
+                            {formatCurrency(p.amount)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSplitPayment(p.id)}
+                            title="Bu ödeme parçasını sil"
+                            className="size-5.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <XIcon className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 4. Yeni Parça Ekleme Alanı */}
+                <div className="flex flex-col gap-2 pt-1 border-t border-purple-200/70">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
+                    <span>Ödeme Yöntemi:</span>
+                    {remainingSplit > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleAddSplitPayment(remainingSplit)}
+                        className="text-[10px] font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer"
+                      >
+                        Kalanın Tamamını ({formatCurrency(remainingSplit)}) Ekle
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Yöntem Butonları: [Nakit] [Kart] [Yemek Çeki] */}
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setSplitSelectedMethod("CASH")}
+                      className={cn(
+                        "py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer select-none",
+                        splitSelectedMethod === "CASH"
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <BanknoteIcon className="size-3.5" />
+                      <span>Nakit</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSplitSelectedMethod("CARD")}
+                      className={cn(
+                        "py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer select-none",
+                        splitSelectedMethod === "CARD"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <CreditCardIcon className="size-3.5" />
+                      <span>Kart</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSplitSelectedMethod("OTHER")}
+                      className={cn(
+                        "py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer select-none",
+                        splitSelectedMethod === "OTHER"
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <WalletIcon className="size-3.5" />
+                      <span>Yemek Çeki</span>
+                    </button>
+                  </div>
+
+                  {/* Yemek Çeki Seçici (Eğer OTHER seçiliyse) */}
+                  {splitSelectedMethod === "OTHER" && (
+                    <div className="grid grid-cols-4 gap-1 p-1 bg-white rounded-xl border border-slate-200">
+                      {MEAL_VOUCHERS.map((v) => (
+                        <button
+                          key={v.name}
+                          type="button"
+                          onClick={() => setSplitMealVoucher(v.name)}
+                          className={cn(
+                            "py-1 px-1 rounded-lg text-[10px] font-black border transition-all truncate text-center cursor-pointer",
+                            splitMealVoucher === v.name
+                              ? "bg-amber-100 border-amber-300 text-amber-900 shadow-2xs"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          )}
+                        >
+                          {v.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Tutar Giriş Kutusu ve Ekle Butonu */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={splitInputAmount}
+                        onChange={(e) => setSplitInputAmount(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddSplitPayment();
+                          }
+                        }}
+                        placeholder={remainingSplit > 0 ? String(remainingSplit) : "0.00"}
+                        className="w-full h-9 pl-3 pr-8 rounded-xl border border-slate-300 bg-white font-mono font-black text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 shadow-2xs"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                        ₺
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAddSplitPayment()}
+                      className="h-9 px-3.5 rounded-xl bg-purple-700 hover:bg-purple-800 active:bg-purple-900 text-white font-black text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                    >
+                      <PlusIcon className="size-3.5" />
+                      <span>Ekle</span>
+                    </button>
+                  </div>
+
+                  {/* Hızlı Tutar Butonları */}
+                  <div className="flex items-center gap-1 flex-wrap text-[10px]">
+                    {[20, 50, 100, 200, 500].map((quick) => (
+                      <button
+                        key={quick}
+                        type="button"
+                        onClick={() => handleAddSplitPayment(quick)}
+                        className="px-2 py-0.5 rounded-lg bg-white hover:bg-purple-100/60 border border-purple-200 text-purple-900 font-bold font-mono transition-colors cursor-pointer shadow-2xs"
+                      >
+                        +{quick} ₺
+                      </button>
+                    ))}
+                    {remainingSplit > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSplitInputAmount(String(remainingSplit))}
+                        className="px-2 py-0.5 rounded-lg bg-purple-100 hover:bg-purple-200/80 border border-purple-300 text-purple-900 font-bold font-mono transition-colors cursor-pointer shadow-2xs ml-auto"
+                      >
+                        Kalan: {remainingSplit} ₺
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
