@@ -30,6 +30,7 @@ const submitFeedbackSchema = z.object({
   attachments: z.array(z.string()).default([]),
   deviceInfo: z
     .object({
+      device: z.string().optional(),
       userAgent: z.string().optional(),
       browser: z.string().optional(),
       os: z.string().optional(),

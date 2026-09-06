@@ -747,9 +747,11 @@ export function HomeScreen({
                   Sistem Bildirimleri
                 </h2>
               </div>
-              <span className="flex size-5 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black">
-                {visibleNotifications.filter((n) => !n.isRead).length || visibleNotifications.length}
-              </span>
+              {visibleNotifications.filter((n) => !n.isRead).length > 0 && (
+                <span className="flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black animate-in zoom-in duration-150">
+                  {visibleNotifications.filter((n) => !n.isRead).length}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -996,35 +998,7 @@ export function HomeScreen({
       </main>
 
       {/* 
-        3. SİSTEM DEĞİŞİKLİK VE İŞLEM GÜNLÜĞÜ (AUDIT LOG ÇUBUĞU - DAR, GENİŞ VE DİKKAT ÇEKMEYEN ZARİF ALAN)
-      */}
-      <div className="w-full rounded-2xl p-2.5 sm:p-3 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white/95 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex size-7 items-center justify-center rounded-xl bg-slate-900 text-white shadow-2xs shrink-0">
-            <HistoryIcon className="size-3.5 text-indigo-400" />
-          </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs font-black text-gray-900 tracking-tight shrink-0">
-              Sistem Değişiklik Günlüğü:
-            </span>
-            <span className="text-[11px] text-gray-500 font-medium truncate hidden sm:inline">
-              Sipariş, masa, menü ve personel hareketleri anlık arşivlenir.
-            </span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsLogModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-slate-900 text-gray-700 hover:text-white text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0 ml-auto"
-        >
-          <HistoryIcon className="size-3.5" />
-          <span>Logları İncele</span>
-        </button>
-      </div>
-
-      {/* 
-        4. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DİŞ LINK YOK, KİLİT YOK, SIFIR FAZLA BOŞLUK)
+        3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DİŞ LINK YOK, KİLİT YOK, SIFIR FAZLA BOŞLUK)
       */}
       <footer
         className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0"

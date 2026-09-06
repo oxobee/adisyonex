@@ -109,6 +109,144 @@ const CATEGORIES = [
   },
 ];
 
+const DRAFT_STORAGE_KEY = "adisyonex_feedback_draft";
+
+function getStoredDraft(): {
+  title: string;
+  message: string;
+  category?: FeedbackCategoryType;
+} {
+  if (typeof window === "undefined") return { title: "", message: "" };
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { title: "", message: "" };
+}
+
+function saveDraft(data: {
+  title: string;
+  message: string;
+  category: FeedbackCategoryType;
+}) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function clearDraft() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch {}
+}
+
+export function detectClientEnvironment() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return {
+      device: "Bilinmiyor",
+      os: "Bilinmiyor",
+      browser: "Bilinmiyor",
+      screenResolution: "",
+      path: "",
+      userAgent: "",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  const ua = navigator.userAgent || "";
+  const platform =
+    (navigator as any).userAgentData?.platform || navigator.platform || "";
+  let os = "Bilinmiyor";
+  let device = "Masaüstü Bilgisayar";
+  let browser = "Web Tarayıcısı";
+
+  // 1. Tarayıcı Tespiti
+  if (/Edg\/(\d+[\.\d]*)/.test(ua)) {
+    browser = `Microsoft Edge ${RegExp.$1.split(".")[0]}`;
+  } else if (
+    /Chrome\/(\d+[\.\d]*)/.test(ua) &&
+    !/Chromium|Edg|OPR|Brave/.test(ua)
+  ) {
+    browser = `Google Chrome ${RegExp.$1.split(".")[0]}`;
+  } else if (
+    /Safari\/(\d+[\.\d]*)/.test(ua) &&
+    !/Chrome|Chromium|Edg|OPR|Android/.test(ua)
+  ) {
+    const v = /Version\/(\d+[\.\d]*)/.exec(ua);
+    browser = `Apple Safari ${v ? v[1].split(".")[0] : ""}`.trim();
+  } else if (/Firefox\/(\d+[\.\d]*)/.test(ua)) {
+    browser = `Mozilla Firefox ${RegExp.$1.split(".")[0]}`;
+  } else if (/OPR\/(\d+[\.\d]*)/.test(ua)) {
+    browser = `Opera ${RegExp.$1.split(".")[0]}`;
+  }
+
+  // 2. Apple Silicon / M-Serisi Tespiti (WebGL Renderer üzerinden Apple GPU)
+  let isAppleSilicon = false;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl =
+      canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (gl && "getExtension" in gl) {
+      const debugInfo = (gl as WebGLRenderingContext).getExtension(
+        "WEBGL_debug_renderer_info"
+      );
+      if (debugInfo) {
+        const renderer = (gl as WebGLRenderingContext).getParameter(
+          debugInfo.UNMASKED_RENDERER_WEBGL
+        );
+        if (
+          typeof renderer === "string" &&
+          (renderer.includes("Apple") ||
+            renderer.includes("M1") ||
+            renderer.includes("M2") ||
+            renderer.includes("M3") ||
+            renderer.includes("M4"))
+        ) {
+          isAppleSilicon = true;
+        }
+      }
+    }
+  } catch {}
+
+  // 3. İşletim Sistemi ve Cihaz Tespiti
+  if (/Macintosh|Mac OS X|MacIntel/i.test(ua) || /Mac/i.test(platform)) {
+    if (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) {
+      device = "Apple iPad";
+      os = "iPadOS";
+    } else if (isAppleSilicon) {
+      device = "Apple Mac (Apple Silicon / M-Serisi)";
+      os = "macOS (Apple Silicon)";
+    } else {
+      device = "Apple Mac";
+      os = "macOS";
+    }
+  } else if (/iPhone/i.test(ua)) {
+    device = "Apple iPhone";
+    os = "iOS";
+  } else if (/Android/i.test(ua)) {
+    device = "Android Cihaz";
+    os = "Android";
+  } else if (/Windows/i.test(ua) || /Win/i.test(platform)) {
+    device = "Windows Bilgisayar";
+    os = "Windows 11 / 10";
+  } else if (/Linux/i.test(ua)) {
+    device = "Linux Bilgisayar";
+    os = "Linux";
+  }
+
+  return {
+    device,
+    os,
+    browser,
+    screenResolution: `${window.screen.width}x${window.screen.height}`,
+    path: window.location.pathname || "/",
+    userAgent: ua,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 export function FeedbackModal({
   isOpen,
   onClose,
@@ -117,9 +255,12 @@ export function FeedbackModal({
   initialAttachments = [],
   onRequestScreenCapture,
 }: FeedbackModalProps) {
-  const [category, setCategory] = useState<FeedbackCategoryType>(initialCategory);
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [category, setCategory] = useState<FeedbackCategoryType>(() => {
+    const draft = getStoredDraft();
+    return draft.category || initialCategory;
+  });
+  const [title, setTitle] = useState<string>(() => getStoredDraft().title || "");
+  const [message, setMessage] = useState<string>(() => getStoredDraft().message || "");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +291,21 @@ export function FeedbackModal({
       });
     }
   }, [initialAttachments]);
+
+  const handleTitleChange = (val: string) => {
+    setTitle(val);
+    saveDraft({ title: val, message, category });
+  };
+
+  const handleMessageChange = (val: string) => {
+    setMessage(val);
+    saveDraft({ title, message: val, category });
+  };
+
+  const handleCategoryChange = (cat: FeedbackCategoryType) => {
+    setCategory(cat);
+    saveDraft({ title, message, category: cat });
+  };
 
   // Handle device image selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,17 +350,7 @@ export function FeedbackModal({
 
     setIsSubmitting(true);
     try {
-      const deviceInfo = {
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-        browser: typeof navigator !== "undefined" ? navigator.userAgent : "",
-        os: typeof navigator !== "undefined" ? navigator.platform : "",
-        screenResolution:
-          typeof window !== "undefined"
-            ? `${window.screen.width}x${window.screen.height}`
-            : "",
-        path: typeof window !== "undefined" ? window.location.pathname : "",
-        timestamp: new Date().toISOString(),
-      };
+      const deviceInfo = detectClientEnvironment();
 
       const res = await submitFeedbackAction({
         category,
@@ -216,9 +362,10 @@ export function FeedbackModal({
 
       if (res.success) {
         toast.success("Geri bildiriminiz başarıyla iletildi! 🎉", {
-          description: "Görüş ve bildiriminiz için teşekkür ederiz. İlgili ekip inceleyecektir.",
+          description:
+            "Görüş ve bildiriminiz için teşekkür ederiz. İlgili ekip inceleyecektir.",
         });
-        // Reset form
+        clearDraft();
         setTitle("");
         setMessage("");
         setAttachments([]);
@@ -275,7 +422,7 @@ export function FeedbackModal({
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => setCategory(cat.id)}
+                    onClick={() => handleCategoryChange(cat.id)}
                     className={cn(
                       "flex flex-col items-center text-center p-3 rounded-2xl border-2 transition-all cursor-pointer select-none",
                       isSelected
@@ -307,7 +454,7 @@ export function FeedbackModal({
             <Input
               id="fb-title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder={CATEGORY_PLACEHOLDERS[category].title}
               className="h-11 rounded-xl text-sm font-medium border-gray-300 focus-visible:ring-indigo-500"
               maxLength={120}
@@ -323,7 +470,7 @@ export function FeedbackModal({
             <Textarea
               id="fb-msg"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => handleMessageChange(e.target.value)}
               placeholder={CATEGORY_PLACEHOLDERS[category].message}
               rows={4}
               className="rounded-xl text-sm font-normal border-gray-300 focus-visible:ring-indigo-500 resize-none"

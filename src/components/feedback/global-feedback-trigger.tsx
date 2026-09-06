@@ -205,26 +205,26 @@ export function GlobalFeedbackTrigger() {
       {isCaptureBarVisible && (
         <aside
           aria-label="Ekran Yakalama Çubuğu"
-          className="global-feedback-trigger fixed bottom-5 left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-50 flex items-center gap-1.5 transition-all"
+          className="global-feedback-trigger fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center transition-all w-full px-4 max-w-lg pointer-events-none"
         >
-          <div className="flex items-center gap-2 p-2 rounded-full bg-slate-900/95 text-white backdrop-blur-md border border-slate-700/90 shadow-[0_12px_28px_-6px_rgba(0,0,0,0.4),0_8px_10px_-6px_rgba(0,0,0,0.3)] animate-in fade-in slide-in-from-bottom-3 duration-200">
-            {/* Ekran Görüntüsü Çek Butonu */}
+          <div className="pointer-events-auto flex items-center justify-between gap-3 w-full p-2.5 sm:p-3 rounded-full bg-slate-950/95 text-white backdrop-blur-xl border border-red-500/40 shadow-[0_16px_36px_-6px_rgba(220,38,38,0.35),0_12px_24px_-4px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-200">
+            {/* Geniş, Ortalı ve Kırmızı Ekran Görüntüsü Çek Butonu */}
             <button
               type="button"
               onClick={handleDirectCapture}
               disabled={isCapturing}
               title="Tarayıcı izni ile bu ekranın görüntüsünü al"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all cursor-pointer group shrink-0 active:scale-95 disabled:opacity-50 shadow-xs"
+              className="flex-1 flex items-center justify-center gap-2.5 h-12 px-6 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-black transition-all cursor-pointer group shadow-lg shadow-red-600/30 active:scale-98 disabled:opacity-50"
             >
               {isCapturing ? (
-                <Loader2Icon className="size-4 animate-spin" />
+                <Loader2Icon className="size-5 animate-spin" />
               ) : (
-                <CameraIcon className="size-4 transition-transform group-hover:scale-110" />
+                <CameraIcon className="size-5 transition-transform group-hover:scale-110" />
               )}
-              <span>
+              <span className="tracking-wide">
                 {capturedScreenshots.length > 0
-                  ? `Ekran Görüntüsü Çek (${capturedScreenshots.length})`
-                  : "Ekran Görüntüsü Çek"}
+                  ? `📸 Ekran Görüntüsü Çek (${capturedScreenshots.length})`
+                  : "📸 Ekran Görüntüsü Çek"}
               </span>
             </button>
 
@@ -233,15 +233,13 @@ export function GlobalFeedbackTrigger() {
               <button
                 type="button"
                 onClick={handleOpenModalWithScreenshots}
-                title="Çekilen ekran görüntülerini forma aktar ve geri bildirim formunu aç"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 animate-in zoom-in-95 duration-150"
+                title="Çekilen ekran görüntülerini forma aktar ve formu aç"
+                className="flex items-center justify-center gap-1.5 h-12 px-5 rounded-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-black transition-all cursor-pointer shadow-md shadow-emerald-600/30 active:scale-95 shrink-0 animate-in zoom-in-95 duration-150"
               >
-                <SendIcon className="size-3.5" />
-                <span>Gönder ({capturedScreenshots.length})</span>
+                <SendIcon className="size-4" />
+                <span>Forma Aktar ({capturedScreenshots.length})</span>
               </button>
             )}
-
-            <div className="h-4 w-px bg-slate-700 mx-0.5" />
 
             {/* Kapatma ('X') Butonu */}
             <button
@@ -251,10 +249,10 @@ export function GlobalFeedbackTrigger() {
                 setCapturedScreenshots([]);
                 toast.info("Ekran görüntüsü yakalama çubuğu kapatıldı.");
               }}
-              title="Ekran görüntüsü yakalama çubuğunu kapat"
-              className="size-8 rounded-full flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+              title="Kapat"
+              className="size-10 rounded-full flex items-center justify-center bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
             >
-              <XIcon className="size-4" />
+              <XIcon className="size-5" />
             </button>
           </div>
         </aside>

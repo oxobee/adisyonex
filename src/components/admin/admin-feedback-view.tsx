@@ -620,12 +620,28 @@ export function AdminFeedbackView({ initialFeedbacks }: AdminFeedbackViewProps) 
                       <LaptopIcon className="size-4 text-indigo-600" />
                       <span>Cihaz ve Tarayıcı Ortamı</span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                      {selectedFeedback.deviceInfo.device && (
+                        <div>
+                          <span className="text-gray-400 text-[11px] block">Cihaz Türü:</span>
+                          <span className="font-bold text-gray-800">
+                            {selectedFeedback.deviceInfo.device}
+                          </span>
+                        </div>
+                      )}
                       {selectedFeedback.deviceInfo.os && (
                         <div>
                           <span className="text-gray-400 text-[11px] block">İşletim Sistemi:</span>
                           <span className="font-bold text-gray-800">
                             {selectedFeedback.deviceInfo.os}
+                          </span>
+                        </div>
+                      )}
+                      {selectedFeedback.deviceInfo.browser && (
+                        <div>
+                          <span className="text-gray-400 text-[11px] block">Tarayıcı:</span>
+                          <span className="font-bold text-gray-800">
+                            {selectedFeedback.deviceInfo.browser}
                           </span>
                         </div>
                       )}
