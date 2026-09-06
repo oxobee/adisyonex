@@ -1,6 +1,6 @@
 /**
  * Unified Thermal Printer Client Abstraction
- * Supports LOCAL_OS (via QZ Tray / local print agent) and NETWORK (direct TCP socket).
+ * Powered by official QZ Tray integration.
  * Decoupled from UI components to allow future swap-in of custom native agents.
  */
 
@@ -20,127 +20,57 @@ export interface DetectedPrintersResult {
 }
 
 /**
- * Low-level QZ Tray / Local Agent WebSocket client
+ * Dynamically loads official qz-tray module in client-side environment only.
  */
-class QzTrayConnector {
-  private ws: WebSocket | null = null;
-  private reqId: number = 0;
-  private pending = new Map<
-    number,
-    { resolve: (val: unknown) => void; reject: (err: Error) => void }
-  >();
-
-  private connect(): Promise<WebSocket> {
-    return new Promise((resolve, reject) => {
-      if (typeof window === "undefined") {
-        return reject(new Error("Browser environment required for QZ Tray."));
-      }
-
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        return resolve(this.ws);
-      }
-
-      // Standard QZ Tray local ports (8182 unsecure, 8181 secure)
-      const ports = [8182, 8181];
-      let currentPortIndex = 0;
-
-      const tryNext = () => {
-        if (currentPortIndex >= ports.length) {
-          return reject(
-            new Error(
-              "QZ Tray servisi bulunamadı. Lütfen bilgisayarınızda QZ Tray uygulamasını çalıştırın."
-            )
-          );
-        }
-
-        const port = ports[currentPortIndex++];
-        const protocol = port === 8181 ? "wss" : "ws";
-        const url = `${protocol}://localhost:${port}`;
-
-        try {
-          const socket = new WebSocket(url);
-          const timer = setTimeout(() => {
-            socket.close();
-            tryNext();
-          }, 1500);
-
-          socket.onopen = () => {
-            clearTimeout(timer);
-            this.ws = socket;
-            this.setupListeners(socket);
-            resolve(socket);
-          };
-
-          socket.onerror = () => {
-            clearTimeout(timer);
-            socket.close();
-            tryNext();
-          };
-        } catch {
-          tryNext();
-        }
-      };
-
-      tryNext();
-    });
+async function getQz() {
+  if (typeof window === "undefined") {
+    throw new Error("QZ Tray sadece tarayıcı ortamında çalışır.");
   }
-
-  private setupListeners(socket: WebSocket) {
-    socket.onmessage = (event) => {
-      try {
-        const res = JSON.parse(event.data);
-        if (res.uid && this.pending.has(res.uid)) {
-          const { resolve, reject } = this.pending.get(res.uid)!;
-          this.pending.delete(res.uid);
-          if (res.error) {
-            reject(new Error(res.error));
-          } else {
-            resolve(res.result);
-          }
-        }
-      } catch {
-        // ignore malformed frame
-      }
-    };
-
-    socket.onclose = () => {
-      this.ws = null;
-    };
-  }
-
-  async sendRequest<T = unknown>(call: string, params: unknown[] = []): Promise<T> {
-    const socket = await this.connect();
-    const uid = ++this.reqId;
-
-    const payload = JSON.stringify({
-      call,
-      params,
-      uid,
-      timestamp: Date.now(),
-    });
-
-    return new Promise<T>((resolve, reject) => {
-      this.pending.set(uid, {
-        resolve: resolve as (val: unknown) => void,
-        reject,
-      });
-      socket.send(payload);
-
-      setTimeout(() => {
-        if (this.pending.has(uid)) {
-          this.pending.delete(uid);
-          reject(new Error("Yazıcı yanıt zaman aşımına uğradı."));
-        }
-      }, 7000);
-    });
-  }
+  const qzMod = await import("qz-tray");
+  return qzMod.default || qzMod;
 }
 
-const connector = new QzTrayConnector();
+/**
+ * Ensures a healthy active connection with local QZ Tray instance.
+ */
+async function ensureQzConnected() {
+  const qz = await getQz();
+  if (qz.websocket.isActive()) {
+    return qz;
+  }
+
+  try {
+    // retries: 3, delay: 1 gives enough time for QZ Tray dialog prompt
+    await qz.websocket.connect({ retries: 3, delay: 1 });
+  } catch (err: unknown) {
+    if (qz.websocket.isActive()) {
+      return qz;
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      msg.includes("already exists") ||
+      msg.includes("already connected") ||
+      msg.includes("already active")
+    ) {
+      return qz;
+    }
+
+    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+    const sslHint = isHttps
+      ? " HTTPS üzerinde çalışıyorsanız, bir kereye mahsus yeni sekmede https://localhost:8181 adresini açıp 'Gelişmiş -> localhost sitesine ilerle' seçeneğini onaylamanız gerekebilir."
+      : "";
+
+    throw new Error(
+      `QZ Tray servisine bağlanılamadı. Lütfen QZ Tray uygulamasının çalıştığından ve izin penceresinde 'İzin Ver' (Allow) seçtiğinizden emin olun.${sslHint}`
+    );
+  }
+
+  return qz;
+}
 
 export class PrinterClient {
   /**
-   * Scans for all printers installed on the local operating system.
+   * Scans for all printers installed on the local operating system via QZ Tray.
    */
   static async detectPrinters(): Promise<DetectedPrintersResult> {
     try {
@@ -148,11 +78,12 @@ export class PrinterClient {
         return { available: false, printers: [] };
       }
 
-      // Try QZ Tray native call
-      const printers = await connector.sendRequest<string[]>("printers.find");
+      const qz = await ensureQzConnected();
+      const printers = await qz.printers.find();
+      const list = Array.isArray(printers) ? printers : [];
       return {
         available: true,
-        printers: Array.isArray(printers) ? printers : [],
+        printers: list,
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Yazıcılar taranamadı.";
@@ -192,13 +123,21 @@ export class PrinterClient {
       }
 
       try {
-        await connector.sendRequest("print", [
-          { name: printerName },
-          [{ type: "raw", format: "plain", data: rawText }],
+        const qz = await ensureQzConnected();
+        const config = qz.configs.create(printerName, {
+          encoding: "windows-1254",
+        });
+        await qz.print(config, [
+          {
+            type: "raw",
+            format: "command",
+            flavor: "plain",
+            data: rawText,
+          },
         ]);
         return {
           success: true,
-          message: `${printerName} yazıcısına başarıyla gönderildi.`,
+          message: `'${printerName}' yazıcısına başarıyla gönderildi.`,
         };
       } catch (err) {
         return {
@@ -219,12 +158,19 @@ export class PrinterClient {
         };
       }
 
-      // Network printer dispatch via local agent or server bridge
       try {
-        // Attempt sending via local QZ socket or server endpoint if available
-        await connector.sendRequest("print", [
-          { host: zone.printerIp, port: zone.printerPort || 9100 },
-          [{ type: "raw", format: "plain", data: rawText }],
+        const qz = await ensureQzConnected();
+        const config = qz.configs.create({
+          host: zone.printerIp,
+          port: String(zone.printerPort || 9100),
+        });
+        await qz.print(config, [
+          {
+            type: "raw",
+            format: "command",
+            flavor: "plain",
+            data: rawText,
+          },
         ]);
         return {
           success: true,

@@ -497,13 +497,19 @@ export function ManageZonesDialog({
                               {scanStatus === "connected" && (
                                 <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                                   <CheckCircle2Icon className="size-3" />
-                                  QZ Tray Bağlı
+                                  QZ Tray Bağlı ({availablePrinters.length})
                                 </span>
                               )}
                               {scanStatus === "disconnected" && (
                                 <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold">
                                   <AlertCircleIcon className="size-3" />
                                   QZ Tray Çevrimdışı
+                                </span>
+                              )}
+                              {isScanningPrinters && (
+                                <span className="flex items-center gap-1 text-[10px] text-primary font-bold">
+                                  <RefreshCwIcon className="size-3 animate-spin" />
+                                  Taranıyor...
                                 </span>
                               )}
                               <Button
@@ -521,31 +527,55 @@ export function ManageZonesDialog({
                           </div>
 
                           {availablePrinters.length > 0 ? (
-                            <select
-                              id="p-sysname"
-                              value={printerSystemName}
-                              onChange={(e) => setPrinterSystemName(e.target.value)}
-                              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
-                            >
-                              <option value="">-- Yazıcı Seçin --</option>
-                              {availablePrinters.map((p) => (
-                                <option key={p} value={p}>
-                                  {p}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="flex gap-2">
+                              <select
+                                id="p-sysname"
+                                value={printerSystemName}
+                                onChange={(e) => setPrinterSystemName(e.target.value)}
+                                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+                              >
+                                <option value="">-- Yazıcı Seçin --</option>
+                                {availablePrinters.map((p) => (
+                                  <option key={p} value={p}>
+                                    {p}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           ) : (
                             <Input
                               id="p-sysname"
                               value={printerSystemName}
                               onChange={(e) => setPrinterSystemName(e.target.value)}
-                              placeholder="Örn: EPSON TM-T20III veya XP-80C"
+                              placeholder="Örn: XP-80C veya EPSON TM-T20III"
                               className="rounded-xl font-medium text-xs bg-background"
                             />
                           )}
 
+                          {scanStatus === "disconnected" && (
+                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-900 dark:text-amber-300 flex flex-col gap-1">
+                              <span>
+                                QZ Tray servisine bağlanılamadı. QZ Tray masaüstü uygulamasının açık olduğundan ve izin penceresinde <strong>&quot;Allow / İzin Ver&quot;</strong> dediğinizden emin olun.
+                              </span>
+                              {typeof window !== "undefined" && window.location.protocol === "https:" && (
+                                <span>
+                                  💡 <strong>HTTPS İpucu:</strong> Tarayıcınızda bir defaya mahsus{" "}
+                                  <a
+                                    href="https://localhost:8181"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline font-bold text-amber-900 dark:text-amber-200"
+                                  >
+                                    https://localhost:8181
+                                  </a>{" "}
+                                  adresine gidip <em>&quot;Gelişmiş &rarr; localhost sitesine ilerle (güvenli değil)&quot;</em> izni vermeniz gerekebilir.
+                                </span>
+                              )}
+                            </div>
+                          )}
+
                           <span className="text-[10px] text-muted-foreground">
-                            İşletim sisteminde kurulu termal yazıcının adı (USB / Seri / Bluetooth / Paylaşılan).
+                            İşletim sisteminde kurulu termal yazıcının adı (USB / Seri / Bluetooth / Paylaşılan). Manuel olarak da yazabilirsiniz.
                           </span>
                         </div>
                       )}
