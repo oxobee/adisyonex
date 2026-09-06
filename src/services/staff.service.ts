@@ -35,7 +35,31 @@ export interface StaffContext {
 
 const iso = (d: Date | null): string | null => (d ? d.toISOString() : null);
 
-export const mapStaff = (s: Staff): StaffDTO => ({
+export const mapStaff = (
+  s: Staff & {
+    customRole?: {
+      id: string;
+      restaurantId: string;
+      name: string;
+      description: string | null;
+      isDefault: boolean;
+      sortOrder: number;
+    } | null;
+    zone?: {
+      id: string;
+      restaurantId: string;
+      name: string;
+      code: string | null;
+      description: string | null;
+      color: string | null;
+      printerIp: string | null;
+      printerPort: number | null;
+      printerModel: string | null;
+      isDefault: boolean;
+      sortOrder: number;
+    } | null;
+  }
+): StaffDTO => ({
   id: s.id,
   employeeCode: s.employeeCode,
   name: s.name,
@@ -59,6 +83,33 @@ export const mapStaff = (s: Staff): StaffDTO => ({
   jobTitle: s.jobTitle,
   allowedRoutes: (s.allowedRoutes as string[] | null) ?? null,
   hasPin: Boolean(s.pinHash),
+  customRoleId: s.customRoleId ?? null,
+  customRole: s.customRole
+    ? {
+        id: s.customRole.id,
+        restaurantId: s.customRole.restaurantId,
+        name: s.customRole.name,
+        description: s.customRole.description,
+        isDefault: s.customRole.isDefault,
+        sortOrder: s.customRole.sortOrder,
+      }
+    : null,
+  zoneId: s.zoneId ?? null,
+  zone: s.zone
+    ? {
+        id: s.zone.id,
+        restaurantId: s.zone.restaurantId,
+        name: s.zone.name,
+        code: s.zone.code,
+        description: s.zone.description,
+        color: s.zone.color,
+        printerIp: s.zone.printerIp,
+        printerPort: s.zone.printerPort,
+        printerModel: s.zone.printerModel,
+        isDefault: s.zone.isDefault,
+        sortOrder: s.zone.sortOrder,
+      }
+    : null,
 });
 
 const toWriteData = (
@@ -83,6 +134,8 @@ const toWriteData = (
   emergencyContactPhone: input.emergencyContactPhone ?? null,
   notes: input.notes ?? null,
   jobTitle: input.jobTitle ?? null,
+  customRoleId: input.customRoleId ?? null,
+  zoneId: input.zoneId ?? null,
   allowedRoutes: input.allowedRoutes ?? null,
 });
 

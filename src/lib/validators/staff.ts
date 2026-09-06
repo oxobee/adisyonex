@@ -45,6 +45,8 @@ const profileFields = {
   emergencyContactPhone: optionalText(20),
   notes: optionalText(300),
   jobTitle: optionalText(80),
+  customRoleId: z.string().trim().nullable().optional(),
+  zoneId: z.string().trim().nullable().optional(),
   allowedRoutes: z.array(z.string()).optional(),
 };
 

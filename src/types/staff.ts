@@ -3,6 +3,29 @@ export type StaffStatus = "ACTIVE" | "ON_LEAVE" | "INACTIVE";
 export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT";
 export type Gender = "MALE" | "FEMALE" | "OTHER";
 
+export interface RestaurantStaffRoleDTO {
+  readonly id: string;
+  readonly restaurantId: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly isDefault: boolean;
+  readonly sortOrder: number;
+}
+
+export interface RestaurantZoneDTO {
+  readonly id: string;
+  readonly restaurantId: string;
+  readonly name: string;
+  readonly code: string | null;
+  readonly description: string | null;
+  readonly color: string | null;
+  readonly printerIp: string | null;
+  readonly printerPort: number | null;
+  readonly printerModel: string | null;
+  readonly isDefault: boolean;
+  readonly sortOrder: number;
+}
+
 export interface StaffDTO {
   readonly id: string;
   readonly employeeCode: string;
@@ -27,4 +50,8 @@ export interface StaffDTO {
   readonly jobTitle: string | null;
   readonly allowedRoutes: readonly string[] | null;
   readonly hasPin: boolean;
+  readonly customRoleId?: string | null;
+  readonly customRole?: RestaurantStaffRoleDTO | null;
+  readonly zoneId?: string | null;
+  readonly zone?: RestaurantZoneDTO | null;
 }

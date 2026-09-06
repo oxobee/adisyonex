@@ -57,6 +57,7 @@ describe("staffRepository", () => {
         pinHash: "hash",
         employeeCode: "E1",
       }),
+      include: { customRole: true, zone: true },
     });
   });
 
@@ -67,6 +68,7 @@ describe("staffRepository", () => {
 
     expect(findMany).toHaveBeenCalledWith({
       where: { restaurantId: "res_1", deletedAt: null },
+      include: { customRole: true, zone: true },
       orderBy: [{ role: "asc" }, { name: "asc" }],
     });
   });

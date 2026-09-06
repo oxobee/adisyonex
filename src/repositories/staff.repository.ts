@@ -28,13 +28,29 @@ export interface StaffWriteData {
   emergencyContactPhone: string | null;
   notes: string | null;
   jobTitle?: string | null;
+  customRoleId?: string | null;
+  zoneId?: string | null;
   allowedRoutes?: string[] | null;
 }
 
-const toPrismaData = (data: StaffWriteData) => {
-  const { allowedRoutes, ...rest } = data;
+const toPrismaData = (data: StaffWriteData, isUpdate = false) => {
+  const { allowedRoutes, customRoleId, zoneId, ...rest } = data;
   return {
     ...rest,
+    ...(customRoleId !== undefined
+      ? customRoleId
+        ? { customRole: { connect: { id: customRoleId } } }
+        : isUpdate
+        ? { customRole: { disconnect: true } }
+        : {}
+      : {}),
+    ...(zoneId !== undefined
+      ? zoneId
+        ? { zone: { connect: { id: zoneId } } }
+        : isUpdate
+        ? { zone: { disconnect: true } }
+        : {}
+      : {}),
     ...(allowedRoutes !== undefined
       ? {
           allowedRoutes:
@@ -50,27 +66,36 @@ export const createStaff = (
   restaurantId: string,
   data: StaffWriteData,
   pinHash: string,
-): Promise<Staff> =>
+): Promise<StaffWithRelations> =>
   prisma.staff.create({
     data: {
       restaurant: { connect: { id: restaurantId } },
       pinHash,
-      ...toPrismaData(data),
+      ...toPrismaData(data, false),
     },
-  });
+    include: { customRole: true, zone: true },
+  }) as unknown as Promise<StaffWithRelations>;
 
-export const updateStaff = (id: string, data: StaffWriteData): Promise<Staff> =>
-  prisma.staff.update({ where: { id }, data: toPrismaData(data) });
+export const updateStaff = (
+  id: string,
+  data: StaffWriteData
+): Promise<StaffWithRelations> =>
+  prisma.staff.update({
+    where: { id },
+    data: toPrismaData(data, true),
+    include: { customRole: true, zone: true },
+  }) as unknown as Promise<StaffWithRelations>;
 
 export const reviveStaff = (
   id: string,
   data: StaffWriteData,
   pinHash: string,
-): Promise<Staff> =>
+): Promise<StaffWithRelations> =>
   prisma.staff.update({
     where: { id },
     data: { ...toPrismaData(data), pinHash, deletedAt: null },
-  });
+    include: { customRole: true, zone: true },
+  }) as unknown as Promise<StaffWithRelations>;
 
 export const softDeleteStaff = (id: string): Promise<Staff> =>
   prisma.staff.update({ where: { id }, data: { deletedAt: new Date() } });
@@ -112,11 +137,18 @@ export const findStaffByEmployeeCode = (
     where: { restaurantId_employeeCode: { restaurantId, employeeCode } },
   });
 
-export const findStaffByRestaurant = (restaurantId: string): Promise<Staff[]> =>
+export type StaffWithRelations = Prisma.StaffGetPayload<{
+  include: { customRole: true; zone: true };
+}>;
+
+export const findStaffByRestaurant = (
+  restaurantId: string
+): Promise<StaffWithRelations[]> =>
   prisma.staff.findMany({
     where: { restaurantId, deletedAt: null },
+    include: { customRole: true, zone: true },
     orderBy: [{ role: "asc" }, { name: "asc" }],
-  });
+  }) as unknown as Promise<StaffWithRelations[]>;
 
 /**
  * Find every active (non-deleted, ACTIVE status) staff row that matches the

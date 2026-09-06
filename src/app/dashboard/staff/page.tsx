@@ -4,6 +4,10 @@ import { StaffManager } from "@/components/staff/staff-manager";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { listStaff } from "@/services/staff.service";
+import {
+  listRestaurantStaffRoles,
+  listRestaurantZones,
+} from "@/services/zone-and-role.service";
 
 export default async function StaffPage() {
   const [ctx, staffCtx] = await Promise.all([
@@ -27,6 +31,17 @@ export default async function StaffPage() {
     );
   }
 
-  const staff = await listStaff(restaurantId);
-  return <StaffManager staff={staff} />;
+  const [staff, roles, zones] = await Promise.all([
+    listStaff(restaurantId),
+    listRestaurantStaffRoles(restaurantId),
+    listRestaurantZones(restaurantId),
+  ]);
+
+  return (
+    <StaffManager
+      staff={staff}
+      initialRoles={roles}
+      initialZones={zones}
+    />
+  );
 }

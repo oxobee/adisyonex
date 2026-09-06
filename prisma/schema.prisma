@@ -265,6 +265,8 @@ model Restaurant {
   modules        RestaurantModule[]
   notifications  RestaurantNotification[]
   feedbacks      Feedback[]
+  zones          RestaurantZone[]
+  staffRoles     RestaurantStaffRole[]
 
   salesRepId     String?
   salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
@@ -780,7 +782,57 @@ model Staff {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
+  customRoleId String?
+  customRole   RestaurantStaffRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+
+  zoneId       String?
+  zone         RestaurantZone?      @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+
   @@unique([restaurantId, employeeCode])
+  @@index([restaurantId])
+  @@index([customRoleId])
+  @@index([zoneId])
+}
+
+/// Dynamic staff roles per restaurant (e.g. Aşçı, Garson, Kasiyer, Barista, Mutfak Şefi, etc.)
+model RestaurantStaffRole {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  description  String?
+  isDefault    Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  staff        Staff[]
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+}
+
+/// Operational zones/stations per restaurant (e.g. Mutfak, Bar, Kasa, Salon, Teras, etc.)
+/// Built with hardware/printer routing fields for thermal printer & KDS integration.
+model RestaurantZone {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  code         String?
+  description  String?
+  color        String?
+  printerIp    String?
+  printerPort  Int?
+  printerModel String?
+  isDefault    Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  staff        Staff[]
+
+  @@unique([restaurantId, name])
   @@index([restaurantId])
 }
 
