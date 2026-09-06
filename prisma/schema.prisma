@@ -264,6 +264,7 @@ model Restaurant {
   cashMovements  CashMovement[]
   modules        RestaurantModule[]
   notifications  RestaurantNotification[]
+  feedbacks      Feedback[]
 
   salesRepId     String?
   salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
@@ -1192,6 +1193,48 @@ model RestaurantNotification {
 
   @@index([restaurantId])
   @@index([isRead])
+}
+
+enum FeedbackCategory {
+  SUGGESTION
+  REQUEST
+  COMPLAINT
+  BUG
+}
+
+enum FeedbackStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  REJECTED
+}
+
+/// User feedback, suggestions, requests, complaints, and bug reports
+model Feedback {
+  id           String           @id @default(cuid())
+  restaurantId String
+  userId       String?
+  userName     String?
+  userEmail    String?
+  userPhone    String?
+  category     FeedbackCategory @default(SUGGESTION)
+  title        String
+  message      String
+  attachments  String[]         @default([])
+  deviceInfo   Json?
+
+  status       FeedbackStatus   @default(PENDING)
+  adminNote    String?
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
 }
 
 

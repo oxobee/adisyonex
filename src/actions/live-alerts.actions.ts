@@ -205,3 +205,31 @@ export async function markAdminNotificationReadAction(notificationId: string): P
     return failure("Bildirim güncellenemedi");
   }
 }
+
+export async function toggleAdminNotificationReadAction(
+  notificationId: string,
+  isRead: boolean
+): Promise<ActionResult<void>> {
+  try {
+    await prisma.restaurantNotification.update({
+      where: { id: notificationId },
+      data: { isRead, readAt: isRead ? new Date() : null },
+    });
+    return success(undefined);
+  } catch (e) {
+    return failure("Bildirim durumu güncellenemedi");
+  }
+}
+
+export async function deleteAdminNotificationAction(
+  notificationId: string
+): Promise<ActionResult<void>> {
+  try {
+    await prisma.restaurantNotification.delete({
+      where: { id: notificationId },
+    });
+    return success(undefined);
+  } catch (e) {
+    return failure("Bildirim silinemedi");
+  }
+}

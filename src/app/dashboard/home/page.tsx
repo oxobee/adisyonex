@@ -204,115 +204,40 @@ export default async function HomePage() {
         restaurant?.city || restaurant?.branchName,
       );
 
-      // Kategorize Edilmiş Gerçek Canlı Bildirimler (Öncelikli)
-      const notifications: HomeNotificationItem[] = [];
+      // Yalnızca Süper Admin tarafından gönderilen Sistem Bildirimleri
+      const dbNotifications = await prisma.restaurantNotification.findMany({
+        where: { restaurantId },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
 
-      // 1. ÖNCELİKLİ: Garson Çağrıları ([GARSON_CAGIRILDI])
-      const waiterCalls = urgentOrders.filter((o) => o.note?.includes("GARSON"));
-      for (const o of waiterCalls) {
-        const tableTxt = o.table?.label || o.tableLabel || `#${o.orderNumber}`;
-        notifications.push({
-          id: `waiter-${o.id}`,
-          type: "table",
-          title: `🛎️ Masa ${tableTxt} Garson Çağırıyor!`,
-          description: "Müşteri servis personeli bekliyor. Lütfen masaya yönleniniz.",
-          timeAgo: "Acil",
-          targetUrl: "/dashboard/orders",
-        });
-      }
-
-      // 2. ÖNCELİKLİ: Hesap İsteme Bildirimleri (billRequestedAt)
-      const billRequests = urgentOrders.filter((o) => !!o.billRequestedAt);
-      for (const o of billRequests) {
-        const tableTxt = o.table?.label || o.tableLabel || `#${o.orderNumber}`;
-        notifications.push({
-          id: `bill-${o.id}`,
-          type: "order",
-          title: `💳 Masa ${tableTxt} Hesap İstiyor`,
-          description: "Müşteri hesap/pos fişi talep etti, adisyon kapatmaya hazır.",
-          timeAgo: "Hesap",
-          targetUrl: "/dashboard/orders",
-        });
-      }
-
-      // 3. ÖNCELİKLİ: Mutfaktan Yeni Çıkan Hazır Ürünler (PREPARED)
-      for (const item of preparedItemsList) {
-        const tableTxt =
-          item.order?.table?.label || item.order?.tableLabel || `#${item.order?.orderNumber || ""}`;
-        notifications.push({
-          id: `prep-${item.id}`,
-          type: "kitchen",
-          title: `🍽️ ${item.name} Servise Hazır!`,
-          description: `Masa ${tableTxt} için mutfaktan çıktı, masaya teslim ediniz.`,
-          timeAgo: "Hazır",
-          targetUrl: "/dashboard/kitchen",
-        });
-      }
-
-      // 4. Genel Mutfak Hazırlık Özeti Bildirimleri
-      if (waitingItems > 0 && notifications.length < 15) {
-        notifications.push({
-          id: "kitchen-waiting",
-          type: "kitchen",
-          title: `Mutfakta ${waitingItems} Ürün Hazırlanıyor`,
-          description: "KOT fişleri mutfak kuyruğunda beklemede",
-          timeAgo: "Canlı",
-          targetUrl: "/dashboard/kitchen",
-        });
-      }
-
-      // 5. Yeni Gelen Siparişler
-      for (const o of recentOrders) {
+      const notifications: HomeNotificationItem[] = dbNotifications.map((n) => {
         const diffMinutes = Math.max(
           1,
-          Math.round((Date.now() - new Date(o.createdAt).getTime()) / 60000),
+          Math.round((Date.now() - new Date(n.createdAt).getTime()) / 60000),
         );
-        notifications.push({
-          id: `order-${o.id}`,
-          type: "order",
-          title: o.table?.label
-            ? `Masa ${o.table.label} Adisyonu Açıldı`
-            : `Paket Sipariş #${o.orderNumber}`,
-          description:
-            o.orderType === "TAKEAWAY"
-              ? "Paket servis siparişi işleme alındı"
-              : o.orderType === "DELIVERY"
-              ? "Online kurye teslimat adisyonu"
-              : "Masa servisi devam ediyor",
-          timeAgo: `${diffMinutes} dk önce`,
-          targetUrl: "/dashboard/orders",
-        });
-      }
-
-      // 6. Masa Bildirimleri
-      for (const t of activeTablesList) {
-        const orderTime = t.orders[0]?.createdAt;
-        const diffMinutes = orderTime
-          ? Math.max(1, Math.round((Date.now() - new Date(orderTime).getTime()) / 60000))
-          : 5;
-        notifications.push({
-          id: `table-${t.id}`,
-          type: "table",
-          title: `Masa ${t.label} Dolu`,
-          description: `Masa servisi aktif, adisyon işlem görüyor`,
-          timeAgo: `${diffMinutes} dk önce`,
-          targetUrl: "/dashboard/orders",
-        });
-      }
-
-      // 7. Kritik Stok Uyarıları
-      for (const item of stockItems) {
-        if (Number(item.onHand) <= Number(item.reorderLevel)) {
-          notifications.push({
-            id: `stock-${item.id}`,
-            type: "stock",
-            title: `${item.name} Kritik Seviyede`,
-            description: `Kalan: ${item.onHand} ${item.unit} (Kritik Eşik: ${item.reorderLevel})`,
-            timeAgo: "Uyarı",
-            targetUrl: "/dashboard/inventory",
-          });
+        let timeAgo = `${diffMinutes} dk önce`;
+        if (diffMinutes >= 1440) {
+          timeAgo = `${Math.floor(diffMinutes / 1440)} gün önce`;
+        } else if (diffMinutes >= 60) {
+          timeAgo = `${Math.floor(diffMinutes / 60)} sa önce`;
         }
-      }
+
+        return {
+          id: n.id,
+          type: "system",
+          title: n.title,
+          description: n.message,
+          message: n.message,
+          timeAgo,
+          targetUrl: n.buttonUrl || "/dashboard/home",
+          buttonText: n.buttonText,
+          buttonUrl: n.buttonUrl,
+          isRead: n.isRead,
+          createdAt: n.createdAt.toISOString(),
+          readAt: n.readAt ? n.readAt.toISOString() : null,
+        };
+      });
 
       operationalStats = {
         restaurantName,

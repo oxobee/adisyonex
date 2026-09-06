@@ -16,9 +16,11 @@ import {
   CloudLightningIcon,
   CloudRainIcon,
   CloudSunIcon,
+  CameraIcon,
   HeadphonesIcon,
   LockIcon,
   MapPinIcon,
+  MessageSquareQuoteIcon,
   MicIcon,
   SendIcon,
   ServerIcon,
@@ -40,6 +42,10 @@ import {
   HomeNotificationsModal,
   type HomeNotificationItem,
 } from "./home-notifications-modal";
+import {
+  SystemNotificationDetailModal,
+  type SystemNotificationItem,
+} from "./system-notification-detail-modal";
 import { HomeScreenLockModal } from "./home-screen-lock-modal";
 import { SystemActivityLogModal } from "./system-activity-log-modal";
 import {
@@ -136,6 +142,7 @@ export function HomeScreen({
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [selectedDetailNotif, setSelectedDetailNotif] = useState<SystemNotificationItem | null>(null);
 
   // Kalıcı Bildirim Senkronizasyonu (Sayfa yenilendiğinde temizlenen bildirimlerin gelmemesi için)
   const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([]);
@@ -231,32 +238,7 @@ export function HomeScreen({
       iconType: "cloud-sun" as const,
     };
 
-    const notifications: readonly HomeNotificationItem[] = operationalStats?.notifications ?? [
-      {
-        id: "1",
-        type: "order" as const,
-        title: "Yeni online paket siparişi",
-        description: "Mutfak kuyruğuna aktarıldı (#1042)",
-        timeAgo: "2 dk önce",
-        targetUrl: "/dashboard/orders",
-      },
-      {
-        id: "2",
-        type: "table" as const,
-        title: "Masa 4 adisyonu açıldı",
-        description: "4 kişilik masa servisi başladı",
-        timeAgo: "8 dk önce",
-        targetUrl: "/dashboard/orders",
-      },
-      {
-        id: "3",
-        type: "kitchen" as const,
-        title: "Mutfakta 3 sipariş bekliyor",
-        description: "Hazırlık süresi ortalama 10 dk",
-        timeAgo: "12 dk önce",
-        targetUrl: "/dashboard/kitchen",
-      },
-    ];
+    const notifications: readonly HomeNotificationItem[] = operationalStats?.notifications ?? [];
 
     return {
       totalTables,
@@ -740,7 +722,7 @@ export function HomeScreen({
             </div>
           </div>
 
-          {/* KART 3: BİLDİRİMLER (TIKLANINCA POPUP AÇILIR) */}
+          {/* KART 3: SİSTEM BİLDİRİMLERİ (YALNIZCA SÜPER ADMİN) */}
           <div
             className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-2.5"
             style={{ animationDelay: "70ms" }}
@@ -750,57 +732,123 @@ export function HomeScreen({
               className="flex items-center justify-between pb-1 border-b border-gray-100 cursor-pointer group"
             >
               <div className="flex items-center gap-2">
-                <BellIcon className="size-4 text-gray-700 group-hover:text-primary transition-colors" />
+                <BellIcon className="size-4 text-indigo-600 group-hover:text-primary transition-colors" />
                 <h2 className="text-xs sm:text-sm font-black text-gray-900 group-hover:text-primary transition-colors">
-                  Bildirimler
+                  Sistem Bildirimleri
                 </h2>
               </div>
               <span className="flex size-5 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black">
-                {visibleNotifications.length}
+                {visibleNotifications.filter((n) => !n.isRead).length || visibleNotifications.length}
               </span>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {visibleNotifications.slice(0, 3).map((n, i) => (
-                <div
-                  key={n.id || i}
-                  onClick={() => setIsNotifModalOpen(true)}
-                  className="flex items-center justify-between gap-2 cursor-pointer hover:bg-gray-50/80 p-1.5 rounded-xl transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className={cn(
-                        "flex size-5.5 shrink-0 items-center justify-center rounded-full text-white text-[9px] font-black",
-                        n.type === "order"
-                          ? "bg-emerald-500"
-                          : n.type === "table"
-                          ? "bg-blue-500"
-                          : n.type === "kitchen"
-                          ? "bg-orange-500"
-                          : "bg-rose-500"
-                      )}
-                    >
-                      {n.type === "order" ? "S" : n.type === "table" ? "M" : n.type === "kitchen" ? "K" : "!"}
+              {visibleNotifications.length === 0 ? (
+                <div className="py-3 text-center text-xs text-gray-400 font-medium">
+                  Yeni sistem bildirimi bulunmuyor.
+                </div>
+              ) : (
+                visibleNotifications.slice(0, 3).map((n, i) => (
+                  <div
+                    key={n.id || i}
+                    onClick={() => setSelectedDetailNotif(n)}
+                    className={cn(
+                      "flex items-center justify-between gap-2 cursor-pointer p-2 rounded-xl transition-all border",
+                      n.isRead
+                        ? "bg-gray-50/60 border-gray-100 hover:bg-gray-100/70"
+                        : "bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100/60",
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={cn(
+                          "flex size-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black shadow-2xs",
+                          n.isRead
+                            ? "bg-gray-200 text-gray-600"
+                            : "bg-indigo-600 text-white",
+                        )}
+                      >
+                        📢
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-gray-900 truncate">
+                          {n.title}
+                        </span>
+                        <span className="text-[10px] text-gray-500 truncate">
+                          {n.description || n.message}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-xs font-bold text-gray-800 truncate">
-                      {n.title}
+                    <span className="text-[10px] font-semibold text-gray-400 shrink-0">
+                      {n.timeAgo}
                     </span>
                   </div>
-                  <span className="text-[10px] font-medium text-gray-400 shrink-0">
-                    {n.timeAgo}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <button
               type="button"
               onClick={() => setIsNotifModalOpen(true)}
-              className="mt-1 inline-flex items-center justify-between text-xs font-bold text-gray-500 hover:text-primary transition-colors pt-2 border-t border-gray-100 group cursor-pointer"
+              className="mt-1 inline-flex items-center justify-between text-xs font-bold text-gray-500 hover:text-indigo-600 transition-colors pt-2 border-t border-gray-100 group cursor-pointer"
             >
               <span>Tüm bildirimleri göster</span>
               <span className="transition-transform group-hover:translate-x-1">→</span>
             </button>
+          </div>
+
+          {/* KART 4: GERİ BİLDİRİM & İSTEK BİLDİR (SABİT HOME KARTI) */}
+          <div
+            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-indigo-100 border-b-[3px] border-b-indigo-200/80 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/20 shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-2.5"
+            style={{ animationDelay: "100ms" }}
+          >
+            <div className="flex items-center justify-between pb-1 border-b border-indigo-100/60">
+              <div className="flex items-center gap-2">
+                <MessageSquareQuoteIcon className="size-4 text-indigo-600" />
+                <h2 className="text-xs sm:text-sm font-black text-gray-900">
+                  Geri Bildirim & İstek
+                </h2>
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                Destek
+              </span>
+            </div>
+
+            <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
+              Öneri, yeni özellik isteği, şikayet veya sistem hatalarını doğrudan ekibimize bildirin.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("open-feedback-modal", {
+                      detail: { category: "BUG", captureScreen: true },
+                    }),
+                  );
+                }}
+                className="flex items-center justify-center gap-1.5 h-9 px-2 rounded-xl bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-[11px] font-bold text-gray-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
+              >
+                <CameraIcon className="size-3.5 text-indigo-600" />
+                <span>Fotoğrafla</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("open-feedback-modal", {
+                      detail: { category: "SUGGESTION", captureScreen: false },
+                    }),
+                  );
+                }}
+                className="flex items-center justify-center gap-1.5 h-9 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[11px] font-black text-white shadow-2xs transition-all active:scale-95 cursor-pointer"
+              >
+                <SendIcon className="size-3 text-white" />
+                <span>Formu Aç</span>
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -1040,6 +1088,22 @@ export function HomeScreen({
         isOpen={isNotifModalOpen}
         onClose={() => setIsNotifModalOpen(false)}
         notifications={visibleNotifications}
+      />
+
+      {/* SİSTEM BİLDİRİMİ DETAY MODALI (MOBİLDE ALTTAN AÇILIR, MASAÜSTÜNDE POPUP) */}
+      <SystemNotificationDetailModal
+        notification={selectedDetailNotif}
+        isOpen={Boolean(selectedDetailNotif)}
+        onClose={() => setSelectedDetailNotif(null)}
+        onStatusChange={(id, newReadState) => {
+          if (selectedDetailNotif && selectedDetailNotif.id === id) {
+            setSelectedDetailNotif({ ...selectedDetailNotif, isRead: newReadState });
+          }
+        }}
+        onDelete={(id) => {
+          setDismissedNotifIds((prev) => [...prev, id]);
+          setSelectedDetailNotif(null);
+        }}
       />
 
       {/* EKRAN KİLİDİ MODAL */}

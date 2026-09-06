@@ -10,6 +10,7 @@ import {
   HeadphonesIcon,
   LayoutDashboardIcon,
   MenuIcon,
+  MessageSquareQuoteIcon,
   Settings2Icon,
   SparklesIcon,
   StoreIcon,
@@ -24,6 +25,7 @@ import type { SystemSettingsDTO } from "@/services/system-setting.service";
 
 const NAV = [
   { title: "Genel Bakış", href: "/admin", icon: LayoutDashboardIcon },
+  { title: "Geri Bildirimler", href: "/admin/feedbacks", icon: MessageSquareQuoteIcon },
   { title: "Satış Temsilcileri", href: "/admin/sales-reps", icon: HeadphonesIcon },
   { title: "Restoranlar", href: "/admin/restaurants", icon: StoreIcon },
   { title: "Modüller", href: "/admin/modules", icon: BoxesIcon },

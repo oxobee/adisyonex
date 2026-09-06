@@ -18,6 +18,7 @@ import { GlobalAiAssistant } from "@/components/dashboard/global-ai-assistant"
 import { GlobalRealtimeAlerts } from "@/components/shared/global-realtime-alerts"
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner"
 import { getRestaurantActiveModulesMap } from "@/services/module.service"
+import { GlobalFeedbackTrigger } from "@/components/feedback/global-feedback-trigger"
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export default async function DashboardLayout({
       <OfflineSyncManager />
       {activeModules.admin_ai !== false && <GlobalAiAssistant />}
       <GlobalRealtimeAlerts />
+      <GlobalFeedbackTrigger />
       {brandColor && (
         <style
           dangerouslySetInnerHTML={{
