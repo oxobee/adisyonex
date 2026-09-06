@@ -16,6 +16,7 @@ import { GlobalEscNavigation } from "@/components/dashboard/global-esc-navigatio
 import { OfflineSyncManager } from "@/components/shared/offline-sync-manager"
 import { GlobalAiAssistant } from "@/components/dashboard/global-ai-assistant"
 import { GlobalRealtimeAlerts } from "@/components/shared/global-realtime-alerts"
+import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner"
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,9 @@ export default async function DashboardLayout({
 
   return (
     <>
+      {ctx?.isImpersonating && ctx.impersonatedRestaurantName && (
+        <ImpersonationBanner restaurantName={ctx.impersonatedRestaurantName} />
+      )}
       <GlobalEscNavigation />
       <OfflineSyncManager />
       <GlobalAiAssistant />

@@ -7,6 +7,7 @@ import {
   ExternalLinkIcon,
   EyeIcon,
   HeadphonesIcon,
+  LogInIcon,
   PencilIcon,
   PowerIcon,
   SearchIcon,
@@ -22,6 +23,8 @@ import {
   toggleAdminRestaurantActiveAction,
   updateAdminRestaurantAction,
 } from "@/actions/admin-management.actions";
+import { impersonateRestaurantAction } from "@/actions/admin-modules.actions";
+import { RestaurantDetailDialog } from "@/components/admin/restaurant-detail-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { AssignLicenseDialog } from "@/components/admin/assign-license-dialog";
@@ -103,6 +106,20 @@ export function RestaurantsTable({
     },
     onError: (err) => toast.error(err),
   });
+
+  const handleImpersonate = async (restaurantId: string) => {
+    try {
+      const res = await impersonateRestaurantAction({ restaurantId });
+      if (res.success && res.data) {
+        toast.success(`"${res.data.restaurantName}" hesabına giriş yapılıyor...`);
+        window.location.href = res.data.redirectUrl;
+      } else {
+        toast.error(res.error || "Giriş yapılamadı");
+      }
+    } catch {
+      toast.error("Giriş sırasında bir hata oluştu");
+    }
+  };
 
   const filteredItems = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -284,7 +301,16 @@ export function RestaurantsTable({
                         <Button
                           size="icon-xs"
                           variant="ghost"
-                          title="Detay Görüntüle"
+                          title="Restoran Hesabına Giriş Yap"
+                          className="text-amber-600 hover:bg-amber-500/15"
+                          onClick={() => handleImpersonate(restaurant.id)}
+                        >
+                          <LogInIcon className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          title="Detay & Modül Yönetimi"
                           onClick={() => setDetailRestaurant(restaurant)}
                         >
                           <EyeIcon className="size-3.5" />
@@ -325,68 +351,12 @@ export function RestaurantsTable({
         </div>
       </div>
 
-      {/* DETAIL DIALOG */}
-      {detailRestaurant ? (
-        <Dialog open onOpenChange={(open) => !open && setDetailRestaurant(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Restoran Detayları</DialogTitle>
-              <DialogDescription>
-                {detailRestaurant.name} işletme ve sistem kayıtları
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-3 py-2 text-sm">
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Restoran ID:</span>
-                <span className="font-mono text-xs">{detailRestaurant.id}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Restoran Adı:</span>
-                <span className="font-medium">{detailRestaurant.name}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Slug / URL:</span>
-                <span className="font-mono text-xs">/{detailRestaurant.slug}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Kullanıcı Adı / QR:</span>
-                <span className="font-mono text-xs">{detailRestaurant.username ?? "—"}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">İşletmeci:</span>
-                <span className="font-medium">{detailRestaurant.ownerName ?? "—"}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">İşletmeci Telefon:</span>
-                <span className="font-mono">{detailRestaurant.ownerPhone}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Şehir / Ülke:</span>
-                <span>{[detailRestaurant.city, detailRestaurant.country].filter(Boolean).join(", ")}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Adres:</span>
-                <span>{detailRestaurant.addressLine1 || "—"}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Durum:</span>
-                <span className={detailRestaurant.isActive ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
-                  {detailRestaurant.isActive ? "Aktif" : "Pasif"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Kayıt Tarihi:</span>
-                <span>{formatDate(detailRestaurant.onboardedAt)}</span>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDetailRestaurant(null)}>
-                Kapat
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ) : null}
+      {/* RESTAURANT DETAIL, MODULES & NOTIFICATIONS DIALOG */}
+      <RestaurantDetailDialog
+        restaurant={detailRestaurant}
+        open={Boolean(detailRestaurant)}
+        onOpenChange={(open) => !open && setDetailRestaurant(null)}
+      />
 
       {/* EDIT DIALOG */}
       {editRestaurant ? (

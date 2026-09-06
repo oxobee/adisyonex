@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { getLatestLiveAlertsAction, type LiveAlertDTO } from "@/actions/live-alerts.actions";
+import { getLatestLiveAlertsAction, markAdminNotificationReadAction, type LiveAlertDTO } from "@/actions/live-alerts.actions";
 
 // Pleasant multi-tone chime for real-time restaurant alerts (Bell sound)
 function playAlertChime(type?: LiveAlertDTO["type"]) {
@@ -22,6 +22,8 @@ function playAlertChime(type?: LiveAlertDTO["type"]) {
         ? [659.25, 880.0, 1174.66] // Urgent E5 - A5 - D6
         : type === "BILL_REQUEST"
         ? [523.25, 659.25, 783.99] // C5 - E5 - G5
+        : type === "ADMIN_NOTIFICATION"
+        ? [440.0, 554.37, 659.25, 880.0] // A4 - C#5 - E5 - A5 fanfare
         : [587.33, 739.99, 880.0]; // D5 - F#5 - A5
 
     baseFreqs.forEach((freq, idx) => {
@@ -110,13 +112,14 @@ export function GlobalRealtimeAlerts() {
 
         const alerts = res.data;
 
-        // On first run, record existing alerts as baseline so we don't spam old notifications
+        // On first run, record existing order alerts as baseline, but allow ADMIN_NOTIFICATION to be shown
         if (isInitialMountRef.current) {
           isInitialMountRef.current = false;
           for (const a of alerts) {
-            seenAlertIdsRef.current.add(a.id);
+            if (a.type !== "ADMIN_NOTIFICATION") {
+              seenAlertIdsRef.current.add(a.id);
+            }
           }
-          return;
         }
 
         // Detect newly arrived alerts
@@ -131,12 +134,34 @@ export function GlobalRealtimeAlerts() {
             void showNativePush(alert.title, alert.message, alert.targetUrl);
 
             // 3. Show interactive toast
+            const isNotif = alert.type === "ADMIN_NOTIFICATION";
             toast(alert.title, {
               description: alert.message,
-              duration: 8000,
+              duration: isNotif ? 12000 : 8000,
               action: {
-                label: "Gör",
-                onClick: () => router.push(alert.targetUrl),
+                label: alert.buttonText || "Gör",
+                onClick: () => {
+                  if (alert.notifId) {
+                    markAdminNotificationReadAction(alert.notifId).catch(() => {});
+                  }
+                  if (alert.targetUrl) {
+                    if (alert.targetUrl.startsWith("http://") || alert.targetUrl.startsWith("https://")) {
+                      window.open(alert.targetUrl, "_blank");
+                    } else {
+                      router.push(alert.targetUrl);
+                    }
+                  }
+                },
+              },
+              onDismiss: () => {
+                if (alert.notifId) {
+                  markAdminNotificationReadAction(alert.notifId).catch(() => {});
+                }
+              },
+              onAutoClose: () => {
+                if (alert.notifId) {
+                  markAdminNotificationReadAction(alert.notifId).catch(() => {});
+                }
               },
             });
 

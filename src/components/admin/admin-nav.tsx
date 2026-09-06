@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
+  BoxesIcon,
   GlobeIcon,
   HeadphonesIcon,
   LayoutDashboardIcon,
@@ -25,6 +26,7 @@ const NAV = [
   { title: "Genel Bakış", href: "/admin", icon: LayoutDashboardIcon },
   { title: "Satış Temsilcileri", href: "/admin/sales-reps", icon: HeadphonesIcon },
   { title: "Restoranlar", href: "/admin/restaurants", icon: StoreIcon },
+  { title: "Modüller", href: "/admin/modules", icon: BoxesIcon },
   { title: "Kullanıcılar", href: "/admin/users", icon: UsersIcon },
   { title: "AI Stüdyo & Krediler", href: "/admin/ai-studio", icon: SparklesIcon },
   { title: "Sistem & SEO Ayarları", href: "/admin/system", icon: Settings2Icon },

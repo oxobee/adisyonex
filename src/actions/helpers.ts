@@ -73,6 +73,27 @@ export const withAdminValidation = <TSchema extends ZodType, TOutput>(
   };
 };
 
+/** Require a super admin session, validate input, then delegate to the handler. */
+export const withSuperAdminValidation = <TSchema extends ZodType, TOutput>(
+  schema: TSchema,
+  handler: (
+    data: z.infer<TSchema>,
+    ctx: AdminContext,
+  ) => Promise<ActionResult<TOutput>> | Promise<TOutput>,
+) => {
+  return async (raw: unknown): Promise<ActionResult<TOutput>> => {
+    const ctx = await getAdminContextOrNull();
+    if (!ctx || !ctx.isSuperAdmin) {
+      return failure<TOutput>("FORBIDDEN_SUPER_ADMIN");
+    }
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) {
+      return failure<TOutput>("Validation failed", extractFieldErrors(parsed.error));
+    }
+    return runHandler<TOutput>(() => handler(parsed.data, ctx));
+  };
+};
+
 /** Require the manager's restaurant, validate input, then delegate to the handler. */
 export const withManagerValidation = <TSchema extends ZodType, TOutput>(
   schema: TSchema,

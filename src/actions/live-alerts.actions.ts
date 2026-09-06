@@ -7,12 +7,14 @@ import { success, failure, type ActionResult } from "@/types";
 
 export interface LiveAlertDTO {
   readonly id: string;
-  readonly type: "WAITER_CALL" | "BILL_REQUEST" | "NEW_ORDER" | "KITCHEN_READY";
+  readonly type: "WAITER_CALL" | "BILL_REQUEST" | "NEW_ORDER" | "KITCHEN_READY" | "ADMIN_NOTIFICATION";
   readonly title: string;
   readonly message: string;
   readonly tableLabel?: string | null;
   readonly createdAt: string;
   readonly targetUrl: string;
+  readonly buttonText?: string | null;
+  readonly notifId?: string;
 }
 
 export async function getLatestLiveAlertsAction(): Promise<ActionResult<readonly LiveAlertDTO[]>> {
@@ -27,7 +29,7 @@ export async function getLatestLiveAlertsAction(): Promise<ActionResult<readonly
 
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
-    const [urgentOrders, recentNewOrders, preparedItems] = await Promise.all([
+    const [urgentOrders, recentNewOrders, preparedItems, unreadAdminNotifs] = await Promise.all([
       // 1. Garson Çağrısı ve Hesap İsteme
       prisma.order.findMany({
         where: {
@@ -72,11 +74,16 @@ export async function getLatestLiveAlertsAction(): Promise<ActionResult<readonly
         orderBy: { createdAt: "desc" },
       }),
 
-      // 3. Mutfakta Hazır Olan Ürünler
+      // 3. Mutfakta Hazır Olan Ürünler (Servis bekleyenler)
       prisma.orderItem.findMany({
         where: {
-          order: { restaurantId, status: "OPEN", deletedAt: null },
+          order: {
+            restaurantId,
+            status: "OPEN",
+            deletedAt: null,
+          },
           state: "PREPARED",
+          createdAt: { gte: tenMinutesAgo },
         },
         select: {
           id: true,
@@ -94,9 +101,33 @@ export async function getLatestLiveAlertsAction(): Promise<ActionResult<readonly
         take: 10,
         orderBy: { createdAt: "desc" },
       }),
+
+      // 4. Süper Admin'den Restorana Özel Gönderilen Bildirimler
+      prisma.restaurantNotification.findMany({
+        where: {
+          restaurantId,
+          isRead: false,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
     ]);
 
     const alerts: LiveAlertDTO[] = [];
+
+    // Süper Admin Bildirimleri
+    for (const n of unreadAdminNotifs) {
+      alerts.push({
+        id: `admin-notif-${n.id}`,
+        type: "ADMIN_NOTIFICATION",
+        title: `📢 ${n.title}`,
+        message: n.message,
+        createdAt: n.createdAt.toISOString(),
+        targetUrl: n.buttonUrl || "/dashboard/home",
+        buttonText: n.buttonText || "İncele",
+        notifId: n.id,
+      });
+    }
 
     // Garson Çağrıları
     for (const o of urgentOrders) {
@@ -160,5 +191,17 @@ export async function getLatestLiveAlertsAction(): Promise<ActionResult<readonly
   } catch (error) {
     console.error("Live Alerts Error:", error);
     return failure("Canlı bildirimler alınamadı");
+  }
+}
+
+export async function markAdminNotificationReadAction(notificationId: string): Promise<ActionResult<void>> {
+  try {
+    await prisma.restaurantNotification.update({
+      where: { id: notificationId },
+      data: { isRead: true, readAt: new Date() },
+    });
+    return success(undefined);
+  } catch (e) {
+    return failure("Bildirim güncellenemedi");
   }
 }

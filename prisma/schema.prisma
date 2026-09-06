@@ -262,6 +262,8 @@ model Restaurant {
   aiTasks        AiTask[]
   zReports       ZReport[]
   cashMovements  CashMovement[]
+  modules        RestaurantModule[]
+  notifications  RestaurantNotification[]
 
   salesRepId     String?
   salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
@@ -1139,6 +1141,57 @@ model SystemActivityLog {
   @@index([restaurantId])
   @@index([createdAt])
   @@index([restaurantId, category])
+}
+
+/// System module definitions manageable by SuperAdmin
+model SystemModule {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  price       Decimal  @default(0) @db.Decimal(10, 2)
+  currency    String   @default("₺")
+  icon        String?  @default("SparklesIcon")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  restaurantModules RestaurantModule[]
+}
+
+/// Module assignments per restaurant
+model RestaurantModule {
+  id           String       @id @default(cuid())
+  restaurantId String
+  moduleId     String
+  isActive     Boolean      @default(true)
+  assignedAt   DateTime     @default(now())
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  module       SystemModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, moduleId])
+  @@index([restaurantId])
+  @@index([moduleId])
+}
+
+/// Notifications sent from SuperAdmin to restaurants
+model RestaurantNotification {
+  id           String      @id @default(cuid())
+  restaurantId String
+  title        String
+  message      String
+  buttonText   String?
+  buttonUrl    String?
+  isRead       Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  readAt       DateTime?
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@index([isRead])
 }
 
 
