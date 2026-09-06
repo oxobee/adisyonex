@@ -8,6 +8,7 @@ import {
   CalculatorIcon,
   CheckCircle2Icon,
   ChevronRightIcon,
+  ChevronLeftIcon,
   CreditCardIcon,
   DeleteIcon,
   Maximize2Icon,
@@ -30,6 +31,19 @@ import {
   ArmchairIcon,
   ShoppingBagIcon,
   BikeIcon,
+  HeartIcon,
+  QrCodeIcon,
+  SunIcon,
+  LayoutGridIcon,
+  PizzaIcon,
+  SandwichIcon,
+  CupSodaIcon,
+  CoffeeIcon,
+  DessertIcon,
+  SoupIcon,
+  FlameIcon,
+  UtensilsIcon,
+  MoreHorizontalIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -286,6 +300,65 @@ export function CashierSalesTerminal({
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [configItem, setConfigItem] = useState<MenuItemDTO | null>(null);
 
+  // Favorites state persisted to localStorage
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const saved = localStorage.getItem("pos_cashier_favorites");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggleFavorite = (itemId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      try {
+        localStorage.setItem("pos_cashier_favorites", JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  // Category horizontal scroll ref
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const scrollCategories = (dir: "left" | "right") => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({
+        left: dir === "right" ? 220 : -220,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  // Fullscreen state and handler
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = () => {
+    if (typeof document === "undefined") return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
   // Drag & Drop State
   const [draggedItem, setDraggedItem] = useState<MenuItemDTO | null>(null);
   const [draggedTable, setDraggedTable] = useState<TableDTO | null>(null);
@@ -412,17 +485,35 @@ export function CashierSalesTerminal({
   const filteredItems = useMemo(() => {
     return menu.items.filter((item) => {
       if (!item.isActive) return false;
-      if (selectedCategory !== "ALL" && item.categoryId !== selectedCategory) return false;
+      if (selectedCategory === "FAVORITES") {
+        if (!favorites.has(item.id)) return false;
+      } else if (selectedCategory !== "ALL" && item.categoryId !== selectedCategory) {
+        return false;
+      }
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchesName = item.name.toLowerCase().includes(query);
         const catName = categoryMap.get(item.categoryId)?.toLowerCase() || "";
         const matchesCat = catName.includes(query);
-        return matchesName || matchesCat;
+        const matchesDesc = (item.shortDescription || "").toLowerCase().includes(query);
+        return matchesName || matchesCat || matchesDesc;
       }
       return true;
     });
-  }, [menu, selectedCategory, searchQuery, categoryMap]);
+  }, [menu, selectedCategory, searchQuery, categoryMap, favorites]);
+
+  const getCategoryIconComponent = (catName: string) => {
+    const n = catName.toLowerCase();
+    if (n.includes("pizza")) return PizzaIcon;
+    if (n.includes("burger") || n.includes("sandviç") || n.includes("dürüm")) return SandwichIcon;
+    if (n.includes("menü") || n.includes("avantaj") || n.includes("fırsat")) return SparklesIcon;
+    if (n.includes("içecek") || n.includes("kola") || n.includes("ayran") || n.includes("meşrubat")) return CupSodaIcon;
+    if (n.includes("kahve") || n.includes("çay") || n.includes("sıcak")) return CoffeeIcon;
+    if (n.includes("tatlı") || n.includes("pasta") || n.includes("dondurma")) return DessertIcon;
+    if (n.includes("çorba")) return SoupIcon;
+    if (n.includes("popüler") || n.includes("ateş") || n.includes("sıcak")) return FlameIcon;
+    return UtensilsIcon;
+  };
 
   // Item counts in cart map
   const cartItemCounts = useMemo(() => {
@@ -863,45 +954,114 @@ export function CashierSalesTerminal({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-[#f1f5f9] select-none">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-[#f8fafc] select-none">
       {/* 1. ÜST KASA KONTROL ÇUBUĞU (HEADER) */}
-      <header className="shrink-0 flex items-center justify-between px-3 sm:px-5 py-2.5 bg-white border-b-2 border-b-gray-200/90 shadow-xs z-20">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_6px_rgba(16,185,129,0.3)] border border-emerald-400">
-            <CalculatorIcon className="size-5" />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-black text-gray-900 tracking-tight">
-                POS Kasa Satış Terminali
-              </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                Canlı Satış
-              </span>
-            </div>
-            <span className="text-[11px] font-semibold text-gray-500">
-              👤 Kasa: <span className="text-gray-900 font-bold">{cashierName}</span> • {restaurantName}
-            </span>
+      <header className="shrink-0 flex items-center justify-between px-3.5 sm:px-5 py-2.5 bg-white border-b border-slate-200 shadow-2xs z-20 gap-3">
+        {/* Sol: Arama Girişi + Barkod / QR Butonu */}
+        <div className="relative flex-1 max-w-xs sm:max-w-md">
+          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Ürün adı, içerik veya barkod ile ara..."
+            className="w-full pl-9 pr-9 py-2 rounded-xl border border-slate-200 bg-slate-50/90 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500/25 focus:border-rose-300 focus:bg-white transition-all shadow-inner"
+          />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+              >
+                <XIcon className="size-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.info("Barkod okuyucu aktif")}
+                title="Barkod / QR Okut"
+                className="text-slate-400 hover:text-rose-600 p-0.5 cursor-pointer"
+              >
+                <QrCodeIcon className="size-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Sağ Butonlar: Sepeti Boşalt */}
-        <div className="flex items-center gap-2">
-          {cart.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm("Sepeti temizlemek istediğinize emin misiniz?")) {
-                  clear();
-                  setCashTenderedStr("");
-                }
-              }}
-              className="px-2.5 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
-            >
-              <Trash2Icon className="size-3.5" />
-              <span className="hidden sm:inline">Sepeti Boşalt</span>
-            </button>
-          )}
+        {/* Orta: Fiş 01 - Fiş 05 Sekmeleri */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {tickets.map((ticket) => {
+            const isActive = ticket.id === activeTicketId;
+            const itemCount = ticket.cart.reduce((s, l) => s + l.quantity, 0);
+            const hasCart = itemCount > 0;
+            const hasTable = !!ticket.selectedTableId;
+            const tableName = hasTable ? tables.find((t) => t.id === ticket.selectedTableId)?.label : null;
+
+            return (
+              <button
+                key={ticket.id}
+                type="button"
+                onClick={() => setActiveTicketId(ticket.id)}
+                title={hasTable ? `${ticket.label} (${tableName})` : `${ticket.label} (${itemCount} Kalem)`}
+                className={cn(
+                  "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none whitespace-nowrap flex items-center gap-1.5",
+                  isActive
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                )}
+              >
+                <span>{ticket.label}</span>
+                {(hasCart || hasTable) && (
+                  <span
+                    className={cn(
+                      "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-rose-100 text-rose-700"
+                    )}
+                  >
+                    {hasTable ? `🪑 ${tableName || ""}` : `${itemCount}`}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sağ: Tema, Tam Ekran & Kasiyer / Restoran Profili */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <button
+            type="button"
+            onClick={() => toast.info("Aydınlık POS modu aktif")}
+            title="Aydınlık Mod"
+            className="size-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <SunIcon className="size-4.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran Yap"}
+            className="size-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            {isFullscreen ? <Minimize2Icon className="size-4.5" /> : <Maximize2Icon className="size-4.5" />}
+          </button>
+
+          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+            <div className="size-9 rounded-full bg-rose-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
+              {cashierName ? cashierName.charAt(0).toUpperCase() : "K"}
+            </div>
+            <div className="hidden md:flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-900 leading-tight">
+                {cashierName}
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500 leading-tight">
+                Kasa: {restaurantName}
+              </span>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -912,121 +1072,194 @@ export function CashierSalesTerminal({
           "flex-1 flex-col min-w-0 bg-[#f8fafc] border-r border-gray-200/90 overflow-hidden",
           activeMainTab === "CART" ? "hidden lg:flex" : "flex"
         )}>
-          {/* Üst Sekme Çubuğu: Masa | Ürün ve Fiş 01 - Fiş 05 Sekmeleri */}
-          <div className="p-2 sm:px-4 sm:py-2.5 bg-white border-b border-gray-200 shrink-0 shadow-2xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5">
-            {/* Sol: Masalar | Ürünler | Adisyon (Sepet) */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-inner shrink-0">
+          {/* Yatay Kategori Çubuğu (Görsel referansındaki gibi kartlı ve sağ kaydırmalı) */}
+          <div className="px-4 py-2.5 sm:py-3 bg-white border-b border-slate-200/80 flex items-center gap-2.5 shrink-0 shadow-2xs">
+            <div
+              ref={categoryScrollRef}
+              className="flex-1 flex items-center gap-2.5 overflow-x-auto no-scrollbar py-0.5 scroll-smooth"
+            >
+              {/* Tümü */}
               <button
                 type="button"
-                onClick={() => setActiveMainTab("TABLES")}
+                onClick={() => {
+                  setActiveMainTab("PRODUCTS");
+                  setSelectedCategory("ALL");
+                }}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  "shrink-0 flex flex-col justify-between p-2.5 sm:p-3 rounded-2xl min-w-[105px] sm:min-w-[125px] transition-all cursor-pointer border select-none text-left",
+                  activeMainTab === "PRODUCTS" && selectedCategory === "ALL"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                    : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
+                )}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <div
+                    className={cn(
+                      "size-7 rounded-xl flex items-center justify-center",
+                      activeMainTab === "PRODUCTS" && selectedCategory === "ALL"
+                        ? "bg-white/20 text-white"
+                        : "bg-rose-50 text-rose-600"
+                    )}
+                  >
+                    <LayoutGridIcon className="size-4" />
+                  </div>
+                </div>
+                <div>
+                  <span className="font-bold text-xs sm:text-sm block truncate">Tümü</span>
+                  <span
+                    className={cn(
+                      "text-[10px] sm:text-[11px] block mt-0.5",
+                      activeMainTab === "PRODUCTS" && selectedCategory === "ALL"
+                        ? "text-white/80 font-medium"
+                        : "text-slate-400 font-semibold"
+                    )}
+                  >
+                    {menu.items.length} Ürün
+                  </span>
+                </div>
+              </button>
+
+              {/* Favoriler */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMainTab("PRODUCTS");
+                  setSelectedCategory("FAVORITES");
+                }}
+                className={cn(
+                  "shrink-0 flex flex-col justify-between p-2.5 sm:p-3 rounded-2xl min-w-[105px] sm:min-w-[125px] transition-all cursor-pointer border select-none text-left",
+                  activeMainTab === "PRODUCTS" && selectedCategory === "FAVORITES"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                    : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
+                )}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <div
+                    className={cn(
+                      "size-7 rounded-xl flex items-center justify-center",
+                      activeMainTab === "PRODUCTS" && selectedCategory === "FAVORITES"
+                        ? "bg-white/20 text-white"
+                        : "bg-rose-50 text-rose-600"
+                    )}
+                  >
+                    <HeartIcon className="size-4" />
+                  </div>
+                </div>
+                <div>
+                  <span className="font-bold text-xs sm:text-sm block truncate">Favoriler</span>
+                  <span
+                    className={cn(
+                      "text-[10px] sm:text-[11px] block mt-0.5",
+                      activeMainTab === "PRODUCTS" && selectedCategory === "FAVORITES"
+                        ? "text-white/80 font-medium"
+                        : "text-slate-400 font-semibold"
+                    )}
+                  >
+                    {favorites.size} Ürün
+                  </span>
+                </div>
+              </button>
+
+              {/* Masalar Kartı (Masa Yönetimi için) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMainTab(activeMainTab === "TABLES" ? "PRODUCTS" : "TABLES");
+                }}
+                className={cn(
+                  "shrink-0 flex flex-col justify-between p-2.5 sm:p-3 rounded-2xl min-w-[105px] sm:min-w-[125px] transition-all cursor-pointer border select-none text-left",
                   activeMainTab === "TABLES"
-                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/80 scale-[1.01]"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
                 )}
               >
-                <ArmchairIcon className="size-4 text-blue-600 shrink-0" />
-                <span>Masalar</span>
-                <span className={cn(
-                  "px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight",
-                  activeMainTab === "TABLES"
-                    ? "bg-rose-100 text-rose-700 border border-rose-200"
-                    : "bg-slate-200 text-slate-600"
-                )}>
-                  {occupiedCount} Dolu
-                </span>
+                <div className="flex items-center justify-between w-full mb-1">
+                  <div
+                    className={cn(
+                      "size-7 rounded-xl flex items-center justify-center",
+                      activeMainTab === "TABLES"
+                        ? "bg-white/20 text-white"
+                        : "bg-blue-50 text-blue-600"
+                    )}
+                  >
+                    <ArmchairIcon className="size-4" />
+                  </div>
+                </div>
+                <div>
+                  <span className="font-bold text-xs sm:text-sm block truncate">Masalar</span>
+                  <span
+                    className={cn(
+                      "text-[10px] sm:text-[11px] block mt-0.5",
+                      activeMainTab === "TABLES"
+                        ? "text-white/80 font-medium"
+                        : "text-slate-400 font-semibold"
+                    )}
+                  >
+                    {occupiedCount} Dolu
+                  </span>
+                </div>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveMainTab("PRODUCTS")}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
-                  activeMainTab === "PRODUCTS"
-                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80 scale-[1.01]"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
-                )}
-              >
-                <UtensilsCrossedIcon className="size-4 text-emerald-600 shrink-0" />
-                <span>Ürünler</span>
-                <span className={cn(
-                  "px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight",
-                  activeMainTab === "PRODUCTS"
-                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                    : "bg-slate-200 text-slate-600"
-                )}>
-                  {menu.items.length} Ürün
-                </span>
-              </button>
-
-              {/* Mobilde / Tablette Adisyon Sekmesi */}
-              <button
-                type="button"
-                onClick={() => setActiveMainTab("CART")}
-                className={cn(
-                  "lg:hidden flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
-                  activeMainTab === "CART"
-                    ? "bg-white text-indigo-700 shadow-sm border border-slate-200/80 scale-[1.01]"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
-                )}
-              >
-                <ReceiptIcon className="size-4 text-indigo-600 shrink-0" />
-                <span>Adisyon</span>
-                <span className={cn(
-                  "px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight",
-                  activeMainTab === "CART"
-                    ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
-                    : "bg-slate-200 text-slate-600"
-                )}>
-                  {cart.reduce((s, l) => s + l.quantity, 0)} Kalem
-                </span>
-              </button>
-            </div>
-
-            {/* Sağ / Yan: Fiş 01 - Fiş 05 Bekletilen Satış Tab Menüsü */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-inner overflow-x-auto no-scrollbar">
-              {tickets.map((ticket) => {
-                const isActive = ticket.id === activeTicketId;
-                const itemCount = ticket.cart.reduce((s, l) => s + l.quantity, 0);
-                const hasCart = itemCount > 0;
-                const hasTable = !!ticket.selectedTableId;
-                const tableName = hasTable ? tables.find(t => t.id === ticket.selectedTableId)?.label : null;
+              {/* Dinamik Kategoriler */}
+              {categories.map((cat) => {
+                const CatIcon = getCategoryIconComponent(cat.name);
+                const isCatActive = activeMainTab === "PRODUCTS" && selectedCategory === cat.id;
+                const count = menu.items.filter((it) => it.categoryId === cat.id && it.isActive).length;
 
                 return (
                   <button
-                    key={ticket.id}
+                    key={cat.id}
                     type="button"
-                    onClick={() => setActiveTicketId(ticket.id)}
-                    title={hasTable ? `${ticket.label} (${tableName})` : `${ticket.label} (${itemCount} Ürün)`}
+                    onClick={() => {
+                      setActiveMainTab("PRODUCTS");
+                      setSelectedCategory(cat.id);
+                    }}
                     className={cn(
-                      "relative flex items-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap",
-                      isActive
-                        ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-sm border border-indigo-500/30 scale-[1.02]"
-                        : hasCart || hasTable
-                        ? "bg-indigo-50/80 text-indigo-900 hover:bg-indigo-100/90 border border-indigo-200/60"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent"
+                      "shrink-0 flex flex-col justify-between p-2.5 sm:p-3 rounded-2xl min-w-[105px] sm:min-w-[130px] transition-all cursor-pointer border select-none text-left",
+                      isCatActive
+                        ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                        : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
                     )}
                   >
-                    <ReceiptTextIcon className={cn("size-3.5", isActive ? "text-indigo-200" : hasCart ? "text-indigo-600" : "text-slate-400")} />
-                    <span>{ticket.label}</span>
-                    {(hasCart || hasTable) && (
-                      <span
+                    <div className="flex items-center justify-between w-full mb-1">
+                      <div
                         className={cn(
-                          "px-1.5 py-0.5 rounded-full text-[10px] font-black tracking-tight flex items-center gap-0.5",
-                          isActive
-                            ? "bg-white/20 text-white border border-white/30"
-                            : "bg-indigo-600 text-white shadow-2xs"
+                          "size-7 rounded-xl flex items-center justify-center",
+                          isCatActive
+                            ? "bg-white/20 text-white"
+                            : "bg-rose-50 text-rose-600"
                         )}
                       >
-                        {hasTable && <span>🪑</span>}
-                        {hasCart ? `${itemCount}` : tableName || ""}
+                        <CatIcon className="size-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs sm:text-sm block truncate">{cat.name}</span>
+                      <span
+                        className={cn(
+                          "text-[10px] sm:text-[11px] block mt-0.5",
+                          isCatActive
+                            ? "text-white/80 font-medium"
+                            : "text-slate-400 font-semibold"
+                        )}
+                      >
+                        {count} Ürün
                       </span>
-                    )}
+                    </div>
                   </button>
                 );
               })}
             </div>
+
+            {/* Sağ Kaydırma Oku Butonu */}
+            <button
+              type="button"
+              onClick={() => scrollCategories("right")}
+              title="Kategorileri Sağa Kaydır"
+              className="shrink-0 size-9 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+            >
+              <ChevronRightIcon className="size-4" />
+            </button>
           </div>
 
           {/* TAB 1: MASALAR (DOLU & BOŞ MASA KARTLARI) */}
@@ -1253,210 +1486,147 @@ export function CashierSalesTerminal({
             </>
           )}
 
-          {/* TAB 2: ÜRÜNLER (MEVCUT ÜRÜN KATALOĞU) */}
+          {/* TAB 2: ÜRÜNLER (Görsel referansındaki gibi 5 Kolonlu Modern Kartlar) */}
           {activeMainTab === "PRODUCTS" && (
-            <>
-              {/* Arama ve Kategori Barı */}
-              <div className="p-3 sm:p-4 bg-white border-b border-gray-200 flex flex-col gap-2.5 shrink-0 shadow-2xs">
-                <div className="relative">
-                  <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Hızlı ürün ara veya barkod okutun..."
-                    className="w-full pl-10 pr-9 py-2 rounded-xl border border-gray-200 bg-gray-50 text-xs sm:text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all shadow-inner"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5"
-                    >
-                      <XIcon className="size-4" />
-                    </button>
-                  )}
+            <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 bg-[#f8fafc]">
+              {filteredItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-center text-slate-400">
+                  <UtensilsCrossedIcon className="size-12 stroke-[1.5] mb-2 text-slate-300" />
+                  <p className="text-sm font-bold text-slate-600">Aradığınız kriterde ürün bulunamadı</p>
+                  <span className="text-xs text-slate-400">Aramayı temizleyin veya başka bir kategori seçin</span>
                 </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3.5">
+                  {filteredItems.map((item, idx) => {
+                    const cartCount = cartItemCounts[item.id] || 0;
+                    const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
+                    const primaryImage = item.images?.find((img) => img.isPrimary)?.url || item.images?.[0]?.url;
 
-                {/* Yatay Kategori Çubuğu (Scrollable Pills) */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory("ALL")}
-                    className={cn(
-                      "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
-                      selectedCategory === "ALL"
-                        ? "bg-slate-900 text-white border-slate-900 shadow-md scale-102"
-                        : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
-                    )}
-                  >
-                    Tümü ({menu.items.length})
-                  </button>
+                    return (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, item)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => handleTapItem(item)}
+                        className={cn(
+                          "group relative rounded-2xl border border-slate-200/90 bg-white hover:border-rose-300 hover:shadow-md transition-all duration-150 select-none flex flex-col justify-between overflow-hidden cursor-pointer active:scale-[0.985]",
+                          draggedItem?.id === item.id && "opacity-50 scale-95 ring-4 ring-rose-400/80"
+                        )}
+                      >
+                        {/* Üst Alan: Görsel (showItemImages aktif ve görsel varsa) VEYA Minimal Rozet Alanı */}
+                        {showItemImages && primaryImage ? (
+                          <div className="relative w-full aspect-[16/10] bg-slate-50 overflow-hidden border-b border-slate-100">
+                            <Image
+                              src={primaryImage}
+                              alt={item.name}
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                              className="object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                            />
+                            {/* Sol Üst Rozet */}
+                            <div className="absolute top-2 left-2 z-10">
+                              <span
+                                className={cn(
+                                  "px-2 py-0.5 rounded-full text-[10px] font-bold shadow-2xs backdrop-blur-xs",
+                                  idx % 3 === 0
+                                    ? "bg-rose-500/90 text-white"
+                                    : idx % 3 === 1
+                                    ? "bg-amber-500/90 text-white"
+                                    : "bg-emerald-500/90 text-white"
+                                )}
+                              >
+                                {idx % 3 === 0 ? "★ En Çok Satan" : idx % 3 === 1 ? "★ Popüler" : "★ Şefin Seçimi"}
+                              </span>
+                            </div>
 
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={cn(
-                        "shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border",
-                        selectedCategory === cat.id
-                          ? "bg-primary text-primary-foreground border-primary shadow-md scale-102"
-                          : "bg-gray-100/90 text-gray-700 hover:bg-gray-200 border-gray-200/80"
-                      )}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3D Material Ürün Izgarası */}
-              <div className="flex-1 overflow-y-auto p-3 sm:p-4.5">
-                {filteredItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-center text-gray-400">
-                    <UtensilsCrossedIcon className="size-12 stroke-[1.5] mb-2 text-gray-300" />
-                    <p className="text-sm font-bold text-gray-600">Aradığınız kriterde ürün bulunamadı</p>
-                    <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir kategori seçin</span>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                    {filteredItems.map((item, idx) => {
-                      const cartCount = cartItemCounts[item.id] || 0;
-                      const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
-                      const primaryImage = item.images?.find((img) => img.isPrimary)?.url || item.images?.[0]?.url;
-
-                      // 3D Material vibrant color themes matching reference Image 1
-                      const cardGradients = [
-                        "from-[#1d4ed8] via-[#2563eb] to-[#1e40af]", // Blue (Image 1, Card 01)
-                        "from-[#c2410c] via-[#ea580c] to-[#9a3412]", // Orange (Image 1, Card 02)
-                        "from-[#047857] via-[#059669] to-[#065f46]", // Emerald (Image 1, Card 03)
-                        "from-[#6d28d9] via-[#7c3aed] to-[#5b21b6]", // Purple (Image 1, Card 04)
-                        "from-[#be123c] via-[#e11d48] to-[#9f1239]", // Rose (Image 1, Card 05)
-                        "from-[#334155] via-[#475569] to-[#1e293b]", // Slate (Image 1, Card 06)
-                      ];
-                      const gradient = cardGradients[idx % cardGradients.length];
-
-                      return (
-                        <div
-                          key={item.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, item)}
-                          onDragEnd={handleDragEnd}
-                          onClick={() => handleTapItem(item)}
-                          className={cn(
-                            "group relative rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing select-none flex flex-col justify-between transition-all duration-200 transform-gpu",
-                            `bg-gradient-to-br ${gradient}`,
-                            "border-t border-t-white/50 border-x border-white/15 border-b-[4px] border-b-black/45",
-                            "shadow-[0_10px_24px_-4px_rgba(0,0,0,0.38),inset_0_1.5px_1px_rgba(255,255,255,0.45)]",
-                            "hover:-translate-y-1.5 hover:shadow-2xl hover:brightness-105",
-                            "active:translate-y-1 active:scale-[0.985] active:border-b-[2px]",
-                            draggedItem?.id === item.id && "opacity-50 scale-95 ring-4 ring-emerald-400/80",
-                            showItemImages ? "min-h-[250px] sm:min-h-[275px]" : "min-h-[120px] sm:min-h-[135px]"
-                          )}
-                        >
-                          {/* Subdued Eye-Friendly Texture Overlay & Concentric Rings */}
-                          <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
-                            {/* Concentric geometric rings in bottom corner */}
-                            <svg
-                              className="absolute -bottom-6 -right-6 w-36 h-36 opacity-15 text-white pointer-events-none"
-                              viewBox="0 0 160 160"
-                              fill="none"
+                            {/* Sağ Üst Favori Kalp Butonu */}
+                            <button
+                              type="button"
+                              onClick={(e) => toggleFavorite(item.id, e)}
+                              title="Favorilere Ekle / Çıkar"
+                              className="absolute top-2 right-2 z-10 size-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:bg-white transition-colors cursor-pointer"
                             >
-                              <circle cx="80" cy="80" r="28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                              <circle cx="80" cy="80" r="50" stroke="currentColor" strokeWidth="1.5" />
-                              <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
-                            </svg>
+                              <HeartIcon
+                                className={cn(
+                                  "size-3.5 transition-colors",
+                                  favorites.has(item.id)
+                                    ? "fill-rose-600 text-rose-600"
+                                    : "text-slate-400 hover:text-rose-600"
+                                )}
+                              />
+                            </button>
+                          </div>
+                        ) : (
+                          /* Görsel kapalıysa veya görsel yoksa: Temiz rozet ve kalp butonu */
+                          <div className="p-3 pb-0 flex items-center justify-between">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                              {categoryMap.get(item.categoryId) || "Menü"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => toggleFavorite(item.id, e)}
+                              title="Favorilere Ekle / Çıkar"
+                              className="size-6 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                              <HeartIcon
+                                className={cn(
+                                  "size-3.5 transition-colors",
+                                  favorites.has(item.id)
+                                    ? "fill-rose-600 text-rose-600"
+                                    : "text-slate-400 hover:text-rose-600"
+                                )}
+                              />
+                            </button>
+                          </div>
+                        )}
 
-                            {/* Top Specular Bevel Highlight */}
-                            <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
-
-                            {/* Bottom Extrusion Shadow */}
-                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 via-black/15 to-transparent pointer-events-none" />
+                        {/* Alt Gövde: Başlık, Açıklama, Fiyat ve Ekle Butonu */}
+                        <div className="p-3 flex flex-col justify-between flex-1 gap-2">
+                          <div>
+                            <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-1 group-hover:text-rose-600 transition-colors">
+                              {item.name}
+                            </h3>
+                            {item.shortDescription ? (
+                              <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                                {item.shortDescription}
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                                {categoryMap.get(item.categoryId) || "Özel Lezzet"}
+                              </p>
+                            )}
                           </div>
 
-                          {/* Sepetteki Adet Rozeti (3D Tactile Pill) */}
-                          {cartCount > 0 && (
-                            <div className="absolute top-2.5 right-2.5 z-20 flex size-7 sm:size-8 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-lg border-2 border-white animate-in zoom-in-75">
-                              {cartCount}
-                            </div>
-                          )}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                            <span className="font-black text-sm sm:text-base text-slate-900 font-mono tabular-nums">
+                              {formatCurrency(item.price)}
+                            </span>
 
-                          {/* Üst Alan: Görsel Alanı (showItemImages aktifse) veya Kompakt Rozet */}
-                          {showItemImages ? (
-                            <div className="relative m-2.5 mb-0 h-40 sm:h-44 rounded-2xl bg-white overflow-hidden flex items-center justify-center p-3 border border-white/40">
-                              {/* Kategori Rozeti (Üst Sol Pill) */}
-                              <div className="absolute top-2 left-2 z-10">
-                                <span className="text-[10px] font-bold text-white/95 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
-                                  {categoryMap.get(item.categoryId) || "Menü"}
-                                </span>
+                            {hasVariants ? (
+                              <span className="text-[10px] font-black text-amber-800 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+                                Seçenekli
+                              </span>
+                            ) : (
+                              <div className="relative">
+                                <div className="size-7 sm:size-8 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs group-hover:bg-rose-700 active:scale-95 transition-all">
+                                  <PlusIcon className="size-4 stroke-[2.5]" />
+                                </div>
+                                {cartCount > 0 && (
+                                  <span className="absolute -top-1.5 -right-1.5 size-4.5 rounded-full bg-slate-900 text-white text-[9px] font-black flex items-center justify-center border border-white">
+                                    {cartCount}
+                                  </span>
+                                )}
                               </div>
-
-                              {/* Ürün Görseli */}
-                              {primaryImage ? (
-                                <div className="relative w-full h-full flex items-center justify-center">
-                                  <Image
-                                    src={primaryImage}
-                                    alt={item.name}
-                                    fill
-                                    sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
-                                    className="object-contain p-1 transition-transform duration-300 group-hover:scale-105 pointer-events-none"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="size-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                                  <UtensilsCrossedIcon className="size-7 stroke-[1.5]" />
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="pt-3 px-3.5 flex items-center justify-between z-10">
-                              <span className="text-[10px] font-bold text-white/95 bg-black/40 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
-                                {categoryMap.get(item.categoryId) || "Menü"}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Alt Metin ve Fiyat Alanı */}
-                          <div className="p-3.5 pt-2.5 flex flex-col justify-between flex-1 z-10">
-                            <div className="mb-2">
-                              <h3 className="font-extrabold text-sm sm:text-base text-white line-clamp-1 leading-snug drop-shadow-xs">
-                                {item.name}
-                              </h3>
-                              {item.shortDescription ? (
-                                <p className="text-[11px] text-white/80 line-clamp-1 mt-0.5 font-medium">
-                                  {item.shortDescription}
-                                </p>
-                              ) : (
-                                <p className="text-[11px] text-white/70 line-clamp-1 mt-0.5 font-medium">
-                                  {categoryMap.get(item.categoryId) || "Özel Menü"}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <span className="text-base sm:text-lg font-black text-white tabular-nums tracking-tight font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                                {formatCurrency(item.price)}
-                              </span>
-
-                              {hasVariants ? (
-                                <span className="text-xs font-black text-[#fef08a] bg-black/45 hover:bg-black/60 px-3 py-1 rounded-full border border-amber-400/40 shadow-xs transition-all tracking-wide">
-                                  Seçenekli
-                                </span>
-                              ) : (
-                                <div className="size-8 rounded-full bg-black/40 hover:bg-white hover:text-slate-900 border border-white/30 text-white flex items-center justify-center transition-all shadow-xs group-hover:scale-105 active:scale-95">
-                                  <PlusIcon className="size-4 stroke-[3]" />
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </section>
 
@@ -1499,14 +1669,14 @@ export function CashierSalesTerminal({
             {/* Üst Satır: Fiş Başlığı, Fiş Numarası, Kalem Sayısı & Temizle */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-9 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center border border-slate-800 shadow-xs shrink-0">
+                <div className="size-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs shrink-0">
                   <ReceiptIcon className="size-4.5" />
                 </div>
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <span className="text-sm font-black text-slate-900 tracking-tight whitespace-nowrap">
                     Adisyon Fişi
                   </span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs whitespace-nowrap shrink-0">
                     {currentTicket.label}
                   </span>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap shrink-0">
@@ -1530,7 +1700,7 @@ export function CashierSalesTerminal({
             </div>
 
             {/* Alt Satır: Masa Seçimi / Hizmet Türü Durumu */}
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/90 text-xs">
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 text-xs">
               {selectedTableId ? (
                 <div className="flex items-center justify-between w-full gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -1543,14 +1713,11 @@ export function CashierSalesTerminal({
                   <div className="inline-flex items-center rounded-xl bg-blue-50 border border-blue-200/90 text-blue-700 h-7.5 pl-2.5 pr-1 text-xs font-black shadow-2xs shrink-0 whitespace-nowrap">
                     <button
                       type="button"
-                      onClick={() => {
-                        setServiceType("DINE_IN");
-                        setActiveMainTab("TABLES");
-                      }}
+                      onClick={() => setIsTableModalOpen(true)}
                       title="Masayı Değiştir"
                       className="flex items-center gap-1 hover:text-blue-900 cursor-pointer whitespace-nowrap"
                     >
-                      <span>🪑 {tables.find(t => t.id === selectedTableId)?.label || "Masa"}</span>
+                      <span>🪑 {tables.find((t) => t.id === selectedTableId)?.label || "Masa"}</span>
                     </button>
                     <button
                       type="button"
@@ -1574,11 +1741,8 @@ export function CashierSalesTerminal({
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setServiceType("DINE_IN");
-                      setActiveMainTab("TABLES");
-                    }}
-                    className="h-7.5 px-2.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+                    onClick={() => setIsTableModalOpen(true)}
+                    className="h-7.5 px-2.5 rounded-xl text-xs font-bold bg-white hover:bg-rose-50/50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-300 flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 cursor-pointer transition-colors"
                   >
                     <span>🪑 Masaya Bağla</span>
                   </button>
@@ -1587,16 +1751,74 @@ export function CashierSalesTerminal({
             </div>
           </div>
 
+          {/* Servis Türü Seçici */}
+          <div className="p-3 pb-1 bg-white shrink-0">
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("TAKEAWAY");
+                  setSelectedTableId(null);
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
+                  serviceType === "TAKEAWAY"
+                    ? "bg-white text-rose-700 shadow-sm border border-slate-200/80 ring-1 ring-rose-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <ShoppingBagIcon className="size-3.5 shrink-0 text-rose-600" />
+                <span className="truncate">Gel-Al / Paket</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("DINE_IN");
+                  if (!selectedTableId) {
+                    setIsTableModalOpen(true);
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
+                  serviceType === "DINE_IN"
+                    ? "bg-white text-rose-700 shadow-sm border border-slate-200/80 ring-1 ring-rose-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <ArmchairIcon className="size-3.5 shrink-0 text-rose-600" />
+                <span className="truncate">Masada Servis</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceType("DELIVERY");
+                  setSelectedTableId(null);
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
+                  serviceType === "DELIVERY"
+                    ? "bg-white text-rose-700 shadow-sm border border-slate-200/80 ring-1 ring-rose-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <BikeIcon className="size-3.5 shrink-0 text-rose-600" />
+                <span className="truncate">Paket Servis</span>
+              </button>
+            </div>
+          </div>
+
           {/* Sepet Ürün Satırları (Scrollable) */}
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 min-h-[160px] max-h-[50vh] lg:max-h-[none]">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center my-auto py-10 text-center text-slate-400">
-                <div className="size-16 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center mb-3 text-slate-300">
-                  <ReceiptIcon className="size-8 stroke-[1.5]" />
+              <div className="flex flex-col items-center justify-center my-auto py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 p-6">
+                <div className="size-14 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center mb-2.5 text-rose-500">
+                  <ReceiptIcon className="size-7 stroke-[1.5]" />
                 </div>
-                <p className="text-sm font-bold text-slate-700">Sepetiniz Henüz Boş</p>
-                <span className="text-xs text-slate-400 max-w-[220px] mt-1">
-                  Menüden ürün ekleyerek hızlı satışa veya adisyona başlayabilirsiniz.
+                <p className="text-sm font-bold text-slate-800">Henüz Ürün Eklenmedi</p>
+                <span className="text-xs text-slate-500 max-w-[240px] mt-1">
+                  Sol menüden ürün seçerek adisyona hızlıca ekleyebilirsiniz.
                 </span>
               </div>
             ) : (
@@ -1674,7 +1896,7 @@ export function CashierSalesTerminal({
           </div>
 
           {/* İskonto & İndirim Çubuğu */}
-          <div className="px-3.5 py-2 bg-slate-100/90 border-t border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="px-3.5 py-2 bg-slate-50 border-t border-b border-slate-200 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1.5">
               <TagIcon className="size-3.5 text-slate-600" />
               <span className="text-xs font-bold text-slate-700">İndirim / İskonto:</span>
@@ -1687,7 +1909,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "NONE"
-                    ? "bg-slate-800 text-white border-slate-800"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
@@ -1699,7 +1921,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "PERCENT" && discount.value === 10
-                    ? "bg-indigo-600 text-white border-indigo-600"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
@@ -1711,7 +1933,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "PERCENT" && discount.value === 20
-                    ? "bg-indigo-600 text-white border-indigo-600"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
@@ -1728,7 +1950,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer shadow-2xs",
                   discount.type === "FLAT"
-                    ? "bg-indigo-600 text-white border-indigo-600"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
@@ -1737,23 +1959,23 @@ export function CashierSalesTerminal({
             </div>
           </div>
 
-          {/* Şık Modern Hesap Özeti (Ferah Slate/Dark Design) */}
-          <div className="p-4 bg-slate-900 text-white border-t border-slate-800 shadow-md shrink-0">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-1.5">
+          {/* Hesap Özeti (Clean White / Light Design matching Image) */}
+          <div className="p-3.5 sm:p-4 bg-slate-50/90 border-t border-slate-200 shrink-0">
+            <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-1">
               <span>Ara Toplam: {formatCurrency(bill.subtotal)}</span>
               {bill.discountTotal > 0 && (
-                <span className="text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                <span className="text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                   İndirim: -{formatCurrency(bill.discountTotal)}
                 </span>
               )}
-              <span>KDV: {formatCurrency(bill.taxTotal)}</span>
+              <span>KDV (%10): {formatCurrency(bill.taxTotal)}</span>
             </div>
 
-            <div className="flex items-baseline justify-between pt-2 border-t border-slate-800">
-              <span className="text-xs uppercase tracking-wider font-extrabold text-slate-300">
+            <div className="flex items-baseline justify-between pt-2 border-t border-slate-200">
+              <span className="text-xs uppercase tracking-wider font-extrabold text-slate-700">
                 Ödenecek Tutar:
               </span>
-              <span className="text-3xl font-black text-emerald-400 tracking-tight tabular-nums drop-shadow-sm font-mono">
+              <span className="text-2xl sm:text-3xl font-black text-rose-600 tracking-tight tabular-nums font-mono">
                 {formatCurrency(bill.grandTotal)}
               </span>
             </div>
@@ -1761,63 +1983,7 @@ export function CashierSalesTerminal({
 
           {/* 3. ÖDEME YÖNTEMLERİ VE PARAÜSTÜ MODÜLÜ */}
           <div className="p-3.5 bg-white border-t border-slate-200 flex flex-col gap-3 shrink-0">
-            {/* Servis Türü Seçici (Masada Servis | Gel-Al / Paket | Paket Servis / Kurye) */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("DINE_IN");
-                  if (!selectedTableId) {
-                    setActiveMainTab("TABLES");
-                  }
-                }}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
-                  serviceType === "DINE_IN"
-                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/80 ring-1 ring-blue-500/20"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <ArmchairIcon className="size-3.5 shrink-0 text-blue-600" />
-                <span className="truncate">Masada Servis</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("TAKEAWAY");
-                  setSelectedTableId(null);
-                }}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
-                  serviceType === "TAKEAWAY"
-                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80 ring-1 ring-emerald-500/20"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <ShoppingBagIcon className="size-3.5 shrink-0 text-emerald-600" />
-                <span className="truncate">Gel-Al / Paket</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceType("DELIVERY");
-                  setSelectedTableId(null);
-                }}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer select-none",
-                  serviceType === "DELIVERY"
-                    ? "bg-white text-orange-700 shadow-sm border border-slate-200/80 ring-1 ring-orange-500/20"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <BikeIcon className="size-3.5 shrink-0 text-orange-600" />
-                <span className="truncate">Paket Servis / Kurye</span>
-              </button>
-            </div>
-
-            {/* Ödeme Türü Seçici Sekmeler (Modern Segmented Control) */}
+            {/* Ödeme Türü Seçici Sekmeler (Active is bg-rose-600 text-white) */}
             <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
               <button
                 type="button"
@@ -1825,7 +1991,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "CASH"
-                    ? "bg-white text-emerald-700 shadow-sm border border-slate-200/60"
+                    ? "bg-rose-600 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
@@ -1839,7 +2005,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "CARD"
-                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/60"
+                    ? "bg-rose-600 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
@@ -1853,7 +2019,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "MEAL_VOUCHER"
-                    ? "bg-white text-amber-700 shadow-sm border border-slate-200/60"
+                    ? "bg-rose-600 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
@@ -1867,7 +2033,7 @@ export function CashierSalesTerminal({
                 className={cn(
                   "flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                   paymentMethod === "SPLIT"
-                    ? "bg-white text-purple-700 shadow-sm border border-slate-200/60"
+                    ? "bg-rose-600 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
@@ -2270,8 +2436,8 @@ export function CashierSalesTerminal({
                 disabled={cart.length === 0 || submitSale.isPending}
                 className={cn(
                   "flex-1 py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base text-white tracking-wide transition-all select-none cursor-pointer",
-                  "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700",
-                  "shadow-lg shadow-emerald-600/25",
+                  "bg-rose-600 hover:bg-rose-700 active:bg-rose-800",
+                  "shadow-lg shadow-rose-600/25",
                   "active:scale-[0.99] transition-transform",
                   "disabled:opacity-50 disabled:pointer-events-none",
                   "flex items-center justify-center gap-2"
@@ -2288,6 +2454,21 @@ export function CashierSalesTerminal({
                     <span>Siparişi Tamamla</span>
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (cart.length > 0) {
+                    window.print?.();
+                  } else {
+                    toast.info("Adisyon fişi boş.");
+                  }
+                }}
+                title="Ek Seçenekler & Yazdır"
+                className="size-12 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs active:scale-95"
+              >
+                <MoreHorizontalIcon className="size-5" />
               </button>
             </div>
           </div>
