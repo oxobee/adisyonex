@@ -35,24 +35,33 @@ async function getQz() {
  */
 async function ensureQzConnected() {
   const qz = await getQz();
-  if (qz.websocket.isActive()) {
+  
+  // If already connected and connection is fully established
+  if (qz.websocket.isActive() && (qz.websocket as unknown as { connection?: { sendData?: unknown } }).connection?.sendData) {
     return qz;
   }
 
-  try {
-    // retries: 3, delay: 1 gives enough time for QZ Tray dialog prompt
-    await qz.websocket.connect({ retries: 3, delay: 1 });
-  } catch (err: unknown) {
-    if (qz.websocket.isActive()) {
-      return qz;
+  // If a half-open/broken connection exists, close it first
+  if (qz.websocket.isActive()) {
+    try {
+      await qz.websocket.disconnect();
+    } catch {
+      // ignore
     }
+  }
+
+  try {
+    await qz.websocket.connect({ retries: 2, delay: 1 });
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (
       msg.includes("already exists") ||
       msg.includes("already connected") ||
       msg.includes("already active")
     ) {
-      return qz;
+      if ((qz.websocket as unknown as { connection?: { sendData?: unknown } }).connection?.sendData) {
+        return qz;
+      }
     }
 
     const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
@@ -63,6 +72,13 @@ async function ensureQzConnected() {
     throw new Error(
       `QZ Tray servisine bağlanılamadı. Lütfen QZ Tray uygulamasının çalıştığından ve izin penceresinde 'İzin Ver' (Allow) seçtiğinizden emin olun.${sslHint}`
     );
+  }
+
+  // Small pause to guarantee handshake and sendData assignment completion
+  let attempts = 0;
+  while (attempts < 15 && !(qz.websocket as unknown as { connection?: { sendData?: unknown } }).connection?.sendData) {
+    await new Promise((r) => setTimeout(r, 200));
+    attempts++;
   }
 
   return qz;
