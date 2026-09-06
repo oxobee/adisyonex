@@ -13,6 +13,8 @@ import {
 } from "@/repositories/restaurant.repository";
 import { createUser, findUserByPhone } from "@/repositories/user.repository";
 import { generateUsername } from "@/lib/username";
+import type { LicensePlan } from "@/generated/prisma/client";
+import { adminRecharge } from "@/services/ai/ai-credit.service";
 import type { Paginated } from "@/types";
 import type { RestaurantListItemDTO } from "@/types/admin";
 
@@ -108,6 +110,47 @@ export const onboardRestaurant = async (
   const slug = await uniqueSlug(input.name);
   const username = await generateUniqueUsername();
 
+  const now = new Date();
+  let licensePlan: LicensePlan = input.licensePlan || "MONTHLY";
+  let licenseExpiresAt: Date | null = null;
+  let defaultAiCredits = 100;
+
+  if (input.licenseType === "CUSTOM") {
+    const days = input.customDays && input.customDays > 0 ? input.customDays : 30;
+    licenseExpiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    licensePlan = days >= 365 ? "YEARLY" : "MONTHLY";
+    // For custom days, AI credits are manually specified by admin (or default to 0 if not provided)
+    defaultAiCredits = input.aiCredits !== undefined ? input.aiCredits : 100;
+  } else {
+    // Standard Packages
+    if (input.licensePlan === "LIFETIME") {
+      licensePlan = "LIFETIME";
+      licenseExpiresAt = null;
+      defaultAiCredits = input.aiCredits !== undefined ? input.aiCredits : 5000;
+    } else if (input.licensePlan === "YEARLY") {
+      licensePlan = "YEARLY";
+      const days = input.customDays && input.customDays > 0 ? input.customDays : 365;
+      licenseExpiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+      defaultAiCredits = input.aiCredits !== undefined ? input.aiCredits : 1500;
+    } else if (input.licensePlan === "TRIAL") {
+      licensePlan = "TRIAL";
+      const days = input.customDays && input.customDays > 0 ? input.customDays : 14;
+      licenseExpiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+      defaultAiCredits = input.aiCredits !== undefined ? input.aiCredits : 50;
+    } else {
+      licensePlan = "MONTHLY";
+      const days = input.customDays && input.customDays > 0 ? input.customDays : 30;
+      licenseExpiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+      defaultAiCredits = input.aiCredits !== undefined ? input.aiCredits : 100;
+    }
+  }
+
+  const licenseNote =
+    input.licenseNote ||
+    (input.licenseType === "CUSTOM"
+      ? `${input.customDays ?? 30} Günlük Özel Lisans Tanımlaması`
+      : undefined);
+
   const restaurant = await createRestaurant({
     name: input.name,
     slug,
@@ -116,8 +159,32 @@ export const onboardRestaurant = async (
     city: input.city ?? null,
     country: input.country,
     timezone: input.timezone ?? null,
+    licensePlan,
+    licenseStatus: "ACTIVE",
+    licenseStartsAt: now,
+    licenseExpiresAt,
+    licenseNote,
     owner: { connect: { id: owner.id } },
   });
+
+  // Automatically top-up starting AI credits if defined and > 0
+  if (defaultAiCredits > 0) {
+    try {
+      await adminRecharge(
+        restaurant.id,
+        defaultAiCredits,
+        `Yeni restoran açılış lisansı (${licensePlan}) ile ${defaultAiCredits} AI kredisi tanımlandı`,
+      );
+    } catch {
+      // Wallet creation or recharge can fail softly without blocking restaurant creation
+    }
+  }
+
+  let daysRemaining = 9999;
+  if (licensePlan !== "LIFETIME" && licenseExpiresAt) {
+    const diffMs = licenseExpiresAt.getTime() - now.getTime();
+    daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
 
   return {
     id: restaurant.id,
@@ -133,6 +200,11 @@ export const onboardRestaurant = async (
     ownerName: owner.name,
     ownerPhone: owner.phone,
     onboardedAt: restaurant.onboardedAt.toISOString(),
+    licensePlan,
+    licenseExpiresAt: licenseExpiresAt ? licenseExpiresAt.toISOString() : null,
+    licenseDaysRemaining: daysRemaining,
+    licenseStatus: "ACTIVE",
+    aiBalance: defaultAiCredits,
   };
 };
 

@@ -34,6 +34,12 @@ export const onboardRestaurantSchema = z.object({
   city: z.string().trim().max(120).optional(),
   country: z.string().trim().length(2).toUpperCase().default("IN"),
   timezone: z.string().trim().max(64).optional(),
+  // Lisans & Yapay Zeka Kredisi Tanımlaması
+  licenseType: z.enum(["PACKAGE", "CUSTOM"]).default("PACKAGE").optional(),
+  licensePlan: z.enum(["TRIAL", "MONTHLY", "YEARLY", "LIFETIME"]).default("MONTHLY").optional(),
+  customDays: z.coerce.number().int().min(1).max(3650).optional(),
+  aiCredits: z.coerce.number().int().min(0).max(100000).optional(),
+  licenseNote: z.string().trim().max(500).optional(),
 });
 export type OnboardRestaurantInput = z.infer<typeof onboardRestaurantSchema>;
 
