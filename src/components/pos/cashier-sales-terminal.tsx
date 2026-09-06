@@ -1227,8 +1227,8 @@ export function CashierSalesTerminal({
           isCatalogOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
         )}
       >
-        {/* Panel Üst Başlığı (Paneli Daralt Butonu + Sekmeler + Arama) */}
-        <div className="p-3 sm:p-3.5 bg-white border-b border-slate-200 flex items-center justify-between gap-2 shrink-0 shadow-2xs">
+        {/* Panel Üst Başlığı (Paneli Daralt Butonu + Ürün Arama + Sağa Kaydırılmış Sekmeler + Kapat) */}
+        <div className="p-3 sm:p-3.5 bg-white border-b border-slate-200 flex items-center justify-between gap-2 sm:gap-3 shrink-0 shadow-2xs">
           {/* Sol: Paneli Daralt Butonu */}
           <button
             type="button"
@@ -1240,35 +1240,68 @@ export function CashierSalesTerminal({
             <span>Paneli Daralt</span>
           </button>
 
-          {/* Orta: Ürünler / Masalar Geçiş Sekmeleri */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("PRODUCTS")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5",
-                activeMainTab === "PRODUCTS"
-                  ? "bg-white text-rose-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+          {/* Orta/Sağ: Ürün Arama Input Alanı + Sağa Kaydırılmış Masa ve Ürün Seç Alanı */}
+          <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+            {/* Arama Input Alanı */}
+            <div className="relative flex-1 max-w-xs sm:max-w-sm min-w-0">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={activeMainTab === "PRODUCTS" ? searchQuery : tableSearch}
+                onChange={(e) => {
+                  if (activeMainTab === "PRODUCTS") {
+                    setSearchQuery(e.target.value);
+                  } else {
+                    setTableSearch(e.target.value);
+                  }
+                }}
+                placeholder={activeMainTab === "PRODUCTS" ? "Ürün veya barkod ara..." : "Masa ara..."}
+                className="w-full pl-8.5 pr-8 py-1.5 sm:py-2 rounded-xl border border-slate-200 bg-slate-50/90 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500/25 focus:border-rose-300 focus:bg-white transition-all shadow-inner"
+              />
+              {(activeMainTab === "PRODUCTS" ? searchQuery : tableSearch) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeMainTab === "PRODUCTS") setSearchQuery("");
+                    else setTableSearch("");
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
               )}
-            >
-              <UtensilsCrossedIcon className="size-3.5" />
-              <span>Ürünler ({menu.items.length})</span>
-            </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("TABLES")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5",
-                activeMainTab === "TABLES"
-                  ? "bg-white text-rose-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              )}
-            >
-              <ArmchairIcon className="size-3.5" />
-              <span>Masalar ({tables.length})</span>
-            </button>
+            {/* Sağa Kaydırılmış Masa ve Ürün Seç Sekmeleri */}
+            <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("PRODUCTS")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5",
+                  activeMainTab === "PRODUCTS"
+                    ? "bg-white text-rose-600 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <UtensilsCrossedIcon className="size-3.5" />
+                <span>Ürünler ({menu.items.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("TABLES")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5",
+                  activeMainTab === "TABLES"
+                    ? "bg-white text-rose-600 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <ArmchairIcon className="size-3.5" />
+                <span>Masalar ({tables.length})</span>
+              </button>
+            </div>
           </div>
 
           {/* Sağ: Kapat Çarpı Butonu */}
@@ -1637,7 +1670,14 @@ export function CashierSalesTerminal({
                           )}
                         </div>
 
-                        <div className="mt-3 pt-2.5 border-t border-white/20 flex items-center justify-between z-10">
+                        {/* Masa Simgesi Rozeti */}
+                        <div className="my-auto py-2 flex items-center justify-center z-10">
+                          <div className="size-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
+                            <ArmchairIcon className="size-6 stroke-[2.2]" />
+                          </div>
+                        </div>
+
+                        <div className="mt-2 pt-2.5 border-t border-white/20 flex items-center justify-between z-10">
                           {isOccupied && existingOrder ? (
                             <div className="flex flex-col">
                               <span className="text-[11px] text-white/80 font-semibold">
@@ -2117,45 +2157,10 @@ export function CashierSalesTerminal({
             </div>
           </div>
 
-          {/* 4. ÖDEME YÖNTEMLERİ (3 BÜYÜK DOKUNMATİK BUTON) */}
-          <div className="px-3 pt-2.5 pb-1 bg-white shrink-0">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleProcessPayment("CASH")}
-                disabled={remainingBalance <= 0}
-                className="py-3 px-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-              >
-                <BanknoteIcon className="size-5" />
-                <span>💵 Nakit</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleProcessPayment("CARD")}
-                disabled={remainingBalance <= 0}
-                className="py-3 px-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-              >
-                <CreditCardIcon className="size-5" />
-                <span>💳 Kredi Kartı</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleProcessPayment("MEAL_VOUCHER")}
-                disabled={remainingBalance <= 0}
-                className="py-3 px-2 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-              >
-                <WalletIcon className="size-5" />
-                <span>🎫 Yemek Kartı</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 5. SABİT SANAL KLAVYE & HIZLI BANKNOTLAR (DOKUNMATİK EKRANLAR İÇİN ESTETİK NUMPAD) */}
-          <div className="flex-1 min-h-0 p-3 pt-1 bg-white flex flex-col justify-between">
+          {/* 4. SABİT SANAL KLAVYE & HIZLI BANKNOTLAR (DOKUNMATİK EKRANLAR İÇİN ESTETİK NUMPAD) */}
+          <div className="flex-1 min-h-0 p-3 pt-2 bg-white flex flex-col justify-between">
             {/* Hızlı Banknotlar Satırı */}
-            <div className="grid grid-cols-6 gap-1.5 mb-2 shrink-0">
+            <div className="grid grid-cols-6 gap-1.5 mb-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => handleNumpad("EXACT")}
@@ -2209,6 +2214,41 @@ export function CashierSalesTerminal({
                 title="Geri Sil"
               >
                 ⌫
+              </button>
+            </div>
+          </div>
+
+          {/* 5. ÖDEME YÖNTEMLERİ (NUMPAD ALTINDA YER ALIR) */}
+          <div className="px-3 pb-2 pt-1 bg-white shrink-0 border-t border-slate-100">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleProcessPayment("CASH")}
+                disabled={remainingBalance <= 0}
+                className="py-2.5 px-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <BanknoteIcon className="size-5" />
+                <span>💵 Nakit</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleProcessPayment("CARD")}
+                disabled={remainingBalance <= 0}
+                className="py-2.5 px-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <CreditCardIcon className="size-5" />
+                <span>💳 Kredi Kartı</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleProcessPayment("MEAL_VOUCHER")}
+                disabled={remainingBalance <= 0}
+                className="py-2.5 px-2 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <WalletIcon className="size-5" />
+                <span>🎫 Yemek Kartı</span>
               </button>
             </div>
           </div>
@@ -2437,8 +2477,9 @@ export function CashierSalesTerminal({
                     )}
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className={cn("text-sm font-black truncate", isOccupied ? "text-white" : "text-gray-900")}>
-                        {table.label}
+                      <span className={cn("text-sm font-black truncate flex items-center gap-1.5", isOccupied ? "text-white" : "text-gray-900")}>
+                        <ArmchairIcon className="size-4 shrink-0 opacity-80" />
+                        <span>{table.label}</span>
                       </span>
                       <span
                         className={cn(
@@ -2452,7 +2493,18 @@ export function CashierSalesTerminal({
                       </span>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-white/20 flex flex-col">
+                    <div className="my-2 flex items-center justify-center">
+                      <div className={cn(
+                        "size-9 rounded-xl flex items-center justify-center border",
+                        isOccupied 
+                          ? "bg-white/20 border-white/30 text-white" 
+                          : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                      )}>
+                        <ArmchairIcon className="size-5 stroke-[2]" />
+                      </div>
+                    </div>
+
+                    <div className="mt-1 pt-2 border-t border-white/20 flex flex-col">
                       {isOccupied && existingOrder ? (
                         <>
                           <span className="text-[10px] text-white/80 font-medium">
