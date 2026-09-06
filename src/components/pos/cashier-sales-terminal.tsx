@@ -263,8 +263,8 @@ export function CashierSalesTerminal({
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const router = useRouter();
 
-  // Main Tab State: "PRODUCTS" | "TABLES"
-  const [activeMainTab, setActiveMainTab] = useState<"PRODUCTS" | "TABLES">("PRODUCTS");
+  // Main Tab State: "PRODUCTS" | "TABLES" | "CART"
+  const [activeMainTab, setActiveMainTab] = useState<"PRODUCTS" | "TABLES" | "CART">("PRODUCTS");
   const [tableFilter, setTableFilter] = useState<"ALL" | "OCCUPIED" | "EMPTY">("ALL");
   const [tableSearch, setTableSearch] = useState("");
 
@@ -761,16 +761,19 @@ export function CashierSalesTerminal({
       {/* 2. ANA GÖVDE: SOL ÜRÜN KATALOĞU (60%) + SAĞ ADİSYON & ÖDEME (40%) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* SOL ALAN: TAB MENÜ (MASA | ÜRÜN) + İÇERİK */}
-        <section className="flex-1 flex flex-col min-w-0 bg-[#f8fafc] border-r border-gray-200/90 overflow-hidden">
+        <section className={cn(
+          "flex-1 flex-col min-w-0 bg-[#f8fafc] border-r border-gray-200/90 overflow-hidden",
+          activeMainTab === "CART" ? "hidden lg:flex" : "flex"
+        )}>
           {/* Üst Sekme Çubuğu: Masa | Ürün ve Fiş 01 - Fiş 05 Sekmeleri */}
           <div className="p-2 sm:px-4 sm:py-2.5 bg-white border-b border-gray-200 shrink-0 shadow-2xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5">
-            {/* Sol: Masalar | Ürünler */}
+            {/* Sol: Masalar | Ürünler | Adisyon (Sepet) */}
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-inner shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveMainTab("TABLES")}
                 className={cn(
-                  "flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  "flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
                   activeMainTab === "TABLES"
                     ? "bg-white text-blue-700 shadow-sm border border-slate-200/80 scale-[1.01]"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
@@ -779,7 +782,7 @@ export function CashierSalesTerminal({
                 <ArmchairIcon className="size-4 text-blue-600 shrink-0" />
                 <span>Masalar</span>
                 <span className={cn(
-                  "px-2 py-0.5 rounded-full text-[11px] font-black tracking-tight",
+                  "px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight",
                   activeMainTab === "TABLES"
                     ? "bg-rose-100 text-rose-700 border border-rose-200"
                     : "bg-slate-200 text-slate-600"
@@ -792,7 +795,7 @@ export function CashierSalesTerminal({
                 type="button"
                 onClick={() => setActiveMainTab("PRODUCTS")}
                 className={cn(
-                  "flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  "flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
                   activeMainTab === "PRODUCTS"
                     ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80 scale-[1.01]"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
@@ -801,12 +804,35 @@ export function CashierSalesTerminal({
                 <UtensilsCrossedIcon className="size-4 text-emerald-600 shrink-0" />
                 <span>Ürünler</span>
                 <span className={cn(
-                  "px-2 py-0.5 rounded-full text-[11px] font-black tracking-tight",
+                  "px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight",
                   activeMainTab === "PRODUCTS"
                     ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                     : "bg-slate-200 text-slate-600"
                 )}>
                   {menu.items.length} Ürün
+                </span>
+              </button>
+
+              {/* Mobilde / Tablette Adisyon Sekmesi */}
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("CART")}
+                className={cn(
+                  "lg:hidden flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer select-none",
+                  activeMainTab === "CART"
+                    ? "bg-white text-indigo-700 shadow-sm border border-slate-200/80 scale-[1.01]"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                )}
+              >
+                <ReceiptIcon className="size-4 text-indigo-600 shrink-0" />
+                <span>Adisyon</span>
+                <span className={cn(
+                  "px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight",
+                  activeMainTab === "CART"
+                    ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                    : "bg-slate-200 text-slate-600"
+                )}>
+                  {cart.reduce((s, l) => s + l.quantity, 0)} Kalem
                 </span>
               </button>
             </div>
@@ -935,7 +961,7 @@ export function CashierSalesTerminal({
                     <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir filtre seçin</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {filteredTables.map((table, idx) => {
                       const isOccupied = Boolean(occupied[table.id] || tableOrderMap.get(table.id));
                       const existingOrder = tableOrderMap.get(table.id) || (occupied[table.id] ? openOrders.find(o => o.id === occupied[table.id]) : undefined);
@@ -1147,7 +1173,7 @@ export function CashierSalesTerminal({
                     <span className="text-xs text-gray-400">Aramayı temizleyin veya başka bir kategori seçin</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {filteredItems.map((item, idx) => {
                       const cartCount = cartItemCounts[item.id] || 0;
                       const hasVariants = item.variants.length > 0 || item.modifierGroups.length > 0;
@@ -1293,7 +1319,8 @@ export function CashierSalesTerminal({
           onDragLeave={handleDragLeaveCart}
           onDrop={handleDropOnCart}
           className={cn(
-            "relative w-full lg:w-[420px] xl:w-[470px] shrink-0 flex flex-col bg-[#f8fafc] border-l border-slate-200 overflow-hidden shadow-2xl transition-all duration-200",
+            "relative w-full lg:w-[420px] xl:w-[470px] shrink-0 flex-col bg-[#f8fafc] border-l border-slate-200 overflow-hidden shadow-2xl transition-all duration-200",
+            activeMainTab === "CART" ? "flex" : "hidden lg:flex",
             isDragOverCart && "ring-4 ring-emerald-500/80 bg-emerald-50/20"
           )}
         >
@@ -1414,7 +1441,7 @@ export function CashierSalesTerminal({
           </div>
 
           {/* Sepet Ürün Satırları (Scrollable) */}
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 min-h-[140px] max-h-[30vh] lg:max-h-[none]">
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 min-h-[160px] max-h-[50vh] lg:max-h-[none]">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center my-auto py-10 text-center text-slate-400">
                 <div className="size-16 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center mb-3 text-slate-300">
@@ -1898,6 +1925,45 @@ export function CashierSalesTerminal({
           </div>
         </aside>
       </div>
+
+      {/* 3. MOBİL & TABLET KAYAN ADİSYON / SEPET BARI (Ürünler veya Masalar sekmesindeyken sepet doluysa) */}
+      {cart.length > 0 && activeMainTab !== "CART" && (
+        <div className="lg:hidden fixed inset-x-0 bottom-3 z-30 px-3 pointer-events-none animate-in slide-in-from-bottom-3 duration-200">
+          <div className="mx-auto flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-700 pointer-events-auto gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("CART")}
+              className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer select-none active:scale-98 transition-transform"
+            >
+              <div className="relative size-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <ReceiptIcon className="size-5" />
+                <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black shadow-xs">
+                  {cart.reduce((s, l) => s + l.quantity, 0)}
+                </span>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-slate-300 truncate">
+                  {selectedTableId
+                    ? `🪑 ${tables.find((t) => t.id === selectedTableId)?.label || "Masa"}`
+                    : "Hızlı Satış"}
+                </span>
+                <span className="text-base font-black text-emerald-400 font-mono tabular-nums leading-tight">
+                  {formatCurrency(bill.grandTotal)}
+                </span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("CART")}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-black shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Adisyona Git</span>
+              <span className="text-xs">→</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 4. SEÇENEKLİ ÜRÜN MODALI (VARYANT & MODIFIER SEÇİCİ) */}
       {configItem && (

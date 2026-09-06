@@ -541,7 +541,7 @@ export function GuestOrderPage({
 
   return (
     <div className={cn(
-      "mx-auto flex min-h-svh w-full max-w-md flex-col p-4 pb-32 transition-colors",
+      "mx-auto flex min-h-svh w-full max-w-md md:max-w-4xl lg:max-w-5xl flex-col p-3 sm:p-4 md:p-6 pb-32 transition-colors",
       qrMenuTheme === "ELEGANT_DARK" && "bg-zinc-950 text-zinc-100",
     )}>
       {/* Lively & Themed Top Banner with Square Logo */}
@@ -689,7 +689,7 @@ export function GuestOrderPage({
           </div>
         ) : (
           <div className="fixed inset-x-0 bottom-4 z-30 px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
-            <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-foreground text-background p-3.5 shadow-2xl backdrop-blur-xl pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300">
+            <div className="mx-auto flex w-full max-w-md md:max-w-2xl items-center justify-between gap-3 rounded-2xl bg-foreground text-background p-3.5 shadow-2xl backdrop-blur-xl pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300">
               <button
                 type="button"
                 className="flex min-w-0 flex-1 items-center gap-3 text-left transition-transform active:scale-95 cursor-pointer select-none"

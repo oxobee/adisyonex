@@ -582,7 +582,7 @@ export function Theme2QsrView({
 
   return (
     <div
-      className="mx-auto flex min-h-svh w-full max-w-md flex-col bg-[#f8f8f9] text-zinc-900 pb-28 select-none transition-colors"
+      className="mx-auto flex min-h-svh w-full max-w-md md:max-w-4xl lg:max-w-5xl flex-col bg-[#f8f8f9] text-zinc-900 pb-28 select-none transition-colors md:px-6"
       style={{
         ["--qsr-primary" as string]: primaryColor,
         ["--qsr-secondary" as string]: secondaryColor,
@@ -1091,7 +1091,7 @@ export function Theme2QsrView({
                       </Button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
                       {categoryItems.map((item, idx) => {
                         const photo =
                           item.images.find((i) => i.isPrimary) ??
@@ -1357,7 +1357,7 @@ export function Theme2QsrView({
 
                     {/* 2. GRID / KART STİLİ (2'li Izgara Dikey Kartlar) */}
                     {sec.displayStyle === "grid" && (
-                      <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
                         {sectionItems.map((item, idx) => {
                           const photo =
                             item.images.find((i) => i.isPrimary) ??
@@ -1580,8 +1580,8 @@ export function Theme2QsrView({
             <div className="size-8" />
           </div>
 
-          {/* 2-Column Categories Grid (Görseldeki Categories Ekranı) */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Categories Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {hasChefSpecials && (
               <div
                 onClick={() => {
@@ -2326,7 +2326,7 @@ export function Theme2QsrView({
       {/* ============================================================ */}
       {cartItemCount > 0 && activeTab !== "profile" && (
         <div className="fixed inset-x-0 bottom-[98px] z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] animate-in slide-in-from-bottom-3 duration-300">
-          <div className="mx-auto flex w-full max-w-md items-center justify-between rounded-3xl bg-zinc-950 p-2.5 sm:p-3 shadow-2xl border border-zinc-800/90 text-white pointer-events-auto">
+          <div className="mx-auto flex w-full max-w-md md:max-w-xl lg:max-w-2xl items-center justify-between rounded-3xl bg-zinc-950 p-2.5 sm:p-3 shadow-2xl border border-zinc-800/90 text-white pointer-events-auto">
             {/* Left: Bag Icon with Count Badge & Amount */}
             <div className="flex items-center gap-3">
               <div className="relative flex size-11 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-white shrink-0">
@@ -2502,7 +2502,7 @@ export function Theme2QsrView({
       {/* 10. FLOATING BOTTOM NAVIGATION BAR (Ana Sayfa / Kat / Profil) */}
       {/* ============================================================ */}
       <div className="fixed inset-x-0 bottom-4 z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
-        <div className="mx-auto flex w-full max-w-md items-center justify-around rounded-3xl bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl border border-zinc-200/90 pointer-events-auto">
+        <div className="mx-auto flex w-full max-w-md md:max-w-xl lg:max-w-2xl items-center justify-around rounded-3xl bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl border border-zinc-200/90 pointer-events-auto">
           
           {/* Home Tab */}
           <button

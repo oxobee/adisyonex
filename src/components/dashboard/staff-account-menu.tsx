@@ -127,22 +127,47 @@ export function StaffAccountMenu({
     photoUrl: "",
   });
 
-  // Load saved accounts from localStorage
+  // Load saved accounts and active account from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
+      const savedActiveId = localStorage.getItem("adisyon_active_staff_id");
+      const savedActiveRaw = localStorage.getItem("adisyon_active_staff_account");
+
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const currentExists = parsed.some((a: StaffAccount) => a.id === initialAccount.id);
-          const merged = currentExists
+          const merged: StaffAccount[] = currentExists
             ? parsed.map((a: StaffAccount) => (a.id === initialAccount.id ? { ...a, ...initialAccount } : a))
             : [initialAccount, ...parsed];
 
+          // Determine preferred active account: check savedActiveId or savedActiveRaw in merged
+          let resolvedActive = initialAccount;
+          if (savedActiveId) {
+            const foundById = merged.find((a) => a.id === savedActiveId);
+            if (foundById) {
+              resolvedActive = foundById;
+            }
+          } else if (savedActiveRaw) {
+            try {
+              const parsedSaved = JSON.parse(savedActiveRaw);
+              const found = merged.find((a) => a.id === parsedSaved?.id);
+              if (found) resolvedActive = found;
+            } catch {
+              // ignore
+            }
+          }
+
           setAccounts(merged);
-          setActiveAccount(initialAccount);
-          onActiveAccountChange(initialAccount);
+          setActiveAccount(resolvedActive);
+          onActiveAccountChange(resolvedActive);
+
+          // Update active keys in localStorage to ensure sync
+          localStorage.setItem("adisyon_active_staff_id", resolvedActive.id);
+          localStorage.setItem("adisyon_active_staff_account", JSON.stringify(resolvedActive));
+          window.dispatchEvent(new CustomEvent("active-account-changed", { detail: resolvedActive }));
           return;
         }
       }
@@ -154,6 +179,7 @@ export function StaffAccountMenu({
     setActiveAccount(initialAccount);
     onActiveAccountChange(initialAccount);
     try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([initialAccount]));
       localStorage.setItem("adisyon_active_staff_id", initialAccount.id);
       localStorage.setItem("adisyon_active_staff_account", JSON.stringify(initialAccount));
       window.dispatchEvent(new CustomEvent("active-account-changed", { detail: initialAccount }));

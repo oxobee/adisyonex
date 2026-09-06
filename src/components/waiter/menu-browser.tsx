@@ -475,7 +475,7 @@ export function MenuBrowser({
         </div>
       ) : viewMode === "list" ? (
         /* --- LIST VIEW --- */
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {items.map((item, index) => {
             const photo =
               item.images.find((i) => i.isPrimary) ?? item.images[0] ?? null;
@@ -541,13 +541,10 @@ export function MenuBrowser({
                             <span>{a.name}</span>
                           </span>
                         ))}
-                        {item.allergens.length > 3 ? (
-                          <span className="text-[10px] text-muted-foreground">
-                            +{item.allergens.length - 3}
-                          </span>
-                        ) : null}
                       </div>
-                    ) : diet ? (
+                    ) : null}
+
+                    {diet ? (
                       <div className="mt-1.5 flex items-center gap-1.5">
                         <span className="text-xs">{diet.icon}</span>
                         <span className="text-[11px] text-muted-foreground">{diet.label}</span>
@@ -555,24 +552,23 @@ export function MenuBrowser({
                     ) : null}
                   </div>
 
-                  {/* Price & Action Row */}
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base sm:text-lg font-black text-foreground tabular-nums">
-                        {formatCurrency(item.price)}
-                      </span>
-                    </div>
+                  {/* Price & Action Bottom Row */}
+                  <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <span className="font-extrabold text-foreground text-sm sm:text-base font-mono tabular-nums">
+                      {item.price.toFixed(0)} ₺
+                    </span>
 
-                    <div className="flex items-center gap-2">
-                      {/* Calories badge */}
-                      {item.calories ? (
-                        <span className="text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold">
-                          <FlameIcon className="size-3 text-amber-500" />
-                          {item.calories} kcal
-                        </span>
-                      ) : null}
+                    <div className="flex items-center gap-1.5">
+                      {hasOptions && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenDetail(item)}
+                          className="text-[11px] font-bold text-primary hover:underline px-1.5 py-0.5 cursor-pointer"
+                        >
+                          Seçenekli
+                        </button>
+                      )}
 
-                      {/* Quick Add / Option Trigger */}
                       <button
                         type="button"
                         disabled={!item.available}
@@ -600,8 +596,8 @@ export function MenuBrowser({
           })}
         </div>
       ) : (
-        /* --- GRID VIEW (2 Columns) --- */
-        <div className="grid grid-cols-2 gap-3">
+        /* --- GRID VIEW (Responsive Columns) --- */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {items.map((item, index) => {
             const photo =
               item.images.find((i) => i.isPrimary) ?? item.images[0] ?? null;

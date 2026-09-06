@@ -184,6 +184,20 @@ export function HomeScreen({
   const [activeAccount, setActiveAccount] = useState<StaffAccount>(initialAccount);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedAccountRaw = localStorage.getItem("adisyon_active_staff_account");
+        if (savedAccountRaw) {
+          const parsed = JSON.parse(savedAccountRaw);
+          if (parsed && parsed.id) {
+            setActiveAccount(parsed);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     const handleAccountChange = (e: Event) => {
       const customEvent = e as CustomEvent<StaffAccount>;
       if (customEvent.detail) {
