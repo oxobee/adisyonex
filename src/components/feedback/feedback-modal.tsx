@@ -20,7 +20,6 @@ import {
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
 
 import {
   Dialog,
@@ -41,7 +40,35 @@ interface FeedbackModalProps {
   readonly onClose: () => void;
   readonly initialCategory?: FeedbackCategoryType;
   readonly initialScreenshot?: string | null;
+  readonly initialAttachments?: readonly string[];
+  readonly onRequestScreenCapture?: () => void;
 }
+
+const CATEGORY_PLACEHOLDERS: Record<
+  FeedbackCategoryType,
+  { title: string; message: string }
+> = {
+  SUGGESTION: {
+    title: "Örn: Masa sipariş ekranında hızlı indirim ve ödeme butonu eklenebilir",
+    message:
+      "Örn: Adisyon kapatılırken tek dokunuşla nakit veya POS seçimi yapılırsa garsonların hızlanacağını düşünüyorum. Ayrıca...",
+  },
+  REQUEST: {
+    title: "Örn: Gün sonu raporlarının Excel (XLSX) formatında otomatik indirilmesi",
+    message:
+      "Örn: Muhasebe departmanımıza iletmek üzere her akşam gün sonu Z raporu ve ürün bazlı satışların XLSX çıktısını almak istiyoruz...",
+  },
+  COMPLAINT: {
+    title: "Örn: Yoğun saatlerde mutfak ekranı senkronizasyon gecikmesi",
+    message:
+      "Örn: Akşam 19:00 - 21:00 arasında masadan verilen siparişler mutfak ekranına bazen 1-2 dakika geç düşüyor, lütfen kontrol edilsin...",
+  },
+  BUG: {
+    title: "Örn: İndirim uygulandığında dip toplam yanlış hesaplanıyor",
+    message:
+      "Örn: Adisyona %10 indirim uyguladığımda genel toplam değişmiyor ancak KDV satırında değişiklik oluyor. Ekran görüntüsü ektedir...",
+  },
+};
 
 const CATEGORIES = [
   {
@@ -87,13 +114,14 @@ export function FeedbackModal({
   onClose,
   initialCategory = "SUGGESTION",
   initialScreenshot = null,
+  initialAttachments = [],
+  onRequestScreenCapture,
 }: FeedbackModalProps) {
   const [category, setCategory] = useState<FeedbackCategoryType>(initialCategory);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync initial props
@@ -113,6 +141,15 @@ export function FeedbackModal({
       });
     }
   }, [initialScreenshot]);
+
+  useEffect(() => {
+    if (initialAttachments && initialAttachments.length > 0) {
+      setAttachments((prev) => {
+        const set = new Set([...prev, ...initialAttachments]);
+        return Array.from(set);
+      });
+    }
+  }, [initialAttachments]);
 
   // Handle device image selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,41 +178,6 @@ export function FeedbackModal({
     // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
-    }
-  };
-
-  // Capture screen on demand from inside the modal
-  const handleCaptureScreen = async () => {
-    setIsCapturing(true);
-    // Hide modal temporarily for clean screenshot
-    const modalEl = document.querySelector(".feedback-dialog-content") as HTMLElement;
-    if (modalEl) modalEl.style.opacity = "0";
-
-    await new Promise((r) => setTimeout(r, 200));
-
-    try {
-      const canvas = await html2canvas(document.body, {
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        scale: 1,
-        ignoreElements: (el) => {
-          return (
-            el.classList.contains("feedback-dialog-content") ||
-            el.classList.contains("global-feedback-trigger")
-          );
-        },
-      });
-
-      const dataUrl = canvas.toDataURL("image/png");
-      setAttachments((prev) => [...prev, dataUrl]);
-      toast.success("Ekran görüntüsü başarıyla eklendi! 📸");
-    } catch (err) {
-      console.error("Screen capture error:", err);
-      toast.error("Ekran görüntüsü alınamadı");
-    } finally {
-      if (modalEl) modalEl.style.opacity = "1";
-      setIsCapturing(false);
     }
   };
 
@@ -306,7 +308,7 @@ export function FeedbackModal({
               id="fb-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Örn: Mutfak fişinde masa numarası görünmüyor..."
+              placeholder={CATEGORY_PLACEHOLDERS[category].title}
               className="h-11 rounded-xl text-sm font-medium border-gray-300 focus-visible:ring-indigo-500"
               maxLength={120}
               required
@@ -322,7 +324,7 @@ export function FeedbackModal({
               id="fb-msg"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Lütfen önerinizi, isteğinizi veya hatayla karşılaştığınız durumu detaylandırınız..."
+              placeholder={CATEGORY_PLACEHOLDERS[category].message}
               rows={4}
               className="rounded-xl text-sm font-normal border-gray-300 focus-visible:ring-indigo-500 resize-none"
               maxLength={3000}
@@ -352,21 +354,15 @@ export function FeedbackModal({
 
               <button
                 type="button"
-                onClick={handleCaptureScreen}
-                disabled={isCapturing}
-                className="flex items-center justify-center gap-2 h-11 px-3 rounded-2xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100/80 text-xs font-bold text-indigo-800 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+                onClick={() => {
+                  if (onRequestScreenCapture) {
+                    onRequestScreenCapture();
+                  }
+                }}
+                className="flex items-center justify-center gap-2 h-11 px-3 rounded-2xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100/80 text-xs font-bold text-indigo-800 transition-all cursor-pointer active:scale-98"
               >
-                {isCapturing ? (
-                  <>
-                    <Loader2Icon className="size-4 animate-spin" />
-                    <span>Fotoğraflanıyor…</span>
-                  </>
-                ) : (
-                  <>
-                    <CameraIcon className="size-4 text-indigo-600" />
-                    <span>Ekran Görüntüsü Çek</span>
-                  </>
-                )}
+                <CameraIcon className="size-4 text-indigo-600" />
+                <span>Ekran Görüntüsü Çek</span>
               </button>
             </div>
 

@@ -8,6 +8,7 @@ export interface SystemModuleDTO {
   price: number;
   currency: string;
   icon: string | null;
+  videoUrl: string | null;
   isActive: boolean;
   sortOrder: number;
   activeRestaurantCount: number;
@@ -21,6 +22,7 @@ export interface RestaurantModuleStatusDTO {
   price: number;
   currency: string;
   icon: string | null;
+  videoUrl: string | null;
   isGloballyActive: boolean;
   isAssignedToRestaurant: boolean;
   isRestaurantActive: boolean;
@@ -222,6 +224,7 @@ export async function listSystemModulesWithStats(): Promise<readonly SystemModul
     price: Number(m.price),
     currency: m.currency,
     icon: m.icon,
+    videoUrl: m.videoUrl,
     isActive: m.isActive,
     sortOrder: m.sortOrder,
     activeRestaurantCount: m._count.restaurantModules,
@@ -229,7 +232,7 @@ export async function listSystemModulesWithStats(): Promise<readonly SystemModul
 }
 
 /**
- * Update system module properties (title, price, description, active status).
+ * Update system module properties (title, price, description, active status, videoUrl).
  */
 export async function updateSystemModule(
   id: string,
@@ -237,6 +240,7 @@ export async function updateSystemModule(
     name?: string;
     description?: string | null;
     price?: number;
+    videoUrl?: string | null;
     isActive?: boolean;
   }
 ): Promise<void> {
@@ -246,6 +250,7 @@ export async function updateSystemModule(
       ...(data.name !== undefined && { name: data.name }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.price !== undefined && { price: data.price }),
+      ...(data.videoUrl !== undefined && { videoUrl: data.videoUrl?.trim() || null }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
     },
   });
@@ -282,6 +287,7 @@ export async function getRestaurantModulesStatus(
       price: Number(m.price),
       currency: m.currency,
       icon: m.icon,
+      videoUrl: m.videoUrl,
       isGloballyActive: m.isActive,
       isAssignedToRestaurant: true,
       isRestaurantActive,
@@ -459,3 +465,47 @@ export async function markNotificationAsRead(id: string): Promise<void> {
     data: { isRead: true, readAt: new Date() },
   });
 }
+
+/**
+ * Send notification to all restaurants or selected restaurants in bulk.
+ */
+export async function sendBulkRestaurantNotifications(data: {
+  target: "ALL" | "SELECTED";
+  restaurantIds?: string[];
+  title: string;
+  message: string;
+  buttonText?: string | null;
+  buttonUrl?: string | null;
+}): Promise<{ count: number }> {
+  let targetIds: string[] = [];
+
+  if (data.target === "ALL") {
+    const all = await prisma.restaurant.findMany({
+      where: { deletedAt: null },
+      select: { id: true },
+    });
+    targetIds = all.map((r) => r.id);
+  } else if (data.restaurantIds && data.restaurantIds.length > 0) {
+    targetIds = data.restaurantIds;
+  }
+
+  if (targetIds.length === 0) {
+    return { count: 0 };
+  }
+
+  const records = targetIds.map((rId) => ({
+    restaurantId: rId,
+    title: data.title.trim(),
+    message: data.message.trim(),
+    buttonText: data.buttonText?.trim() || null,
+    buttonUrl: data.buttonUrl?.trim() || null,
+    isRead: false,
+  }));
+
+  const result = await prisma.restaurantNotification.createMany({
+    data: records,
+  });
+
+  return { count: result.count };
+}
+

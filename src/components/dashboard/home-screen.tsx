@@ -552,6 +552,16 @@ export function HomeScreen({
             <span>Şube: {displayBranch}</span>
           </div>
 
+          {/* Modüller Butonu */}
+          <Link
+            href="/dashboard/modules"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-black shadow-2xs transition-all cursor-pointer"
+            title="Sistem ve Yapay Zeka Modülleri"
+          >
+            <SparklesIcon className="size-3.5 text-purple-600" />
+            <span>Modüller</span>
+          </Link>
+
           {/* Ekranı Kilitle Butonu */}
           <button
             type="button"
@@ -831,7 +841,7 @@ export function HomeScreen({
                 className="flex items-center justify-center gap-1.5 h-9 px-2 rounded-xl bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-[11px] font-bold text-gray-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
               >
                 <CameraIcon className="size-3.5 text-indigo-600" />
-                <span>Fotoğrafla</span>
+                <span>Ekran Görüntüsü Çek</span>
               </button>
 
               <button

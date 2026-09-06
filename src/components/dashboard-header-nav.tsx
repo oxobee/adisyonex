@@ -42,6 +42,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/customers": "Müşteriler & Sadakat",
   "/dashboard/system": "Sistem Ayarları",
   "/dashboard/settings": "Restoran Ayarları",
+  "/dashboard/modules": "Sistem Modülleri",
   "/dashboard/ai-studio": "Yapay Zeka Stüdyosu",
   "/dashboard/z-report": "Z Raporu & Gün Sonu",
 };
@@ -370,6 +371,20 @@ export function DashboardHeaderNav({
                           <CircleUserRoundIcon className="size-4" />
                         </div>
                         <span>Hesap Ayarları</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          router.push("/dashboard/modules");
+                        }}
+                        className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-xs font-bold text-foreground hover:bg-muted/80 hover:text-primary transition-all active:scale-98 cursor-pointer text-left group"
+                      >
+                        <div className="flex size-8 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                          <SparklesIcon className="size-4" />
+                        </div>
+                        <span>Modüller & Eklentiler</span>
                       </button>
 
                       <button

@@ -15,6 +15,7 @@ import {
   SparklesIcon,
   StoreIcon,
   UserCheckIcon,
+  VideoIcon,
   WandSparklesIcon,
   XCircleIcon,
 } from "lucide-react";
@@ -72,6 +73,7 @@ export function ModulesGrid({
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPrice, setEditPrice] = useState<number>(0);
+  const [editVideoUrl, setEditVideoUrl] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
   const [isPending, startTransition] = useTransition();
 
@@ -80,6 +82,7 @@ export function ModulesGrid({
     setEditName(mod.name);
     setEditDescription(mod.description ?? "");
     setEditPrice(mod.price);
+    setEditVideoUrl(mod.videoUrl ?? "");
     setEditIsActive(mod.isActive);
   };
 
@@ -93,6 +96,7 @@ export function ModulesGrid({
         name: editName,
         description: editDescription || null,
         price: Number(editPrice),
+        videoUrl: editVideoUrl.trim() || null,
         isActive: editIsActive,
       });
 
@@ -156,7 +160,13 @@ export function ModulesGrid({
                     <Icon className="size-6 stroke-[2]" />
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    {mod.videoUrl && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/25">
+                        <VideoIcon className="size-3 text-rose-600" />
+                        <span>Video</span>
+                      </span>
+                    )}
                     <span
                       className={cn(
                         "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border tracking-tight",
@@ -278,6 +288,22 @@ export function ModulesGrid({
                   className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Modül hakkında bilgilendirici açıklama"
                 />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="mod-video" className="flex items-center gap-1.5">
+                  <VideoIcon className="size-3.5 text-rose-600" />
+                  <span>Tanıtım Videosu Linki (YouTube)</span>
+                </FieldLabel>
+                <Input
+                  id="mod-video"
+                  value={editVideoUrl}
+                  onChange={(e) => setEditVideoUrl(e.target.value)}
+                  placeholder="Örn: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  YouTube linki eklendiğinde restoran yönetim panelindeki modül kartında &apos;Tanıtım Videosu&apos; butonu aktifleşir.
+                </p>
               </Field>
 
               <div className="grid grid-cols-2 gap-3">

@@ -4,6 +4,7 @@ import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { findRestaurantById } from "@/repositories/restaurant.repository";
 import { getMenu } from "@/services/menu-item.service";
+import { isRestaurantModuleActive } from "@/services/module.service";
 import { getQrMenuTheme, getQrThemeCustomization } from "@/services/restaurant-settings.service";
 import { getTables } from "@/services/table.service";
 
@@ -18,7 +19,7 @@ export default async function MenuDesignPage() {
     redirect("/dashboard/home");
   }
 
-  const [restaurant, menu, currentTheme, tables, customization] = await Promise.all([
+  const [restaurant, menu, currentTheme, tables, customization, isQrAiActive] = await Promise.all([
     findRestaurantById(restaurantId),
     getMenu(restaurantId),
     getQrMenuTheme(restaurantId).catch(() => "MODERN"),
@@ -29,6 +30,7 @@ export default async function MenuDesignPage() {
       qrSlidersEnabled: true,
       qrSliders: [],
     })),
+    isRestaurantModuleActive(restaurantId, "qr_ai").catch(() => true),
   ]);
 
   if (!restaurant || restaurant.deletedAt) {
@@ -55,6 +57,7 @@ export default async function MenuDesignPage() {
         menu={menu}
         currentTheme={currentTheme}
         initialCustomization={customization}
+        isQrAiActive={isQrAiActive}
       />
     </div>
   );

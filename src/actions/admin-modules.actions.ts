@@ -8,6 +8,7 @@ import { withSuperAdminValidation } from "@/actions/helpers";
 import {
   getRestaurantModulesStatus,
   listRestaurantNotifications,
+  sendBulkRestaurantNotifications,
   sendRestaurantNotification,
   toggleRestaurantModule,
   updateSystemModule,
@@ -22,6 +23,7 @@ const updateModuleSchema = z.object({
   name: z.string().min(1, "Modül adı zorunludur"),
   description: z.string().nullable().optional(),
   price: z.number().min(0, "Fiyat 0 veya daha büyük olmalıdır"),
+  videoUrl: z.string().nullable().optional(),
   isActive: z.boolean(),
 });
 
@@ -41,13 +43,23 @@ const sendNotificationSchema = z.object({
   buttonUrl: z.string().nullable().optional(),
 });
 
+// Schema for bulk notifications
+const sendBulkNotificationSchema = z.object({
+  target: z.enum(["ALL", "SELECTED"]),
+  restaurantIds: z.array(z.string()).optional(),
+  title: z.string().min(1, "Başlık zorunludur"),
+  message: z.string().min(1, "Mesaj metni zorunludur"),
+  buttonText: z.string().nullable().optional(),
+  buttonUrl: z.string().nullable().optional(),
+});
+
 // Schema for impersonation
 const impersonateSchema = z.object({
   restaurantId: z.string().min(1),
 });
 
 /**
- * Update system module details (title, description, price, global active state)
+ * Update system module details (title, description, price, videoUrl, global active state)
  */
 export const updateAdminModuleAction = withSuperAdminValidation(
   updateModuleSchema,
@@ -56,10 +68,12 @@ export const updateAdminModuleAction = withSuperAdminValidation(
       name: data.name,
       description: data.description,
       price: data.price,
+      videoUrl: data.videoUrl,
       isActive: data.isActive,
     });
     revalidatePath("/admin/modules");
     revalidatePath("/admin/restaurants");
+    revalidatePath("/dashboard/modules");
     return { success: true };
   }
 );
@@ -106,6 +120,26 @@ export const sendRestaurantNotificationAction = withSuperAdminValidation(
   sendNotificationSchema,
   async (data): Promise<RestaurantNotificationDTO> => {
     const result = await sendRestaurantNotification(data.restaurantId, {
+      title: data.title,
+      message: data.message,
+      buttonText: data.buttonText,
+      buttonUrl: data.buttonUrl,
+    });
+    revalidatePath("/admin/restaurants");
+    revalidatePath("/dashboard");
+    return result;
+  }
+);
+
+/**
+ * Send bulk notifications to all or selected restaurants
+ */
+export const sendBulkRestaurantNotificationAction = withSuperAdminValidation(
+  sendBulkNotificationSchema,
+  async (data): Promise<{ count: number }> => {
+    const result = await sendBulkRestaurantNotifications({
+      target: data.target,
+      restaurantIds: data.restaurantIds,
       title: data.title,
       message: data.message,
       buttonText: data.buttonText,

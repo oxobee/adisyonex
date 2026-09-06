@@ -4,7 +4,11 @@ import { redirect } from "next/navigation"
 import { getCurrentUserId } from "@/lib/auth-helpers"
 import { getManagerContextOrNull } from "@/lib/manager-auth"
 import { serializeForClient } from "@/lib/utils"
-import { getRestaurantLicenseInfo, type LicenseInfoDTO } from "@/services/license.service"
+import {
+  checkAndSendDailyLicenseExpiryNotification,
+  getRestaurantLicenseInfo,
+  type LicenseInfoDTO,
+} from "@/services/license.service"
 import { getRestaurantProfile, getSelfOrderShareInfo } from "@/services/restaurant-settings.service"
 import { getStaffContextOrNull } from "@/lib/staff-auth"
 import { getSystemSettings, type SystemSettingsDTO } from "@/services/system-setting.service"
@@ -54,6 +58,7 @@ export default async function DashboardLayout({
         getRestaurantLicenseInfo(restaurantId).catch(() => null),
         getRestaurantProfile(restaurantId).catch(() => null),
         getRestaurantActiveModulesMap(restaurantId).catch(() => ({})),
+        checkAndSendDailyLicenseExpiryNotification(restaurantId).catch(() => {}),
       ])
       share = s
       licenseInfo = l

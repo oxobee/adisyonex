@@ -224,3 +224,64 @@ export const adminAssignLicense = async (
 
   return getRestaurantLicenseInfo(restaurantId);
 };
+
+/**
+ * Automatically checks if license expiry is <= 7 days and sends a daily notification (once per day).
+ */
+export const checkAndSendDailyLicenseExpiryNotification = async (
+  restaurantId: string
+): Promise<void> => {
+  try {
+    const license = await getRestaurantLicenseInfo(restaurantId);
+
+    // Only trigger if <= 7 days remaining, not lifetime
+    if (license.plan === "LIFETIME" || license.daysRemaining > 7 || license.daysRemaining < 0) {
+      return;
+    }
+
+    // Check if notification already sent today for this restaurant
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const alreadySentToday = await prisma.restaurantNotification.findFirst({
+      where: {
+        restaurantId,
+        title: "Lisans Süreniz Sona Eriyor!",
+        createdAt: {
+          gte: startOfDay,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (alreadySentToday) {
+      return;
+    }
+
+    // Determine package wording
+    let packageWording = "aylık";
+    if (license.plan === "YEARLY") {
+      packageWording = "yıllık";
+    } else if (license.plan === "MONTHLY") {
+      packageWording = "aylık";
+    } else if (license.plan === "TRIAL") {
+      packageWording = "deneme sürümü";
+    }
+
+    const message = `Adisyoon Programınızın ${packageWording} süresinin dolmasına ${license.daysRemaining} gün kalmıştır. Lisansınız sona erdiğinde adisyon sistemini kullanamayacaksınız!`;
+
+    await prisma.restaurantNotification.create({
+      data: {
+        restaurantId,
+        title: "Lisans Süreniz Sona Eriyor!",
+        message,
+        buttonText: "Lisansı Yenile",
+        buttonUrl: "/dashboard/settings",
+        isRead: false,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to check daily license expiry notification:", error);
+  }
+};
+

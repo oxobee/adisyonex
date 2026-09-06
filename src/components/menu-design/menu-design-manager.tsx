@@ -80,6 +80,7 @@ export function MenuDesignManager({
   menu,
   currentTheme = "MODERN",
   initialCustomization,
+  isQrAiActive = true,
 }: {
   readonly restaurantId: string;
   readonly restaurantName: string;
@@ -90,6 +91,7 @@ export function MenuDesignManager({
   readonly menu?: MenuDTO | null;
   readonly currentTheme?: string;
   readonly initialCustomization?: QrThemeCustomizationDTO;
+  readonly isQrAiActive?: boolean;
 }) {
   const [activeTheme, setActiveTheme] = useState<string>(currentTheme || "MODERN");
   const [previewTheme, setPreviewTheme] = useState<string>(currentTheme || "MODERN");
@@ -342,6 +344,7 @@ export function MenuDesignManager({
           initialCustomization={customizationData}
           menu={menu}
           previewTableLabel={previewTableLabel}
+          isQrAiModuleActive={isQrAiActive}
           onSaved={() => {
             // refresh page
             window.location.reload();

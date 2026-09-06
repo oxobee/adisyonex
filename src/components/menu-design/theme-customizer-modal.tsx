@@ -10,6 +10,7 @@ import {
   ImageIcon,
   LayoutGridIcon,
   ListIcon,
+  LockIcon,
   PaletteIcon,
   PlusIcon,
   RotateCcwIcon,
@@ -70,6 +71,7 @@ export interface ThemeCustomizerModalProps {
   readonly initialCustomization: QrThemeCustomizationDTO;
   readonly menu?: MenuDTO | null;
   readonly previewTableLabel?: string;
+  readonly isQrAiModuleActive?: boolean;
   readonly onSaved?: () => void;
 }
 
@@ -82,6 +84,7 @@ export function ThemeCustomizerModal({
   initialCustomization,
   menu,
   previewTableLabel = "Masa 1",
+  isQrAiModuleActive = true,
   onSaved,
 }: ThemeCustomizerModalProps) {
   const [primaryColor, setPrimaryColor] = useState(
@@ -94,7 +97,9 @@ export function ThemeCustomizerModal({
     initialCustomization.qrSlidersEnabled ?? true,
   );
   const [qrAiEnabled, setQrAiEnabled] = useState(
-    initialCustomization.qrAiEnabled ?? true,
+    isQrAiModuleActive === false
+      ? false
+      : (initialCustomization.qrAiEnabled ?? true),
   );
   const [sliders, setSliders] = useState<QrSliderItem[]>(
     initialCustomization.qrSliders && initialCustomization.qrSliders.length > 0
@@ -356,7 +361,7 @@ export function ThemeCustomizerModal({
         qrGreetingTitle: greetingTitle,
         qrGreetingSubtitle: greetingSubtitle,
         qrHomeSections: homeSections,
-        qrAiEnabled: qrAiEnabled,
+        qrAiEnabled: isQrAiModuleActive === false ? false : qrAiEnabled,
       });
 
       if (res.success) {
@@ -584,26 +589,60 @@ export function ThemeCustomizerModal({
                 </div>
 
                 {/* QR Menü AI Asistanı Toggle */}
-                <div className="p-4 rounded-2xl bg-card border flex items-center justify-between gap-4 shadow-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                      <SparklesIcon className="size-5" />
+                <div
+                  className={cn(
+                    "p-4 rounded-2xl border flex items-center justify-between gap-4 shadow-xs transition-colors",
+                    isQrAiModuleActive === false
+                      ? "bg-amber-500/5 border-amber-500/30 opacity-85"
+                      : "bg-card border"
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={cn(
+                        "size-10 rounded-xl flex items-center justify-center shrink-0",
+                        isQrAiModuleActive === false
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          : "bg-primary/10 text-primary"
+                      )}
+                    >
+                      {isQrAiModuleActive === false ? (
+                        <LockIcon className="size-5" />
+                      ) : (
+                        <SparklesIcon className="size-5" />
+                      )}
                     </div>
-                    <div className="space-y-0.5">
-                      <Label className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
+                    <div className="space-y-0.5 min-w-0">
+                      <Label className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5 flex-wrap">
                         QR Menü Akıllı AI Asistanı
-                        <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-primary/20 text-primary uppercase">
-                          Yeni
-                        </span>
+                        {isQrAiModuleActive === false ? (
+                          <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 uppercase tracking-tight flex items-center gap-1">
+                            <LockIcon className="size-2.5" />
+                            Süper Admin Yetkisi Gerekir
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-primary/20 text-primary uppercase">
+                            Yeni
+                          </span>
+                        )}
                       </Label>
                       <p className="text-[11px] text-muted-foreground">
-                        Müşterilerinize menü önerisi, alerjen/diyet danışmanlığı sunan ve sepete tek tıkla ürün ekleten interaktif yapay zeka asistanını aktifleştirin.
+                        {isQrAiModuleActive === false
+                          ? "Bu modül Süper Admin tarafından işletmeniz için pasife alınmıştır. Aktif etmek için sistem yöneticinizle iletişime geçiniz."
+                          : "Müşterilerinize menü önerisi, alerjen/diyet danışmanlığı sunan ve sepete tek tıkla ürün ekleten interaktif yapay zeka asistanını aktifleştirin."}
                       </p>
                     </div>
                   </div>
                   <Switch
-                    checked={qrAiEnabled}
-                    onCheckedChange={setQrAiEnabled}
+                    checked={isQrAiModuleActive === false ? false : qrAiEnabled}
+                    disabled={isQrAiModuleActive === false}
+                    onCheckedChange={(checked) => {
+                      if (isQrAiModuleActive === false) {
+                        toast.error("QR Menü AI modülü süper admin tarafından pasife alınmıştır.");
+                        return;
+                      }
+                      setQrAiEnabled(checked);
+                    }}
                     className="data-[state=checked]:bg-primary shrink-0"
                   />
                 </div>

@@ -1153,6 +1153,7 @@ model SystemModule {
   price       Decimal  @default(0) @db.Decimal(10, 2)
   currency    String   @default("₺")
   icon        String?  @default("SparklesIcon")
+  videoUrl    String?
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
