@@ -408,10 +408,10 @@ export function TableActionMenu({
               type="button"
               onClick={onVoidTable}
               className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold border border-destructive/30 bg-destructive/5 hover:bg-destructive/15 text-destructive transition-all active:scale-[0.97] cursor-pointer shadow-2xs"
-              title="Masayı Boşalt / İptal Et"
+              title="Masa İptal"
             >
               <Trash2Icon className="size-4 shrink-0" />
-              <span className="truncate">Boşalt</span>
+              <span className="truncate">Masa İptal</span>
             </button>
           ) : (
             <button

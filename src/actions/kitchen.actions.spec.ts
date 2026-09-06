@@ -8,6 +8,7 @@ vi.mock("@/services/kitchen.service", () => ({
   markPickedUp: vi.fn(),
 }));
 
+import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { advanceTicket, markPickedUp } from "@/services/kitchen.service";
 import {
@@ -31,7 +32,10 @@ const waiterCtx = {
   employeeCode: "W1",
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(getManagerContextOrNull).mockResolvedValue(null);
+});
 
 describe("advanceTicketAction", () => {
   it("advances the ticket for a kitchen staff member", async () => {
@@ -43,23 +47,27 @@ describe("advanceTicketAction", () => {
     expect(advanceTicket).toHaveBeenCalledWith("res_1", "o1");
   });
 
-  it("rejects a waiter (kitchen-only)", async () => {
-    vi.mocked(getStaffContextOrNull).mockResolvedValue(waiterCtx);
+  it("advances the ticket for a manager session", async () => {
+    vi.mocked(getStaffContextOrNull).mockResolvedValue(null);
+    vi.mocked(getManagerContextOrNull).mockResolvedValue({
+      restaurantId: "res_1",
+      userId: "u1",
+    } as any);
 
     const result = await advanceTicketAction({ orderId: "o1" });
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("STAFF_FORBIDDEN");
-    expect(advanceTicket).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(advanceTicket).toHaveBeenCalledWith("res_1", "o1");
   });
 
-  it("rejects when there is no staff session", async () => {
+  it("rejects when there is no session at all", async () => {
     vi.mocked(getStaffContextOrNull).mockResolvedValue(null);
+    vi.mocked(getManagerContextOrNull).mockResolvedValue(null);
 
     const result = await advanceTicketAction({ orderId: "o1" });
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("NO_STAFF_SESSION");
+    expect(result.error).toBe("NO_SESSION");
   });
 
   it("fails validation without an orderId", async () => {
@@ -73,7 +81,7 @@ describe("advanceTicketAction", () => {
 });
 
 describe("markPickedUpAction", () => {
-  it("marks the ticket picked up for a waiter", async () => {
+  it("marks the ticket picked up for an operator", async () => {
     vi.mocked(getStaffContextOrNull).mockResolvedValue(waiterCtx);
 
     const result = await markPickedUpAction({ orderId: "o1" });
@@ -82,13 +90,14 @@ describe("markPickedUpAction", () => {
     expect(markPickedUp).toHaveBeenCalledWith("res_1", "o1");
   });
 
-  it("rejects a kitchen staff member (waiter-only)", async () => {
-    vi.mocked(getStaffContextOrNull).mockResolvedValue(kitchenCtx);
+  it("rejects when there is no session at all", async () => {
+    vi.mocked(getStaffContextOrNull).mockResolvedValue(null);
+    vi.mocked(getManagerContextOrNull).mockResolvedValue(null);
 
     const result = await markPickedUpAction({ orderId: "o1" });
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("STAFF_FORBIDDEN");
+    expect(result.error).toBe("NO_SESSION");
     expect(markPickedUp).not.toHaveBeenCalled();
   });
 });

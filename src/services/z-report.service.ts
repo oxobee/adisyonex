@@ -118,10 +118,11 @@ export async function getZReportData(
     prisma.order.findMany({
       where: {
         restaurantId,
-        createdAt: {
-          gte: dayStart,
-          lte: dayEnd,
-        },
+        OR: [
+          { createdAt: { gte: dayStart, lte: dayEnd } },
+          { status: "VOID", updatedAt: { gte: dayStart, lte: dayEnd } },
+          { status: "COMPLETED", settledAt: { gte: dayStart, lte: dayEnd } },
+        ],
       },
       include: {
         items: {
@@ -333,16 +334,21 @@ export async function getZReportData(
   for (const vo of voidOrders) {
     const vAmt = num(vo.grandTotal) || num(vo.subtotal);
     voidTotal += vAmt;
+    const voidStaff = vo.voidedById ? staffMap.get(vo.voidedById) : null;
+    const placedStaff = vo.placedByStaffId ? staffMap.get(vo.placedByStaffId) : null;
+    const staffName = voidStaff ? voidStaff.name : (placedStaff ? placedStaff.name : "Yönetici");
+    const displayLabel = vo.tableLabel || (vo.orderType === "TAKEAWAY" ? "Gel-Al Kasa" : vo.orderType === "DELIVERY" ? "Paket Servis" : "Hızlı Satış Fişi");
+
     audits.push({
       id: vo.id,
-      time: new Date(vo.createdAt.getTime() + TURKEY_OFFSET_MS).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
+      time: new Date((vo.updatedAt || vo.createdAt).getTime() + TURKEY_OFFSET_MS).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
       orderNumber: vo.orderNumber,
-      tableLabel: vo.tableLabel,
+      tableLabel: displayLabel,
       itemName: "Tüm Adisyon İptali",
       type: "VOID",
       quantity: 1,
       amount: vAmt,
-      staffName: "Yönetici",
+      staffName,
       reason: vo.voidReason || "Adisyon Komple İptal Edildi",
     });
   }

@@ -81,6 +81,7 @@ const CARD_THEME: Record<
 const AUTH_ERRORS: Record<string, string> = {
   STAFF_FORBIDDEN: "Bu işlemi yapmaya yetkiniz yok.",
   NO_STAFF_SESSION: "Oturum süreniz doldu. Lütfen tekrar giriş yapın.",
+  NO_SESSION: "Oturum süreniz doldu. Lütfen tekrar giriş yapın.",
 };
 const toMessage = (m: string): string => AUTH_ERRORS[m] ?? m;
 

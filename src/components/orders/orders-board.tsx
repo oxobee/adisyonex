@@ -152,6 +152,15 @@ const playBillAlertSound = () => {
 
 import { getCachedSnapshot, setCachedSnapshot } from "@/lib/offline-sync";
 
+const QUICK_VOID_REASONS = [
+  "Müşteri Vazgeçti",
+  "Yanlış Sipariş Girişi",
+  "Hizmet Gecikmesi",
+  "Masa Değiştirildi / Birleştirildi",
+  "Hayalet Masa (Hatalı Giriş)",
+  "Diğer",
+] as const;
+
 export function OrdersBoard({
   open,
   completed,
@@ -277,6 +286,8 @@ export function OrdersBoard({
   } | null>(null);
   const [detailGroup, setDetailGroup] = useState<TableGroup | null>(null);
   const [voidConfirmTable, setVoidConfirmTable] = useState<TableDTO | null>(null);
+  const [voidReason, setVoidReason] = useState<string>("Müşteri Vazgeçti");
+  const [customVoidReason, setCustomVoidReason] = useState<string>("");
   const [selectedPackagedOrder, setSelectedPackagedOrder] = useState<OrderDTO | null>(null);
 
   const { supported, enabled, toggle, announce } = useAnnouncer();
@@ -1075,44 +1086,101 @@ export function OrdersBoard({
         }}
       />
 
-      {/* VOID / CLEAR TABLE CONFIRMATION DIALOG */}
+      {/* VOID / CANCEL TABLE CONFIRMATION DIALOG */}
       {voidConfirmTable ? (
-        <Dialog open onOpenChange={(op) => !op && setVoidConfirmTable(null)}>
+        <Dialog
+          open
+          onOpenChange={(op) => {
+            if (!op) {
+              setVoidConfirmTable(null);
+              setVoidReason("Müşteri Vazgeçti");
+              setCustomVoidReason("");
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-md rounded-3xl p-6">
             <DialogHeader>
-              <DialogTitle className="text-destructive font-black">
-                Masa Siparişini İptal Et / Boşalt
+              <DialogTitle className="text-destructive font-black flex items-center gap-2">
+                <Trash2Icon className="size-5 shrink-0" />
+                <span>Masa İptal</span>
               </DialogTitle>
-              <DialogDescription className="text-xs">
-                <strong>{voidConfirmTable.label}</strong> masasındaki tüm açık siparişler iptal edilecek ve masa boşaltılacaktır. Bu işlemi onaylıyor musunuz?
+              <DialogDescription className="text-xs text-muted-foreground">
+                <strong>{voidConfirmTable.label}</strong> masası ve masadaki tüm açık siparişler iptal edilecektir. Lütfen iptal gerekçesini belirtin:
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="pt-2">
+
+            <div className="flex flex-col gap-3 py-2">
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_VOID_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setVoidReason(r)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer",
+                      voidReason === r
+                        ? "bg-destructive text-white border-destructive shadow-xs"
+                        : "bg-muted/50 hover:bg-muted text-foreground border-border/80"
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-1 mt-1">
+                <label className="text-[11px] font-semibold text-muted-foreground">
+                  {voidReason === "Diğer" ? "İptal Açıklaması (Zorunlu):" : "Ek Açıklama / Not (İsteğe bağlı):"}
+                </label>
+                <input
+                  type="text"
+                  value={customVoidReason}
+                  onChange={(e) => setCustomVoidReason(e.target.value)}
+                  placeholder={voidReason === "Diğer" ? "İptal gerekçesini yazın..." : "Örn: Müşteri acil kalkmak zorunda kaldı..."}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-destructive/30"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 flex items-center justify-between sm:justify-end gap-2">
               <Button
                 variant="outline"
                 className="rounded-xl cursor-pointer"
-                onClick={() => setVoidConfirmTable(null)}
+                onClick={() => {
+                  setVoidConfirmTable(null);
+                  setVoidReason("Müşteri Vazgeçti");
+                  setCustomVoidReason("");
+                }}
               >
                 Vazgeç
               </Button>
               <Button
                 variant="destructive"
                 className="rounded-xl font-bold cursor-pointer"
-                disabled={voidAction.isPending}
+                disabled={voidAction.isPending || (voidReason === "Diğer" && !customVoidReason.trim())}
                 onClick={async () => {
+                  const finalReason =
+                    voidReason === "Diğer"
+                      ? customVoidReason.trim() || "Diğer"
+                      : customVoidReason.trim()
+                        ? `${voidReason} (${customVoidReason.trim()})`
+                        : voidReason;
+
                   const ords = ordersByTableId.get(voidConfirmTable.id) ?? [];
                   for (const o of ords) {
                     await voidAction.execute({
                       orderId: o.id,
-                      reason: "Masa boşaltıldı / İptal edildi",
+                      reason: finalReason,
                     });
                   }
                   setVoidConfirmTable(null);
                   setSelectedTableId(null);
+                  setVoidReason("Müşteri Vazgeçti");
+                  setCustomVoidReason("");
                   router.refresh();
                 }}
               >
-                {voidAction.isPending ? "İptal Ediliyor…" : "Evet, Masayı Boşalt"}
+                {voidAction.isPending ? "İptal Ediliyor…" : "Masayı İptal Et"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -335,10 +335,10 @@ export function TableActionModal({
                 disabled={!isOccupied}
                 onClick={() => onVoidTable(table)}
                 className="flex flex-col items-center justify-center gap-1 rounded-2xl py-2.5 px-2 text-xs font-bold border border-destructive/30 bg-destructive/5 hover:bg-destructive/15 text-destructive transition-all active:scale-[0.97] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs"
-                title="Masayı Boşalt"
+                title="Masa İptal"
               >
                 <Trash2Icon className="size-4 shrink-0" />
-                <span className="truncate">Boşalt</span>
+                <span className="truncate">Masa İptal</span>
               </button>
             </div>
           </div>

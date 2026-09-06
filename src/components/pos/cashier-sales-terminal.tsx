@@ -25,6 +25,7 @@ import {
   Trash2Icon,
   UtensilsCrossedIcon,
   WalletIcon,
+  XCircleIcon,
   XIcon,
   ArmchairIcon,
   ShoppingBagIcon,
@@ -33,6 +34,7 @@ import {
 import { toast } from "sonner";
 
 import { quickCashierSaleAction } from "@/actions/cashier-sale.actions";
+import { cancelCashierReceiptAction } from "@/actions/order.actions";
 import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency } from "@/lib/format";
 import { uuid } from "@/lib/uuid";
@@ -43,6 +45,15 @@ import type { TableDTO } from "@/types/table";
 import type { PaymentInput } from "@/lib/validators/order";
 
 import { ItemConfigDialog } from "./item-config-dialog";
+
+const QUICK_RECEIPT_CANCEL_REASONS = [
+  "Müşteri Vazgeçti",
+  "Ödeme Yapılamadı (Kart Red / Bakiye)",
+  "Nakit Yetersiz",
+  "Hatalı Ürün / Yanlış Fiş",
+  "Müşteri Ayrıldı",
+  "Diğer",
+] as const;
 import { toBillLine, type CartLine } from "./types";
 import { useOrderCart } from "./use-order-cart";
 
@@ -282,6 +293,11 @@ export function CashierSalesTerminal({
   // Split Payment State
   const [splitCashStr, setSplitCashStr] = useState<string>("");
   const [splitCardStr, setSplitCardStr] = useState<string>("");
+
+  // Cancel Receipt State
+  const [cancelReceiptOpen, setCancelReceiptOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState<string>("Müşteri Vazgeçti");
+  const [customCancelReason, setCustomCancelReason] = useState<string>("");
 
   // Success Modal State
   const [completedSale, setCompletedSale] = useState<{
@@ -623,6 +639,52 @@ export function CashierSalesTerminal({
       toast.error(msg || "Satış işlemi sırasında bir hata oluştu");
     },
   });
+
+  // Server Action for Receipt Cancellation
+  const cancelReceipt = useServerAction(cancelCashierReceiptAction, {
+    onSuccess: () => {
+      toast.success("Fiş başarıyla iptal edildi ve Z Raporu / Analitik kayıtlarına işlendi.");
+      clear();
+      setSelectedTableId(null);
+      setDiscount({ type: "NONE", value: 0 });
+      setCashTenderedStr("");
+      setSplitCashStr("");
+      setSplitCardStr("");
+      setCustomerName("");
+      setCustomerPhone("");
+      setCancelReceiptOpen(false);
+      setCancelReason("Müşteri Vazgeçti");
+      setCustomCancelReason("");
+      router.refresh();
+    },
+    onError: (msg) => {
+      toast.error(msg || "Fiş iptal edilirken bir hata oluştu");
+    },
+  });
+
+  const handleConfirmCancelReceipt = () => {
+    const finalReason =
+      cancelReason === "Diğer"
+        ? customCancelReason.trim() || "Diğer"
+        : customCancelReason.trim()
+          ? `${cancelReason} (${customCancelReason.trim()})`
+          : cancelReason;
+
+    cancelReceipt.execute({
+      orderId: currentTicket.existingOrderId ?? undefined,
+      tableId: selectedTableId ?? undefined,
+      reason: finalReason,
+      items: cart.map((l) => ({
+        menuItemId: l.menuItemId,
+        variantId: l.variantId ?? undefined,
+        quantity: l.quantity,
+        lineNote: l.lineNote ?? undefined,
+        isComp: l.isComp,
+        compReason: l.isComp ? "Kasa İkramı" : undefined,
+        modifierIds: l.modifiers.map((m) => m.id),
+      })),
+    });
+  };
 
   // Execute Sale
   const handleCompleteSale = () => {
@@ -1896,32 +1958,55 @@ export function CashierSalesTerminal({
               </div>
             )}
 
-            {/* BÜYÜK MODERN 'Siparişi Tamamla' BUTONU */}
-            <button
-              type="button"
-              onClick={handleCompleteSale}
-              disabled={cart.length === 0 || submitSale.isPending}
-              className={cn(
-                "w-full py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base text-white tracking-wide transition-all select-none cursor-pointer",
-                "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700",
-                "shadow-lg shadow-emerald-600/25",
-                "active:scale-[0.99] transition-transform",
-                "disabled:opacity-50 disabled:pointer-events-none",
-                "flex items-center justify-center gap-2"
-              )}
-            >
-              {submitSale.isPending ? (
-                <>
-                  <RefreshCwIcon className="size-5 animate-spin" />
-                  <span>Sipariş Tamamlanıyor...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2Icon className="size-5" />
-                  <span>Siparişi Tamamla</span>
-                </>
-              )}
-            </button>
+            {/* Alt Butonlar: Siparişi Tamamla & Fiş İptal */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (cart.length === 0 && !selectedTableId && !currentTicket.existingOrderId) {
+                    toast.error("İptal edilecek bir fiş veya sepet bulunmuyor!");
+                    return;
+                  }
+                  setCancelReceiptOpen(true);
+                }}
+                disabled={cancelReceipt.isPending || (cart.length === 0 && !selectedTableId && !currentTicket.existingOrderId)}
+                className={cn(
+                  "py-3.5 px-3 sm:px-4 rounded-2xl font-bold text-xs sm:text-sm tracking-tight transition-all select-none cursor-pointer",
+                  "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 active:scale-[0.98]",
+                  "disabled:opacity-40 disabled:pointer-events-none shrink-0 flex items-center justify-center gap-1.5 shadow-2xs"
+                )}
+                title="Fişi / Satışı İptal Et"
+              >
+                <XCircleIcon className="size-4 shrink-0" />
+                <span className="whitespace-nowrap">Fiş İptal</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCompleteSale}
+                disabled={cart.length === 0 || submitSale.isPending}
+                className={cn(
+                  "flex-1 py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base text-white tracking-wide transition-all select-none cursor-pointer",
+                  "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700",
+                  "shadow-lg shadow-emerald-600/25",
+                  "active:scale-[0.99] transition-transform",
+                  "disabled:opacity-50 disabled:pointer-events-none",
+                  "flex items-center justify-center gap-2"
+                )}
+              >
+                {submitSale.isPending ? (
+                  <>
+                    <RefreshCwIcon className="size-5 animate-spin" />
+                    <span>Sipariş Tamamlanıyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2Icon className="size-5" />
+                    <span>Siparişi Tamamla</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </aside>
       </div>
@@ -2144,6 +2229,105 @@ export function CashierSalesTerminal({
                 className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
               >
                 Vazgeç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. FİŞ İPTAL / VAZGEÇİLDİ MODALI */}
+      {cancelReceiptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="size-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200">
+                  <XCircleIcon className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Fiş İptal / Satıştan Vazgeçildi</h3>
+                  <span className="text-xs text-slate-500">Bu işlem Z Raporu ve Analitik kayıtlarına işlenir.</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelReceiptOpen(false)}
+                className="size-8 rounded-lg text-slate-400 hover:text-slate-600 flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+
+            <div className="my-3.5 p-3 rounded-2xl bg-rose-50/60 border border-rose-100 flex items-center justify-between text-xs">
+              <span className="text-rose-900 font-bold">İptal Edilecek Tutar:</span>
+              <span className="text-base font-black text-rose-700 font-mono">
+                {formatCurrency(bill.grandTotal > 0 ? bill.grandTotal : 0)}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xs font-bold text-slate-700">Lütfen İptal Nedenini Seçin:</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {QUICK_RECEIPT_CANCEL_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setCancelReason(r)}
+                    className={cn(
+                      "px-3 py-2 rounded-xl text-xs font-bold text-left transition-all border cursor-pointer",
+                      cancelReason === r
+                        ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                        : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-1 mt-1">
+                <label className="text-[11px] font-semibold text-slate-500">
+                  {cancelReason === "Diğer" ? "İptal Açıklaması (Zorunlu):" : "Ek Açıklama / Not (İsteğe bağlı):"}
+                </label>
+                <input
+                  type="text"
+                  value={customCancelReason}
+                  onChange={(e) => setCustomCancelReason(e.target.value)}
+                  placeholder={cancelReason === "Diğer" ? "İptal gerekçesini yazın..." : "Örn: Müşteri ödemeden vazgeçti..."}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setCancelReceiptOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelReceipt}
+                disabled={cancelReceipt.isPending || (cancelReason === "Diğer" && !customCancelReason.trim())}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl text-xs font-black text-white transition-all cursor-pointer",
+                  "bg-rose-600 hover:bg-rose-700 active:bg-rose-800 shadow-sm",
+                  "disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5"
+                )}
+              >
+                {cancelReceipt.isPending ? (
+                  <>
+                    <RefreshCwIcon className="size-3.5 animate-spin" />
+                    <span>İptal Ediliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircleIcon className="size-3.5" />
+                    <span>Fişi İptal Et</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

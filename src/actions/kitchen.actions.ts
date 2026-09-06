@@ -11,18 +11,16 @@ import {
   type ReadyToServeItemDTO,
 } from "@/services/kitchen.service";
 
-/** Kitchen advances a whole ticket one step (start / mark ready). */
-export const advanceTicketAction = withStaffValidation(
+/** Kitchen advances a whole ticket one step (start / mark ready). Accessible by kitchen staff and managers. */
+export const advanceTicketAction = withOperatorValidation(
   kitchenTicketSchema,
   (data, ctx) => advanceTicket(ctx.restaurantId, data.orderId),
-  { role: "KITCHEN" },
 );
 
 /** Waiter clears a ready ticket after collecting it from the pass. */
-export const markPickedUpAction = withStaffValidation(
+export const markPickedUpAction = withOperatorValidation(
   kitchenTicketSchema,
   (data, ctx) => markPickedUp(ctx.restaurantId, data.orderId),
-  { role: "WAITER" },
 );
 
 /**

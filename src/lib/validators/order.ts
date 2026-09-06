@@ -107,5 +107,11 @@ export const quickCashierSaleSchema = z.object({
   discountReason: z.string().trim().max(200).optional(),
   payments: z.array(paymentSchema).min(1, "En az bir ödeme yöntemi girin"),
 });
-export type QuickCashierSaleInput = z.infer<typeof quickCashierSaleSchema>;
+export const cancelCashierReceiptSchema = z.object({
+  orderId: idSchema.optional(),
+  tableId: idSchema.optional(),
+  reason: z.string().trim().min(1, "İptal gerekçesi belirtilmelidir").max(200),
+  items: z.array(cartLineSchema).default([]),
+});
+export type CancelCashierReceiptInput = z.infer<typeof cancelCashierReceiptSchema>;
 

@@ -335,7 +335,7 @@ export const voidWholeOrder = async (
   if (order.status !== "OPEN") {
     throw new Error(ORDER_NOT_OPEN);
   }
-  await voidOrderRepo(input.orderId, ctx.userId, input.reason);
+  await voidOrderRepo(input.orderId, ctx.staffId || ctx.userId, input.reason);
   await restoreForLines(
     ctx,
     order.items

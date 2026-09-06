@@ -1,10 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { withManagerValidation } from "@/actions/helpers";
+import { withManagerValidation, withOperatorValidation } from "@/actions/helpers";
 import { idSchema } from "@/lib/validators/shared";
 import {
   addItemsSchema,
+  cancelCashierReceiptSchema,
   createOrderSchema,
   fireOrderSchema,
   serveLineSchema,
@@ -93,17 +94,156 @@ export const voidLineAction = withManagerValidation(voidLineSchema, async (data,
   return res;
 });
 
-export const voidOrderAction = withManagerValidation(
+export const voidOrderAction = withOperatorValidation(
   voidOrderSchema,
   async (data, ctx) => {
-    const res = await voidWholeOrder(ctx, data);
+    const res = await voidWholeOrder(
+      {
+        restaurantId: ctx.restaurantId,
+        userId: ctx.userId ?? null,
+        staffId: ctx.staffId ?? null,
+      },
+      data,
+    );
     await logActivity({
       restaurantId: ctx.restaurantId,
       category: "SİPARİŞ",
-      action: "Tüm Sipariş İptal Edildi (Adisyon İptali)",
-      details: `Gerekçe: "${data.reason}"`,
+      action: "Tüm Sipariş İptal Edildi (Masa/Adisyon İptali)",
+      details: `Gerekçe: "${data.reason}" (${ctx.name || "Kullanıcı"})`,
     });
     return res;
+  },
+);
+
+/**
+ * Kasa POS ekranında ödeme esnasında müşteri vazgeçtiğinde fişi iptal eder.
+ * Var olan bir masa siparişi varsa VOID yapar; masasız hızlı satış sepeti ise
+ * Z Raporu ve Analitik kayıtlarında görünmesi için VOID durumunda kaydeder.
+ */
+export const cancelCashierReceiptAction = withOperatorValidation(
+  cancelCashierReceiptSchema,
+  async (data, ctx) => {
+    const performer = ctx.name || "Kasiyer";
+
+    // 1. Eğer açık bir orderId varsa doğrudan iptal et
+    if (data.orderId) {
+      await voidWholeOrder(
+        {
+          restaurantId: ctx.restaurantId,
+          userId: ctx.userId ?? null,
+          staffId: ctx.staffId ?? null,
+        },
+        { orderId: data.orderId, reason: data.reason },
+      );
+      await logActivity({
+        restaurantId: ctx.restaurantId,
+        category: "KASA",
+        action: "Kasa Fiş İptali",
+        details: `Sipariş #${data.orderId} iptal edildi. Gerekçe: "${data.reason}" (${performer})`,
+      });
+      return { success: true };
+    }
+
+    // 2. Eğer tableId verilmişse masaya ait açık siparişleri iptal et
+    if (data.tableId) {
+      const { prisma } = await import("@/lib/prisma");
+      const openOrders = await prisma.order.findMany({
+        where: { tableId: data.tableId, status: "OPEN" },
+      });
+      for (const ord of openOrders) {
+        await voidWholeOrder(
+          {
+            restaurantId: ctx.restaurantId,
+            userId: ctx.userId ?? null,
+            staffId: ctx.staffId ?? null,
+          },
+          { orderId: ord.id, reason: data.reason },
+        );
+      }
+      if (openOrders.length > 0) {
+        await logActivity({
+          restaurantId: ctx.restaurantId,
+          category: "KASA",
+          action: "Kasa Masa Fiş İptali",
+          details: `Masa açık siparişleri iptal edildi. Gerekçe: "${data.reason}" (${performer})`,
+        });
+        return { success: true };
+      }
+    }
+
+    // 3. Masasız / Hızlı Satış sepeti iptali (müşteri kasada ödemeden vazgeçtiğinde)
+    // Z Raporu ve Analitik'e doğru yansıması için VOID sipariş kaydı oluşturulur:
+    if (data.items.length > 0) {
+      const { prisma } = await import("@/lib/prisma");
+      const { getMenu } = await import("@/services/menu-item.service");
+      const menu = await getMenu(ctx.restaurantId);
+      const itemMap = new Map(menu.items.map((i) => [i.id, i]));
+
+      let subtotal = 0;
+      const orderLinesData = [];
+
+      for (const line of data.items) {
+        const menuItem = itemMap.get(line.menuItemId);
+        if (!menuItem) continue;
+        const variant = line.variantId
+          ? menuItem.variants.find((v) => v.id === line.variantId)
+          : null;
+        const unitPrice = variant ? Number(variant.price) : Number(menuItem.price);
+        const lineTotal = line.isComp ? 0 : unitPrice * line.quantity;
+        subtotal += lineTotal;
+
+        orderLinesData.push({
+          menuItemId: menuItem.id,
+          variantId: variant?.id,
+          name: menuItem.name,
+          variantName: variant?.name ?? null,
+          unitPrice,
+          quantity: line.quantity,
+          state: "VOID" as const,
+          isComp: line.isComp ?? false,
+          voidReason: data.reason,
+          lineNote: line.lineNote ?? null,
+        });
+      }
+
+      const nextOrderNum = await prisma.order
+        .aggregate({
+          where: { restaurantId: ctx.restaurantId },
+          _max: { orderNumber: true },
+        })
+        .then((r) => (r._max.orderNumber ?? 0) + 1);
+
+      const { uuid } = await import("@/lib/uuid");
+
+      await prisma.order.create({
+        data: {
+          idempotencyKey: uuid(),
+          restaurantId: ctx.restaurantId,
+          orderNumber: nextOrderNum,
+          orderType: "TAKEAWAY",
+          status: "VOID",
+          subtotal,
+          taxTotal: 0,
+          grandTotal: subtotal,
+          voidReason: data.reason,
+          voidedById: ctx.staffId || ctx.userId || null,
+          placedById: ctx.userId ?? null,
+          placedByStaffId: ctx.staffId ?? null,
+          items: {
+            create: orderLinesData,
+          },
+        },
+      });
+
+      await logActivity({
+        restaurantId: ctx.restaurantId,
+        category: "KASA",
+        action: "Kasa Satışından Vazgeçildi (Fiş İptali)",
+        details: `Tutar: ₺${subtotal.toFixed(2)}, Kalem: ${data.items.length}, Gerekçe: "${data.reason}" (${performer})`,
+      });
+    }
+
+    return { success: true };
   },
 );
 
