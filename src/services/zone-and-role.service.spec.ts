@@ -164,6 +164,11 @@ describe("zone-and-role.service", () => {
         printerIp: "192.168.1.150",
         printerPort: 9100,
         printerModel: "Epson TM-T20",
+        printerEnabled: true,
+        printerConnectionType: "NETWORK",
+        printerSystemName: null,
+        printerPaperWidth: 80,
+        printerAutoPrint: false,
         isDefault: false,
         sortOrder: 0,
         createdAt: new Date(),
@@ -195,6 +200,11 @@ describe("zone-and-role.service", () => {
         printerIp: null,
         printerPort: null,
         printerModel: null,
+        printerEnabled: false,
+        printerConnectionType: null,
+        printerSystemName: null,
+        printerPaperWidth: 80,
+        printerAutoPrint: false,
         isDefault: true,
         sortOrder: 99,
         createdAt: new Date(),
@@ -217,6 +227,11 @@ describe("zone-and-role.service", () => {
         printerIp: null,
         printerPort: null,
         printerModel: null,
+        printerEnabled: false,
+        printerConnectionType: null,
+        printerSystemName: null,
+        printerPaperWidth: 80,
+        printerAutoPrint: false,
         isDefault: false,
         sortOrder: 1,
         createdAt: new Date(),
@@ -233,6 +248,11 @@ describe("zone-and-role.service", () => {
         printerIp: null,
         printerPort: null,
         printerModel: null,
+        printerEnabled: false,
+        printerConnectionType: null,
+        printerSystemName: null,
+        printerPaperWidth: 80,
+        printerAutoPrint: false,
         isDefault: true,
         sortOrder: 99,
         createdAt: new Date(),
@@ -253,6 +273,77 @@ describe("zone-and-role.service", () => {
         where: { id: "z_mutfak" },
       });
       expect(res.reassignedStaffCount).toBe(1);
+    });
+
+    it("creates a zone with LOCAL_OS printer configuration", async () => {
+      vi.mocked(prisma.restaurantZone.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.restaurantZone.create).mockResolvedValue({
+        id: "z_kitchen_printer",
+        restaurantId,
+        name: "Mutfak 2",
+        code: "KITCHEN",
+        description: "Yedek mutfak",
+        color: "#EF4444",
+        printerIp: null,
+        printerPort: null,
+        printerModel: null,
+        printerEnabled: true,
+        printerConnectionType: "LOCAL_OS",
+        printerSystemName: "XP-80C",
+        printerPaperWidth: 80,
+        printerAutoPrint: true,
+        isDefault: false,
+        sortOrder: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const zone = await createRestaurantZone(restaurantId, {
+        name: "Mutfak 2",
+        code: "KITCHEN",
+        printerEnabled: true,
+        printerConnectionType: "LOCAL_OS",
+        printerSystemName: "XP-80C",
+        printerPaperWidth: 80,
+        printerAutoPrint: true,
+      });
+
+      expect(zone.printerEnabled).toBe(true);
+      expect(zone.printerConnectionType).toBe("LOCAL_OS");
+      expect(zone.printerSystemName).toBe("XP-80C");
+      expect(zone.printerPaperWidth).toBe(80);
+      expect(zone.printerAutoPrint).toBe(true);
+    });
+
+    it("normalizes legacy zones with printerIp to NETWORK connection type", async () => {
+      vi.mocked(prisma.restaurantZone.count).mockResolvedValue(1);
+      vi.mocked(prisma.restaurantZone.findMany).mockResolvedValue([
+        {
+          id: "z_legacy",
+          restaurantId,
+          name: "Bar",
+          code: "BAR",
+          description: null,
+          color: "#8B5CF6",
+          printerIp: "192.168.1.100",
+          printerPort: 9100,
+          printerModel: "Epson",
+          printerEnabled: false,
+          printerConnectionType: null,
+          printerSystemName: null,
+          printerPaperWidth: null,
+          printerAutoPrint: false,
+          isDefault: false,
+          sortOrder: 2,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
+      const zones = await listRestaurantZones(restaurantId);
+      expect(zones).toHaveLength(1);
+      expect(zones[0].printerConnectionType).toBe("NETWORK");
+      expect(zones[0].printerPaperWidth).toBe(80);
     });
   });
 });

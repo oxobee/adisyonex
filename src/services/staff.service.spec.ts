@@ -58,11 +58,17 @@ const makeStaff = (o: Record<string, unknown> = {}): Staff =>
     emergencyContactPhone: null,
     notes: null,
     pinHash: "h:res_1:1234",
+    customRoleId: null,
+    customRole: null,
+    zoneId: null,
+    zone: null,
+    allowedRoutes: null,
+    jobTitle: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
     ...o,
-  }) as unknown as Staff;
+  }) as unknown as StaffWithRelations;
 
 const baseInput = {
   employeeCode: "E9",

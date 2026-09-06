@@ -290,6 +290,30 @@ Next 16.2.10 · React 19.2.4 · TypeScript 5 · Tailwind v4 · shadcn/ui + `@bas
 
 ---
 
+## Thermal Printer Infrastructure & Zone Station Routing (2026-09-06) — COMPLETE
+
+Thermal printer infrastructure directly built upon the existing `RestaurantZone` operational stations concept and connected to `MenuCategory` for kitchen KOT routing.
+
+- **Strict Constraint Preserved:** No parallel concepts (no `Department`, `KitchenStation`, or `PrinterDepartment`). `RestaurantZone` remains the single source of truth for both staff operational assignments and production/printing stations.
+- **Schema Additions (`prisma/schema.prisma`):**
+  - `RestaurantZone`: Added `printerEnabled Boolean @default(false)`, `printerConnectionType String? @default("LOCAL_OS")` (`LOCAL_OS` | `NETWORK`), `printerSystemName String?`, `printerPaperWidth Int? @default(80)` (58/80 mm), `printerAutoPrint Boolean @default(false)`. Backward compatibility: Preserved existing `printerIp`, `printerPort`, and `printerModel`. Normalizes legacy records with `printerIp` to `NETWORK`.
+  - `MenuCategory`: Added `productionZoneId String?` and relation `productionZone RestaurantZone? @relation("ZoneCategories", fields: [productionZoneId], references: [id], onDelete: SetNull)` + `@@index([productionZoneId])`.
+- **Printer Client Abstraction (`src/lib/printer/`):**
+  - `escpos.ts`: Standard ESC/POS binary command builder supporting both 58mm (~32 chars) and 80mm (~48 chars) layouts, column formatting, bold headers, and paper cut.
+  - `printer-client.ts`: Decoupled `PrinterClient` supporting local OS printer detection via QZ Tray WebSocket (`printers.find`), direct raw print submission (`LOCAL_OS` and `NETWORK`), and formatted direct ESC/POS test receipt generation (`printTestReceipt(zone)`). UI never talks directly to hardware.
+- **KOT Routing & Document Dispatch (`src/services/print-routing.service.ts`):**
+  - Kitchen KOT Tickets: `OrderItem -> MenuItem -> MenuCategory -> productionZoneId -> RestaurantZone -> Zone Printer`.
+  - Safe Fallbacks: Unassigned categories safely fallback to `KITCHEN` zone, then case-insensitive `/mutfak/i` zone, then first non-default zone, then default zone. Orders never fail if printer is offline or unassigned.
+  - Document separation: `KITCHEN_KOT` routes by zone; `CUSTOMER_BILL`, `SALES_RECEIPT`, `INVOICE` route directly to `CASHIER` (Kasa) zone printer without category splitting.
+- **UI Enhancements:**
+  - `src/components/staff/manage-zones-dialog.tsx`: Redesigned "Yazıcı Altyapısı" with `[ ] Bu bölgede yazıcı kullan` toggle, `LOCAL_OS` vs `NETWORK` connection selector, live QZ Tray scan button & OS printer dropdown, 58mm / 80mm width selector, auto-print toggle, and direct "Test Yazdır" button + quick test button on zone list rows.
+  - `src/components/menu/category-dialog.tsx`: Added "Hazırlama / Yazdırma İstasyonu (KOT Routing)" dropdown mapping category to `RestaurantZone`.
+  - `src/components/menu/menu-manager.tsx`: Displays colored station badges for each category and passes available zones to the category dialog.
+  - `src/app/dashboard/menu/page.tsx`: Fetches zones server-side and passes to menu manager.
+- **Tests:** +15 new specs across `print-routing.service.spec.ts`, `zone-and-role.service.spec.ts`, and `menu-category.repository.spec.ts`. Full test suite **613 passing** with 0 errors. `next build` passes with 0 errors.
+
+---
+
 
 ## Notes / Gotchas
 

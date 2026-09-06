@@ -22,6 +22,11 @@ export interface RestaurantZoneDTO {
   readonly printerIp: string | null;
   readonly printerPort: number | null;
   readonly printerModel: string | null;
+  readonly printerEnabled?: boolean;
+  readonly printerConnectionType?: "LOCAL_OS" | "NETWORK" | string | null;
+  readonly printerSystemName?: string | null;
+  readonly printerPaperWidth?: number | null;
+  readonly printerAutoPrint?: boolean;
   readonly isDefault: boolean;
   readonly sortOrder: number;
 }

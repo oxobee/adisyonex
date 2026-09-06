@@ -1,4 +1,4 @@
-import type { MenuCategory } from "@/generated/prisma/client";
+import type { MenuCategory, RestaurantZone } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export interface MenuCategoryWriteData {
@@ -6,12 +6,17 @@ export interface MenuCategoryWriteData {
   description?: string | null;
   sortOrder?: number;
   isActive?: boolean;
+  productionZoneId?: string | null;
 }
+
+export type MenuCategoryWithZone = MenuCategory & {
+  productionZone?: RestaurantZone | null;
+};
 
 export const createMenuCategory = (
   restaurantId: string,
   data: MenuCategoryWriteData,
-): Promise<MenuCategory> =>
+): Promise<MenuCategoryWithZone> =>
   prisma.menuCategory.create({
     data: {
       restaurant: { connect: { id: restaurantId } },
@@ -19,26 +24,40 @@ export const createMenuCategory = (
       description: data.description ?? null,
       sortOrder: data.sortOrder ?? 0,
       isActive: data.isActive ?? true,
+      ...(data.productionZoneId
+        ? { productionZone: { connect: { id: data.productionZoneId } } }
+        : {}),
+    },
+    include: {
+      productionZone: true,
     },
   });
 
 export const findMenuCategoryById = (
   id: string,
-): Promise<MenuCategory | null> =>
-  prisma.menuCategory.findUnique({ where: { id } });
+): Promise<MenuCategoryWithZone | null> =>
+  prisma.menuCategory.findUnique({
+    where: { id },
+    include: {
+      productionZone: true,
+    },
+  });
 
 export const findCategoriesByRestaurant = (
   restaurantId: string,
-): Promise<MenuCategory[]> =>
+): Promise<MenuCategoryWithZone[]> =>
   prisma.menuCategory.findMany({
     where: { restaurantId, deletedAt: null },
+    include: {
+      productionZone: true,
+    },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
 
 export const updateMenuCategory = (
   id: string,
   data: MenuCategoryWriteData,
-): Promise<MenuCategory> =>
+): Promise<MenuCategoryWithZone> =>
   prisma.menuCategory.update({
     where: { id },
     data: {
@@ -46,6 +65,14 @@ export const updateMenuCategory = (
       description: data.description ?? null,
       sortOrder: data.sortOrder,
       isActive: data.isActive,
+      ...(data.productionZoneId !== undefined
+        ? data.productionZoneId
+          ? { productionZone: { connect: { id: data.productionZoneId } } }
+          : { productionZone: { disconnect: true } }
+        : {}),
+    },
+    include: {
+      productionZone: true,
     },
   });
 

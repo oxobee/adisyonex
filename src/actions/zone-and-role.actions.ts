@@ -37,6 +37,11 @@ const zoneInputSchema = z.object({
   printerIp: z.string().trim().max(45).optional().nullable(),
   printerPort: z.coerce.number().int().min(1).max(65535).optional().nullable(),
   printerModel: z.string().trim().max(100).optional().nullable(),
+  printerEnabled: z.boolean().optional(),
+  printerConnectionType: z.enum(["LOCAL_OS", "NETWORK"]).optional().nullable(),
+  printerSystemName: z.string().trim().max(100).optional().nullable(),
+  printerPaperWidth: z.coerce.number().int().optional().nullable(),
+  printerAutoPrint: z.boolean().optional(),
 });
 
 const updateZoneInputSchema = zoneInputSchema.extend({

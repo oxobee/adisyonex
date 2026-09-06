@@ -311,6 +311,15 @@ export const getMenu = async (restaurantId: string): Promise<MenuDTO> => {
       description: c.description,
       sortOrder: c.sortOrder,
       isActive: c.isActive,
+      productionZoneId: c.productionZoneId ?? null,
+      productionZone: c.productionZone
+        ? {
+            id: c.productionZone.id,
+            name: c.productionZone.name,
+            code: c.productionZone.code,
+            color: c.productionZone.color,
+          }
+        : null,
     })),
     items: items.map((i) => mapItem(i, profile, now)),
   };

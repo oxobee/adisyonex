@@ -336,11 +336,15 @@ model MenuCategory {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
+  productionZoneId String?
+  productionZone   RestaurantZone? @relation("ZoneCategories", fields: [productionZoneId], references: [id], onDelete: SetNull)
+
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   items      MenuItem[]
 
   @@unique([restaurantId, name])
   @@index([restaurantId])
+  @@index([productionZoneId])
 }
 
 /// A sellable menu item. `price` is the base/default; variants (if any) are the
@@ -821,16 +825,22 @@ model RestaurantZone {
   code         String?
   description  String?
   color        String?
-  printerIp    String?
-  printerPort  Int?
-  printerModel String?
-  isDefault    Boolean  @default(false)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  printerIp             String?
+  printerPort           Int?
+  printerModel          String?
+  printerEnabled        Boolean  @default(false)
+  printerConnectionType String?  @default("LOCAL_OS")
+  printerSystemName     String?
+  printerPaperWidth     Int?     @default(80)
+  printerAutoPrint      Boolean  @default(false)
+  isDefault             Boolean  @default(false)
+  sortOrder             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   staff        Staff[]
+  categories   MenuCategory[] @relation("ZoneCategories")
 
   @@unique([restaurantId, name])
   @@index([restaurantId])

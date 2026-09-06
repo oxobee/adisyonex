@@ -73,6 +73,13 @@ export interface MenuCategoryDTO {
   readonly description: string | null;
   readonly sortOrder: number;
   readonly isActive: boolean;
+  readonly productionZoneId?: string | null;
+  readonly productionZone?: {
+    readonly id: string;
+    readonly name: string;
+    readonly code: string | null;
+    readonly color: string | null;
+  } | null;
 }
 
 export interface MenuDTO {

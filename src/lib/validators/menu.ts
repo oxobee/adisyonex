@@ -37,6 +37,7 @@ export const createMenuCategorySchema = z.object({
   description: shortText,
   sortOrder: sortOrderSchema,
   isActive: z.boolean().default(true),
+  productionZoneId: z.string().trim().optional().nullable(),
 });
 export type CreateMenuCategoryInput = z.infer<typeof createMenuCategorySchema>;
 

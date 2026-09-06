@@ -9,6 +9,8 @@ import { listModifierGroups } from "@/services/modifier.service"
 import { listRecipes } from "@/services/recipe.service"
 import { listStock } from "@/services/stock.service"
 
+import { listRestaurantZones } from "@/services/zone-and-role.service"
+
 export default async function MenuPage() {
   const [ctx, staffCtx] = await Promise.all([
     getManagerContextOrNull().catch(() => null),
@@ -31,18 +33,20 @@ export default async function MenuPage() {
     )
   }
 
-  const [menu, groups, restaurant, stockItems, recipes] = await Promise.all([
+  const [menu, groups, restaurant, stockItems, recipes, zones] = await Promise.all([
     getMenu(restaurantId),
     listModifierGroups(restaurantId),
     findRestaurantById(restaurantId),
     listStock(restaurantId),
     listRecipes(restaurantId),
+    listRestaurantZones(restaurantId),
   ])
 
   return (
     <MenuManager
       menu={menu}
       groups={groups}
+      zones={zones}
       gstRegistered={restaurant?.gstRegistrationType !== "UNREGISTERED"}
       stockItems={stockItems.filter((s) => s.isActive)}
       recipes={recipes}

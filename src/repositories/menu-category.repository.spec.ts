@@ -33,6 +33,32 @@ describe("menuCategoryRepository", () => {
         sortOrder: 0,
         isActive: true,
       },
+      include: {
+        productionZone: true,
+      },
+    });
+  });
+
+  it("createMenuCategory connects productionZone when provided", async () => {
+    create.mockResolvedValue({ id: "c2" });
+
+    await createMenuCategory("res_1", {
+      name: "Drinks",
+      productionZoneId: "zone_bar",
+    });
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        restaurant: { connect: { id: "res_1" } },
+        name: "Drinks",
+        description: null,
+        sortOrder: 0,
+        isActive: true,
+        productionZone: { connect: { id: "zone_bar" } },
+      },
+      include: {
+        productionZone: true,
+      },
     });
   });
 

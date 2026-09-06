@@ -123,6 +123,11 @@ export async function listRestaurantZones(
     printerIp: z.printerIp,
     printerPort: z.printerPort,
     printerModel: z.printerModel,
+    printerEnabled: z.printerEnabled ?? false,
+    printerConnectionType: z.printerConnectionType || (z.printerIp ? "NETWORK" : "LOCAL_OS"),
+    printerSystemName: z.printerSystemName,
+    printerPaperWidth: z.printerPaperWidth ?? 80,
+    printerAutoPrint: z.printerAutoPrint ?? false,
     isDefault: z.isDefault,
     sortOrder: z.sortOrder,
   }));
@@ -287,6 +292,11 @@ export async function createRestaurantZone(
     printerIp?: string | null;
     printerPort?: number | null;
     printerModel?: string | null;
+    printerEnabled?: boolean;
+    printerConnectionType?: string | null;
+    printerSystemName?: string | null;
+    printerPaperWidth?: number | null;
+    printerAutoPrint?: boolean;
   }
 ): Promise<RestaurantZoneDTO> {
   const trimmedName = data.name.trim();
@@ -311,6 +321,11 @@ export async function createRestaurantZone(
       printerIp: data.printerIp?.trim() || null,
       printerPort: data.printerPort || null,
       printerModel: data.printerModel?.trim() || null,
+      printerEnabled: data.printerEnabled ?? false,
+      printerConnectionType: data.printerConnectionType || (data.printerIp ? "NETWORK" : "LOCAL_OS"),
+      printerSystemName: data.printerSystemName?.trim() || null,
+      printerPaperWidth: data.printerPaperWidth ?? 80,
+      printerAutoPrint: data.printerAutoPrint ?? false,
       isDefault: false,
     },
   });
@@ -325,6 +340,11 @@ export async function createRestaurantZone(
     printerIp: zone.printerIp,
     printerPort: zone.printerPort,
     printerModel: zone.printerModel,
+    printerEnabled: zone.printerEnabled,
+    printerConnectionType: zone.printerConnectionType,
+    printerSystemName: zone.printerSystemName,
+    printerPaperWidth: zone.printerPaperWidth,
+    printerAutoPrint: zone.printerAutoPrint,
     isDefault: zone.isDefault,
     sortOrder: zone.sortOrder,
   };
@@ -344,6 +364,11 @@ export async function updateRestaurantZone(
     printerIp?: string | null;
     printerPort?: number | null;
     printerModel?: string | null;
+    printerEnabled?: boolean;
+    printerConnectionType?: string | null;
+    printerSystemName?: string | null;
+    printerPaperWidth?: number | null;
+    printerAutoPrint?: boolean;
   }
 ): Promise<RestaurantZoneDTO> {
   const trimmedName = data.name.trim();
@@ -377,6 +402,13 @@ export async function updateRestaurantZone(
       printerIp: data.printerIp?.trim() || null,
       printerPort: data.printerPort || null,
       printerModel: data.printerModel?.trim() || null,
+      printerEnabled: data.printerEnabled !== undefined ? data.printerEnabled : zone.printerEnabled,
+      printerConnectionType: data.printerConnectionType !== undefined
+        ? data.printerConnectionType
+        : (data.printerIp ? "NETWORK" : zone.printerConnectionType),
+      printerSystemName: data.printerSystemName !== undefined ? data.printerSystemName?.trim() || null : zone.printerSystemName,
+      printerPaperWidth: data.printerPaperWidth !== undefined ? data.printerPaperWidth : zone.printerPaperWidth,
+      printerAutoPrint: data.printerAutoPrint !== undefined ? data.printerAutoPrint : zone.printerAutoPrint,
     },
   });
 
@@ -390,6 +422,11 @@ export async function updateRestaurantZone(
     printerIp: updated.printerIp,
     printerPort: updated.printerPort,
     printerModel: updated.printerModel,
+    printerEnabled: updated.printerEnabled,
+    printerConnectionType: updated.printerConnectionType,
+    printerSystemName: updated.printerSystemName,
+    printerPaperWidth: updated.printerPaperWidth,
+    printerAutoPrint: updated.printerAutoPrint,
     isDefault: updated.isDefault,
     sortOrder: updated.sortOrder,
   };

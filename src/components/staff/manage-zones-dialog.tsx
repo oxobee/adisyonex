@@ -9,7 +9,13 @@ import {
   MapPinIcon,
   PlusIcon,
   PrinterIcon,
+  RefreshCwIcon,
   Trash2Icon,
+  WifiIcon,
+  MonitorIcon,
+  PlayIcon,
+  CheckCircle2Icon,
+  AlertCircleIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,7 +35,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { PrinterClient } from "@/lib/printer/printer-client";
 import type { RestaurantZoneDTO } from "@/types/staff";
 
 const PRESET_COLORS = [
@@ -63,12 +71,51 @@ export function ManageZonesDialog({
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#3B82F6");
+
+  // Printer configuration state
+  const [printerEnabled, setPrinterEnabled] = useState(false);
+  const [printerConnectionType, setPrinterConnectionType] = useState<"LOCAL_OS" | "NETWORK">("LOCAL_OS");
+  const [printerSystemName, setPrinterSystemName] = useState("");
   const [printerIp, setPrinterIp] = useState("");
   const [printerPort, setPrinterPort] = useState<string>("9100");
   const [printerModel, setPrinterModel] = useState("");
+  const [printerPaperWidth, setPrinterPaperWidth] = useState<number>(80);
+  const [printerAutoPrint, setPrinterAutoPrint] = useState(false);
+
   const [showPrinterSettings, setShowPrinterSettings] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // Hardware client scanning & testing state
+  const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
+  const [isScanningPrinters, setIsScanningPrinters] = useState(false);
+  const [scanStatus, setScanStatus] = useState<"idle" | "connected" | "disconnected">("idle");
+  const [isTestingPrint, setIsTestingPrint] = useState(false);
+
+  const scanPrinters = async () => {
+    setIsScanningPrinters(true);
+    try {
+      const res = await PrinterClient.detectPrinters();
+      if (res.available && res.printers.length > 0) {
+        setAvailablePrinters(res.printers);
+        setScanStatus("connected");
+        if (!printerSystemName) {
+          setPrinterSystemName(res.printers[0]);
+        }
+        toast.success(`QZ Tray bağlandı: ${res.printers.length} yazıcı bulundu.`);
+      } else {
+        setScanStatus("disconnected");
+        toast.warning(
+          res.error || "QZ Tray aktif değil. Yerel OS yazıcılarını otomatik taramak için QZ Tray uygulamasını çalıştırın."
+        );
+      }
+    } catch {
+      setScanStatus("disconnected");
+      toast.error("Yazıcı servisine erişilemedi.");
+    } finally {
+      setIsScanningPrinters(false);
+    }
+  };
 
   const startEdit = (zone: RestaurantZoneDTO) => {
     setEditingZoneId(zone.id);
@@ -76,11 +123,32 @@ export function ManageZonesDialog({
     setCode(zone.code || "");
     setDescription(zone.description || "");
     setColor(zone.color || "#3B82F6");
+
+    const isEnabled = Boolean(
+      zone.printerEnabled ||
+      zone.printerIp ||
+      zone.printerSystemName ||
+      zone.printerModel
+    );
+    setPrinterEnabled(isEnabled);
+
+    const connType = (zone.printerConnectionType as "LOCAL_OS" | "NETWORK") ||
+      (zone.printerIp ? "NETWORK" : "LOCAL_OS");
+    setPrinterConnectionType(connType);
+
+    setPrinterSystemName(zone.printerSystemName || zone.printerModel || "");
     setPrinterIp(zone.printerIp || "");
     setPrinterPort(zone.printerPort ? String(zone.printerPort) : "9100");
     setPrinterModel(zone.printerModel || "");
-    setShowPrinterSettings(Boolean(zone.printerIp || zone.printerModel));
+    setPrinterPaperWidth(zone.printerPaperWidth ?? 80);
+    setPrinterAutoPrint(zone.printerAutoPrint ?? false);
+
+    setShowPrinterSettings(isEnabled);
     setShowAddForm(true);
+
+    if (connType === "LOCAL_OS" && availablePrinters.length === 0) {
+      void scanPrinters();
+    }
   };
 
   const resetForm = () => {
@@ -89,9 +157,16 @@ export function ManageZonesDialog({
     setCode("");
     setDescription("");
     setColor("#3B82F6");
+
+    setPrinterEnabled(false);
+    setPrinterConnectionType("LOCAL_OS");
+    setPrinterSystemName("");
     setPrinterIp("");
     setPrinterPort("9100");
     setPrinterModel("");
+    setPrinterPaperWidth(80);
+    setPrinterAutoPrint(false);
+
     setShowPrinterSettings(false);
     setShowAddForm(false);
   };
@@ -111,9 +186,14 @@ export function ManageZonesDialog({
         code: code.trim() || undefined,
         description: description.trim() || undefined,
         color: color.trim() || undefined,
-        printerIp: printerIp.trim() || undefined,
-        printerPort: isNaN(portNum as number) ? undefined : portNum,
-        printerModel: printerModel.trim() || undefined,
+        printerEnabled,
+        printerConnectionType: printerEnabled ? printerConnectionType : undefined,
+        printerSystemName: printerEnabled && printerConnectionType === "LOCAL_OS" ? (printerSystemName.trim() || undefined) : undefined,
+        printerIp: printerEnabled && printerConnectionType === "NETWORK" ? (printerIp.trim() || undefined) : undefined,
+        printerPort: printerEnabled && printerConnectionType === "NETWORK" && !isNaN(portNum as number) ? portNum : undefined,
+        printerModel: printerModel.trim() || (printerConnectionType === "LOCAL_OS" ? printerSystemName.trim() : undefined) || undefined,
+        printerPaperWidth: printerEnabled ? printerPaperWidth : 80,
+        printerAutoPrint: printerEnabled ? printerAutoPrint : false,
       };
 
       if (editingZoneId) {
@@ -122,7 +202,7 @@ export function ManageZonesDialog({
           ...payload,
         });
         if (res.success) {
-          toast.success("Bölge güncellendi.");
+          toast.success("Bölge ve yazıcı ayarları güncellendi.");
           resetForm();
           onZonesUpdated();
         } else {
@@ -145,6 +225,41 @@ export function ManageZonesDialog({
       toast.error("Bir hata oluştu.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestPrint = async (targetZone?: RestaurantZoneDTO) => {
+    const zoneToTest: RestaurantZoneDTO = targetZone || {
+      id: editingZoneId || "temp",
+      restaurantId: "current",
+      name: name.trim() || "Mutfak",
+      code: code.trim() || null,
+      description: description.trim() || null,
+      color,
+      printerIp: printerIp.trim() || null,
+      printerPort: printerPort.trim() ? parseInt(printerPort.trim(), 10) : 9100,
+      printerModel: printerModel.trim() || null,
+      printerEnabled: true,
+      printerConnectionType,
+      printerSystemName: printerSystemName.trim() || printerModel.trim() || null,
+      printerPaperWidth,
+      printerAutoPrint,
+      isDefault: false,
+      sortOrder: 0,
+    };
+
+    setIsTestingPrint(true);
+    try {
+      const res = await PrinterClient.printTestReceipt(zoneToTest);
+      if (res.success) {
+        toast.success(res.message || `'${zoneToTest.name}' test fişi başarıyla yazdırıldı.`);
+      } else {
+        toast.error(res.error || "Test fişi yazdırılamadı.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Test fişi gönderilirken hata oluştu.");
+    } finally {
+      setIsTestingPrint(false);
     }
   };
 
@@ -182,7 +297,7 @@ export function ManageZonesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg rounded-3xl p-6">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl rounded-3xl p-6">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-primary/10 text-primary">
@@ -193,7 +308,7 @@ export function ManageZonesDialog({
                 Çalışma Bölgeleri ve İstasyonlar
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Mutfak, Bar, Kasa vb. personelin çalışma alanları ve yazıcı altyapısı.
+                Mutfak, Bar, Kasa vb. personelin çalışma alanları ve termal yazıcı istasyonları.
               </DialogDescription>
             </div>
           </div>
@@ -203,10 +318,9 @@ export function ManageZonesDialog({
         <div className="flex items-start gap-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 p-3 text-xs text-blue-900 dark:text-blue-300">
           <InfoIcon className="size-4 shrink-0 mt-0.5" />
           <span>
-            <strong>Bölge & Yazıcı Altyapısı:</strong> Bölgeler personellerinizin görev yerini belirler
-            ve ileride bu bölgelere özel termal adisyon yazıcıları (Mutfak, Bar, Kasa) atanması için
-            hazırlanmıştır. Bir bölgeyi sildiğinizde personeller otomatik <strong>&quot;Genel&quot;</strong> bölgesine
-            aktarılır.
+            <strong>Bölge & Yazıcı Altyapısı:</strong> Bölgeler hem personellerin görev yerlerini
+            belirler hem de ilgili menü kategorilerinden gelen siparişleri otomatik termal yazıcılara
+            (Mutfak KOT, Bar KOT, Kasa Fişi) yönlendirir.
           </span>
         </div>
 
@@ -214,11 +328,11 @@ export function ManageZonesDialog({
         {showAddForm ? (
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col gap-3 p-4 rounded-2xl border border-primary/20 bg-primary/5"
+            className="flex flex-col gap-3.5 p-4 rounded-2xl border border-primary/20 bg-primary/5"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-foreground">
-                {editingZoneId ? "Bölgeyi Düzenle" : "Yeni Bölge Ekle"}
+                {editingZoneId ? "Bölgeyi & Yazıcıyı Düzenle" : "Yeni Bölge & İstasyon Ekle"}
               </span>
               <button
                 type="button"
@@ -237,7 +351,7 @@ export function ManageZonesDialog({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Örn: Mutfak, Bar, Kasa, Teras"
-                  className="rounded-xl font-bold bg-background"
+                  className="rounded-xl font-bold bg-background text-xs"
                   required
                   autoFocus
                 />
@@ -249,7 +363,7 @@ export function ManageZonesDialog({
                   id="zone-code"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="Örn: KITCHEN, BAR"
+                  placeholder="Örn: KITCHEN, BAR, CASHIER"
                   className="rounded-xl font-mono uppercase bg-background text-xs"
                 />
               </Field>
@@ -290,16 +404,21 @@ export function ManageZonesDialog({
               </div>
             </div>
 
-            {/* Gelişmiş Yazıcı Altyapısı Accordion */}
-            <div className="rounded-xl border border-border/80 bg-background/80 p-3 mt-1">
+            {/* Gelişmiş Yazıcı Altyapısı */}
+            <div className="rounded-2xl border border-border/80 bg-background/90 p-3.5 mt-1 shadow-xs">
               <button
                 type="button"
                 onClick={() => setShowPrinterSettings((prev) => !prev)}
                 className="w-full flex items-center justify-between text-xs font-bold text-foreground cursor-pointer"
               >
-                <div className="flex items-center gap-1.5 text-primary">
+                <div className="flex items-center gap-2 text-primary">
                   <PrinterIcon className="size-4" />
-                  <span>Yazıcı Altyapısı (Opsiyonel / İleriye Hazır)</span>
+                  <span>Yazıcı Altyapısı & İstasyon Entegrasyonu</span>
+                  {printerEnabled && (
+                    <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20 font-bold">
+                      Aktif ({printerPaperWidth}mm)
+                    </Badge>
+                  )}
                 </div>
                 {showPrinterSettings ? (
                   <ChevronUpIcon className="size-4 text-muted-foreground" />
@@ -309,39 +428,220 @@ export function ManageZonesDialog({
               </button>
 
               {showPrinterSettings && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 mt-2 border-t border-border/60">
-                  <Field className="col-span-2 sm:col-span-1">
-                    <FieldLabel htmlFor="p-ip">Yazıcı IP Adresi</FieldLabel>
-                    <Input
-                      id="p-ip"
-                      value={printerIp}
-                      onChange={(e) => setPrinterIp(e.target.value)}
-                      placeholder="192.168.1.200"
-                      className="rounded-xl font-mono text-xs"
+                <div className="flex flex-col gap-3.5 pt-3.5 mt-2.5 border-t border-border/60">
+                  {/* [ ] Bu bölgede yazıcı kullan toggle */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-foreground">
+                        Bu bölgede yazıcı kullan
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Siparişler onaylandığında bu bölgenin yazıcısına KOT fişi gönderilir.
+                      </span>
+                    </div>
+                    <Switch
+                      checked={printerEnabled}
+                      onCheckedChange={(checked) => setPrinterEnabled(checked)}
                     />
-                  </Field>
+                  </div>
 
-                  <Field className="col-span-2 sm:col-span-1">
-                    <FieldLabel htmlFor="p-port">Port</FieldLabel>
-                    <Input
-                      id="p-port"
-                      value={printerPort}
-                      onChange={(e) => setPrinterPort(e.target.value)}
-                      placeholder="9100"
-                      className="rounded-xl font-mono text-xs"
-                    />
-                  </Field>
+                  {printerEnabled && (
+                    <>
+                      {/* Bağlantı Türü: LOCAL_OS vs NETWORK */}
+                      <div>
+                        <span className="text-xs font-bold text-foreground block mb-1.5">
+                          Bağlantı Türü
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPrinterConnectionType("LOCAL_OS");
+                              if (availablePrinters.length === 0) {
+                                void scanPrinters();
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer",
+                              printerConnectionType === "LOCAL_OS"
+                                ? "border-primary bg-primary/10 text-primary shadow-xs"
+                                : "border-border/70 hover:bg-muted/40 text-muted-foreground"
+                            )}
+                          >
+                            <MonitorIcon className="size-4" />
+                            <span>Bilgisayara Bağlı (OS)</span>
+                          </button>
 
-                  <Field className="col-span-2">
-                    <FieldLabel htmlFor="p-model">Yazıcı Modeli / Türü</FieldLabel>
-                    <Input
-                      id="p-model"
-                      value={printerModel}
-                      onChange={(e) => setPrinterModel(e.target.value)}
-                      placeholder="Örn: Epson TM-T20III / 80mm ESC/POS"
-                      className="rounded-xl text-xs"
-                    />
-                  </Field>
+                          <button
+                            type="button"
+                            onClick={() => setPrinterConnectionType("NETWORK")}
+                            className={cn(
+                              "flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer",
+                              printerConnectionType === "NETWORK"
+                                ? "border-primary bg-primary/10 text-primary shadow-xs"
+                                : "border-border/70 hover:bg-muted/40 text-muted-foreground"
+                            )}
+                          >
+                            <WifiIcon className="size-4" />
+                            <span>Ağ / IP Yazıcı (Network)</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* LOCAL_OS Fields */}
+                      {printerConnectionType === "LOCAL_OS" && (
+                        <div className="flex flex-col gap-2 p-3 rounded-xl bg-muted/20 border border-border/60">
+                          <div className="flex items-center justify-between">
+                            <FieldLabel htmlFor="p-sysname">Sistem Yazıcısı</FieldLabel>
+                            <div className="flex items-center gap-2">
+                              {scanStatus === "connected" && (
+                                <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                  <CheckCircle2Icon className="size-3" />
+                                  QZ Tray Bağlı
+                                </span>
+                              )}
+                              {scanStatus === "disconnected" && (
+                                <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                                  <AlertCircleIcon className="size-3" />
+                                  QZ Tray Çevrimdışı
+                                </span>
+                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={scanPrinters}
+                                disabled={isScanningPrinters}
+                                className="h-6 px-2 text-[10px] gap-1 rounded-lg cursor-pointer"
+                              >
+                                <RefreshCwIcon className={cn("size-2.5", isScanningPrinters && "animate-spin")} />
+                                <span>Yazıcıları Tara</span>
+                              </Button>
+                            </div>
+                          </div>
+
+                          {availablePrinters.length > 0 ? (
+                            <select
+                              id="p-sysname"
+                              value={printerSystemName}
+                              onChange={(e) => setPrinterSystemName(e.target.value)}
+                              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+                            >
+                              <option value="">-- Yazıcı Seçin --</option>
+                              {availablePrinters.map((p) => (
+                                <option key={p} value={p}>
+                                  {p}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <Input
+                              id="p-sysname"
+                              value={printerSystemName}
+                              onChange={(e) => setPrinterSystemName(e.target.value)}
+                              placeholder="Örn: EPSON TM-T20III veya XP-80C"
+                              className="rounded-xl font-medium text-xs bg-background"
+                            />
+                          )}
+
+                          <span className="text-[10px] text-muted-foreground">
+                            İşletim sisteminde kurulu termal yazıcının adı (USB / Seri / Bluetooth / Paylaşılan).
+                          </span>
+                        </div>
+                      )}
+
+                      {/* NETWORK Fields */}
+                      {printerConnectionType === "NETWORK" && (
+                        <div className="grid grid-cols-3 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60">
+                          <Field className="col-span-2">
+                            <FieldLabel htmlFor="p-ip">Yazıcı IP Adresi</FieldLabel>
+                            <Input
+                              id="p-ip"
+                              value={printerIp}
+                              onChange={(e) => setPrinterIp(e.target.value)}
+                              placeholder="192.168.1.200"
+                              className="rounded-xl font-mono text-xs bg-background"
+                            />
+                          </Field>
+
+                          <Field className="col-span-1">
+                            <FieldLabel htmlFor="p-port">Port</FieldLabel>
+                            <Input
+                              id="p-port"
+                              value={printerPort}
+                              onChange={(e) => setPrinterPort(e.target.value)}
+                              placeholder="9100"
+                              className="rounded-xl font-mono text-xs bg-background"
+                            />
+                          </Field>
+                        </div>
+                      )}
+
+                      {/* Kağıt Genişliği ve Otomatik Yazdır */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-xs font-bold text-foreground block mb-1.5">
+                            Kağıt Genişliği
+                          </span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPrinterPaperWidth(80)}
+                              className={cn(
+                                "py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center",
+                                printerPaperWidth === 80
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border/70 hover:bg-muted/40 text-muted-foreground"
+                              )}
+                            >
+                              80 mm
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPrinterPaperWidth(58)}
+                              className={cn(
+                                "py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center",
+                                printerPaperWidth === 58
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border/70 hover:bg-muted/40 text-muted-foreground"
+                              )}
+                            >
+                              58 mm
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col justify-end">
+                          <div className="flex items-center justify-between p-2 rounded-xl border border-border/60 bg-muted/20 h-[38px]">
+                            <span className="text-xs font-bold text-foreground">Otomatik Yazdır</span>
+                            <Switch
+                              checked={printerAutoPrint}
+                              onCheckedChange={(checked) => setPrinterAutoPrint(checked)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Test Yazdır Butonu */}
+                      <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <span className="size-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                          <span>Doğrudan termal ESC/POS çıktısı</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleTestPrint()}
+                          disabled={isTestingPrint || (!printerSystemName && !printerIp)}
+                          className="gap-1.5 text-xs font-bold rounded-xl cursor-pointer"
+                        >
+                          <PlayIcon className={cn("size-3.5 fill-current", isTestingPrint && "animate-spin")} />
+                          <span>{isTestingPrint ? "Yazdırılıyor..." : "Test Yazdır"}</span>
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -369,10 +669,10 @@ export function ManageZonesDialog({
               resetForm();
               setShowAddForm(true);
             }}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl border-dashed border-2 py-5 font-bold hover:bg-muted/50"
+            className="w-full flex items-center justify-center gap-2 rounded-2xl border-dashed border-2 py-5 font-bold hover:bg-muted/50 cursor-pointer"
           >
             <PlusIcon className="size-4 text-primary" />
-            <span>Yeni Bölge Ekle</span>
+            <span>Yeni Bölge & İstasyon Ekle</span>
           </Button>
         )}
 
@@ -393,7 +693,7 @@ export function ManageZonesDialog({
                     style={{ backgroundColor: z.color || "#3B82F6" }}
                   />
                   <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-foreground truncate">
                         {z.name}
                       </span>
@@ -407,10 +707,13 @@ export function ManageZonesDialog({
                           Varsayılan
                         </Badge>
                       )}
-                      {z.printerIp && (
+                      {(z.printerEnabled || z.printerIp || z.printerSystemName) && (
                         <Badge variant="secondary" className="text-[10px] gap-1 font-mono">
-                          <PrinterIcon className="size-2.5" />
-                          {z.printerIp}
+                          <PrinterIcon className="size-2.5 text-primary" />
+                          {z.printerConnectionType === "NETWORK" || z.printerIp
+                            ? `${z.printerIp || "Ağ"}:${z.printerPort || 9100}`
+                            : (z.printerSystemName || z.printerModel || "OS Yazıcı")}
+                          <span className="text-[9px] opacity-70">({z.printerPaperWidth || 80}mm)</span>
                         </Badge>
                       )}
                     </div>
@@ -423,6 +726,20 @@ export function ManageZonesDialog({
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
+                  {(z.printerEnabled || z.printerIp || z.printerSystemName) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-muted-foreground hover:text-primary cursor-pointer"
+                      onClick={() => handleTestPrint(z)}
+                      title="Hızlı Test Yazdır"
+                      disabled={isTestingPrint}
+                    >
+                      <PlayIcon className="size-3.5" />
+                    </Button>
+                  )}
+
                   <Button
                     type="button"
                     variant="ghost"

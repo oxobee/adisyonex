@@ -50,6 +50,7 @@ import type {
   MenuModifierGroupDTO,
 } from "@/types/menu"
 import type { RecipeComponentDTO, StockItemDTO } from "@/types/inventory"
+import type { RestaurantZoneDTO } from "@/types/staff"
 
 import { formatCurrency } from "@/lib/format"
 import { CategoryDialog } from "./category-dialog"
@@ -75,6 +76,7 @@ const REASON_LABEL: Record<string, string> = {
 export function MenuManager({
   menu,
   groups,
+  zones = [],
   gstRegistered,
   stockItems,
   recipes,
@@ -82,6 +84,7 @@ export function MenuManager({
 }: {
   menu: MenuDTO
   groups: readonly MenuModifierGroupDTO[]
+  zones?: readonly RestaurantZoneDTO[]
   gstRegistered: boolean
   stockItems: readonly StockItemDTO[]
   recipes: Record<string, readonly RecipeComponentDTO[]>
@@ -248,6 +251,18 @@ export function MenuManager({
                 <div className="flex items-center justify-between gap-2 border-b pb-2">
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold">{category.name}</h2>
+                    {category.productionZone ? (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 text-[11px] font-semibold"
+                      >
+                        <span
+                          className="size-2 rounded-full inline-block"
+                          style={{ backgroundColor: category.productionZone.color || "#EF4444" }}
+                        />
+                        <span>{category.productionZone.name}</span>
+                      </Badge>
+                    ) : null}
                     {!category.isActive ? (
                       <Badge variant="outline">Gizli</Badge>
                     ) : null}
@@ -320,6 +335,7 @@ export function MenuManager({
         <CategoryDialog
           open
           category={categoryDialog.category}
+          zones={zones as RestaurantZoneDTO[]}
           onOpenChange={(open) => setCategoryDialog((s) => ({ ...s, open }))}
           onSaved={refresh}
         />
