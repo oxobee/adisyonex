@@ -23,7 +23,9 @@ const MAX_ATTEMPTS = 5;
  * any diner can verify a phone to place a table order.
  */
 const isOtpDisabled = (): boolean =>
-  process.env.DISABLE_OTP === "true" && process.env.NODE_ENV !== "test";
+  process.env.DISABLE_OTP === "true" &&
+  process.env.NODE_ENV !== "production" &&
+  process.env.NODE_ENV !== "test";
 
 export const requestGuestOtp = async (phone: string): Promise<void> => {
   if (!isOtpDisabled()) {

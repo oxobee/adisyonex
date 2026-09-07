@@ -64,12 +64,12 @@ export const computeBill = (
   const subtotal = round2(bases.reduce((s, b) => s + b.base, 0));
   const compTotal = round2(bases.reduce((s, b) => s + b.comp, 0));
 
-  // 2. Target discount on the pre-tax base.
+  // 2. Target discount on the pre-tax base (capped to subtotal and 100% maximum).
   const targetDiscount =
     discount.type === "PERCENT"
-      ? round2((subtotal * discount.value) / 100)
+      ? round2((subtotal * Math.min(Math.max(0, discount.value), 100)) / 100)
       : discount.type === "FLAT"
-        ? Math.min(round2(discount.value), subtotal)
+        ? Math.min(Math.max(0, round2(discount.value)), subtotal)
         : 0;
 
   // 3. Allocate discount proportionally, then tax the discounted base.

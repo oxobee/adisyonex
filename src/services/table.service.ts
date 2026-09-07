@@ -115,18 +115,38 @@ export const resolveTableForOrder = async (
   return { id: table.id, label: table.label };
 };
 
-/** Transfer all open orders from one table to another */
+/** Transfer all open orders from one table to another (Target must not have open orders) */
 export const transferTableOrders = async (
   restaurantId: string,
   fromTableId: string,
   toTableId: string,
 ): Promise<{ count: number; targetTableLabel: string }> => {
+  if (fromTableId === toTableId) {
+    throw new Error("Kaynak ve hedef masa aynı olamaz.");
+  }
+
   const [fromTable, toTable] = await Promise.all([
     loadOwnedTable(restaurantId, fromTableId),
     loadOwnedTable(restaurantId, toTableId),
   ]);
 
   const { prisma } = await import("@/lib/prisma");
+
+  // Check if target table already has open orders
+  const targetOpenOrdersCount = await prisma.order.count({
+    where: {
+      restaurantId,
+      tableId: toTable.id,
+      status: "OPEN",
+    },
+  });
+
+  if (targetOpenOrdersCount > 0) {
+    throw new Error(
+      `Hedef masa (${toTable.label}) üzerinde zaten açık sipariş var. Masa transferi yerine 'Masa Birleştir' işlemini kullanın.`
+    );
+  }
+
   const updated = await prisma.order.updateMany({
     where: {
       restaurantId,
@@ -140,16 +160,48 @@ export const transferTableOrders = async (
   });
 
   const { clearTableDeviceLock } = await import("@/lib/table-device-lock");
-  await clearTableDeviceLock(fromTable.id).catch(() => undefined);
+  await Promise.all([
+    clearTableDeviceLock(fromTable.id).catch(() => undefined),
+    clearTableDeviceLock(toTable.id).catch(() => undefined),
+  ]);
 
   return { count: updated.count, targetTableLabel: toTable.label };
 };
 
-/** Merge orders from source table into target table */
+/** Merge orders from source table into target table (Target may have open orders) */
 export const mergeTableOrders = async (
   restaurantId: string,
   sourceTableId: string,
   targetTableId: string,
 ): Promise<{ count: number; targetTableLabel: string }> => {
-  return transferTableOrders(restaurantId, sourceTableId, targetTableId);
+  if (sourceTableId === targetTableId) {
+    throw new Error("Kaynak ve hedef masa aynı olamaz.");
+  }
+
+  const [fromTable, toTable] = await Promise.all([
+    loadOwnedTable(restaurantId, sourceTableId),
+    loadOwnedTable(restaurantId, targetTableId),
+  ]);
+
+  const { prisma } = await import("@/lib/prisma");
+
+  const updated = await prisma.order.updateMany({
+    where: {
+      restaurantId,
+      tableId: fromTable.id,
+      status: "OPEN",
+    },
+    data: {
+      tableId: toTable.id,
+      tableLabel: toTable.label,
+    },
+  });
+
+  const { clearTableDeviceLock } = await import("@/lib/table-device-lock");
+  await Promise.all([
+    clearTableDeviceLock(fromTable.id).catch(() => undefined),
+    clearTableDeviceLock(toTable.id).catch(() => undefined),
+  ]);
+
+  return { count: updated.count, targetTableLabel: toTable.label };
 };

@@ -141,9 +141,9 @@ export const getDashboard = async (
     trend.push({ date: key, label: String(day), sales: round2(trendMap.get(key) ?? 0) });
   }
 
-  // Hourly traffic today (e.g. 09:00 to 23:00)
+  // Hourly traffic today (full 24-hour coverage so late-night / 24-hr operations are fully reflected)
   const hourlyMap = new Map<number, { orders: number; sales: number }>();
-  for (let h = 9; h <= 23; h++) {
+  for (let h = 0; h <= 23; h++) {
     hourlyMap.set(h, { orders: 0, sales: 0 });
   }
   for (const o of todayOrders) {
@@ -164,27 +164,29 @@ export const getDashboard = async (
     }),
   );
 
-  // Top items today with both quantity & total revenue.
-  const itemMap = new Map<string, { quantity: number; revenue: number }>();
+  // Top items today with both quantity & total revenue (grouped by menuItemId/unique item key).
+  const itemMap = new Map<string, { name: string; quantity: number; revenue: number }>();
   for (const o of todayOrders) {
     for (const it of o.items) {
       if (it.state === "VOID") {
         continue;
       }
-      const existing = itemMap.get(it.name) ?? { quantity: 0, revenue: 0 };
+      const itemKey = it.menuItemId || it.name;
+      const existing = itemMap.get(itemKey) ?? { name: it.name, quantity: 0, revenue: 0 };
       const itemTotal =
         (num(it.unitPrice) +
           it.modifiers.reduce((s, m) => s + num(m.priceDelta), 0)) *
         it.quantity;
-      itemMap.set(it.name, {
+      itemMap.set(itemKey, {
+        name: it.name,
         quantity: existing.quantity + it.quantity,
         revenue: round2(existing.revenue + itemTotal),
       });
     }
   }
-  const topItemsToday = [...itemMap.entries()]
-    .map(([name, val]) => ({
-      name,
+  const topItemsToday = [...itemMap.values()]
+    .map((val) => ({
+      name: val.name,
       quantity: val.quantity,
       revenue: val.revenue,
     }))

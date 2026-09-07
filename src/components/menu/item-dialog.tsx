@@ -160,6 +160,9 @@ export function ItemDialog({
   const [isActive, setIsActive] = useState(item?.isActive ?? true);
   const [isChefSpecial, setIsChefSpecial] = useState(item?.isChefSpecial ?? false);
   const [isAiFeatured, setIsAiFeatured] = useState(item?.isAiFeatured ?? false);
+  const [sortOrder, setSortOrder] = useState(
+    item?.sortOrder != null ? String(item.sortOrder) : "0",
+  );
   const [variants, setVariants] = useState<VariantRow[]>(
     item
       ? item.variants.map((v) => ({ name: v.name, price: String(v.price) }))
@@ -235,6 +238,7 @@ export function ItemDialog({
       isActive,
       isChefSpecial,
       isAiFeatured,
+      sortOrder: Math.max(0, parseInt(sortOrder, 10) || 0),
       variants: variants
         .filter((v) => v.name.trim())
         .map((v) => ({ name: v.name, price: Number(v.price || 0) })),
@@ -661,8 +665,8 @@ export function ItemDialog({
               </div>
             ) : null}
 
-            {/* Preparation time & Item Type */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Preparation time, Item Type & Sort Order */}
+            <div className="grid grid-cols-3 gap-3">
               <Field>
                 <FieldLabel htmlFor="item-prep">
                   <span className="flex items-center gap-1">
@@ -699,6 +703,20 @@ export function ItemDialog({
                     <SelectItem value="OTHER">Diğer</SelectItem>
                   </SelectContent>
                 </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="item-sort">Sıra No</FieldLabel>
+                <Input
+                  id="item-sort"
+                  type="number"
+                  min={0}
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  placeholder="0"
+                  className="font-bold"
+                  title="Küçük numara önce listelenir (0 en üst)"
+                />
               </Field>
             </div>
 

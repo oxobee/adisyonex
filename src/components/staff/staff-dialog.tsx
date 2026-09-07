@@ -246,7 +246,7 @@ export function StaffDialog({
     }
   };
 
-  const pinValid = /^\d{4,6}$/.test(pin);
+  const pinValid = /^\d{4}$/.test(pin);
   const disabled =
     save.isPending ||
     !form.employeeCode.trim() ||
@@ -662,24 +662,24 @@ export function StaffDialog({
               <div className="flex items-center justify-between">
                 <FieldLabel htmlFor="st-pin" className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <KeyRoundIcon className="size-3.5 text-primary" />
-                  <span>{staff ? "Giriş PIN Kodu / Şifre Değiştir (İsteğe Bağlı)" : "Giriş PIN Kodu / Şifresi (4–6 Haneli)"}</span>
+                  <span>{staff ? "Giriş PIN Kodu / Şifre Değiştir (İsteğe Bağlı)" : "Giriş PIN Kodu / Şifresi (4 Haneli)"}</span>
                 </FieldLabel>
-                <span className="text-[11px] font-semibold text-muted-foreground">Sadece rakam (0-9)</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">Sadece 4 rakam (0-9)</span>
               </div>
               <Input
                 id="st-pin"
                 inputMode="numeric"
                 autoComplete="off"
                 value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                 placeholder={staff ? "Mevcut PIN'i korumak için boş bırakın" : "•••• (Örn: 1234)"}
                 className="rounded-xl font-bold tracking-widest text-center text-base bg-background"
                 required={!staff}
               />
               <p className="text-muted-foreground text-[11px]">
                 {staff
-                  ? "Yeni bir 4-6 haneli PIN girerseniz personelin mevcut şifresi güncellenir."
-                  : "Kullanıcı veya personel bu PIN / şifre ile sisteme ve yetkili ekranlarına giriş yapacaktır."}
+                  ? "Yeni bir 4 haneli PIN girerseniz personelin mevcut şifresi güncellenir."
+                  : "Personel bu 4 haneli PIN ile sisteme ve terminal ekranlarına giriş yapacaktır."}
               </p>
             </div>
 

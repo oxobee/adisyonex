@@ -81,8 +81,10 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => {
   }, 0);
 
   const rawGrandTotal = num(o.grandTotal);
-  const effectiveGrandTotal = rawGrandTotal > 0 ? rawGrandTotal : computedLinesTotal;
-  const effectiveSubtotal = num(o.subtotal) > 0 ? num(o.subtotal) : computedLinesTotal;
+  // If order is settled or explicitly zero-discounted, respect 0 rather than falling back to computedLinesTotal
+  const isSettled = o.settledAt !== null || o.status === "COMPLETED";
+  const effectiveGrandTotal = isSettled ? rawGrandTotal : (rawGrandTotal > 0 ? rawGrandTotal : computedLinesTotal);
+  const effectiveSubtotal = isSettled ? num(o.subtotal) : (num(o.subtotal) > 0 ? num(o.subtotal) : computedLinesTotal);
 
   return {
     id: o.id,
@@ -143,12 +145,7 @@ const snapshotLines = (
 ): OrderLineWriteData[] => {
   const itemsById = new Map(menu.items.map((i) => [i.id, i]));
   return lines.map((line, idx) => {
-    let item = itemsById.get(line.menuItemId);
-    if (!item) {
-      item = menu.items.find(
-        (i) => i.name.toLowerCase().trim() === line.menuItemId.toLowerCase().trim(),
-      );
-    }
+    const item = itemsById.get(line.menuItemId);
     if (!item) {
       throw new Error(MENU_ITEM_NOT_FOUND);
     }
@@ -231,28 +228,54 @@ export const createOrder = async (
     tableLabel = table.label;
   }
 
-  const order = await createOrderRepo({
-    restaurantId: ctx.restaurantId,
-    orderNumber,
-    idempotencyKey: input.idempotencyKey,
-    orderType: input.orderType,
-    tableLabel,
-    tableId,
-    customerName: input.customerName ?? null,
-    customerPhone: input.customerPhone ?? null,
-    customerAddress: input.customerAddress ?? null,
-    note: input.note ?? null,
-    placedById: ctx.userId,
-    placedByStaffId: ctx.staffId ?? null,
-    customerId: input.customerId ?? null,
-    items,
-  });
+  let order;
+  let attempts = 0;
+  while (attempts < 3) {
+    try {
+      const orderNumber = (await maxOrderNumber(ctx.restaurantId)) + 1;
+      order = await createOrderRepo({
+        restaurantId: ctx.restaurantId,
+        orderNumber,
+        idempotencyKey: input.idempotencyKey,
+        orderType: input.orderType,
+        tableLabel,
+        tableId,
+        customerName: input.customerName ?? null,
+        customerPhone: input.customerPhone ?? null,
+        customerAddress: input.customerAddress ?? null,
+        note: input.note ?? null,
+        placedById: ctx.userId,
+        placedByStaffId: ctx.staffId ?? null,
+        customerId: input.customerId ?? null,
+        items,
+      });
+      break;
+    } catch (err: unknown) {
+      attempts++;
+      const isUniqueError =
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        (err as { code: string }).code === "P2002";
+      if (isUniqueError && attempts < 3) {
+        // Retry with next orderNumber
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  if (!order) {
+    throw new Error("Sipariş oluşturulamadı, lütfen tekrar deneyin.");
+  }
 
   await depleteForLines(
     ctx,
     input.items.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
     order.id,
-  ).catch(() => undefined);
+  ).catch((err) => {
+    console.error("[stock] createOrder deplete failed:", err);
+  });
   return mapOrder(order);
 };
 
@@ -278,7 +301,9 @@ export const addItems = async (
     ctx,
     input.items.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
     input.orderId,
-  ).catch(() => undefined);
+  ).catch((err) => {
+    console.error("[stock] addItems deplete failed:", err);
+  });
   return mapOrder(updated);
 };
 
@@ -313,6 +338,9 @@ export const voidLine = async (
   input: VoidLineInput,
 ): Promise<void> => {
   const order = await loadOwnedOrder(ctx.restaurantId, input.orderId);
+  if (order.status !== "OPEN") {
+    throw new Error(ORDER_NOT_OPEN);
+  }
   const line = order.items.find((i) => i.id === input.itemId);
   if (!line) {
     throw new Error(ORDER_ITEM_NOT_FOUND);
@@ -323,7 +351,9 @@ export const voidLine = async (
       ctx,
       [{ menuItemId: line.menuItemId, quantity: line.quantity }],
       order.id,
-    ).catch(() => undefined);
+    ).catch((err) => {
+      console.error("[stock] voidLine restore failed:", err);
+    });
   }
 };
 
@@ -342,7 +372,9 @@ export const voidWholeOrder = async (
       .filter((i) => i.state !== "VOID")
       .map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
     input.orderId,
-  ).catch(() => undefined);
+  ).catch((err) => {
+    console.error("[stock] voidWholeOrder restore failed:", err);
+  });
 
   if (order.tableId) {
     const { prisma } = await import("@/lib/prisma");

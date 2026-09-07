@@ -147,6 +147,7 @@ const mapItem = (
       : [],
     isChefSpecial: item.isChefSpecial ?? false,
     isAiFeatured: item.isAiFeatured ?? false,
+    sortOrder: item.sortOrder ?? 0,
     isActive: item.isActive,
     available: isItemAvailable(item, now),
     disabledReason: liveDisable?.reason ?? null,

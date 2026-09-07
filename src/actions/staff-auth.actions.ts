@@ -41,7 +41,7 @@ export const directStaffLogoutAction = async (): Promise<void> => {
 };
 
 import { prisma } from "@/lib/prisma";
-import { hashStaffPin } from "@/lib/staff-pin";
+import { hashStaffPin, safeCompareStaffPin } from "@/lib/staff-pin";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getStaffEffectiveRoutes } from "@/lib/staff";
@@ -141,7 +141,7 @@ export async function switchStaffAccountAction(data: {
         return failure("Bu personel için henüz PIN kodu belirlenmemiş");
       }
 
-      if (hashStaffPin(pin, staff.restaurantId) !== staff.pinHash) {
+      if (!safeCompareStaffPin(pin, staff.restaurantId, staff.pinHash)) {
         return failure("Hatalı PIN kodu / şifre girdiniz");
       }
 

@@ -4,6 +4,8 @@ import type { Staff } from "@/generated/prisma/client";
 
 vi.mock("@/lib/staff-pin", () => ({
   hashStaffPin: (pin: string, restaurantId: string) => `h:${restaurantId}:${pin}`,
+  safeCompareStaffPin: (pin: string, restaurantId: string, expectedHash: string) =>
+    `h:${restaurantId}:${pin}` === expectedHash,
 }));
 vi.mock("@/repositories/restaurant.repository", () => ({
   findRestaurantByUsername: vi.fn(),

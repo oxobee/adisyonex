@@ -47,26 +47,38 @@ export const assertAndDeductCredits = async (
   referenceId?: string,
   description?: string,
 ): Promise<{ walletId: string; balance: number }> => {
-  const wallet = await getOrCreateWallet(restaurantId);
-
-  if (wallet.balance < amount) {
-    throw new Error(
-      `Yetersiz AI Kredisi. Bu işlem için ${amount} kredi gerekiyor, mevcut bakiyeniz: ${wallet.balance} kredi.`,
-    );
-  }
+  // Ensure wallet exists first
+  await getOrCreateWallet(restaurantId);
 
   return prisma.$transaction(async (tx) => {
-    const updated = await tx.aiCreditWallet.update({
-      where: { restaurantId },
+    // Atomic deduction: only decrement if balance >= amount
+    const result = await tx.aiCreditWallet.updateMany({
+      where: {
+        restaurantId,
+        balance: { gte: amount },
+      },
       data: {
         balance: { decrement: amount },
         totalUsed: { increment: amount },
       },
     });
 
+    if (result.count === 0) {
+      const current = await tx.aiCreditWallet.findUnique({
+        where: { restaurantId },
+      });
+      throw new Error(
+        `Yetersiz AI Kredisi. Bu işlem için ${amount} kredi gerekiyor, mevcut bakiyeniz: ${current?.balance ?? 0} kredi.`,
+      );
+    }
+
+    const updated = await tx.aiCreditWallet.findUniqueOrThrow({
+      where: { restaurantId },
+    });
+
     await tx.aiCreditTransaction.create({
       data: {
-        walletId: wallet.id,
+        walletId: updated.id,
         amount: -amount,
         type: "USAGE_DEDUCT",
         action,
@@ -75,7 +87,7 @@ export const assertAndDeductCredits = async (
       },
     });
 
-    return { walletId: wallet.id, balance: updated.balance };
+    return { walletId: updated.id, balance: updated.balance };
   });
 };
 

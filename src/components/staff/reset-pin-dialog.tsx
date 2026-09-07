@@ -51,19 +51,20 @@ export function ResetPinDialog({
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="rp-pin">Yeni POS PIN Kodu (4–6 Haneli)</FieldLabel>
+            <FieldLabel htmlFor="rp-pin">Yeni POS PIN Kodu (4 Haneli)</FieldLabel>
             <Input
               id="rp-pin"
               inputMode="numeric"
               autoComplete="off"
               value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
               placeholder="••••"
+              className="tracking-widest text-center"
               autoFocus
             />
           </Field>
           <DialogFooter>
-            <Button type="submit" disabled={save.isPending || !/^\d{4,6}$/.test(pin)}>
+            <Button type="submit" disabled={save.isPending || !/^\d{4}$/.test(pin)}>
               {save.isPending ? "Kaydediliyor…" : "PIN'i Güncelle"}
             </Button>
           </DialogFooter>

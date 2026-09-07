@@ -30,7 +30,9 @@ const findEligibleUser = async (phone: string): Promise<User> => {
 };
 
 const isOtpDisabled = (): boolean =>
-  process.env.DISABLE_OTP === "true" && process.env.NODE_ENV !== "test";
+  process.env.DISABLE_OTP === "true" &&
+  process.env.NODE_ENV !== "production" &&
+  process.env.NODE_ENV !== "test";
 
 /** Generate + store a hashed OTP for a registered phone and text it via Twilio. */
 export const requestOtp = async (phone: string): Promise<void> => {

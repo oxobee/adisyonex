@@ -34,6 +34,7 @@ export function CategoryDialog({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
+  const [sortOrder, setSortOrder] = useState(category?.sortOrder != null ? String(category.sortOrder) : "0");
   const [isActive, setIsActive] = useState(category?.isActive ?? true);
   const [productionZoneId, setProductionZoneId] = useState(category?.productionZoneId ?? "");
 
@@ -54,6 +55,7 @@ export function CategoryDialog({
     const payload = {
       name,
       description: description || undefined,
+      sortOrder: Math.max(0, parseInt(sortOrder, 10) || 0),
       isActive,
       productionZoneId: productionZoneId.trim() ? productionZoneId.trim() : null,
     };
@@ -100,16 +102,32 @@ export function CategoryDialog({
             </span>
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="cat-desc">Açıklama (Opsiyonel)</FieldLabel>
-            <Textarea
-              id="cat-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="rounded-xl text-xs"
-            />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field>
+              <FieldLabel htmlFor="cat-sort">Sıralama Önceliği (Sıra No)</FieldLabel>
+              <Input
+                id="cat-sort"
+                type="number"
+                min="0"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                placeholder="0"
+                className="rounded-xl text-xs font-bold"
+              />
+              <span className="text-[10px] text-muted-foreground mt-0.5">Küçük numara önce listelenir (0 en üst)</span>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="cat-desc">Açıklama (Opsiyonel)</FieldLabel>
+              <Textarea
+                id="cat-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                className="rounded-xl text-xs"
+              />
+            </Field>
+          </div>
 
           <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/30 border border-border/60">
             <Switch

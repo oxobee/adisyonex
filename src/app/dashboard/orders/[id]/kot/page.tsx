@@ -1,10 +1,16 @@
 import { notFound } from "next/navigation";
 
-import { PrintButton } from "@/components/orders/print-button";
+import { KotPrintManager } from "@/components/orders/kot-print-manager";
 import { formatDateTime } from "@/lib/format";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getOrder } from "@/services/order.service";
+import { getMenu } from "@/services/menu-item.service";
+import { listRestaurantZones } from "@/services/zone-and-role.service";
+import {
+  routeOrderToKitchenTickets,
+  type OrderRoutingMetadata,
+} from "@/services/print-routing.service";
 
 export default async function KotPage({
   params,
@@ -20,12 +26,29 @@ export default async function KotPage({
     notFound();
   }
   const { id } = await params;
-  const order = await getOrder(restaurantId, id).catch(() => null);
+  const [order, menu, zones] = await Promise.all([
+    getOrder(restaurantId, id).catch(() => null),
+    getMenu(restaurantId).catch(() => null),
+    listRestaurantZones(restaurantId).catch(() => []),
+  ]);
   if (!order) {
     notFound();
   }
 
   const lines = order.lines.filter((l) => l.state !== "VOID");
+  const routedTickets =
+    menu && zones.length > 0
+      ? routeOrderToKitchenTickets(lines, menu.categories, menu.items, zones)
+      : [];
+
+  const routingMetadata: OrderRoutingMetadata = {
+    orderNumber: order.orderNumber,
+    tableLabel: order.tableLabel,
+    orderType: order.orderType,
+    createdAt: formatDateTime(order.createdAt),
+    note: order.note,
+  };
+
   const groupedLines = [
     { title: "Yemekler", lines: lines.filter((line) => line.itemType === "SERVED") },
     { title: "Paketli Ürünler", lines: lines.filter((line) => line.itemType === "PACKAGED_GOODS") },
@@ -40,9 +63,8 @@ export default async function KotPage({
 
   return (
     <div className="mx-auto w-full max-w-[80mm] p-4 font-mono text-[13px] leading-tight text-black print:max-w-none print:p-2">
-      <div className="mb-4 flex items-center justify-between print:hidden">
-        <span className="text-muted-foreground text-xs">Mutfak Fişi</span>
-        <PrintButton label="Fişi Yazdır" />
+      <div className="mb-4 print:hidden">
+        <KotPrintManager tickets={routedTickets} metadata={routingMetadata} />
       </div>
 
       <div className="border-b-2 border-black pb-3 text-center">

@@ -6,7 +6,7 @@ import {
 } from "@/lib/mobile-session";
 import { generateOtpCode, hashOtpCode } from "@/lib/otp";
 import { verifyPin as verifyManagerPin } from "@/lib/pin";
-import { hashStaffPin } from "@/lib/staff-pin";
+import { hashStaffPin, safeCompareStaffPin } from "@/lib/staff-pin";
 import { sendSms } from "@/lib/twilio";
 import {
     consumeChallenge,
@@ -50,7 +50,7 @@ const MAX_OTP_ATTEMPTS = 5;
 const MAX_MANAGER_PIN_ATTEMPTS = 5;
 const MANAGER_PIN_LOCK_MS = 15 * 60_000;
 const MAX_STAFF_PIN_ATTEMPTS = 5;
-const STAFF_PIN_LOCK_MS = 60_000;
+const STAFF_PIN_LOCK_MS = 15 * 60_000;
 
 export type MobileAuthKind = "manager" | "staff";
 
@@ -146,7 +146,9 @@ const tokenPayloadFor = (user: MobileAuthUser) => ({
 });
 
 const isOtpDisabled = (): boolean =>
-  process.env.DISABLE_OTP === "true" && process.env.NODE_ENV !== "test";
+  process.env.DISABLE_OTP === "true" &&
+  process.env.NODE_ENV !== "production" &&
+  process.env.NODE_ENV !== "test";
 
 /** Issue an OTP challenge for a phone that belongs to a manager or a staff row. */
 export const requestMobileOtp = async (
@@ -277,7 +279,7 @@ export const verifyMobilePin = async (input: {
   if (staff.loginLockedUntil && staff.loginLockedUntil.getTime() > Date.now()) {
     throw new Error(MOBILE_PIN_LOCKED);
   }
-  if (hashStaffPin(input.pin, staff.restaurantId) !== staff.pinHash) {
+  if (!safeCompareStaffPin(input.pin, staff.restaurantId, staff.pinHash)) {
     const failedAttempts = staff.loginFailedAttempts + 1;
     const lockedUntil =
       failedAttempts >= MAX_STAFF_PIN_ATTEMPTS

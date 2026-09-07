@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
  * HMAC-hash a staff PIN with AUTH_SECRET, scoped to the restaurant. Raw PINs are
@@ -14,4 +14,19 @@ export const hashStaffPin = (pin: string, restaurantId: string): string => {
   return createHmac("sha256", secret)
     .update(`${restaurantId}:${pin}`)
     .digest("hex");
+};
+
+/** Timing-safe comparison of staff PIN hash to mitigate side-channel timing attacks */
+export const safeCompareStaffPin = (
+  pin: string,
+  restaurantId: string,
+  expectedHash: string,
+): boolean => {
+  const calculated = hashStaffPin(pin, restaurantId);
+  const bufCalculated = Buffer.from(calculated, "hex");
+  const bufExpected = Buffer.from(expectedHash, "hex");
+  if (bufCalculated.length !== bufExpected.length) {
+    return false;
+  }
+  return timingSafeEqual(bufCalculated, bufExpected);
 };

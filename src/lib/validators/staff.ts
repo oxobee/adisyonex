@@ -21,7 +21,7 @@ export const genderSchema = z.enum(["MALE", "FEMALE", "OTHER"]);
 const pinSchema = z
   .string()
   .trim()
-  .regex(/^\d{4,6}$/, "PIN must be 4–6 digits");
+  .regex(/^\d{4}$/, "PIN 4 haneli olmalıdır");
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
 

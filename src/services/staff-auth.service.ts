@@ -1,4 +1,4 @@
-import { hashStaffPin } from "@/lib/staff-pin";
+import { hashStaffPin, safeCompareStaffPin } from "@/lib/staff-pin";
 import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
 import {
   findStaffByEmployeeCode,
@@ -12,7 +12,7 @@ export const STAFF_LOGIN_INVALID = "STAFF_LOGIN_INVALID";
 export const STAFF_LOGIN_LOCKED = "STAFF_LOGIN_LOCKED";
 
 export const MAX_STAFF_ATTEMPTS = 5;
-export const STAFF_LOCK_MS = 60_000;
+export const STAFF_LOCK_MS = 15 * 60_000; // 15 minutes brute-force lockout window
 
 export interface StaffLoginResult {
   readonly staffId: string;
@@ -83,7 +83,7 @@ export const verifyStaffLogin = async (
   if (staff.loginLockedUntil && staff.loginLockedUntil.getTime() > Date.now()) {
     throw new Error(STAFF_LOGIN_LOCKED);
   }
-  if (hashStaffPin(pin, restaurantId) !== staff.pinHash) {
+  if (!safeCompareStaffPin(pin, restaurantId, staff.pinHash)) {
     const failedAttempts = staff.loginFailedAttempts + 1;
     const lockedUntil =
       failedAttempts >= MAX_STAFF_ATTEMPTS

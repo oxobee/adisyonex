@@ -243,3 +243,5 @@ export function formatEscposKotTicket(
 
   return builder.build();
 }
+
+export const buildEscPosKotTicket = formatEscposKotTicket;

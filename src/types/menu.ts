@@ -57,6 +57,7 @@ export interface MenuItemDTO {
   readonly allergens: readonly AllergenDTO[];
   readonly isChefSpecial?: boolean;
   readonly isAiFeatured?: boolean;
+  readonly sortOrder?: number;
   readonly isActive: boolean;
   readonly available: boolean;
   readonly disabledReason: string | null;
