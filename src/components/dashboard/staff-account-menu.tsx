@@ -480,7 +480,7 @@ export function StaffAccountMenu({
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
           "inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-white border border-gray-200 hover:border-gray-300 shadow-2xs transition-all active:scale-95 cursor-pointer text-left shrink-0",
-          isMobile ? "px-2.5 sm:px-3 py-1.5 max-w-[195px] sm:max-w-[230px]" : "px-3.5 py-1.5"
+          isMobile ? "px-2.5 sm:px-3 py-1.5 max-w-[175px] sm:max-w-[210px]" : "px-3.5 py-1.5"
         )}
         title="Hesap ve Personel Seçimi"
       >
@@ -503,13 +503,13 @@ export function StaffAccountMenu({
         <div className="flex flex-col text-left min-w-0 pr-0.5">
           <span className={cn(
             "text-xs font-black text-gray-900 leading-tight truncate",
-            isMobile ? "max-w-[105px] sm:max-w-[140px]" : "max-w-[110px] sm:max-w-[140px]"
+            isMobile ? "max-w-[95px] sm:max-w-[130px]" : "max-w-[110px] sm:max-w-[140px]"
           )}>
             {activeAccount.name}
           </span>
           <span className={cn(
             "text-[10px] font-bold text-gray-400 leading-tight truncate",
-            isMobile ? "max-w-[105px] sm:max-w-[140px]" : "max-w-[110px] sm:max-w-[140px]"
+            isMobile ? "max-w-[95px] sm:max-w-[130px]" : "max-w-[110px] sm:max-w-[140px]"
           )}>
             {formatStaffRole(activeAccount.role)}
           </span>

@@ -491,7 +491,7 @@ export function HomeScreen({
       */}
       <header className="relative flex lg:hidden flex-col gap-2.5 w-full z-50 px-1 py-1">
         <div className="flex items-center justify-between gap-2 sm:gap-3 w-full">
-          <div className="relative h-11 sm:h-13 w-40 sm:w-52 max-w-[210px] shrink-0">
+          <div className="relative h-[54px] sm:h-[62px] w-[165px] sm:w-[190px] shrink-0">
             <Image
               src="/logo-oxonom-horizontal.png"
               alt={settings.systemName || "Oxonom POS"}
