@@ -568,8 +568,8 @@ export function HomeScreen({
         {/* SOL PANEL (Masaüstü W-[280px] - XL:W-[310px]) */}
         <aside className="w-full lg:w-[280px] xl:w-[310px] shrink-0 flex flex-col gap-3 sm:gap-4 order-2 lg:order-1">
           {/* 1. MASAÜSTÜ STACKED LOGO */}
-          <div className="hidden lg:flex items-center justify-center p-2 mb-1">
-            <div className="relative h-24 xl:h-28 w-full max-w-[240px]">
+          <div className="hidden lg:flex items-center justify-center p-1 mb-1">
+            <div className="relative h-44 xl:h-52 w-full max-w-[270px]">
               <Image
                 src="/logo-oxonom-stacked.png"
                 alt={settings.systemName || "Oxonom POS"}
@@ -798,10 +798,11 @@ export function HomeScreen({
           </div>
         </aside>
 
-        {/* SAĞ TARAF: MASAÜSTÜ HEADER BAR + 6 AKSİYON KARTI GRID'İ */}
-        <div className="flex-1 flex flex-col gap-3.5 sm:gap-4 w-full min-w-0 order-1 lg:order-2">
-          {/* MASAÜSTÜ HEADER BAR */}
-          <header className="hidden lg:flex items-center justify-end gap-2.5 flex-wrap w-full py-0.5">
+        {/* SAĞ TARAF: MASAÜSTÜ HEADER BAR + 6 AKSİYON KARTI GRID'İ + DESKTOP FOOTER */}
+        <div className="flex-1 flex flex-col justify-between gap-4 sm:gap-5 w-full min-w-0 order-1 lg:order-2 self-stretch">
+          <div className="flex flex-col gap-3.5 sm:gap-4 w-full">
+            {/* MASAÜSTÜ HEADER BAR */}
+            <header className="hidden lg:flex items-center justify-end gap-2.5 flex-wrap w-full py-0.5">
             {/* İnternet Durumu */}
             <div
               className={cn(
@@ -1009,43 +1010,77 @@ export function HomeScreen({
               className="col-span-full"
             />
           )}
+          </div>
+
+          {/* 
+            3. MASAÜSTÜ ALT BAR (OXONOM CORP KURUMSAL FOOTER - MASAÜSTÜNDE SAĞDA, KARTLARLA AYNI HİZADA)
+          */}
+          <footer
+            className="hidden lg:flex w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] items-center justify-between gap-3 text-xs font-semibold text-gray-600 mt-2 z-10"
+          >
+            {/* Sol: Yatay Sistem Logosu + Slogan */}
+            <div className="flex items-center gap-3">
+              <div className="relative h-7 w-28 sm:w-36">
+                <Image
+                  src="/logo-oxonom-horizontal.png"
+                  alt="Oxonom POS"
+                  fill
+                  className="object-contain object-left"
+                />
+              </div>
+
+              <span className="text-[11px] text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
+                {settings.systemTagline || "Gelişmiş Restoran & QR Menü Yönetim Sistemi"}
+              </span>
+            </div>
+
+            {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
+            <div className="text-center text-[11px] text-gray-500">
+              © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom Pos"} Tüm hakları saklıdır.
+            </div>
+
+            {/* Sağ: www.oxonom.com & Destek Hattı */}
+            <div className="flex items-center gap-4 text-xs font-mono font-bold text-gray-600">
+              <a
+                href="https://www.oxonom.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                www.oxonom.com
+              </a>
+
+              <div className="flex items-center gap-1.5 text-gray-700 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200">
+                <HeadphonesIcon className="size-3.5 text-rose-500" />
+                <span className="text-[11px] font-black">{settings.supportPhone || "+90 850 309 9901"}</span>
+              </div>
+            </div>
+          </footer>
         </div>
       </main>
 
-      {/* 
-        3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DİŞ LINK YOK, KİLİT YOK, SIFIR FAZLA BOŞLUK)
-      */}
+      {/* MOBİL ALT BAR (SADECE MOBİL EKRANDA SAYFA SONUNA YERLEŞİR) */}
       <footer
-        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0 z-10"
+        className="flex lg:hidden w-full rounded-2xl p-3 border-t border-t-white border-x border-gray-200/90 border-b-[2px] border-b-gray-300/80 bg-white shadow-xs flex-col items-center justify-center gap-2 text-center text-xs font-semibold text-gray-600 mt-1 z-10"
       >
-        {/* Sol: Yatay Sistem Logosu + Slogan */}
-        <div className="flex items-center gap-3">
-          <div className="relative h-7 w-28 sm:w-36">
-            <Image
-              src="/logo-oxonom-horizontal.png"
-              alt="Oxonom POS"
-              fill
-              className="object-contain object-left"
-            />
-          </div>
-
-          <span className="text-[11px] text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
-            {settings.systemTagline || "Gelişmiş Restoran & QR Menü Yönetim Sistemi"}
-          </span>
+        <div className="relative h-6 w-28">
+          <Image
+            src="/logo-oxonom-horizontal.png"
+            alt="Oxonom POS"
+            fill
+            className="object-contain"
+          />
         </div>
-
-        {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
-        <div className="text-center text-[11px] text-gray-500">
+        <div className="text-[10px] text-gray-500">
           © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom Pos"} Tüm hakları saklıdır.
         </div>
-
-        {/* Sağ: www.oxonom.com & Destek Hattı */}
-        <div className="flex items-center gap-4 text-xs font-mono font-bold text-gray-600">
-          <span className="text-gray-500">www.oxonom.com</span>
-
-          <div className="flex items-center gap-1.5 text-gray-700 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200">
-            <HeadphonesIcon className="size-3.5 text-primary" />
-            <span className="text-[11px] font-black">{settings.supportPhone || "+90 850 309 9901"}</span>
+        <div className="flex items-center gap-3 text-[11px] text-gray-600">
+          <a href="https://www.oxonom.com" target="_blank" rel="noreferrer">
+            www.oxonom.com
+          </a>
+          <div className="flex items-center gap-1">
+            <HeadphonesIcon className="size-3 text-rose-500" />
+            <span>{settings.supportPhone || "+90 850 309 9901"}</span>
           </div>
         </div>
       </footer>
