@@ -51,7 +51,7 @@ import type {
 import type { MenuDTO } from "@/types/menu";
 
 const PRESET_COLORS = [
-  { name: "AdisyonEx Turuncu", primary: "#FF5500", secondary: "#FFF7ED" },
+  { name: "Oxonom POS Turuncu", primary: "#FF5500", secondary: "#FFF7ED" },
   { name: "McDonald's Fast-Food", primary: "#DC2626", secondary: "#FEF2F2" },
   { name: "Gurme Amber", primary: "#D97706", secondary: "#FFFBEB" },
   { name: "Zümrüt Yeşili", primary: "#059669", secondary: "#ECFDF5" },

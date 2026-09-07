@@ -109,7 +109,7 @@ const CATEGORIES = [
   },
 ];
 
-const DRAFT_STORAGE_KEY = "adisyonex_feedback_draft";
+const DRAFT_STORAGE_KEY = "oxonompos_feedback_draft";
 
 function getStoredDraft(): {
   title: string;

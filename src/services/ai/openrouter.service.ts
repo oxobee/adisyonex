@@ -68,8 +68,8 @@ export const callOpenRouter = async ({
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://adisyonex.vercel.app",
-        "X-Title": "Adisyonex AI Studio",
+        "HTTP-Referer": "https://oxonompos.vercel.app",
+        "X-Title": "Oxonom POS AI Studio",
       },
       body: JSON.stringify({
         model: activeModel,

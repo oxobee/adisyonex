@@ -134,7 +134,7 @@ export function DashboardModulesView({
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black uppercase tracking-wider text-indigo-200">
               <SparklesIcon className="size-3.5 text-amber-400" />
-              <span>Adisyoon Ekosistemi</span>
+              <span>Oxonom POS Ekosistemi</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
               Sistem ve Yapay Zeka Modülleri
@@ -509,7 +509,7 @@ function ModulePurchaseModal({
     "905550570368";
 
   const whatsappMessage = encodeURIComponent(
-    `Merhaba, Adisyoon işletmemiz için "${module.name}" modülünü satın almak ve aktifleştirmek istiyoruz. Bilgi alabilir miyim?`
+    `Merhaba, Oxonom POS işletmemiz için "${module.name}" modülünü satın almak ve aktifleştirmek istiyoruz. Bilgi alabilir miyim?`
   );
 
   return (

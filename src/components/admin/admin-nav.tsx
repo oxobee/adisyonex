@@ -74,7 +74,7 @@ export function AdminNav({
         </div>
       ) : (
         <span className="font-black text-sm tracking-tight text-foreground truncate">
-          {systemSettings?.systemName || "AdisyonEx"}
+          {systemSettings?.systemName || "Oxonom POS"}
         </span>
       )}
       <span className="text-primary text-[10px] font-black uppercase tracking-wider bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-md ml-auto shrink-0">

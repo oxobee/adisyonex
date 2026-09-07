@@ -556,7 +556,7 @@ export function DashboardView({
           </div>
 
           <div className="pt-3 border-t border-gray-100 text-xs text-gray-400">
-            AdisyonEx bulut raporlama otomatik güncellenir.
+            Oxonom POS bulut raporlama otomatik güncellenir.
           </div>
         </div>
       </section>

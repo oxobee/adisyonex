@@ -25,7 +25,7 @@ export function SalesRepCard({
   const repName = salesRep?.name || "Adisyon Destek & Satış Ekibi";
   const repTitle = salesRep?.title || "Müşteri ve Lisans Danışmanı";
   const repPhone = salesRep?.phone || "+90 (850) 000 00 00";
-  const repEmail = salesRep?.email || "destek@adisyonex.com";
+  const repEmail = salesRep?.email || "destek@oxonompos.com";
   const repWhatsapp = salesRep?.whatsapp || repPhone.replace(/[^0-9]/g, "");
   const repNotes =
     salesRep?.notes ||

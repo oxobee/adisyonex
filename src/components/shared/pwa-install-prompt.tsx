@@ -22,7 +22,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaInstallPrompt({
-  appName = "AdisyonEx",
+  appName = "Oxonom POS",
   logoUrl,
   faviconUrl,
 }: {

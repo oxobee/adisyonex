@@ -16,7 +16,7 @@ export function PosTerminal({
   occupied = {},
   openOrders = [],
   cashierName = "Kasa Personeli",
-  restaurantName = "Adisyoon",
+  restaurantName = "Oxonom POS",
   showItemImages = true,
 }: {
   readonly menu: MenuDTO;

@@ -268,7 +268,7 @@ export const checkAndSendDailyLicenseExpiryNotification = async (
       packageWording = "deneme sürümü";
     }
 
-    const message = `Adisyoon Programınızın ${packageWording} süresinin dolmasına ${license.daysRemaining} gün kalmıştır. Lisansınız sona erdiğinde adisyon sistemini kullanamayacaksınız!`;
+    const message = `Oxonom POS Programınızın ${packageWording} süresinin dolmasına ${license.daysRemaining} gün kalmıştır. Lisansınız sona erdiğinde adisyon sistemini kullanamayacaksınız!`;
 
     await prisma.restaurantNotification.create({
       data: {

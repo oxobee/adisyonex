@@ -226,8 +226,8 @@ export function SystemSettingsForm({
     metaDescription: initialSettings.metaDescription ?? "",
     metaKeywords: initialSettings.metaKeywords ?? "",
     supportPhone: initialSettings.supportPhone ?? "+90 850 309 9901",
-    websiteUrl: initialSettings.websiteUrl ?? "https://adisyonex.com",
-    copyrightText: initialSettings.copyrightText ?? "© 2026 AdisyonEx. Tüm hakları saklıdır.",
+    websiteUrl: initialSettings.websiteUrl ?? "https://oxonompos.com",
+    copyrightText: initialSettings.copyrightText ?? "© 2026 Oxonom POS. Tüm hakları saklıdır.",
   });
 
   const set = (key: keyof typeof form, val: string) =>
@@ -437,7 +437,7 @@ export function SystemSettingsForm({
                 id="sys-website-url"
                 value={form.websiteUrl}
                 onChange={(e) => set("websiteUrl", e.target.value)}
-                placeholder="Örn: https://adisyonex.com"
+                placeholder="Örn: https://oxonompos.com"
                 className="rounded-xl font-mono text-sm"
               />
             </Field>
@@ -449,7 +449,7 @@ export function SystemSettingsForm({
               id="sys-copyright"
               value={form.copyrightText}
               onChange={(e) => set("copyrightText", e.target.value)}
-              placeholder="Örn: © 2026 AdisyonEx. Tüm hakları saklıdır."
+              placeholder="Örn: © 2026 Oxonom POS. Tüm hakları saklıdır."
               className="rounded-xl"
             />
           </Field>
@@ -475,7 +475,7 @@ export function SystemSettingsForm({
               ) : (
                 <GlobeIcon className="size-3.5" />
               )}
-              <span>https://adisyonex.vercel.app</span>
+              <span>https://oxonompos.vercel.app</span>
             </div>
             <div className="mt-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline">
               {form.metaTitle || form.systemName}

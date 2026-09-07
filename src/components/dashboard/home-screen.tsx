@@ -48,6 +48,8 @@ import {
   type SystemNotificationItem,
 } from "./system-notification-detail-modal";
 import { HomeScreenLockModal } from "./home-screen-lock-modal";
+import { GridPattern } from "@/components/velora/grid-pattern";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SystemActivityLogModal } from "./system-activity-log-modal";
 import {
   StaffAccountMenu,
@@ -107,7 +109,7 @@ export function HomeScreen({
   allowedRoutes,
   restaurantUsername,
   operationalStats,
-  restaurantName = "AdisyonEx",
+  restaurantName = "Oxonom POS",
   userName = "Yönetici",
   userPhone,
   userEmail,
@@ -151,7 +153,7 @@ export function HomeScreen({
   useEffect(() => {
     const loadDismissed = () => {
       try {
-        const stored = localStorage.getItem("adisyonex_dismissed_notifications");
+        const stored = localStorage.getItem("oxonompos_dismissed_notifications");
         if (stored) {
           setDismissedNotifIds(JSON.parse(stored));
         }
@@ -421,7 +423,14 @@ export function HomeScreen({
     (activeAccount.role || "").toLowerCase() === "garson";
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] text-gray-900 p-2.5 sm:p-5 lg:p-6 pb-4 sm:pb-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
+    <div className="relative w-full max-w-full overflow-x-hidden min-h-[calc(100vh-3.5rem)] bg-background text-foreground p-2.5 sm:p-5 lg:p-6 pb-4 sm:pb-6 flex flex-col justify-between gap-3 sm:gap-5 selection:bg-primary/20">
+      {/* Background Grid Texture */}
+      <GridPattern
+        width={36}
+        height={36}
+        className="pointer-events-none absolute inset-0 size-full stroke-border/40 opacity-25 [mask-image:radial-gradient(ellipse_at_center,white,transparent_80%)]"
+      />
+
       {/* WORLD-CLASS MOTION DESIGN KEYFRAMES (FLUID & REFINED) */}
       <style jsx global>{`
         @keyframes sleekFadeIn {
@@ -480,7 +489,7 @@ export function HomeScreen({
       {/* 
         1. ÜST HEADER ALANI (STATİK, TAŞMAYAN VE MOBİL UYUMLU)
       */}
-      <header className="w-full flex flex-col md:flex-row md:items-center justify-between gap-2.5 px-1 py-1">
+      <header className="relative z-10 w-full flex flex-col md:flex-row md:items-center justify-between gap-2.5 px-1 py-1">
         {/* Sol: Logo + Alt Slogan */}
         <div className="flex items-center justify-between md:justify-start gap-2 sm:gap-3 w-full md:w-auto min-w-0">
           <div className="flex items-center gap-2 min-w-0 shrink">
@@ -488,7 +497,7 @@ export function HomeScreen({
               <div className="relative h-8 sm:h-10 md:h-12 w-32 sm:w-44 md:w-56 shrink-0">
                 <Image
                   src={settings.logoUrl || settings.logoDarkUrl || ""}
-                  alt="Adisyoon"
+                  alt="Oxonom POS"
                   fill
                   className="object-contain object-left"
                   priority
@@ -496,11 +505,11 @@ export function HomeScreen({
               </div>
             ) : (
               <div className="flex items-center gap-2.5 shrink-0">
-                <div className="flex size-9 sm:size-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-500/25">
+                <div className="flex size-9 sm:size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-primary/25">
                   <UtensilsCrossedIcon className="size-4.5 sm:size-6" />
                 </div>
-                <span className="text-xl sm:text-3xl font-black tracking-tight text-gray-900">
-                  {settings.systemName || "AdisyonEx"}
+                <span className="text-xl sm:text-3xl font-black tracking-tight text-foreground">
+                  {settings.systemName || "Oxonom POS"}
                 </span>
               </div>
             )}
@@ -575,6 +584,9 @@ export function HomeScreen({
               <span>Modüller</span>
             </Link>
           )}
+
+          {/* Tema Değiştirici (Dark/Light Mode) */}
+          <ThemeToggle />
 
           {/* Ekranı Kilitle Butonu */}
           <button
@@ -1034,7 +1046,7 @@ export function HomeScreen({
                 <UtensilsCrossedIcon className="size-3.5 text-amber-400" />
               </div>
               <span className="text-sm font-black text-gray-900 tracking-tight">
-                {settings.systemName || "AdisyonEx"}
+                {settings.systemName || "Oxonom POS"}
               </span>
             </div>
           )}
@@ -1046,7 +1058,7 @@ export function HomeScreen({
 
         {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
         <div className="text-center text-[11px] text-gray-500">
-          © {currentYear} OXONOM CORP. | {settings.systemName || "AdisyonEx"} Tüm hakları saklıdır.
+          © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom POS"} Tüm hakları saklıdır.
         </div>
 
         {/* Sağ: www.oxonom.com & Destek Hattı */}

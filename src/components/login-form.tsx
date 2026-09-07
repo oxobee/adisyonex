@@ -36,7 +36,7 @@ type Step = "phone" | "pin" | "code";
 
 export function LoginForm({
   className,
-  systemName = "AdisyonEx",
+  systemName = "Oxonom POS",
   logoUrl = null,
   systemTagline = "Gelişmiş Restoran & QR Menü Yönetim Sistemi",
   ...props

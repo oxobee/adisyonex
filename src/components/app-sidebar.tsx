@@ -145,7 +145,7 @@ export function AppSidebar({
                   />
                 </div>
               ) : (
-                <span className="text-sm font-black truncate">{systemSettings?.systemName || "AdisyonEx"}</span>
+                <span className="text-sm font-black truncate">{systemSettings?.systemName || "Oxonom POS"}</span>
               )}
             </SidebarMenuButton>
           </SidebarMenuItem>

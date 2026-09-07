@@ -45,7 +45,7 @@ export const requestGuestOtp = async (phone: string): Promise<void> => {
 
   await sendSms(
     phone,
-    `AdisyonEx sipariş doğrulama kodunuz: ${code}. 5 dakika içinde geçerliliğini yitirecektir.`,
+    `Oxonom POS sipariş doğrulama kodunuz: ${code}. 5 dakika içinde geçerliliğini yitirecektir.`,
   );
 };
 

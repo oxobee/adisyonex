@@ -100,8 +100,8 @@ export function getRoleSuggestionsAndGreeting(staff: StaffInfo | null) {
     return {
       isKitchen: true,
       greeting: name
-        ? `Merhaba ${name}! Ben AdisyonEx Mutfak Asistanınız. Mutfak siparişleri, hazırlık durumu ve operasyon bildirimleri hakkında bana danışabilirsiniz.`
-        : "Merhaba! Ben AdisyonEx Mutfak Asistanınız. Mutfak siparişleri, hazırlık durumu ve operasyon bildirimleri hakkında bana danışabilirsiniz.",
+        ? `Merhaba ${name}! Ben Oxonom POS Mutfak Asistanınız. Mutfak siparişleri, hazırlık durumu ve operasyon bildirimleri hakkında bana danışabilirsiniz.`
+        : "Merhaba! Ben Oxonom POS Mutfak Asistanınız. Mutfak siparişleri, hazırlık durumu ve operasyon bildirimleri hakkında bana danışabilirsiniz.",
       options: [
         "Bekleyen siparişleri göster",
         "Tavuk burger hazırlanıyor mu?",
@@ -116,8 +116,8 @@ export function getRoleSuggestionsAndGreeting(staff: StaffInfo | null) {
     return {
       isWaiter: true,
       greeting: name
-        ? `Merhaba ${name}! Ben AdisyonEx Garson Asistanınız. Masalar, sipariş ekleme ve servis bildirimleri hakkında bana danışabilirsiniz.`
-        : "Merhaba! Ben AdisyonEx Garson Asistanınız. Masalar, sipariş ekleme ve servis bildirimleri hakkında bana danışabilirsiniz.",
+        ? `Merhaba ${name}! Ben Oxonom POS Garson Asistanınız. Masalar, sipariş ekleme ve servis bildirimleri hakkında bana danışabilirsiniz.`
+        : "Merhaba! Ben Oxonom POS Garson Asistanınız. Masalar, sipariş ekleme ve servis bildirimleri hakkında bana danışabilirsiniz.",
       options: [
         "Masa 5'e 1 Hamburger ekle",
         "Boş masaları göster",
@@ -132,8 +132,8 @@ export function getRoleSuggestionsAndGreeting(staff: StaffInfo | null) {
     return {
       isCashier: true,
       greeting: name
-        ? `Merhaba ${name}! Ben AdisyonEx Kasa Asistanınız. Açık hesaplar, ödemeler ve POS işlemleri hakkında bana danışabilirsiniz.`
-        : "Merhaba! Ben AdisyonEx Kasa Asistanınız. Açık hesaplar, ödemeler ve POS işlemleri hakkında bana danışabilirsiniz.",
+        ? `Merhaba ${name}! Ben Oxonom POS Kasa Asistanınız. Açık hesaplar, ödemeler ve POS işlemleri hakkında bana danışabilirsiniz.`
+        : "Merhaba! Ben Oxonom POS Kasa Asistanınız. Açık hesaplar, ödemeler ve POS işlemleri hakkında bana danışabilirsiniz.",
       options: [
         "Açık masa hesaplarını göster",
         "POS ödeme ekranına git",
@@ -147,8 +147,8 @@ export function getRoleSuggestionsAndGreeting(staff: StaffInfo | null) {
   // Management / Super Admin / Owner / General Staff
   return {
     greeting: name
-      ? `Merhaba ${name}! Ben AdisyonEx Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.`
-      : "Merhaba! Ben AdisyonEx Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.",
+      ? `Merhaba ${name}! Ben Oxonom POS Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.`
+      : "Merhaba! Ben Oxonom POS Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.",
     options: [
       "Bugünkü toplam ciro ne kadar?",
       "Masa 5'e 1 Hamburger ekle",
@@ -189,7 +189,7 @@ export function GlobalAiAssistant() {
       id: "welcome",
       role: "assistant",
       content:
-        "Merhaba! Ben AdisyonEx Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.",
+        "Merhaba! Ben Oxonom POS Akıllı Restoran Asistanınız. Sipariş ekleme, masa/menü/kasa durumu veya sistem kullanımı hakkında bana her şeyi sorabilirsiniz.",
       clarificationOptions: [
         "Masa 5'e 1 Hamburger ekle",
         "Mutfak durumunu göster",
@@ -648,7 +648,7 @@ export function GlobalAiAssistant() {
         >
           <div
             className="flex size-9 sm:size-10 items-center justify-center rounded-full bg-card/90 hover:bg-card text-muted-foreground hover:text-foreground border border-border shadow-md backdrop-blur-md cursor-pointer transition-all hover:scale-105 group"
-            title="AdisyonEx Asistan"
+            title="Oxonom POS Asistan"
           >
             <SparklesIcon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
             <span className="sr-only">Yapay Zeka Asistanı</span>
@@ -672,7 +672,7 @@ export function GlobalAiAssistant() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
-                    AdisyonEx Asistan
+                    Oxonom POS Asistan
                   </h3>
                   {activeStaff ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 inline-flex items-center gap-1.5 truncate">

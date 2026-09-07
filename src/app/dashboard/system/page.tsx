@@ -65,7 +65,7 @@ export default async function SystemPage() {
     categoryCount,
     isDayClosed: !!todayZReport,
     zNumberFormatted: todayZReport?.zNumberFormatted || null,
-    restaurantName: restaurant?.name || "AdisyonEx Restoran",
+    restaurantName: restaurant?.name || "Oxonom POS Restoran",
   };
 
   return <SystemHub stats={stats} allowedRoutes={staffCtx?.allowedRoutes} />;

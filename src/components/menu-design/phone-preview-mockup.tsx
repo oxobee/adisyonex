@@ -67,7 +67,7 @@ export function PhonePreviewMockup({
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <GlobeIcon className="size-3 shrink-0 text-primary" />
               <span className="truncate font-mono text-[9px] text-foreground font-semibold">
-                adisyonex.com/order/{restaurantUsername || "menu"}?{tableLabel}
+                oxonompos.com/order/{restaurantUsername || "menu"}?{tableLabel}
               </span>
             </div>
 

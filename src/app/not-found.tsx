@@ -46,7 +46,7 @@ export default function NotFound() {
       </div>
 
       <div className="mt-12 text-xs text-muted-foreground">
-        Adisyoon Akıllı Restoran Yönetim Sistemi
+        Oxonom POS Akıllı Restoran Yönetim Sistemi
       </div>
     </div>
   )

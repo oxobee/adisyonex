@@ -975,7 +975,7 @@ export function StaffAccountMenu({
                   type="email"
                   value={profileForm.email}
                   onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="ornek@adisyonex.com"
+                  placeholder="ornek@oxonompos.com"
                   className="rounded-xl"
                 />
               </div>

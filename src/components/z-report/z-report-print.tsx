@@ -189,7 +189,7 @@ export function ZReportPrintSheet({
       </div>
 
       <div className="text-center text-[9px] text-gray-500 mt-6">
-        AdisyonEx Bulut Restoran POS Otomasyonu ile üretilmiştir.
+        Oxonom POS Bulut Restoran POS Otomasyonu ile üretilmiştir.
       </div>
     </div>
   );

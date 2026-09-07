@@ -56,6 +56,7 @@ import { linePrice, type CartLine } from "@/components/pos/types";
 import { CustomerLoyaltyPanel } from "@/components/guest-order/customer-loyalty-panel";
 import { GuestAiAssistant, AiSparkleIcon } from "./guest-ai-assistant";
 import type { CustomerDTO } from "@/services/customer.service";
+import { Dock, DockIcon } from "@/components/velora/dock";
 
 const DIET_BADGES: Record<string, { label: string; icon: string }> = {
   VEG: { label: "Vejetaryen", icon: "🌱" },
@@ -2499,80 +2500,90 @@ export function Theme2QsrView({
       </Sheet>
 
       {/* ============================================================ */}
-      {/* 10. FLOATING BOTTOM NAVIGATION BAR (Ana Sayfa / Kat / Profil) */}
+      {/* 10. VELORA FLOATING DOCK (Ana Sayfa / Kat / AI / Profil)      */}
       {/* ============================================================ */}
-      <div className="fixed inset-x-0 bottom-4 z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)]">
-        <div className="mx-auto flex w-full max-w-md md:max-w-xl lg:max-w-2xl items-center justify-around rounded-3xl bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl border border-zinc-200/90 pointer-events-auto">
-          
-          {/* Home Tab */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("home")}
-            className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all cursor-pointer",
-              activeTab === "home" ? "font-black scale-105" : "text-zinc-400 font-bold hover:text-zinc-600",
-            )}
-            style={{ color: activeTab === "home" ? primaryColor : undefined }}
+      <div className="fixed inset-x-0 bottom-4 z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] flex justify-center">
+        <div className="pointer-events-auto">
+          <Dock
+            className="h-16 items-center gap-2 sm:gap-3 rounded-3xl border border-zinc-200/90 dark:border-border/60 bg-white/95 dark:bg-card/95 backdrop-blur-xl px-3 sm:px-4 py-2 shadow-2xl"
+            baseSize={44}
+            magnification={60}
+            distance={110}
           >
-            <HomeIcon className="size-5" />
-            <span className="text-[10px]">Ana Sayfa</span>
-          </button>
-
-          {/* Categories Tab */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("categories")}
-            className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all cursor-pointer",
-              activeTab === "categories" ? "font-black scale-105" : "text-zinc-400 font-bold hover:text-zinc-600",
-            )}
-            style={{ color: activeTab === "categories" ? primaryColor : undefined }}
-          >
-            <LayoutGridIcon className="size-5" />
-            <span className="text-[10px]">Kategoriler</span>
-          </button>
-
-          {/* AI Asistan Menu Tab (Menüye Sabitlenmiş Yapay Zeka Butonu) */}
-          {qrAiEnabled !== false && (
-            <button
-              type="button"
-              onClick={() => setAiAssistantOpen(true)}
-              className="group relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl transition-all cursor-pointer active:scale-95 select-none"
-              aria-label="Yapay Zeka Menü Danışmanı"
-            >
-              <div
-                className="relative size-10 rounded-2xl flex items-center justify-center text-white shadow-md shadow-primary/25 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ring-2 ring-white/90"
-                style={{
-                  background: `linear-gradient(135deg, ${primaryColor} 0%, #ec4899 50%, #8b5cf6 100%)`,
-                }}
+            {/* Home Tab */}
+            <DockIcon label="Ana Sayfa">
+              <button
+                type="button"
+                onClick={() => setActiveTab("home")}
+                className={cn(
+                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer",
+                  activeTab === "home" ? "bg-primary/15 font-black" : "text-zinc-500 dark:text-muted-foreground hover:bg-muted/60"
+                )}
+                style={{ color: activeTab === "home" ? primaryColor : undefined }}
+                title="Ana Sayfa"
               >
-                <span className="absolute inset-0 rounded-2xl bg-white/20 animate-pulse" />
-                <AiSparkleIcon className="size-5 text-white drop-shadow-sm relative z-10" />
-                <span className="absolute -top-0.5 -right-0.5 flex size-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full size-2.5 bg-emerald-500 border border-white" />
-                </span>
-              </div>
-              <span className="text-[10px] font-black text-zinc-800 tracking-tight flex items-center gap-0.5 mt-0.5">
-                <span>AI Asistan</span>
-              </span>
-            </button>
-          )}
+                <HomeIcon className="size-5" />
+                <span className="text-[9px] font-bold">Ana Sayfa</span>
+              </button>
+            </DockIcon>
 
-          {/* Profile / Masa Tab */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("profile")}
-            className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all cursor-pointer",
-              activeTab === "profile" ? "font-black scale-105" : "text-zinc-400 font-bold hover:text-zinc-600",
+            {/* Categories Tab */}
+            <DockIcon label="Kategoriler">
+              <button
+                type="button"
+                onClick={() => setActiveTab("categories")}
+                className={cn(
+                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer",
+                  activeTab === "categories" ? "bg-primary/15 font-black" : "text-zinc-500 dark:text-muted-foreground hover:bg-muted/60"
+                )}
+                style={{ color: activeTab === "categories" ? primaryColor : undefined }}
+                title="Kategoriler"
+              >
+                <LayoutGridIcon className="size-5" />
+                <span className="text-[9px] font-bold">Kategori</span>
+              </button>
+            </DockIcon>
+
+            {/* AI Asistan Menu Tab */}
+            {qrAiEnabled !== false && (
+              <DockIcon label="AI Asistan">
+                <button
+                  type="button"
+                  onClick={() => setAiAssistantOpen(true)}
+                  className="group relative size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer select-none"
+                  aria-label="Yapay Zeka Menü Danışmanı"
+                  title="Yapay Zeka Menü Danışmanı"
+                >
+                  <div
+                    className="size-8 rounded-xl flex items-center justify-center text-white shadow-md shadow-primary/25 transition-transform group-hover:scale-105"
+                    style={{
+                      background: `linear-gradient(135deg, ${primaryColor} 0%, #ec4899 50%, #8b5cf6 100%)`,
+                    }}
+                  >
+                    <AiSparkleIcon className="size-4 text-white drop-shadow-sm" />
+                  </div>
+                  <span className="text-[9px] font-black text-foreground tracking-tight">AI</span>
+                </button>
+              </DockIcon>
             )}
-            style={{ color: activeTab === "profile" ? primaryColor : undefined }}
-          >
-            <UserIcon className="size-5" />
-            <span className="text-[10px]">{qrCustomerAuthEnabled ? "Profil" : "Masa"}</span>
-          </button>
 
+            {/* Profile / Masa Tab */}
+            <DockIcon label={qrCustomerAuthEnabled ? "Profil" : "Masa"}>
+              <button
+                type="button"
+                onClick={() => setActiveTab("profile")}
+                className={cn(
+                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer",
+                  activeTab === "profile" ? "bg-primary/15 font-black" : "text-zinc-500 dark:text-muted-foreground hover:bg-muted/60"
+                )}
+                style={{ color: activeTab === "profile" ? primaryColor : undefined }}
+                title={qrCustomerAuthEnabled ? "Profilim" : "Masa"}
+              >
+                <UserIcon className="size-5" />
+                <span className="text-[9px] font-bold">{qrCustomerAuthEnabled ? "Profil" : "Masa"}</span>
+              </button>
+            </DockIcon>
+          </Dock>
         </div>
       </div>
 

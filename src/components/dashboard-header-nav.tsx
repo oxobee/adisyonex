@@ -166,7 +166,7 @@ export function DashboardHeaderNav({
                   {systemSettings?.logoUrl && (
                     <Image
                       src={systemSettings.logoUrl}
-                      alt={systemSettings?.systemName || "AdisyonEx"}
+                      alt={systemSettings?.systemName || "Oxonom POS"}
                       fill
                       className={cn(
                         "object-contain object-left",
@@ -179,7 +179,7 @@ export function DashboardHeaderNav({
                   {systemSettings?.logoDarkUrl && (
                     <Image
                       src={systemSettings.logoDarkUrl}
-                      alt={systemSettings?.systemName || "AdisyonEx"}
+                      alt={systemSettings?.systemName || "Oxonom POS"}
                       fill
                       className={cn(
                         "object-contain object-left",
@@ -208,7 +208,7 @@ export function DashboardHeaderNav({
                     </div>
                   )}
                   <span className="text-base font-black tracking-tight text-foreground">
-                    {systemSettings?.systemName || "AdisyonEx"}
+                    {systemSettings?.systemName || "Oxonom POS"}
                   </span>
                 </div>
               )}

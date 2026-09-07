@@ -24,8 +24,8 @@ export interface OfflineMutation<T = unknown> {
   retryCount: number;
 }
 
-const QUEUE_STORAGE_KEY = "adisyonex_offline_queue_v1";
-const SNAPSHOT_PREFIX = "adisyonex_cache_";
+const QUEUE_STORAGE_KEY = "oxonompos_offline_queue_v1";
+const SNAPSHOT_PREFIX = "oxonompos_cache_";
 
 // --- Queue helpers ---
 
@@ -49,7 +49,7 @@ export function saveOfflineQueue(queue: readonly OfflineMutation[]): void {
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
     }
     window.dispatchEvent(
-      new CustomEvent("adisyonex:queue-updated", { detail: { count: queue.length } }),
+      new CustomEvent("oxonompos:queue-updated", { detail: { count: queue.length } }),
     );
   } catch (err) {
     console.error("Failed to persist offline queue:", err);
@@ -144,7 +144,7 @@ export function applyOptimisticMutation(mutation: OfflineMutation<any>): void {
         const updatedOpen = [newOrder, ...cachedOpen];
         setCachedSnapshot("open_orders", updatedOpen);
         window.dispatchEvent(
-          new CustomEvent("adisyonex:orders-updated", { detail: { open: updatedOpen } }),
+          new CustomEvent("oxonompos:orders-updated", { detail: { open: updatedOpen } }),
         );
         break;
       }
@@ -189,7 +189,7 @@ export function applyOptimisticMutation(mutation: OfflineMutation<any>): void {
           const updatedOpen = cachedOpen.map((o) => (o.id === p.orderId ? updatedOrder : o));
           setCachedSnapshot("open_orders", updatedOpen);
           window.dispatchEvent(
-            new CustomEvent("adisyonex:orders-updated", { detail: { open: updatedOpen } }),
+            new CustomEvent("oxonompos:orders-updated", { detail: { open: updatedOpen } }),
           );
         }
         break;
@@ -209,7 +209,7 @@ export function applyOptimisticMutation(mutation: OfflineMutation<any>): void {
         setCachedSnapshot("open_orders", remainingOpen);
         setCachedSnapshot("completed_orders", [...settledOrders, ...cachedCompleted]);
         window.dispatchEvent(
-          new CustomEvent("adisyonex:orders-updated", { detail: { open: remainingOpen } }),
+          new CustomEvent("oxonompos:orders-updated", { detail: { open: remainingOpen } }),
         );
         break;
       }
@@ -227,7 +227,7 @@ export function applyOptimisticMutation(mutation: OfflineMutation<any>): void {
           setCachedSnapshot("open_orders", remainingOpen);
           setCachedSnapshot("completed_orders", [settled, ...cachedCompleted]);
           window.dispatchEvent(
-            new CustomEvent("adisyonex:orders-updated", { detail: { open: remainingOpen } }),
+            new CustomEvent("oxonompos:orders-updated", { detail: { open: remainingOpen } }),
           );
         }
         break;
@@ -248,7 +248,7 @@ export function applyOptimisticMutation(mutation: OfflineMutation<any>): void {
         });
         setCachedSnapshot("open_orders", updatedOpen);
         window.dispatchEvent(
-          new CustomEvent("adisyonex:orders-updated", { detail: { open: updatedOpen } }),
+          new CustomEvent("oxonompos:orders-updated", { detail: { open: updatedOpen } }),
         );
         break;
       }
@@ -318,7 +318,7 @@ export async function processOfflineSync(): Promise<{
   }
 
   isSyncInProgress = true;
-  window.dispatchEvent(new CustomEvent("adisyonex:sync-started"));
+  window.dispatchEvent(new CustomEvent("oxonompos:sync-started"));
 
   let synced = 0;
   let failed = 0;
@@ -403,7 +403,7 @@ export async function processOfflineSync(): Promise<{
         description: "Lokal cihaz hafızası temizlendi.",
       });
       window.dispatchEvent(
-        new CustomEvent("adisyonex:sync-completed", { detail: { synced, failed } }),
+        new CustomEvent("oxonompos:sync-completed", { detail: { synced, failed } }),
       );
     }
   } catch (err) {
@@ -479,9 +479,9 @@ export function useOfflineSync() {
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    window.addEventListener("adisyonex:queue-updated", handleQueueChange);
-    window.addEventListener("adisyonex:sync-started", handleSyncStart);
-    window.addEventListener("adisyonex:sync-completed", handleSyncEnd);
+    window.addEventListener("oxonompos:queue-updated", handleQueueChange);
+    window.addEventListener("oxonompos:sync-started", handleSyncStart);
+    window.addEventListener("oxonompos:sync-completed", handleSyncEnd);
 
     if (navigator.onLine && getOfflineQueue().length > 0) {
       void syncNow();
@@ -490,9 +490,9 @@ export function useOfflineSync() {
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("adisyonex:queue-updated", handleQueueChange);
-      window.removeEventListener("adisyonex:sync-started", handleSyncStart);
-      window.removeEventListener("adisyonex:sync-completed", handleSyncEnd);
+      window.removeEventListener("oxonompos:queue-updated", handleQueueChange);
+      window.removeEventListener("oxonompos:sync-started", handleSyncStart);
+      window.removeEventListener("oxonompos:sync-completed", handleSyncEnd);
     };
   }, [refreshCount, syncNow]);
 

@@ -80,7 +80,7 @@ describe("offline-sync library", () => {
 
     clearSyncedMutations([m3.id]);
     expect(getOfflineQueue()).toHaveLength(0);
-    expect(localStorageMock.getItem("adisyonex_offline_queue_v1")).toBeNull();
+    expect(localStorageMock.getItem("oxonompos_offline_queue_v1")).toBeNull();
   });
 
   it("caches and retrieves lightweight snapshots safely", () => {

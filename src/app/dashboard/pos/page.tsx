@@ -57,7 +57,7 @@ export default async function PosPage() {
       openOrders={openOrders}
       services={services}
       cashierName={staffCtx?.name || "Kasa Yetkilisi"}
-      restaurantName={restaurant?.name || "Adisyoon"}
+      restaurantName={restaurant?.name || "Oxonom POS"}
       showItemImages={restaurant?.showItemImages ?? true}
     />
   );

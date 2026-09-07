@@ -37,10 +37,11 @@ const fontMono = Geist_Mono({
 import { getSystemSettings } from "@/services/system-setting.service";
 import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
 import { DeviceNotificationBridge } from "@/components/shared/device-notification-bridge";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSystemSettings().catch(() => null);
-  const name = settings?.systemName || "AdisyonEx";
+  const name = settings?.systemName || "Oxonom POS";
   const title = settings?.metaTitle || name;
   const description =
     settings?.metaDescription ||
@@ -83,6 +84,7 @@ export default async function RootLayout({
   return (
     <html
       lang="tr"
+      suppressHydrationWarning
       className={cn(
         "h-full",
         "antialiased",
@@ -91,15 +93,22 @@ export default async function RootLayout({
         fontMono.variable,
       )}
     >
-      <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster />
-        <DeviceNotificationBridge />
-        <PwaInstallPrompt
-          appName={settings?.systemName}
-          logoUrl={settings?.logoUrl}
-          faviconUrl={settings?.faviconUrl}
-        />
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+          <DeviceNotificationBridge />
+          <PwaInstallPrompt
+            appName={settings?.systemName}
+            logoUrl={settings?.logoUrl}
+            faviconUrl={settings?.faviconUrl}
+          />
+        </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

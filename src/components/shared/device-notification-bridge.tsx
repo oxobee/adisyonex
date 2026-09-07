@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-const PERMISSION_PROMPT_KEY = "adisyonex_notification_permission_prompted";
+const PERMISSION_PROMPT_KEY = "oxonompos_notification_permission_prompted";
 const NOTIFICATION_COOLDOWN_MS = 1200;
 
 const getToastContent = (toastElement: Element) => {
@@ -12,7 +12,7 @@ const getToastContent = (toastElement: Element) => {
     .querySelector("[data-description]")
     ?.textContent?.trim();
   return {
-    title: title || "AdisyonEx",
+    title: title || "Oxonom POS",
     body: description || title || "Yeni bir işlem tamamlandı.",
   };
 };
@@ -24,7 +24,7 @@ const showDeviceNotification = async (title: string, body: string) => {
     body,
     icon: "/icon.png",
     badge: "/icon.png",
-    tag: `adisyonex-${Date.now()}`,
+    tag: `oxonompos-${Date.now()}`,
     data: { url: window.location.href },
   };
 

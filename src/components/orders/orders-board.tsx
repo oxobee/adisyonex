@@ -221,9 +221,9 @@ export function OrdersBoard({
       if (cachedCompleted) setCompletedOrders(cachedCompleted);
     };
 
-    window.addEventListener("adisyonex:orders-updated", handleOrdersUpdated);
+    window.addEventListener("oxonompos:orders-updated", handleOrdersUpdated);
     return () => {
-      window.removeEventListener("adisyonex:orders-updated", handleOrdersUpdated);
+      window.removeEventListener("oxonompos:orders-updated", handleOrdersUpdated);
     };
   }, []);
 

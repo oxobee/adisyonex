@@ -24,7 +24,7 @@ export default async function HomePage() {
   const { dayStart, dayEnd } = getTurkeyDayRange();
 
   let operationalStats: HomeOperationalStats | null = null;
-  let restaurantName = settings.systemName || "AdisyonEx";
+  let restaurantName = settings.systemName || "Oxonom POS";
 
   if (restaurantId) {
     try {

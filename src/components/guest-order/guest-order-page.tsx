@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
+  BellIcon,
   CakeIcon,
   CalendarIcon,
   CheckCircle2Icon,
@@ -18,6 +19,8 @@ import {
   UtensilsCrossedIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Dock, DockIcon } from "@/components/velora/dock";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import { registerCustomerAction } from "@/actions/customer.actions";
 import {
@@ -156,6 +159,7 @@ export function GuestOrderPage({
   const [placed, setPlaced] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<CustomerDTO | null>(null);
   const [tableSessionClosed, setTableSessionClosed] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   // Customer Loyalty Registration State
   const [customerName, setCustomerName] = useState("");
@@ -294,6 +298,20 @@ export function GuestOrderPage({
     },
     onError: (m) => toast.error(m || "Hesap talebi iletilemedi"),
   });
+
+  const [callingWaiter, setCallingWaiter] = useState(false);
+  const handleCallWaiter = async () => {
+    if (callingWaiter) return;
+    setCallingWaiter(true);
+    try {
+      await guestCallWaiterAction({ username, tableId });
+      toast.success("Garson masanıza çağrıldı!");
+    } catch {
+      toast.error("Garson çağrılamadı, lütfen tekrar deneyin.");
+    } finally {
+      setCallingWaiter(false);
+    }
+  };
 
   const bill = useMemo(
     () => computeBill(cart.cart.map(toBillLine)),
@@ -623,6 +641,8 @@ export function GuestOrderPage({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <ThemeToggle className="size-8 rounded-xl" />
+
             <button
               type="button"
               onClick={() => setProfileSheetOpen(true)}
@@ -670,6 +690,94 @@ export function GuestOrderPage({
         qrMenuTheme={qrMenuTheme}
         showItemImages={showItemImages}
       />
+
+      {/* VELORA FLOATING DOCK (Garson Çağır / Hesap İste / AI / Profil) */}
+      {qrMenuTheme !== "QSR_FASTFOOD" && (
+        <div
+          className={cn(
+            "fixed inset-x-0 z-30 px-3 flex justify-center pointer-events-none transition-all duration-300",
+            itemCount > 0
+              ? "bottom-[84px] pb-[env(safe-area-inset-bottom,0.5rem)]"
+              : "bottom-4 pb-[env(safe-area-inset-bottom,0.5rem)]"
+          )}
+        >
+          <div className="pointer-events-auto shadow-2xl rounded-3xl">
+            <Dock
+              className="h-14 items-center gap-1.5 sm:gap-2.5 rounded-3xl border border-border/80 bg-card/95 dark:bg-card/95 backdrop-blur-xl px-3 py-1.5 shadow-2xl"
+              baseSize={38}
+              magnification={52}
+              distance={90}
+            >
+              <DockIcon label="Garson Çağır">
+                <button
+                  type="button"
+                  onClick={handleCallWaiter}
+                  disabled={callingWaiter}
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                  title="Garson Çağır"
+                >
+                  <BellIcon className="size-4" />
+                  <span className="text-[8px] font-bold">Garson</span>
+                </button>
+              </DockIcon>
+
+              <DockIcon label="Hesap İste">
+                <button
+                  type="button"
+                  onClick={() => setRequestBillConfirmOpen(true)}
+                  disabled={requestBill.isPending}
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                  title="Hesap İste"
+                >
+                  <ReceiptIcon className="size-4" />
+                  <span className="text-[8px] font-bold">Hesap</span>
+                </button>
+              </DockIcon>
+
+              {myOrders.length > 0 && (
+                <DockIcon label="Siparişlerim">
+                  <button
+                    type="button"
+                    onClick={() => setOrdersOpen(true)}
+                    className="relative size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                    title={`Siparişlerim (${myOrders.length})`}
+                  >
+                    <UtensilsCrossedIcon className="size-4" />
+                    <span className="text-[8px] font-bold">Sipariş</span>
+                    <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px] font-black">
+                      {myOrders.length}
+                    </span>
+                  </button>
+                </DockIcon>
+              )}
+
+              <DockIcon label="AI Asistan">
+                <button
+                  type="button"
+                  onClick={() => setAiAssistantOpen(true)}
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-purple-500 hover:bg-purple-500/10 transition-colors cursor-pointer"
+                  title="Yapay Zeka Menü Danışmanı"
+                >
+                  <SparklesIcon className="size-4" />
+                  <span className="text-[8px] font-bold">AI</span>
+                </button>
+              </DockIcon>
+
+              <DockIcon label="Profilim">
+                <button
+                  type="button"
+                  onClick={() => setProfileSheetOpen(true)}
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  title="Profilim / Sadakat"
+                >
+                  <UserIcon className="size-4" />
+                  <span className="text-[8px] font-bold">Profil</span>
+                </button>
+              </DockIcon>
+            </Dock>
+          </div>
+        </div>
+      )}
 
       {/* Floating Bottom Cart Pill */}
       {itemCount > 0 ? (
@@ -1065,6 +1173,8 @@ export function GuestOrderPage({
         onQuickAdd={onQuickAdd}
         onAddCustomLine={handleAddCustomLine}
         enabled={qrAiEnabled !== false}
+        isOpen={aiAssistantOpen}
+        onOpenChange={setAiAssistantOpen}
       />
     </div>
   );

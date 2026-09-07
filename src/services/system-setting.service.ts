@@ -16,18 +16,18 @@ export interface SystemSettingsDTO {
 }
 
 const DEFAULT_SETTINGS: SystemSettingsDTO = {
-  systemName: "AdisyonEx",
+  systemName: "Oxonom POS",
   systemTagline: "Gelişmiş Restoran & QR Menü Yönetim Sistemi",
   logoUrl: null,
   logoDarkUrl: null,
   faviconUrl: null,
   ogImageUrl: null,
-  metaTitle: "AdisyonEx | Restoran ve QR Menü Otomasyonu",
+  metaTitle: "Oxonom POS | Restoran ve QR Menü Otomasyonu",
   metaDescription: "Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.",
   metaKeywords: "restoran otomasyonu, adisyon sistemi, qr menü, pos kasa",
   supportPhone: "+90 850 309 9901",
-  websiteUrl: "https://adisyonex.com",
-  copyrightText: "© 2026 AdisyonEx. Tüm hakları saklıdır.",
+  websiteUrl: "https://oxonompos.com",
+  copyrightText: "© 2026 Oxonom POS. Tüm hakları saklıdır.",
 };
 
 export async function getSystemSettings(): Promise<SystemSettingsDTO> {

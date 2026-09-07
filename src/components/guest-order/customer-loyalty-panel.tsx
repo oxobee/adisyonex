@@ -92,7 +92,7 @@ export interface CustomerLoyaltyPanelProps {
   readonly qrCustomerAuthEnabled?: boolean;
 }
 
-const KVKK_TEXT = `Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca; Adisyoon ve işletmemiz tarafından sunulan sadakat programı, doğum günü indirimleri ve sipariş geçmişi takibi hizmetlerinden faydalanabilmeniz amacıyla; adınız, soyadınız, telefon numaranız ve doğum tarihi bilgileriniz 6698 sayılı Kanun'a uygun olarak işlenmekte ve güvenle saklanmaktadır. Verileriniz üçüncü şahıslara ticari amaçla aktarılmaz.`;
+const KVKK_TEXT = `Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca; Oxonom POS ve işletmemiz tarafından sunulan sadakat programı, doğum günü indirimleri ve sipariş geçmişi takibi hizmetlerinden faydalanabilmeniz amacıyla; adınız, soyadınız, telefon numaranız ve doğum tarihi bilgileriniz 6698 sayılı Kanun'a uygun olarak işlenmekte ve güvenle saklanmaktadır. Verileriniz üçüncü şahıslara ticari amaçla aktarılmaz.`;
 
 export function CustomerLoyaltyPanel({
   username,

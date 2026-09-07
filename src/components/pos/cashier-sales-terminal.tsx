@@ -147,7 +147,7 @@ export function CashierSalesTerminal({
   occupied = {},
   openOrders = [],
   cashierName = "Kasa Personeli",
-  restaurantName = "Adisyoon",
+  restaurantName = "Oxonom POS",
   showItemImages = true,
 }: CashierSalesTerminalProps) {
   // Çoklu Fiş Sistemi (Fiş 01 - Fiş 05)

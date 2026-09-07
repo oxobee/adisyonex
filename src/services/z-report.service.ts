@@ -530,7 +530,7 @@ export async function getZReportData(
   return {
     id: null,
     restaurantId,
-    restaurantName: restaurant?.name || "AdisyonEx Restoran",
+    restaurantName: restaurant?.name || "Oxonom POS Restoran",
     status: "OPEN",
     zNumber: null,
     zNumberFormatted: null,
