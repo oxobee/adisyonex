@@ -489,9 +489,9 @@ export function HomeScreen({
       {/* 
         1. MOBİL ÜST HEADER (YALNIZCA MOBİLDE GÖRÜNÜR)
       */}
-      <header className="flex lg:hidden flex-col gap-2.5 w-full z-10 px-1 py-1">
-        <div className="flex items-center justify-between gap-3 w-full">
-          <div className="relative h-14 sm:h-16 w-56 sm:w-72 max-w-[280px] shrink-0">
+      <header className="relative flex lg:hidden flex-col gap-2.5 w-full z-50 px-1 py-1">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 w-full">
+          <div className="relative h-11 sm:h-13 w-40 sm:w-52 max-w-[210px] shrink-0">
             <Image
               src="/logo-oxonom-horizontal.png"
               alt={settings.systemName || "Oxonom POS"}
@@ -501,7 +501,7 @@ export function HomeScreen({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 min-w-0">
             <StaffAccountMenu
               initialAccount={initialAccount}
               onActiveAccountChange={setActiveAccount}
