@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oxonompos-offline-v10';
+const CACHE_NAME = 'oxonompos-offline-v11';
 
 // Static assets to pre-cache immediately upon installation
 const PRECACHE_ASSETS = [
