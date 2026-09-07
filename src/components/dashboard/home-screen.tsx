@@ -491,7 +491,7 @@ export function HomeScreen({
       */}
       <header className="flex lg:hidden flex-col gap-2.5 w-full z-10 px-1 py-1">
         <div className="flex items-center justify-between gap-3 w-full">
-          <div className="relative h-8 sm:h-9 w-36 sm:w-44 shrink-0">
+          <div className="relative h-11 sm:h-12 w-48 sm:w-64 max-w-[250px] shrink-0">
             <Image
               src="/logo-oxonom-horizontal.png"
               alt={settings.systemName || "Oxonom POS"}
@@ -1020,7 +1020,7 @@ export function HomeScreen({
           >
             {/* Sol: Yatay Sistem Logosu + Slogan */}
             <div className="flex items-center gap-3">
-              <div className="relative h-7 w-28 sm:w-36">
+              <div className="relative h-9 sm:h-10 w-36 sm:w-44">
                 <Image
                   src="/logo-oxonom-horizontal.png"
                   alt="Oxonom POS"
@@ -1063,7 +1063,7 @@ export function HomeScreen({
       <footer
         className="flex lg:hidden w-full rounded-2xl p-3 border-t border-t-white border-x border-gray-200/90 border-b-[2px] border-b-gray-300/80 bg-white shadow-xs flex-col items-center justify-center gap-2 text-center text-xs font-semibold text-gray-600 mt-1 z-10"
       >
-        <div className="relative h-6 w-28">
+        <div className="relative h-8 sm:h-9 w-36 sm:w-44">
           <Image
             src="/logo-oxonom-horizontal.png"
             alt="Oxonom POS"
