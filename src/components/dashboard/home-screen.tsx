@@ -491,7 +491,7 @@ export function HomeScreen({
       */}
       <header className="flex lg:hidden flex-col gap-2.5 w-full z-10 px-1 py-1">
         <div className="flex items-center justify-between gap-3 w-full">
-          <div className="relative h-11 sm:h-12 w-48 sm:w-64 max-w-[250px] shrink-0">
+          <div className="relative h-14 sm:h-16 w-56 sm:w-72 max-w-[280px] shrink-0">
             <Image
               src="/logo-oxonom-horizontal.png"
               alt={settings.systemName || "Oxonom POS"}
@@ -798,11 +798,10 @@ export function HomeScreen({
           </div>
         </aside>
 
-        {/* SAĞ TARAF: MASAÜSTÜ HEADER BAR + 6 AKSİYON KARTI GRID'İ + DESKTOP FOOTER */}
-        <div className="flex-1 flex flex-col justify-between gap-4 sm:gap-5 w-full min-w-0 order-1 lg:order-2 self-stretch">
-          <div className="flex flex-col gap-3.5 sm:gap-4 w-full">
-            {/* MASAÜSTÜ HEADER BAR */}
-            <header className="hidden lg:flex items-center justify-end gap-2.5 flex-wrap w-full py-0.5">
+        {/* SAĞ TARAF: MASAÜSTÜ HEADER BAR + (6 AKSİYON KARTI & FOOTER BÜTÜNÜ) */}
+        <div className="flex-1 flex flex-col justify-between gap-3.5 sm:gap-4 w-full min-w-0 order-1 lg:order-2 self-stretch min-h-0">
+          {/* MASAÜSTÜ HEADER BAR */}
+          <header className="hidden lg:flex items-center justify-end gap-2.5 flex-wrap w-full py-0.5 shrink-0">
             {/* İnternet Durumu */}
             <div
               className={cn(
@@ -871,31 +870,33 @@ export function HomeScreen({
             />
           </header>
 
-          {/* 6 AKSİYON KARTI GRID'İ (3 SÜTUN X 2 SATIR) */}
-          <section className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 w-full">
-            {visibleCards.map((card, index) => {
-              const Icon = card.icon;
-              const patternId = `home-pat-${card.id}`;
-              const isSingleCardWaiter = visibleCards.length === 1 && isWaiter;
+          {/* BÜTÜN KARTLAR VE FOOTER BLOKU (KUTULAR VE FOOTER BİRBİRİNE BAĞLI, AYNI ORANDA HAREKET EDER) */}
+          <div className="flex-1 flex flex-col justify-end gap-3 sm:gap-4 w-full min-h-0 mt-auto">
+            {/* 6 AKSİYON KARTI GRID'İ (3 SÜTUN X 2 SATIR) */}
+            <section className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 w-full flex-1">
+              {visibleCards.map((card, index) => {
+                const Icon = card.icon;
+                const patternId = `home-pat-${card.id}`;
+                const isSingleCardWaiter = visibleCards.length === 1 && isWaiter;
 
-              return (
-                <Link
-                  key={card.id}
-                  href={card.href}
-                  prefetch={true}
-                  className={cn(
-                    "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl",
-                    "text-white overflow-hidden select-none cursor-pointer transition-all duration-200",
-                    card.gradient,
-                    card.shadow,
-                    card.border,
-                    card.insetHighlight,
-                    isSingleCardWaiter && "col-span-2 md:col-span-1 xl:col-span-1",
-                    "transform-gpu will-change-transform",
-                    "hover:-translate-y-1.5 hover:shadow-2xl",
-                    "active:translate-y-1 active:scale-[0.985] active:border-b-2 active:shadow-md",
-                    "min-h-[195px] sm:min-h-[250px] xl:min-h-[265px]"
-                  )}
+                return (
+                  <Link
+                    key={card.id}
+                    href={card.href}
+                    prefetch={true}
+                    className={cn(
+                      "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl",
+                      "text-white overflow-hidden select-none cursor-pointer transition-all duration-200",
+                      card.gradient,
+                      card.shadow,
+                      card.border,
+                      card.insetHighlight,
+                      isSingleCardWaiter && "col-span-2 md:col-span-1 xl:col-span-1",
+                      "transform-gpu will-change-transform",
+                      "hover:-translate-y-1.5 hover:shadow-2xl",
+                      "active:translate-y-1 active:scale-[0.985] active:border-b-2 active:shadow-md",
+                      "h-full min-h-[210px] sm:min-h-[250px] lg:min-h-[270px] xl:min-h-[285px]"
+                    )}
                   style={{
                     animationDelay: `${index * 35 + 90}ms`,
                   }}
@@ -1004,58 +1005,58 @@ export function HomeScreen({
           </section>
 
           {/* SADECE GARSON EKRANINDA GÖZÜKEN SERVİSE HAZIR ÜRÜNLER ALANI */}
-          {isWaiter && (
-            <WaiterReadyItemsPanel
-              initialItems={operationalStats?.readyToServeItems}
-              className="col-span-full"
-            />
-          )}
+            {isWaiter && (
+              <WaiterReadyItemsPanel
+                initialItems={operationalStats?.readyToServeItems}
+                className="col-span-full shrink-0"
+              />
+            )}
+
+            {/* 
+              3. MASAÜSTÜ ALT BAR (OXONOM CORP KURUMSAL FOOTER - KARTLARIN HEMEN ALTINDA, BÜTÜN OLARAK HAREKET EDER)
+            */}
+            <footer
+              className="hidden lg:flex w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] items-center justify-between gap-3 text-xs font-semibold text-gray-600 mt-1 shrink-0 z-10"
+            >
+              {/* Sol: Yatay Sistem Logosu + Slogan */}
+              <div className="flex items-center gap-3">
+                <div className="relative h-11 sm:h-12 w-48 sm:w-56 shrink-0">
+                  <Image
+                    src="/logo-oxonom-horizontal.png"
+                    alt="Oxonom POS"
+                    fill
+                    className="object-contain object-left"
+                  />
+                </div>
+
+                <span className="text-[11px] text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
+                  {settings.systemTagline || "Gelişmiş Restoran & QR Menü Yönetim Sistemi"}
+                </span>
+              </div>
+
+              {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
+              <div className="text-center text-[11px] text-gray-500">
+                © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom Pos"} Tüm hakları saklıdır.
+              </div>
+
+              {/* Sağ: www.oxonom.com & Destek Hattı */}
+              <div className="flex items-center gap-4 text-xs font-mono font-bold text-gray-600 shrink-0 pr-1">
+                <a
+                  href="https://www.oxonom.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  www.oxonom.com
+                </a>
+
+                <div className="flex items-center gap-1.5 text-gray-700 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200">
+                  <HeadphonesIcon className="size-3.5 text-rose-500" />
+                  <span className="text-[11px] font-black">{settings.supportPhone || "+90 850 309 9901"}</span>
+                </div>
+              </div>
+            </footer>
           </div>
-
-          {/* 
-            3. MASAÜSTÜ ALT BAR (OXONOM CORP KURUMSAL FOOTER - MASAÜSTÜNDE SAĞDA, KARTLARLA AYNI HİZADA)
-          */}
-          <footer
-            className="hidden lg:flex w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] items-center justify-between gap-3 text-xs font-semibold text-gray-600 mt-2 z-10"
-          >
-            {/* Sol: Yatay Sistem Logosu + Slogan */}
-            <div className="flex items-center gap-3">
-              <div className="relative h-9 sm:h-10 w-36 sm:w-44">
-                <Image
-                  src="/logo-oxonom-horizontal.png"
-                  alt="Oxonom POS"
-                  fill
-                  className="object-contain object-left"
-                />
-              </div>
-
-              <span className="text-[11px] text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
-                {settings.systemTagline || "Gelişmiş Restoran & QR Menü Yönetim Sistemi"}
-              </span>
-            </div>
-
-            {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
-            <div className="text-center text-[11px] text-gray-500">
-              © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom Pos"} Tüm hakları saklıdır.
-            </div>
-
-            {/* Sağ: www.oxonom.com & Destek Hattı */}
-            <div className="flex items-center gap-4 text-xs font-mono font-bold text-gray-600">
-              <a
-                href="https://www.oxonom.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-gray-500 hover:text-gray-900 transition-colors"
-              >
-                www.oxonom.com
-              </a>
-
-              <div className="flex items-center gap-1.5 text-gray-700 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200">
-                <HeadphonesIcon className="size-3.5 text-rose-500" />
-                <span className="text-[11px] font-black">{settings.supportPhone || "+90 850 309 9901"}</span>
-              </div>
-            </div>
-          </footer>
         </div>
       </main>
 
@@ -1063,7 +1064,7 @@ export function HomeScreen({
       <footer
         className="flex lg:hidden w-full rounded-2xl p-3 border-t border-t-white border-x border-gray-200/90 border-b-[2px] border-b-gray-300/80 bg-white shadow-xs flex-col items-center justify-center gap-2 text-center text-xs font-semibold text-gray-600 mt-1 z-10"
       >
-        <div className="relative h-8 sm:h-9 w-36 sm:w-44">
+        <div className="relative h-10 sm:h-11 w-44 sm:w-52 shrink-0">
           <Image
             src="/logo-oxonom-horizontal.png"
             alt="Oxonom POS"
