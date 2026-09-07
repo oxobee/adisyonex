@@ -493,7 +493,7 @@ export function HomeScreen({
         <div className="flex items-center justify-between gap-3 w-full">
           <div className="relative h-8 sm:h-9 w-36 sm:w-44 shrink-0">
             <Image
-              src={settings.logoUrl || "/logo-oxonom-horizontal.png"}
+              src="/logo-oxonom-horizontal.png"
               alt={settings.systemName || "Oxonom POS"}
               fill
               className="object-contain object-left"
@@ -571,7 +571,7 @@ export function HomeScreen({
           <div className="hidden lg:flex items-center justify-center p-2 mb-1">
             <div className="relative h-24 xl:h-28 w-full max-w-[240px]">
               <Image
-                src={settings.logoDarkUrl || "/logo-oxonom-stacked.png"}
+                src="/logo-oxonom-stacked.png"
                 alt={settings.systemName || "Oxonom POS"}
                 fill
                 className="object-contain object-center drop-shadow-xs select-none"
@@ -1022,7 +1022,7 @@ export function HomeScreen({
         <div className="flex items-center gap-3">
           <div className="relative h-7 w-28 sm:w-36">
             <Image
-              src={settings.logoUrl || "/logo-oxonom-horizontal.png"}
+              src="/logo-oxonom-horizontal.png"
               alt="Oxonom POS"
               fill
               className="object-contain object-left"

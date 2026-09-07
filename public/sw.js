@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adisyonex-offline-v4';
+const CACHE_NAME = 'oxonompos-offline-v5';
 
 // Static assets to pre-cache immediately upon installation
 const PRECACHE_ASSETS = [
@@ -8,7 +8,8 @@ const PRECACHE_ASSETS = [
   '/dashboard/tables',
   '/manifest.webmanifest',
   '/favicon.ico',
-  '/icon.png',
+  '/logo-oxonom-stacked.png',
+  '/logo-oxonom-horizontal.png',
   '/default-avatar.png'
 ];
 
