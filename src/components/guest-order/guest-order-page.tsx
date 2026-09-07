@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dock, DockIcon } from "@/components/velora/dock";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 import { registerCustomerAction } from "@/actions/customer.actions";
 import {
@@ -641,8 +640,6 @@ export function GuestOrderPage({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            <ThemeToggle className="size-8 rounded-xl" />
-
             <button
               type="button"
               onClick={() => setProfileSheetOpen(true)}
@@ -695,29 +692,29 @@ export function GuestOrderPage({
       {qrMenuTheme !== "QSR_FASTFOOD" && (
         <div
           className={cn(
-            "fixed inset-x-0 z-30 px-3 flex justify-center pointer-events-none transition-all duration-300",
+            "fixed inset-x-0 z-30 px-3 sm:px-4 flex justify-center pointer-events-none transition-all duration-300",
             itemCount > 0
               ? "bottom-[84px] pb-[env(safe-area-inset-bottom,0.5rem)]"
               : "bottom-4 pb-[env(safe-area-inset-bottom,0.5rem)]"
           )}
         >
-          <div className="pointer-events-auto shadow-2xl rounded-3xl">
+          <div className="w-full max-w-md sm:max-w-lg md:max-w-xl pointer-events-auto shadow-2xl rounded-3xl">
             <Dock
-              className="h-14 items-center gap-1.5 sm:gap-2.5 rounded-3xl border border-border/80 bg-card/95 dark:bg-card/95 backdrop-blur-xl px-3 py-1.5 shadow-2xl"
-              baseSize={38}
-              magnification={52}
-              distance={90}
+              className="w-full h-16 sm:h-18 items-center justify-around rounded-3xl border border-zinc-200/90 bg-white/95 backdrop-blur-xl px-3 sm:px-5 py-2 shadow-2xl"
+              baseSize={46}
+              magnification={62}
+              distance={110}
             >
               <DockIcon label="Garson Çağır">
                 <button
                   type="button"
                   onClick={handleCallWaiter}
                   disabled={callingWaiter}
-                  className="size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-zinc-700 hover:text-amber-600 hover:bg-amber-50 active:scale-95 transition-all cursor-pointer select-none"
                   title="Garson Çağır"
                 >
-                  <BellIcon className="size-4" />
-                  <span className="text-[8px] font-bold">Garson</span>
+                  <BellIcon className="size-5 text-amber-600" />
+                  <span className="text-[10px] font-bold text-zinc-800 mt-0.5">Garson</span>
                 </button>
               </DockIcon>
 
@@ -726,11 +723,11 @@ export function GuestOrderPage({
                   type="button"
                   onClick={() => setRequestBillConfirmOpen(true)}
                   disabled={requestBill.isPending}
-                  className="size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-zinc-700 hover:text-emerald-600 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer select-none"
                   title="Hesap İste"
                 >
-                  <ReceiptIcon className="size-4" />
-                  <span className="text-[8px] font-bold">Hesap</span>
+                  <ReceiptIcon className="size-5 text-emerald-600" />
+                  <span className="text-[10px] font-bold text-zinc-800 mt-0.5">Hesap</span>
                 </button>
               </DockIcon>
 
@@ -739,12 +736,12 @@ export function GuestOrderPage({
                   <button
                     type="button"
                     onClick={() => setOrdersOpen(true)}
-                    className="relative size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                    className="relative size-full rounded-2xl flex flex-col items-center justify-center text-zinc-700 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all cursor-pointer select-none"
                     title={`Siparişlerim (${myOrders.length})`}
                   >
-                    <UtensilsCrossedIcon className="size-4" />
-                    <span className="text-[8px] font-bold">Sipariş</span>
-                    <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px] font-black">
+                    <UtensilsCrossedIcon className="size-5 text-blue-600" />
+                    <span className="text-[10px] font-bold text-zinc-800 mt-0.5">Sipariş</span>
+                    <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-orange-600 text-white text-[10px] font-black shadow-sm">
                       {myOrders.length}
                     </span>
                   </button>
@@ -755,11 +752,11 @@ export function GuestOrderPage({
                 <button
                   type="button"
                   onClick={() => setAiAssistantOpen(true)}
-                  className="size-full rounded-2xl flex flex-col items-center justify-center text-purple-500 hover:bg-purple-500/10 transition-colors cursor-pointer"
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-purple-600 hover:bg-purple-50 active:scale-95 transition-all cursor-pointer select-none"
                   title="Yapay Zeka Menü Danışmanı"
                 >
-                  <SparklesIcon className="size-4" />
-                  <span className="text-[8px] font-bold">AI</span>
+                  <SparklesIcon className="size-5 text-purple-600" />
+                  <span className="text-[10px] font-bold text-zinc-800 mt-0.5">AI Danışman</span>
                 </button>
               </DockIcon>
 
@@ -767,11 +764,11 @@ export function GuestOrderPage({
                 <button
                   type="button"
                   onClick={() => setProfileSheetOpen(true)}
-                  className="size-full rounded-2xl flex flex-col items-center justify-center text-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  className="size-full rounded-2xl flex flex-col items-center justify-center text-zinc-700 hover:text-orange-600 hover:bg-orange-50 active:scale-95 transition-all cursor-pointer select-none"
                   title="Profilim / Sadakat"
                 >
-                  <UserIcon className="size-4" />
-                  <span className="text-[8px] font-bold">Profil</span>
+                  <UserIcon className="size-5 text-orange-600" />
+                  <span className="text-[10px] font-bold text-zinc-800 mt-0.5">Profilim</span>
                 </button>
               </DockIcon>
             </Dock>

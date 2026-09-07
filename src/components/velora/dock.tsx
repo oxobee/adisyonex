@@ -101,7 +101,7 @@ export function DockIcon({ children, className, label }: DockIconProps) {
           : { width: size, height: size }
       }
       className={cn(
-        "flex aspect-square cursor-pointer items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground",
+        "flex aspect-square cursor-pointer items-center justify-center rounded-2xl transition-all",
         className
       )}
     >

@@ -6,7 +6,6 @@ import { ArrowLeftIcon, ExternalLinkIcon, LockIcon, LogOutIcon } from "lucide-re
 
 import { ConnectionStatus } from "@/components/shared/connection-status";
 import { StaffLockModal } from "@/components/staff/staff-lock-modal";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -97,9 +96,8 @@ export function SiteHeader({
             )}
           </div>
 
-          {/* Right: Theme Toggle & Lock Button */}
+          {/* Right: "Ekranı Kilitle" Lock Button */}
           <div className="flex items-center gap-2 shrink-0">
-            <ThemeToggle />
             <Button
               type="button"
               variant="outline"
@@ -137,9 +135,8 @@ export function SiteHeader({
           <h1 className="text-sm sm:text-base font-bold text-foreground">Oxonom POS</h1>
         </div>
 
-        {/* Live System Connection Indicator & Theme Toggle */}
+        {/* Live System Connection Indicator */}
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <ConnectionStatus />
 
           { (staffContext?.role === "ADMIN" || staffContext?.role === "SUPER_ADMIN" || staffContext?.role === "MANAGER") && staffLoginUsername ? (

@@ -49,7 +49,6 @@ import {
 } from "./system-notification-detail-modal";
 import { HomeScreenLockModal } from "./home-screen-lock-modal";
 import { GridPattern } from "@/components/velora/grid-pattern";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { SystemActivityLogModal } from "./system-activity-log-modal";
 import {
   StaffAccountMenu,
@@ -494,7 +493,7 @@ export function HomeScreen({
         <div className="flex items-center justify-between md:justify-start gap-2 sm:gap-3 w-full md:w-auto min-w-0">
           <div className="flex items-center gap-2 min-w-0 shrink">
             {settings.logoUrl || settings.logoDarkUrl ? (
-              <div className="relative h-8 sm:h-10 md:h-12 w-32 sm:w-44 md:w-56 shrink-0">
+              <div className="relative h-16 sm:h-20 md:h-24 lg:h-28 w-full sm:w-[310px] xl:w-[330px] shrink-0">
                 <Image
                   src={settings.logoUrl || settings.logoDarkUrl || ""}
                   alt="Oxonom POS"
@@ -504,11 +503,11 @@ export function HomeScreen({
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2.5 shrink-0">
-                <div className="flex size-9 sm:size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-primary/25">
-                  <UtensilsCrossedIcon className="size-4.5 sm:size-6" />
+              <div className="flex items-center gap-3 w-full sm:w-[310px] xl:w-[330px]">
+                <div className="flex size-12 sm:size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
+                  <UtensilsCrossedIcon className="size-6 sm:size-7" />
                 </div>
-                <span className="text-xl sm:text-3xl font-black tracking-tight text-foreground">
+                <span className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
                   {settings.systemName || "Oxonom POS"}
                 </span>
               </div>
@@ -584,9 +583,6 @@ export function HomeScreen({
               <span>Modüller</span>
             </Link>
           )}
-
-          {/* Tema Değiştirici (Dark/Light Mode) */}
-          <ThemeToggle />
 
           {/* Ekranı Kilitle Butonu */}
           <button

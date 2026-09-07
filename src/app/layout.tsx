@@ -37,7 +37,6 @@ const fontMono = Geist_Mono({
 import { getSystemSettings } from "@/services/system-setting.service";
 import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
 import { DeviceNotificationBridge } from "@/components/shared/device-notification-bridge";
-import { ThemeProvider } from "@/components/theme-provider";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSystemSettings().catch(() => null);
@@ -94,21 +93,14 @@ export default async function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-          <DeviceNotificationBridge />
-          <PwaInstallPrompt
-            appName={settings?.systemName}
-            logoUrl={settings?.logoUrl}
-            faviconUrl={settings?.faviconUrl}
-          />
-        </ThemeProvider>
+        {children}
+        <Toaster />
+        <DeviceNotificationBridge />
+        <PwaInstallPrompt
+          appName={settings?.systemName}
+          logoUrl={settings?.logoUrl}
+          faviconUrl={settings?.faviconUrl}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

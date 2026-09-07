@@ -2502,13 +2502,13 @@ export function Theme2QsrView({
       {/* ============================================================ */}
       {/* 10. VELORA FLOATING DOCK (Ana Sayfa / Kat / AI / Profil)      */}
       {/* ============================================================ */}
-      <div className="fixed inset-x-0 bottom-4 z-40 px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] flex justify-center">
-        <div className="pointer-events-auto">
+      <div className="fixed inset-x-0 bottom-4 z-40 px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0.5rem)] flex justify-center">
+        <div className="w-full max-w-md sm:max-w-lg md:max-w-xl pointer-events-auto shadow-2xl rounded-3xl">
           <Dock
-            className="h-16 items-center gap-2 sm:gap-3 rounded-3xl border border-zinc-200/90 dark:border-border/60 bg-white/95 dark:bg-card/95 backdrop-blur-xl px-3 sm:px-4 py-2 shadow-2xl"
-            baseSize={44}
-            magnification={60}
-            distance={110}
+            className="w-full h-16 sm:h-18 items-center justify-around rounded-3xl border border-zinc-200/90 bg-white/95 backdrop-blur-xl px-4 sm:px-6 py-2 shadow-2xl"
+            baseSize={48}
+            magnification={64}
+            distance={120}
           >
             {/* Home Tab */}
             <DockIcon label="Ana Sayfa">
@@ -2516,14 +2516,14 @@ export function Theme2QsrView({
                 type="button"
                 onClick={() => setActiveTab("home")}
                 className={cn(
-                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer",
-                  activeTab === "home" ? "bg-primary/15 font-black" : "text-zinc-500 dark:text-muted-foreground hover:bg-muted/60"
+                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer select-none",
+                  activeTab === "home" ? "bg-amber-500/15 font-black text-amber-600" : "text-zinc-600 hover:bg-zinc-100/70"
                 )}
                 style={{ color: activeTab === "home" ? primaryColor : undefined }}
                 title="Ana Sayfa"
               >
                 <HomeIcon className="size-5" />
-                <span className="text-[9px] font-bold">Ana Sayfa</span>
+                <span className="text-[10px] font-bold mt-0.5">Ana Sayfa</span>
               </button>
             </DockIcon>
 
@@ -2533,14 +2533,14 @@ export function Theme2QsrView({
                 type="button"
                 onClick={() => setActiveTab("categories")}
                 className={cn(
-                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer",
-                  activeTab === "categories" ? "bg-primary/15 font-black" : "text-zinc-500 dark:text-muted-foreground hover:bg-muted/60"
+                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer select-none",
+                  activeTab === "categories" ? "bg-amber-500/15 font-black text-amber-600" : "text-zinc-600 hover:bg-zinc-100/70"
                 )}
                 style={{ color: activeTab === "categories" ? primaryColor : undefined }}
                 title="Kategoriler"
               >
                 <LayoutGridIcon className="size-5" />
-                <span className="text-[9px] font-bold">Kategori</span>
+                <span className="text-[10px] font-bold mt-0.5">Kategori</span>
               </button>
             </DockIcon>
 
@@ -2555,14 +2555,14 @@ export function Theme2QsrView({
                   title="Yapay Zeka Menü Danışmanı"
                 >
                   <div
-                    className="size-8 rounded-xl flex items-center justify-center text-white shadow-md shadow-primary/25 transition-transform group-hover:scale-105"
+                    className="size-8.5 rounded-xl flex items-center justify-center text-white shadow-md shadow-primary/25 transition-transform group-hover:scale-105"
                     style={{
                       background: `linear-gradient(135deg, ${primaryColor} 0%, #ec4899 50%, #8b5cf6 100%)`,
                     }}
                   >
-                    <AiSparkleIcon className="size-4 text-white drop-shadow-sm" />
+                    <AiSparkleIcon className="size-4.5 text-white drop-shadow-sm" />
                   </div>
-                  <span className="text-[9px] font-black text-foreground tracking-tight">AI</span>
+                  <span className="text-[9px] font-black text-zinc-900 tracking-tight mt-0.5">AI Danışman</span>
                 </button>
               </DockIcon>
             )}
@@ -2573,14 +2573,14 @@ export function Theme2QsrView({
                 type="button"
                 onClick={() => setActiveTab("profile")}
                 className={cn(
-                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer",
-                  activeTab === "profile" ? "bg-primary/15 font-black" : "text-zinc-500 dark:text-muted-foreground hover:bg-muted/60"
+                  "size-full rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer select-none",
+                  activeTab === "profile" ? "bg-amber-500/15 font-black text-amber-600" : "text-zinc-600 hover:bg-zinc-100/70"
                 )}
                 style={{ color: activeTab === "profile" ? primaryColor : undefined }}
                 title={qrCustomerAuthEnabled ? "Profilim" : "Masa"}
               >
                 <UserIcon className="size-5" />
-                <span className="text-[9px] font-bold">{qrCustomerAuthEnabled ? "Profil" : "Masa"}</span>
+                <span className="text-[10px] font-bold mt-0.5">{qrCustomerAuthEnabled ? "Profil" : "Masa"}</span>
               </button>
             </DockIcon>
           </Dock>

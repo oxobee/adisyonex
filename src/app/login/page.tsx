@@ -2,7 +2,6 @@ import { LoginForm } from "@/components/login-form";
 import { getSystemSettings } from "@/services/system-setting.service";
 import { RetroGrid } from "@/components/velora/retro-grid";
 import { Ripple } from "@/components/velora/ripple";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +10,6 @@ export default async function LoginPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 bg-background text-foreground overflow-hidden">
-      {/* Theme Toggle in top-right */}
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggle />
-      </div>
-
       {/* RetroGrid + Ripple Ambient Backgrounds */}
       <RetroGrid opacity={0.35} />
       <Ripple circles={4} baseSize={220} className="opacity-30" />
