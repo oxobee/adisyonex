@@ -18,15 +18,15 @@ export interface SystemSettingsDTO {
 const DEFAULT_SETTINGS: SystemSettingsDTO = {
   systemName: "Oxonom POS",
   systemTagline: "Gelişmiş Restoran & QR Menü Yönetim Sistemi",
-  logoUrl: null,
-  logoDarkUrl: null,
-  faviconUrl: null,
-  ogImageUrl: null,
+  logoUrl: "/logo-oxonom-horizontal.png",
+  logoDarkUrl: "/logo-oxonom-stacked.png",
+  faviconUrl: "/logo-oxonom-stacked.png",
+  ogImageUrl: "/logo-oxonom-horizontal.png",
   metaTitle: "Oxonom POS | Restoran ve QR Menü Otomasyonu",
   metaDescription: "Yeni nesil restoran adisyon, sipariş, mutfak ve QR menü yönetim platformu.",
   metaKeywords: "restoran otomasyonu, adisyon sistemi, qr menü, pos kasa",
   supportPhone: "+90 850 309 9901",
-  websiteUrl: "https://oxonompos.com",
+  websiteUrl: "https://oxonom.com",
   copyrightText: "© 2026 Oxonom POS. Tüm hakları saklıdır.",
 };
 

@@ -26,6 +26,7 @@ import {
   ServerIcon,
   Settings2Icon,
   ShoppingBagIcon,
+  SlidersHorizontalIcon,
   SnowflakeIcon,
   SparklesIcon,
   SunIcon,
@@ -295,10 +296,10 @@ export function HomeScreen({
       href: "/dashboard/orders",
       icon: ArmchairIcon,
       statLeftValue: `${stats.activeTables}`,
-      statLeftLabel: "aktif masa",
+      statLeftLabel: "AKTİF MASA",
       statRightValue: `%${stats.occupancyRate}`,
-      statRightLabel: "doluluk",
-      gradient: "bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8]",
+      statRightLabel: "DOLULUK",
+      gradient: "bg-gradient-to-br from-[#2563eb] via-[#1d4ed8] to-[#1e40af]",
       shadow: "shadow-[0_16px_34px_-6px_rgba(37,99,235,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
       border: "border-t border-t-blue-200/60 border-x border-blue-300/30 border-b-[3px] border-b-black/35",
       insetHighlight: "shadow-[inset_0_1.5px_1px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
@@ -313,10 +314,10 @@ export function HomeScreen({
       href: "/dashboard/kitchen",
       icon: ChefHatIcon,
       statLeftValue: `${stats.waitingItems}`,
-      statLeftLabel: "bekleyen",
+      statLeftLabel: "BEKLEYEN",
       statRightValue: `${stats.readyItems}`,
-      statRightLabel: "servise hazır",
-      gradient: "bg-gradient-to-br from-[#f97316] via-[#ea580c] to-[#c2410c]",
+      statRightLabel: "SERVİSE HAZIR",
+      gradient: "bg-gradient-to-br from-[#ea580c] via-[#c2410c] to-[#9a3412]",
       shadow: "shadow-[0_16px_34px_-6px_rgba(234,88,12,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
       border: "border-t border-t-orange-200/60 border-x border-orange-300/30 border-b-[3px] border-b-black/35",
       insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
@@ -331,10 +332,10 @@ export function HomeScreen({
       href: "/dashboard/pos",
       icon: CalculatorIcon,
       statLeftValue: `${stats.openOrders}`,
-      statLeftLabel: "açık adisyon",
+      statLeftLabel: "AÇIK ADİSYON",
       statRightValue: "Hızlı Kasa",
-      statRightLabel: "terminal hazır",
-      gradient: "bg-gradient-to-br from-[#10b981] via-[#059669] to-[#047857]",
+      statRightLabel: "TERMINAL HAZIR",
+      gradient: "bg-gradient-to-br from-[#059669] via-[#047857] to-[#065f46]",
       shadow: "shadow-[0_16px_34px_-6px_rgba(16,185,129,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
       border: "border-t border-t-emerald-200/60 border-x border-emerald-300/30 border-b-[3px] border-b-black/35",
       insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
@@ -349,10 +350,10 @@ export function HomeScreen({
       href: "/dashboard",
       icon: BarChart3Icon,
       statLeftValue: `${stats.todayOrders}`,
-      statLeftLabel: "günlük sipariş",
+      statLeftLabel: "GÜNLÜK SİPARİŞ",
       statRightValue: "Trendler",
-      statRightLabel: "anlık analiz",
-      gradient: "bg-gradient-to-br from-[#8b5cf6] via-[#7c3aed] to-[#5b21b6]",
+      statRightLabel: "ANLIK ANALİZ",
+      gradient: "bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6]",
       shadow: "shadow-[0_16px_34px_-6px_rgba(124,58,237,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
       border: "border-t border-t-purple-200/60 border-x border-purple-300/30 border-b-[3px] border-b-black/35",
       insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
@@ -367,10 +368,10 @@ export function HomeScreen({
       href: "/dashboard/customers",
       icon: TrendingUpIcon,
       statLeftValue: `${stats.totalCustomers.toLocaleString("tr-TR")}`,
-      statLeftLabel: "toplam kayıt",
+      statLeftLabel: "TOPLAM KAYIT",
       statRightValue: `${stats.newCustomers}`,
-      statRightLabel: "bugün yeni",
-      gradient: "bg-gradient-to-br from-[#f43f5e] via-[#e11d48] to-[#9f1239]",
+      statRightLabel: "BUGÜN YENİ",
+      gradient: "bg-gradient-to-br from-[#e11d48] via-[#be123c] to-[#9f1239]",
       shadow: "shadow-[0_16px_34px_-6px_rgba(225,29,72,0.42),0_4px_12px_rgba(0,0,0,0.16)]",
       border: "border-t border-t-rose-200/60 border-x border-rose-300/30 border-b-[3px] border-b-black/35",
       insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.2)]",
@@ -383,12 +384,12 @@ export function HomeScreen({
       title: "Sistem",
       description: "Menü, Masa, Stok, Z Raporu",
       href: "/dashboard/system",
-      icon: Settings2Icon,
+      icon: SlidersHorizontalIcon,
       statLeftValue: "Ayarlar",
-      statLeftLabel: "yapılandırma",
+      statLeftLabel: "YAPILANDIRMA",
       statRightValue: "Yönetim",
-      statRightLabel: "sistem",
-      gradient: "bg-gradient-to-br from-[#475569] via-[#334155] to-[#1e293b]",
+      statRightLabel: "SİSTEM",
+      gradient: "bg-gradient-to-br from-[#334155] via-[#1e293b] to-[#0f172a]",
       shadow: "shadow-[0_16px_34px_-6px_rgba(51,65,85,0.45),0_4px_12px_rgba(0,0,0,0.18)]",
       border: "border-t border-t-slate-300/60 border-x border-slate-400/30 border-b-[3px] border-b-black/40",
       insetHighlight: "shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.25)]",
@@ -486,42 +487,26 @@ export function HomeScreen({
       `}</style>
 
       {/* 
-        1. ÜST HEADER ALANI (STATİK, TAŞMAYAN VE MOBİL UYUMLU)
+        1. MOBİL ÜST HEADER (YALNIZCA MOBİLDE GÖRÜNÜR)
       */}
-      <header className="relative z-10 w-full flex flex-col md:flex-row md:items-center justify-between gap-2.5 px-1 py-1">
-        {/* Sol: Logo + Alt Slogan */}
-        <div className="flex items-center justify-between md:justify-start gap-2 sm:gap-3 w-full md:w-auto min-w-0">
-          <div className="flex items-center gap-2 min-w-0 shrink">
-            {settings.logoUrl || settings.logoDarkUrl ? (
-              <div className="relative h-16 sm:h-20 md:h-24 lg:h-28 w-full sm:w-[310px] xl:w-[330px] shrink-0">
-                <Image
-                  src={settings.logoUrl || settings.logoDarkUrl || ""}
-                  alt="Oxonom POS"
-                  fill
-                  className="object-contain object-left"
-                  priority
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 w-full sm:w-[310px] xl:w-[330px]">
-                <div className="flex size-12 sm:size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
-                  <UtensilsCrossedIcon className="size-6 sm:size-7" />
-                </div>
-                <span className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
-                  {settings.systemName || "Oxonom POS"}
-                </span>
-              </div>
-            )}
+      <header className="flex lg:hidden flex-col gap-2.5 w-full z-10 px-1 py-1">
+        <div className="flex items-center justify-between gap-3 w-full">
+          <div className="relative h-8 sm:h-9 w-36 sm:w-44 shrink-0">
+            <Image
+              src={settings.logoUrl || "/logo-oxonom-horizontal.png"}
+              alt={settings.systemName || "Oxonom POS"}
+              fill
+              className="object-contain object-left"
+              priority
+            />
           </div>
 
-          {/* Mobilde sağ üst: Profil Adı + Görevi + Ekranı Kilitle */}
-          <div className="flex md:hidden items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <StaffAccountMenu
               initialAccount={initialAccount}
               onActiveAccountChange={setActiveAccount}
               isMobile={true}
             />
-
             <button
               type="button"
               onClick={() => setIsLockModalOpen(true)}
@@ -533,152 +518,76 @@ export function HomeScreen({
           </div>
         </div>
 
-        {/* Masaüstü Rozetler & Profil Alanı */}
-        <div className="hidden md:flex items-center gap-2.5 flex-wrap">
-          {/* İnternet Durumu */}
-          <div
+        {/* Mobilde Yatay Kaydırılabilir Rozetler */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <span
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all shadow-2xs",
+              "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0",
               isOnline
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : "bg-rose-50 text-rose-700 border-rose-200",
+                : "bg-rose-50 text-rose-700 border-rose-200"
             )}
-            title={isOnline ? "İnternet Bağlantısı Aktif" : "İnternet Yok"}
           >
-            <WifiIcon className="size-3.5" />
+            <WifiIcon className="size-3" />
             <span>{isOnline ? "İnternet Bağlı" : "Bağlantı Yok"}</span>
-          </div>
+          </span>
 
-          {/* Sunucu Durumu */}
-          <div
+          <span
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold shadow-2xs transition-all",
+              "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0",
               isOnline
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : "bg-amber-50 text-amber-700 border-amber-200",
+                : "bg-amber-50 text-amber-700 border-amber-200"
             )}
-            title={isOnline ? "Merkezi Bulut Sunucu Aktif" : "Yerel Ağ / Lokal Sunucu"}
           >
-            <ServerIcon className="size-3.5" />
+            <ServerIcon className="size-3" />
             <span>{isOnline ? "Sunucu Bağlı" : "Lokal Sunucu"}</span>
-          </div>
+          </span>
 
-          {/* Şube Bilgisi */}
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-gray-700 border border-gray-200 text-xs font-bold shadow-2xs"
-            title={`Şube: ${displayBranch}`}
-          >
-            <MapPinIcon className="size-3.5 text-blue-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white text-gray-700 border border-gray-200 text-[11px] font-bold shrink-0 shadow-2xs">
+            <MapPinIcon className="size-3 text-blue-600" />
             <span>Şube: {displayBranch}</span>
-          </div>
+          </span>
 
-          {/* Modüller Butonu (Yetki Kontrollü) */}
           {hasPermissionForRoute(activeAccount.allowedRoutes, "/dashboard/modules") && (
             <Link
               href="/dashboard/modules"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-black shadow-2xs transition-all cursor-pointer"
-              title="Sistem ve Yapay Zeka Modülleri"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-black shrink-0"
             >
-              <SparklesIcon className="size-3.5 text-purple-600" />
+              <SparklesIcon className="size-3 text-purple-600" />
               <span>Modüller</span>
             </Link>
           )}
-
-          {/* Ekranı Kilitle Butonu */}
-          <button
-            type="button"
-            onClick={() => setIsLockModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
-            title="Terminal Ekranını Kilitle"
-          >
-            <LockIcon className="size-3.5 text-amber-400" />
-            <span>Ekranı Kilitle</span>
-          </button>
-
-          {/* Personel / Hesap Değiştirici Menüsü */}
-          <StaffAccountMenu
-            initialAccount={initialAccount}
-            onActiveAccountChange={setActiveAccount}
-            isMobile={false}
-          />
-        </div>
-
-        {/* Mobilde 2. Satır: Kompakt Durum Rozetleri */}
-        <div className="flex md:hidden items-center justify-between gap-1.5 overflow-x-auto no-scrollbar pt-1">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
-                isOnline
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-rose-50 text-rose-700 border-rose-200"
-              )}
-            >
-              <WifiIcon className="size-2.5" />
-              <span>{isOnline ? "İnternet" : "Yok"}</span>
-            </span>
-
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
-                isOnline
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-amber-50 text-amber-700 border-amber-200"
-              )}
-            >
-              <ServerIcon className="size-2.5" />
-              <span>{isOnline ? "Sunucu Bağlı" : "Lokal Sunucu"}</span>
-            </span>
-          </div>
-
-          <span className="text-[10px] font-bold text-gray-500 truncate max-w-[140px]">
-            📍 {displayBranch}
-          </span>
         </div>
       </header>
 
       {/* 
-        2. ANA GÖVDE: SOL PANEL (SAAT, OPERASYON, BİLDİRİMLER) + SAĞ 2 SÜTUNLU KART GRID'İ
+        2. ANA GÖVDE: SOL PANEL (STACKED LOGO + OPERASYON + BİLDİRİMLER + DESTEK) + SAĞ ALAN (DESKTOP HEADER + 6 KART)
       */}
-      <main className="w-full flex flex-col lg:flex-row gap-3.5 sm:gap-5 items-start flex-1">
-        {/* SOL PANEL (W-FULL LG:W-[310px]) */}
-        <aside className="w-full lg:w-[310px] xl:w-[330px] shrink-0 flex flex-col gap-3 sm:gap-4">
-          {/* KART 1: SAAT & CANLI HAVA DURUMU */}
-          <div
-            className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex items-center justify-between"
-            style={{ animationDelay: "0ms" }}
-          >
-            <div className="flex flex-col">
-              <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 capitalize tracking-wide">
-                {dateStr}
-              </span>
-              <span className="text-4xl sm:text-5xl font-black tracking-tight text-gray-900 tabular-nums mt-0.5 font-mono">
-                {timeStr}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-end text-right">
-              <WeatherIcon iconType={stats.weather.iconType} />
-              <span className="text-lg sm:text-xl font-extrabold text-gray-900 mt-0.5 tabular-nums">
-                {stats.weather.temperature}°
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-medium text-gray-500">
-                {stats.weather.description}
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate max-w-[120px]">
-                {stats.weather.cityName}
-              </span>
+      <main className="w-full flex flex-col lg:flex-row gap-3.5 sm:gap-5 items-start flex-1 z-10">
+        {/* SOL PANEL (Masaüstü W-[280px] - XL:W-[310px]) */}
+        <aside className="w-full lg:w-[280px] xl:w-[310px] shrink-0 flex flex-col gap-3 sm:gap-4 order-2 lg:order-1">
+          {/* 1. MASAÜSTÜ STACKED LOGO */}
+          <div className="hidden lg:flex items-center justify-center p-2 mb-1">
+            <div className="relative h-24 xl:h-28 w-full max-w-[240px]">
+              <Image
+                src={settings.logoDarkUrl || "/logo-oxonom-stacked.png"}
+                alt={settings.systemName || "Oxonom POS"}
+                fill
+                className="object-contain object-center drop-shadow-xs select-none"
+                priority
+              />
             </div>
           </div>
 
-          {/* KART 2: OPERASYON ÖZETİ (%100 GERÇEK CANLI DB) */}
+          {/* 2. OPERASYON ÖZETİ (%100 GERÇEK CANLI DB) */}
           <div
             className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-3"
             style={{ animationDelay: "35ms" }}
           >
             <div className="flex items-center justify-between pb-1 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <TrendingUpIcon className="size-4 text-primary" />
+                <TrendingUpIcon className="size-4 text-rose-500" />
                 <h2 className="text-xs sm:text-sm font-black text-gray-900">Operasyon Özeti</h2>
               </div>
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -754,7 +663,7 @@ export function HomeScreen({
             </div>
           </div>
 
-          {/* KART 3: SİSTEM BİLDİRİMLERİ (YALNIZCA SÜPER ADMİN) */}
+          {/* 3. SİSTEM BİLDİRİMLERİ */}
           <div
             className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-gray-200/90 border-b-[3px] border-b-gray-300/80 bg-white shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-2.5"
             style={{ animationDelay: "70ms" }}
@@ -778,11 +687,29 @@ export function HomeScreen({
 
             <div className="flex flex-col gap-1.5">
               {visibleNotifications.length === 0 ? (
-                <div className="py-3 text-center text-xs text-gray-400 font-medium">
-                  Yeni sistem bildirimi bulunmuyor.
+                <div
+                  onClick={() => setIsNotifModalOpen(true)}
+                  className="flex items-center justify-between gap-2 cursor-pointer p-2 rounded-xl transition-all border bg-gray-50/60 border-gray-100 hover:bg-gray-100/70"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-gray-600 text-xs font-black shadow-2xs">
+                      📢
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-gray-900 truncate">
+                        Yeni özellik eklendi !
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate">
+                        Yapay zeka modülümüzü denediniz...
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-400 shrink-0">
+                    23 sa önce
+                  </span>
                 </div>
               ) : (
-                visibleNotifications.slice(0, 3).map((n, i) => (
+                visibleNotifications.slice(0, 2).map((n, i) => (
                   <div
                     key={n.id || i}
                     onClick={() => setSelectedDetailNotif(n)}
@@ -790,16 +717,16 @@ export function HomeScreen({
                       "flex items-center justify-between gap-2 cursor-pointer p-2 rounded-xl transition-all border",
                       n.isRead
                         ? "bg-gray-50/60 border-gray-100 hover:bg-gray-100/70"
-                        : "bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100/60",
+                        : "bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100/60"
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div
                         className={cn(
-                          "flex size-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black shadow-2xs",
+                          "flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-black shadow-2xs",
                           n.isRead
                             ? "bg-gray-200 text-gray-600"
-                            : "bg-indigo-600 text-white",
+                            : "bg-indigo-600 text-white"
                         )}
                       >
                         📢
@@ -831,7 +758,7 @@ export function HomeScreen({
             </button>
           </div>
 
-          {/* KART 4: GERİ BİLDİRİM & İSTEK BİLDİR (SABİT HOME KARTI) */}
+          {/* 4. GERİ BİLDİRİM & İSTEK (DESTEK) */}
           <div
             className="anim-sleek rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-t border-t-white border-x border-indigo-100 border-b-[3px] border-b-indigo-200/80 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/20 shadow-[0_10px_24px_-6px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.9)] flex flex-col gap-2.5"
             style={{ animationDelay: "100ms" }}
@@ -859,7 +786,7 @@ export function HomeScreen({
                   window.dispatchEvent(
                     new CustomEvent("open-feedback-modal", {
                       detail: { category: "SUGGESTION", captureScreen: false },
-                    }),
+                    })
                   );
                 }}
                 className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-black text-white shadow-xs transition-all active:scale-98 cursor-pointer"
@@ -871,143 +798,209 @@ export function HomeScreen({
           </div>
         </aside>
 
-        {/* SAĞ TARAF: MOBİLDE 2 SÜTUNLU, MASAÜSTÜNDE 3 SÜTUNLU 3D MATERIAL MENÜ KARTLARI */}
-        <section className="flex-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 w-full">
-          {visibleCards.map((card, index) => {
-            const Icon = card.icon;
-            const patternId = `home-pat-${card.id}`;
-            const isSingleCardWaiter = visibleCards.length === 1 && isWaiter;
+        {/* SAĞ TARAF: MASAÜSTÜ HEADER BAR + 6 AKSİYON KARTI GRID'İ */}
+        <div className="flex-1 flex flex-col gap-3.5 sm:gap-4 w-full min-w-0 order-1 lg:order-2">
+          {/* MASAÜSTÜ HEADER BAR */}
+          <header className="hidden lg:flex items-center justify-end gap-2.5 flex-wrap w-full py-0.5">
+            {/* İnternet Durumu */}
+            <div
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all shadow-2xs",
+                isOnline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-rose-50 text-rose-700 border-rose-200"
+              )}
+              title={isOnline ? "İnternet Bağlantısı Aktif" : "İnternet Yok"}
+            >
+              <WifiIcon className="size-3.5" />
+              <span>{isOnline ? "İnternet Bağlı" : "Bağlantı Yok"}</span>
+            </div>
 
-            return (
+            {/* Sunucu Durumu */}
+            <div
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold shadow-2xs transition-all",
+                isOnline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              )}
+              title={isOnline ? "Merkezi Bulut Sunucu Aktif" : "Yerel Ağ / Lokal Sunucu"}
+            >
+              <ServerIcon className="size-3.5" />
+              <span>{isOnline ? "Sunucu Bağlı" : "Lokal Sunucu"}</span>
+            </div>
+
+            {/* Şube Bilgisi */}
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-gray-700 border border-gray-200 text-xs font-bold shadow-2xs"
+              title={`Şube: ${displayBranch}`}
+            >
+              <MapPinIcon className="size-3.5 text-blue-600" />
+              <span>Şube: {displayBranch}</span>
+            </div>
+
+            {/* Modüller Butonu (Yetki Kontrollü) */}
+            {hasPermissionForRoute(activeAccount.allowedRoutes, "/dashboard/modules") && (
               <Link
-                key={card.id}
-                href={card.href}
-                prefetch={true}
-                className={cn(
-                  "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl",
-                  "text-white overflow-hidden select-none cursor-pointer transition-all duration-200",
-                  card.gradient,
-                  card.shadow,
-                  card.border,
-                  card.insetHighlight,
-                  isSingleCardWaiter && "col-span-2 md:col-span-1 xl:col-span-1",
-                  "transform-gpu will-change-transform",
-                  "hover:-translate-y-1.5 hover:shadow-2xl",
-                  "active:translate-y-1 active:scale-[0.985] active:border-b-2 active:shadow-md",
-                  "min-h-[195px] sm:min-h-[280px]"
-                )}
-                style={{
-                  animationDelay: `${index * 35 + 90}ms`,
-                }}
+                href="/dashboard/modules"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-black shadow-2xs transition-all cursor-pointer"
+                title="Sistem ve Yapay Zeka Modülleri"
               >
-                {/* 3D MATERIAL BACKGROUND TEXTURES & GÖZ YORMAYAN PATTERN */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
-                  {/* Göz yormayan Mikro-Grid & Dot Matrix SVG Deseni */}
-                  <svg
-                    className="absolute inset-0 size-full opacity-[0.07] mix-blend-overlay"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <defs>
-                      <pattern
-                        id={patternId}
-                        width="24"
-                        height="24"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <circle cx="2" cy="2" r="1.1" fill="white" />
-                        <circle cx="14" cy="14" r="0.9" fill="white" />
-                        <path
-                          d="M24 0H0V24"
-                          fill="none"
-                          stroke="white"
-                          strokeWidth="0.5"
-                          strokeDasharray="2 4"
-                        />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill={`url(#${patternId})`} />
-                  </svg>
-
-                  {/* Sağ Alt Köşe: 3D Geometrik Konsantrik Halkalar */}
-                  <svg
-                    className="absolute -bottom-8 -right-8 w-44 h-44 opacity-[0.09] text-white pointer-events-none"
-                    viewBox="0 0 160 160"
-                    fill="none"
-                  >
-                    <circle cx="80" cy="80" r="30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                    <circle cx="80" cy="80" r="52" stroke="currentColor" strokeWidth="1.5" />
-                    <circle cx="80" cy="80" r="74" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
-                  </svg>
-
-                  {/* Üst Işık Evi: 3D Specular Light Bevel */}
-                  <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none rounded-t-[inherit]" />
-
-                  {/* Alt Kalınlık & Zemin Temas Gölgesi: 3D Bottom Depth Shadow */}
-                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 via-black/10 to-transparent pointer-events-none rounded-b-[inherit]" />
-
-                  {/* Sol-Üst Işıma / Ambient Specular Glow */}
-                  <div className="absolute -top-12 -left-12 size-40 rounded-full bg-white/15 blur-2xl pointer-events-none" />
-                </div>
-
-                {/* 1. Üst Sıra: Kabartmalı Rozet (Embossed Medallion) & Sağ Yön Oku */}
-                <div className="relative z-10 flex items-center justify-between">
-                  <span
-                    className={cn(
-                      "inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-black tracking-wider backdrop-blur-xs",
-                      card.badgeBg
-                    )}
-                  >
-                    {card.badge}
-                  </span>
-
-                  <div className="flex size-6 sm:size-7 items-center justify-center rounded-full bg-white/15 border border-white/30 text-white/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-200 group-hover:bg-white group-hover:text-gray-900 group-hover:translate-x-0.5">
-                    <span className="text-xs sm:text-sm font-black leading-none">→</span>
-                  </div>
-                </div>
-
-                {/* 2. Orta: 3D Kabartmalı Dairesel İkon & Başlık & Açıklama */}
-                <div className="relative z-10 flex flex-col items-center justify-center text-center my-auto py-2 sm:py-3">
-                  <div
-                    className={cn(
-                      "flex size-14 sm:size-20 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
-                      card.circleBg
-                    )}
-                  >
-                    <Icon className="size-7 sm:size-10 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
-                  </div>
-
-                  <h3 className="text-base sm:text-2xl font-black text-white tracking-tight mt-2.5 sm:mt-3.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] group-hover:brightness-110 transition-all">
-                    {card.title}
-                  </h3>
-
-                  <p className="text-[11px] sm:text-xs font-semibold text-white/85 mt-0.5 sm:mt-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] line-clamp-1 hidden sm:block">
-                    {card.description}
-                  </p>
-                </div>
-
-                {/* 3. Alt: Gömülü 3D LCD Metrik Paneli (Recessed LCD / Embedded Module) */}
-                <div className="relative z-10 grid grid-cols-2 gap-1.5 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/20 border border-white/15 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xs text-center mt-1 sm:mt-2">
-                  <div className="flex flex-col items-center justify-center">
-                    <span className="text-xs sm:text-base font-black text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                      {card.statLeftValue}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-wider">
-                      {card.statLeftLabel}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-center justify-center border-l border-white/15">
-                    <span className="text-xs sm:text-base font-black text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                      {card.statRightValue}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-wider">
-                      {card.statRightLabel}
-                    </span>
-                  </div>
-                </div>
+                <SparklesIcon className="size-3.5 text-purple-600" />
+                <span>Modüller</span>
               </Link>
-            );
-          })}
+            )}
+
+            {/* Ekranı Kilitle Butonu */}
+            <button
+              type="button"
+              onClick={() => setIsLockModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+              title="Terminal Ekranını Kilitle"
+            >
+              <LockIcon className="size-3.5 text-amber-400" />
+              <span>Ekranı Kilitle</span>
+            </button>
+
+            {/* Personel / Hesap Değiştirici Menüsü */}
+            <StaffAccountMenu
+              initialAccount={initialAccount}
+              onActiveAccountChange={setActiveAccount}
+              isMobile={false}
+            />
+          </header>
+
+          {/* 6 AKSİYON KARTI GRID'İ (3 SÜTUN X 2 SATIR) */}
+          <section className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 w-full">
+            {visibleCards.map((card, index) => {
+              const Icon = card.icon;
+              const patternId = `home-pat-${card.id}`;
+              const isSingleCardWaiter = visibleCards.length === 1 && isWaiter;
+
+              return (
+                <Link
+                  key={card.id}
+                  href={card.href}
+                  prefetch={true}
+                  className={cn(
+                    "anim-sleek group relative flex flex-col justify-between p-3.5 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl",
+                    "text-white overflow-hidden select-none cursor-pointer transition-all duration-200",
+                    card.gradient,
+                    card.shadow,
+                    card.border,
+                    card.insetHighlight,
+                    isSingleCardWaiter && "col-span-2 md:col-span-1 xl:col-span-1",
+                    "transform-gpu will-change-transform",
+                    "hover:-translate-y-1.5 hover:shadow-2xl",
+                    "active:translate-y-1 active:scale-[0.985] active:border-b-2 active:shadow-md",
+                    "min-h-[195px] sm:min-h-[250px] xl:min-h-[265px]"
+                  )}
+                  style={{
+                    animationDelay: `${index * 35 + 90}ms`,
+                  }}
+                >
+                  {/* 3D Material Background Textures */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]">
+                    <svg
+                      className="absolute inset-0 size-full opacity-[0.07] mix-blend-overlay"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <defs>
+                        <pattern
+                          id={patternId}
+                          width="24"
+                          height="24"
+                          patternUnits="userSpaceOnUse"
+                        >
+                          <circle cx="2" cy="2" r="1.1" fill="white" />
+                          <circle cx="14" cy="14" r="0.9" fill="white" />
+                          <path
+                            d="M24 0H0V24"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="0.5"
+                            strokeDasharray="2 4"
+                          />
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+                    </svg>
+
+                    <svg
+                      className="absolute -bottom-8 -right-8 w-44 h-44 opacity-[0.09] text-white pointer-events-none"
+                      viewBox="0 0 160 160"
+                      fill="none"
+                    >
+                      <circle cx="80" cy="80" r="30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                      <circle cx="80" cy="80" r="52" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="80" cy="80" r="74" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                    </svg>
+
+                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none rounded-t-[inherit]" />
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 via-black/10 to-transparent pointer-events-none rounded-b-[inherit]" />
+                    <div className="absolute -top-12 -left-12 size-40 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+                  </div>
+
+                  {/* 1. Üst Sıra: Rozet & Sağ Yön Oku */}
+                  <div className="relative z-10 flex items-center justify-between">
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-black tracking-wider backdrop-blur-xs",
+                        card.badgeBg
+                      )}
+                    >
+                      {card.badge}
+                    </span>
+
+                    <div className="flex size-6 sm:size-7 items-center justify-center rounded-full bg-white/15 border border-white/30 text-white/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-200 group-hover:bg-white group-hover:text-gray-900 group-hover:translate-x-0.5">
+                      <span className="text-xs sm:text-sm font-black leading-none">→</span>
+                    </div>
+                  </div>
+
+                  {/* 2. Orta: 3D Kabartmalı Dairesel İkon & Başlık & Açıklama */}
+                  <div className="relative z-10 flex flex-col items-center justify-center text-center my-auto py-1 sm:py-2">
+                    <div
+                      className={cn(
+                        "flex size-14 sm:size-18 lg:size-20 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
+                        card.circleBg
+                      )}
+                    >
+                      <Icon className="size-7 sm:size-9 lg:size-10 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                    </div>
+
+                    <h3 className="text-base sm:text-xl lg:text-2xl font-black text-white tracking-tight mt-2 sm:mt-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] group-hover:brightness-110 transition-all">
+                      {card.title}
+                    </h3>
+
+                    <p className="text-[10px] sm:text-xs font-semibold text-white/85 mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] line-clamp-1 hidden sm:block">
+                      {card.description}
+                    </p>
+                  </div>
+
+                  {/* 3. Alt: Gömülü 3D LCD Metrik Paneli */}
+                  <div className="relative z-10 grid grid-cols-2 gap-1.5 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/20 border border-white/15 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xs text-center mt-1">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-xs sm:text-base font-black text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                        {card.statLeftValue}
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] font-bold text-white/80 uppercase tracking-wider">
+                        {card.statLeftLabel}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center border-l border-white/15">
+                      <span className="text-xs sm:text-base font-black text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                        {card.statRightValue}
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] font-bold text-white/80 uppercase tracking-wider">
+                        {card.statRightLabel}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
 
           {/* SADECE GARSON EKRANINDA GÖZÜKEN SERVİSE HAZIR ÜRÜNLER ALANI */}
           {isWaiter && (
@@ -1016,45 +1009,34 @@ export function HomeScreen({
               className="col-span-full"
             />
           )}
-        </section>
+        </div>
       </main>
 
       {/* 
         3. ALT BAR (OXONOM CORP KURUMSAL FOOTER - DİŞ LINK YOK, KİLİT YOK, SIFIR FAZLA BOŞLUK)
       */}
       <footer
-        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0"
+        className="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-t border-t-white border-x border-gray-200/90 border-b-[2.5px] border-b-gray-300/80 bg-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-0 z-10"
       >
         {/* Sol: Yatay Sistem Logosu + Slogan */}
         <div className="flex items-center gap-3">
-          {settings.logoUrl || settings.logoDarkUrl ? (
-            <div className="relative h-7 w-28 sm:w-36">
-              <Image
-                src={settings.logoUrl || settings.logoDarkUrl || ""}
-                alt="Adisyoon"
-                fill
-                className="object-contain object-left"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
-                <UtensilsCrossedIcon className="size-3.5 text-amber-400" />
-              </div>
-              <span className="text-sm font-black text-gray-900 tracking-tight">
-                {settings.systemName || "Oxonom POS"}
-              </span>
-            </div>
-          )}
+          <div className="relative h-7 w-28 sm:w-36">
+            <Image
+              src={settings.logoUrl || "/logo-oxonom-horizontal.png"}
+              alt="Oxonom POS"
+              fill
+              className="object-contain object-left"
+            />
+          </div>
 
           <span className="text-[11px] text-gray-400 hidden sm:inline-block border-l border-gray-200 pl-3">
-            {settings.systemTagline || "Restoran & POS Yönetim Platformu"}
+            {settings.systemTagline || "Gelişmiş Restoran & QR Menü Yönetim Sistemi"}
           </span>
         </div>
 
         {/* Orta: Telif Hakkı (© {yıl} OXONOM CORP. | {sistem adı} Tüm hakları saklıdır.) */}
         <div className="text-center text-[11px] text-gray-500">
-          © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom POS"} Tüm hakları saklıdır.
+          © {currentYear} OXONOM CORP. | {settings.systemName || "Oxonom Pos"} Tüm hakları saklıdır.
         </div>
 
         {/* Sağ: www.oxonom.com & Destek Hattı */}
