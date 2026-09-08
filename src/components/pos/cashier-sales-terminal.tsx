@@ -16,6 +16,7 @@ import {
   DeleteIcon,
   MinusIcon,
   PercentIcon,
+  PhoneCallIcon,
   PlusIcon,
   PrinterIcon,
   RadioIcon,
@@ -71,8 +72,11 @@ const QUICK_RECEIPT_CANCEL_REASONS = [
   "Müşteri Ayrıldı",
   "Diğer",
 ] as const;
-import { toBillLine, type CartLine } from "./types";
+import { toBillLine, newLineKey, type CartLine } from "./types";
 import { useOrderCart } from "./use-order-cart";
+import { useTelephony } from "@/hooks/use-telephony";
+import { IncomingCallDrawer, type OnStartOrderPayload } from "@/components/telephony/incoming-call-drawer";
+import { MissedCallsDialog } from "@/components/telephony/missed-calls-dialog";
 
 import type { OrderDTO, OrderType } from "@/types/order";
 
@@ -84,6 +88,7 @@ export interface CashierSalesTerminalProps {
   readonly cashierName?: string;
   readonly restaurantName?: string;
   readonly showItemImages?: boolean;
+  readonly telephonyEnabled?: boolean;
 }
 
 export type PaymentMethodType = "CASH" | "CARD" | "MEAL_VOUCHER" | "QR" | "SPLIT";
@@ -117,17 +122,18 @@ export interface ParkedTicketState {
   discount: DiscountInput;
   customerName: string;
   customerPhone: string;
+  customerAddress?: string;
   cashTenderedStr: string;
   paymentMethod: PaymentMethodType;
   paidPayments: ProcessedPayment[];
 }
 
 const DEFAULT_TICKETS: ParkedTicketState[] = [
-  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
+  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
+  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
+  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
+  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
+  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
 ];
 
 export const getTableOrderTotal = (order?: OrderDTO): number => {
@@ -149,6 +155,7 @@ export function CashierSalesTerminal({
   cashierName = "Kasa Personeli",
   restaurantName = "Oxonom POS",
   showItemImages = true,
+  telephonyEnabled = false,
 }: CashierSalesTerminalProps) {
   // Çoklu Fiş Sistemi (Fiş 01 - Fiş 05)
   const [tickets, setTickets] = useState<ParkedTicketState[]>(DEFAULT_TICKETS);
@@ -220,6 +227,52 @@ export function CashierSalesTerminal({
   const setDiscount = (d: DiscountInput) => updateActiveTicket({ discount: d });
   const setCustomerName = (n: string) => updateActiveTicket({ customerName: n });
   const setCustomerPhone = (p: string) => updateActiveTicket({ customerPhone: p });
+  const setCustomerAddress = (a: string) => updateActiveTicket({ customerAddress: a });
+
+  // Akıllı Telefon Sipariş Modülü
+  const {
+    activeCall,
+    missedCalls,
+    isDrawerOpen,
+    setIsDrawerOpen,
+    isMissedListOpen,
+    setIsMissedListOpen,
+    dismissCall,
+  } = useTelephony({ enabled: telephonyEnabled });
+
+  const handleStartOrderFromTelephony = (payload: OnStartOrderPayload) => {
+    let newCart: CartLine[] | undefined = undefined;
+
+    if (payload.repeatItems && payload.repeatItems.length > 0) {
+      newCart = payload.repeatItems.map((it) => {
+        const matching = menu.items.find(
+          (m) => m.name.toLowerCase() === it.name.toLowerCase()
+        );
+        return {
+          key: newLineKey(),
+          menuItemId: matching?.id || `custom-${Date.now()}`,
+          name: it.name,
+          variantId: null,
+          variantName: it.variantName || null,
+          unitPrice: matching ? matching.price : it.price,
+          taxRate: matching?.tax.rate ?? 0,
+          taxInclusive: matching?.tax.inclusive ?? true,
+          modifiers: [],
+          quantity: it.quantity,
+          lineNote: null,
+          isComp: false,
+        };
+      });
+    }
+
+    updateActiveTicket({
+      customerName: payload.customerName,
+      customerPhone: payload.customerPhone,
+      customerAddress: payload.customerAddress,
+      serviceType: payload.serviceType,
+      ...(newCart && newCart.length > 0 ? { cart: newCart } : {}),
+    });
+  };
   const setCashTenderedStr = (s: string | ((prev: string) => string)) => {
     if (typeof s === "function") {
       updateActiveTicket((t) => ({ ...t, cashTenderedStr: s(t.cashTenderedStr) }));
@@ -850,6 +903,7 @@ export function CashierSalesTerminal({
       tableId: selectedTableId ?? undefined,
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
+      customerAddress: currentTicket.customerAddress?.trim() || undefined,
       discountType: discount.type,
       discountValue: discount.value,
       discountReason: discount.type !== "NONE" ? "Kasa İskontosu" : undefined,
@@ -1187,6 +1241,41 @@ export function CashierSalesTerminal({
 
         {/* Sağ: Panele Dön & Kasiyer / Restoran Profili */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+          {telephonyEnabled && (
+            <button
+              type="button"
+              onClick={() => {
+                if (activeCall) {
+                  setIsDrawerOpen(true);
+                } else if (missedCalls.length > 0) {
+                  setIsMissedListOpen(true);
+                } else {
+                  toast.info("Aktif bir gelen arama bulunmuyor.");
+                }
+              }}
+              title="Akıllı Telefon Siparişleri & Cevapsız Aramalar"
+              className={cn(
+                "h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs relative",
+                activeCall
+                  ? "bg-rose-50 border-rose-300 text-rose-700 animate-pulse"
+                  : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+              )}
+            >
+              <PhoneCallIcon
+                className={cn(
+                  "size-3.5",
+                  activeCall ? "text-rose-600 animate-bounce" : "text-slate-500"
+                )}
+              />
+              <span className="hidden xl:inline">Telefon Sipariş</span>
+              {missedCalls.length > 0 && !activeCall && (
+                <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black leading-none">
+                  {missedCalls.length}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
@@ -2914,6 +3003,24 @@ export function CashierSalesTerminal({
             </div>
           </div>
         </div>
+      )}
+
+      {telephonyEnabled && (
+        <>
+          <IncomingCallDrawer
+            call={activeCall}
+            open={isDrawerOpen}
+            onClose={() => setIsDrawerOpen(false)}
+            onDismissCall={dismissCall}
+            onStartOrder={handleStartOrderFromTelephony}
+          />
+          <MissedCallsDialog
+            open={isMissedListOpen}
+            onClose={() => setIsMissedListOpen(false)}
+            missedCalls={missedCalls}
+            onStartOrder={handleStartOrderFromTelephony}
+          />
+        </>
       )}
     </div>
   );

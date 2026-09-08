@@ -31,7 +31,7 @@ export default async function PosPage() {
     );
   }
 
-  const [menu, tables, openOrders, services, restaurant] = await Promise.all([
+  const [menu, tables, openOrders, services, restaurant, telephony] = await Promise.all([
     getMenu(restaurantId),
     getTables(restaurantId),
     listOrders(restaurantId, ["OPEN"]),
@@ -39,6 +39,10 @@ export default async function PosPage() {
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
       select: { name: true, showItemImages: true },
+    }),
+    prisma.telephonyIntegration.findUnique({
+      where: { restaurantId },
+      select: { enabled: true },
     }),
   ]);
 
@@ -59,6 +63,7 @@ export default async function PosPage() {
       cashierName={staffCtx?.name || "Kasa Yetkilisi"}
       restaurantName={restaurant?.name || "Oxonom POS"}
       showItemImages={restaurant?.showItemImages ?? true}
+      telephonyEnabled={telephony?.enabled ?? false}
     />
   );
 }

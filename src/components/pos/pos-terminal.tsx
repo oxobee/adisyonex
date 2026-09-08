@@ -18,6 +18,7 @@ export function PosTerminal({
   cashierName = "Kasa Personeli",
   restaurantName = "Oxonom POS",
   showItemImages = true,
+  telephonyEnabled = false,
 }: {
   readonly menu: MenuDTO;
   readonly tables: readonly TableDTO[];
@@ -27,6 +28,7 @@ export function PosTerminal({
   readonly cashierName?: string;
   readonly restaurantName?: string;
   readonly showItemImages?: boolean;
+  readonly telephonyEnabled?: boolean;
 }) {
   // Automatically snapshot menu and tables to local device storage for offline capability
   useEffect(() => {
@@ -43,6 +45,7 @@ export function PosTerminal({
       cashierName={cashierName}
       restaurantName={restaurantName}
       showItemImages={showItemImages}
+      telephonyEnabled={telephonyEnabled}
     />
   );
 }

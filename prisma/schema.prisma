@@ -267,6 +267,9 @@ model Restaurant {
   feedbacks      Feedback[]
   zones          RestaurantZone[]
   staffRoles     RestaurantStaffRole[]
+  telephonyIntegration TelephonyIntegration?
+  customerAddresses    CustomerAddress[]
+  callSessions         CallSession[]
 
   salesRepId     String?
   salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
@@ -553,6 +556,7 @@ model Order {
   tableSession TableSession? @relation(fields: [tableSessionId], references: [id])
   items        OrderItem[]
   payments     Payment[]
+  callSessions CallSession[]
 
   @@unique([restaurantId, orderNumber])
   @@index([restaurantId, status])
@@ -889,6 +893,8 @@ model Customer {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   orders     Order[]
+  addresses  CustomerAddress[]
+  callSessions CallSession[]
   discounts  CustomerDiscount[]
   birthdayMessageSimulations BirthdayMessageSimulation[]
 
@@ -1298,6 +1304,105 @@ model Feedback {
   @@index([category])
   @@index([status])
   @@index([createdAt])
+}
+
+// ------------------------------------------------------------- Telephony / Caller ID ---
+
+/// Customer delivery addresses (Ev, İş, Diğer, etc.)
+model CustomerAddress {
+  id           String    @id @default(cuid())
+  customerId   String
+  restaurantId String
+  title        String    @default("Ev") // "Ev", "İş", "Diğer"
+  address      String
+  buildingNo   String?
+  floor        String?
+  apartmentNo  String?
+  directions   String?
+  isDefault    Boolean   @default(false)
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([restaurantId])
+}
+
+enum TelephonyMode {
+  SIMULATION
+  LIVE
+}
+
+enum TelephonyStatus {
+  ACTIVE
+  PENDING_SETUP
+  ERROR
+}
+
+/// Telephony / Caller ID integration configuration per restaurant
+model TelephonyIntegration {
+  id                         String          @id @default(cuid())
+  restaurantId               String          @unique
+  provider                   String          @default("NETGSM") // NETGSM, BULUTFON, etc.
+  enabled                    Boolean         @default(false)
+  mode                       TelephonyMode   @default(SIMULATION)
+  status                     TelephonyStatus @default(PENDING_SETUP)
+  incomingNumber             String?         // Santral / Netgsm Numarası (0850... / 0212...)
+  sipExtension               String?         // Dahili numara (101, 102 vb.)
+  apiUsername                String?         // Netgsm API kullanıcı adı
+  apiPasswordEncrypted       String?         // Encrypted API password / token
+  webhookSecret              String          @default(cuid())
+  lastSuccessfulConnectionAt DateTime?
+  lastIncomingCallAt         DateTime?
+  lastError                  String?
+  createdAt                  DateTime        @default(now())
+  updatedAt                  DateTime        @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+}
+
+enum CallStatus {
+  RINGING
+  ANSWERED
+  ENDED
+  MISSED
+}
+
+/// A telephone call session captured from telephony webhooks or simulation
+model CallSession {
+  id                   String     @id @default(cuid())
+  restaurantId         String
+  provider             String     @default("NETGSM")
+  providerCallId       String     // Unique identifier from provider for idempotency
+  fromNumber           String     // Raw incoming number
+  normalizedFromNumber String     // Standard +905...
+  toNumber             String?    // Called trunk number
+  sipExtension         String?    // Target internal line
+  customerId           String?
+  status               CallStatus @default(RINGING)
+  isSimulation         Boolean    @default(false)
+  orderId              String?
+  startedAt            DateTime   @default(now())
+  answeredAt           DateTime?
+  endedAt              DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  order      Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@unique([restaurantId, providerCallId])
+  @@index([restaurantId, status])
+  @@index([restaurantId, normalizedFromNumber])
+  @@index([restaurantId, createdAt])
+  @@index([customerId])
+  @@index([orderId])
 }
 
 

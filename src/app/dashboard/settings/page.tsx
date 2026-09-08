@@ -6,6 +6,7 @@ import {
   ImagesIcon,
   KeyRoundIcon,
   MapPinIcon,
+  PhoneCallIcon,
   QrCodeIcon,
   ReceiptIcon,
   ShieldCheckIcon,
@@ -25,6 +26,7 @@ import { SignInPinCard } from "@/components/settings/sign-in-pin-card"
 import { TaxSettingsForm } from "@/components/settings/tax-settings-form"
 import { UsernameCard } from "@/components/settings/username-card"
 import { VideosManager } from "@/components/settings/videos-manager"
+import { TelephonySettingsTab } from "@/components/settings/telephony-settings-tab"
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
 import {
@@ -49,12 +51,14 @@ import {
   getSelfOrderEnabled,
   getTaxProfile,
 } from "@/services/restaurant-settings.service"
+import { getTelephonySettings } from "@/services/telephony.service"
 import { getPinStatus } from "@/services/pin-auth.service"
 import { getRestaurantLicenseInfo } from "@/services/license.service"
 import { prisma } from "@/lib/prisma"
 
 const TABS = [
   { value: "profile", label: "İşletme Profili", icon: StoreIcon },
+  { value: "telephony", label: "Akıllı Telefon Sipariş", icon: PhoneCallIcon },
   { value: "license", label: "Lisans & Satış Temsilcisi", icon: HeadphonesIcon },
   { value: "location", label: "Konum & Harita", icon: MapPinIcon },
   { value: "ordering", label: "QR Menü & Sipariş", icon: QrCodeIcon },
@@ -115,11 +119,12 @@ export default async function SettingsPage() {
     );
   }
 
-  const [profile, taxProfile, licenseInfo, adminCtx] = await Promise.all([
+  const [profile, taxProfile, licenseInfo, adminCtx, telephonySettings] = await Promise.all([
     getRestaurantProfile(restaurantId),
     getTaxProfile(restaurantId),
     getRestaurantLicenseInfo(restaurantId).catch(() => null),
     getAdminContextOrNull().catch(() => null),
+    getTelephonySettings(restaurantId),
   ])
   const isSuperAdminUser = Boolean(adminCtx && adminCtx.isSuperAdmin)
   const pinStatus = ctx?.userId
@@ -217,6 +222,10 @@ export default async function SettingsPage() {
         <div className="min-w-0 flex-1">
           <TabsContent value="profile" keepMounted>
             <RestaurantProfileForm profile={profile} />
+          </TabsContent>
+
+          <TabsContent value="telephony" keepMounted>
+            <TelephonySettingsTab initialSettings={telephonySettings} />
           </TabsContent>
 
           <TabsContent value="license" keepMounted className="flex flex-col gap-6">

@@ -5,6 +5,7 @@ import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { getDashboard } from "@/services/dashboard.service";
 import { getLowStockCount } from "@/services/stock.service";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +29,51 @@ export default async function Page() {
     );
   }
 
-  const [data, lowStock] = await Promise.all([
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const [data, lowStock, telephony] = await Promise.all([
     getDashboard(restaurantId),
     getLowStockCount(restaurantId),
+    prisma.telephonyIntegration.findUnique({
+      where: { restaurantId },
+      select: { enabled: true, lastIncomingCallAt: true },
+    }),
   ]);
 
-  return <DashboardView data={data} lowStock={lowStock} />;
+  let telephonyStats: {
+    enabled: boolean;
+    todayPhoneOrdersCount: number;
+    todayMissedCallsCount: number;
+    lastIncomingCallAt?: string | null;
+  } | undefined = undefined;
+
+  if (telephony?.enabled) {
+    const [phoneOrdersCount, missedCallsCount] = await Promise.all([
+      prisma.order.count({
+        where: {
+          restaurantId,
+          orderType: "DELIVERY",
+          customerPhone: { not: null },
+          createdAt: { gte: startOfDay },
+        },
+      }),
+      prisma.callSession.count({
+        where: {
+          restaurantId,
+          status: "MISSED",
+          createdAt: { gte: startOfDay },
+        },
+      }),
+    ]);
+
+    telephonyStats = {
+      enabled: true,
+      todayPhoneOrdersCount: phoneOrdersCount,
+      todayMissedCallsCount: missedCallsCount,
+      lastIncomingCallAt: telephony.lastIncomingCallAt?.toISOString() ?? null,
+    };
+  }
+
+  return <DashboardView data={data} lowStock={lowStock} telephonyStats={telephonyStats} />;
 }

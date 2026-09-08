@@ -14,6 +14,7 @@ import {
   LayersIcon,
   ReceiptIcon,
   SparklesIcon,
+  PhoneCallIcon,
   TrendingUpIcon,
   UsersIcon,
   UtensilsCrossedIcon,
@@ -40,9 +41,16 @@ const deltaPct = (current: number, previous: number): number | null =>
 export function DashboardView({
   data,
   lowStock,
+  telephonyStats,
 }: {
   readonly data: DashboardDTO;
   readonly lowStock: number;
+  readonly telephonyStats?: {
+    enabled: boolean;
+    todayPhoneOrdersCount: number;
+    todayMissedCallsCount: number;
+    lastIncomingCallAt?: string | null;
+  };
 }) {
   const [activePeriod, setActivePeriod] = useState<"today" | "month">("today");
 
@@ -136,6 +144,35 @@ export function DashboardView({
             Stoğu İncele →
           </span>
         </Link>
+      )}
+
+      {/* Akıllı Telefon Sipariş Özeti (Yalnızca Modül Aktifse Gösterilir) */}
+      {telephonyStats?.enabled && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-rose-200/70 bg-gradient-to-r from-rose-50/70 via-white to-rose-50/30 text-slate-800 text-xs shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
+              <PhoneCallIcon className="size-4" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 text-sm block">Akıllı Telefon Sipariş Özeti</span>
+              <span className="text-slate-600 text-xs">
+                Bugün: <strong className="text-slate-900">{telephonyStats.todayPhoneOrdersCount}</strong> Telefon Siparişi •{" "}
+                <strong className={telephonyStats.todayMissedCallsCount > 0 ? "text-rose-600 font-black" : "text-slate-900"}>
+                  {telephonyStats.todayMissedCallsCount}
+                </strong> Cevapsız Arama
+                {telephonyStats.lastIncomingCallAt && (
+                  <> • Son Arama: {new Date(telephonyStats.lastIncomingCallAt).toLocaleTimeString("tr-TR")}</>
+                )}
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/pos"
+            className="font-bold text-rose-600 hover:text-rose-700 underline text-xs flex items-center gap-1 self-start sm:self-auto"
+          >
+            Kasa / POS&apos;u Aç →
+          </Link>
+        </div>
       )}
 
       {/* 
