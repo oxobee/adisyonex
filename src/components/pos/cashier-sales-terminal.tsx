@@ -8,6 +8,7 @@ import {
   ArrowLeftIcon,
   BanknoteIcon,
   CalculatorIcon,
+  CalendarDaysIcon,
   CheckCircle2Icon,
   CheckIcon,
   ChevronRightIcon,
@@ -83,6 +84,8 @@ import { OrderReceiptPrintDialog } from "@/components/orders/order-receipt-print
 import { triggerCallSimulationAction } from "@/actions/telephony.actions";
 import { broadcastTelephonyEvent } from "@/lib/telephony-broadcast";
 import type { SimulationScenario } from "@/services/telephony.service";
+import { createReservationAction, listReservationsAction } from "@/actions/reservation.actions";
+import { PosReservationsDialog } from "./pos-reservations-dialog";
 
 import type { OrderDTO, OrderType } from "@/types/order";
 
@@ -142,14 +145,18 @@ export interface ParkedTicketState {
   cashTenderedStr: string;
   paymentMethod: PaymentMethodType;
   paidPayments: ProcessedPayment[];
+  isReservation?: boolean;
+  reservationDate?: string;
+  reservationTime?: string;
+  guestCount?: number;
 }
 
 const DEFAULT_TICKETS: ParkedTicketState[] = [
-  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
-  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [] },
+  { id: "1", label: "Fiş 01", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [], isReservation: false, reservationDate: "", reservationTime: "19:30", guestCount: 2 },
+  { id: "2", label: "Fiş 02", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [], isReservation: false, reservationDate: "", reservationTime: "19:30", guestCount: 2 },
+  { id: "3", label: "Fiş 03", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [], isReservation: false, reservationDate: "", reservationTime: "19:30", guestCount: 2 },
+  { id: "4", label: "Fiş 04", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [], isReservation: false, reservationDate: "", reservationTime: "19:30", guestCount: 2 },
+  { id: "5", label: "Fiş 05", cart: [], selectedTableId: null, existingOrderId: null, serviceType: "TAKEAWAY", discount: { type: "NONE", value: 0 }, customerName: "", customerPhone: "", customerAddress: "", cashTenderedStr: "", paymentMethod: "CASH", paidPayments: [], isReservation: false, reservationDate: "", reservationTime: "19:30", guestCount: 2 },
 ];
 
 export const getTableOrderTotal = (order?: OrderDTO): number => {
@@ -257,6 +264,101 @@ export function CashierSalesTerminal({
       customerAddresses: [],
     });
 
+  const isReservation = Boolean(currentTicket.isReservation);
+  const setIsReservation = (val: boolean) => updateActiveTicket({ isReservation: val });
+  const reservationDate = currentTicket.reservationDate || "";
+  const setReservationDate = (val: string) => updateActiveTicket({ reservationDate: val });
+  const reservationTime = currentTicket.reservationTime || "19:30";
+  const setReservationTime = (val: string) => updateActiveTicket({ reservationTime: val });
+  const guestCount = currentTicket.guestCount || 2;
+  const setGuestCount = (val: number) => updateActiveTicket({ guestCount: val });
+
+  // Rezervasyonlar Dialog Durumu
+  const [isReservationsDialogOpen, setIsReservationsDialogOpen] = useState(false);
+  const [todayReservationsCount, setTodayReservationsCount] = useState(0);
+  const [isCreatingReservation, setIsCreatingReservation] = useState(false);
+
+  useEffect(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    listReservationsAction({ date: todayStr })
+      .then((res) => {
+        if (res.success && res.data) {
+          setTodayReservationsCount(
+            res.data.filter((r) => r.status === "CONFIRMED" || r.status === "PENDING").length
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleCreateReservationFromPos = async () => {
+    if (!customerName.trim()) {
+      toast.error("Lütfen müşteri adını girin.");
+      return;
+    }
+    if (!customerPhone.trim()) {
+      toast.error("Lütfen müşteri telefon numarasını girin.");
+      return;
+    }
+
+    const chosenDate = reservationDate || new Date().toISOString().slice(0, 10);
+    const chosenTime = reservationTime || "19:30";
+    const resDateTime = new Date(`${chosenDate}T${chosenTime}:00`);
+
+    setIsCreatingReservation(true);
+    try {
+      const preOrderItems = cart.map((c) => ({
+        menuItemId: c.menuItemId,
+        name: c.name,
+        quantity: c.quantity,
+        price: c.unitPrice,
+        notes: c.lineNote || undefined,
+        modifiers: c.modifiers?.map((m) => m.name),
+      }));
+
+      const res = await createReservationAction({
+        tableId: selectedTableId || null,
+        customerId: currentTicket.customerId || null,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        guestCount: guestCount || 2,
+        reservationTime: resDateTime,
+        source: currentTicket.callSessionId ? "PHONE" : "POS",
+        notes: currentTicket.customerNotes || null,
+        preOrderItems: preOrderItems.length > 0 ? preOrderItems : undefined,
+      });
+
+      if (!res.success || !res.data) {
+        toast.error(res.error || "Rezervasyon oluşturulamadı.");
+        return;
+      }
+
+      toast.success(
+        `✓ ${res.data.customerName} adına ${res.data.tableLabel ? `Masa ${res.data.tableLabel}` : "masa"} rezervasyonu oluşturuldu!`
+      );
+
+      // Reset active ticket
+      updateActiveTicket({
+        cart: [],
+        selectedTableId: null,
+        existingOrderId: null,
+        isReservation: false,
+        customerName: "",
+        customerPhone: "",
+        customerAddress: "",
+        customerId: undefined,
+        customerNotes: null,
+        callSessionId: undefined,
+      });
+
+      setTodayReservationsCount((prev) => prev + 1);
+    } catch {
+      toast.error("Rezervasyon kaydedilirken bir hata oluştu.");
+    } finally {
+      setIsCreatingReservation(false);
+    }
+  };
+
   // Akıllı Telefon Sipariş Modülü
   const {
     activeCall,
@@ -330,6 +432,8 @@ export function CashierSalesTerminal({
       });
     }
 
+    const isRes = Boolean(payload.isReservation || payload.serviceType === "RESERVATION");
+
     updateActiveTicket({
       customerName: payload.customerName,
       customerPhone: payload.customerPhone,
@@ -338,10 +442,17 @@ export function CashierSalesTerminal({
       callSessionId: payload.callSessionId,
       customerNotes: payload.customerNotes ?? null,
       customerAddresses: payload.addresses,
-      serviceType: payload.serviceType, // Varsayılan DELIVERY (Kurye / Paket)
-      selectedTableId: null, // Masadan bağımsız telefon siparişi
+      serviceType: isRes ? "DINE_IN" : (payload.serviceType as OrderType),
+      isReservation: isRes,
+      selectedTableId: null,
       ...(newCart && newCart.length > 0 ? { cart: newCart } : {}),
     });
+
+    if (isRes) {
+      toast.info("📅 Masa Rezervasyonu Modu Açıldı: Lütfen masa ve tarih/saat seçip rezervasyonu oluşturun.");
+      setActiveMainTab("TABLES");
+      setIsCatalogOpen(true);
+    }
   };
   const setCashTenderedStr = (s: string | ((prev: string) => string)) => {
     if (typeof s === "function") {
@@ -1333,8 +1444,29 @@ export function CashierSalesTerminal({
 
         {/* Sağ: Panele Dön & Kasiyer / Restoran Profili */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Telefon Sipariş ve Simülasyon Butonları */}
+          {/* Telefon Sipariş, Simülasyon ve Rezervasyon Butonları */}
           <div className="flex items-center gap-1.5">
+            {/* Rezervasyonlar Butonu */}
+            <button
+              type="button"
+              onClick={() => setIsReservationsDialogOpen(true)}
+              title="Masa Rezervasyonları Listesi"
+              className={cn(
+                "h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs relative",
+                todayReservationsCount > 0
+                  ? "border-amber-300 bg-amber-50/90 hover:bg-amber-100 text-amber-900 ring-1 ring-amber-500/30"
+                  : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+              )}
+            >
+              <CalendarDaysIcon className="size-3.5 text-amber-600" />
+              <span className="hidden xl:inline">Rezervasyonlar</span>
+              {todayReservationsCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-black leading-none">
+                  {todayReservationsCount}
+                </span>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -2186,42 +2318,44 @@ export function CashierSalesTerminal({
 
           {/* Servis Türü Seçici */}
           <div className="p-2.5 pb-1 bg-white shrink-0">
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
               <button
                 type="button"
                 onClick={() => {
                   setServiceType("TAKEAWAY");
                   setSelectedTableId(null);
+                  setIsReservation(false);
                 }}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
-                  serviceType === "TAKEAWAY"
+                  "flex items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
+                  !isReservation && serviceType === "TAKEAWAY"
                     ? "bg-white text-rose-700 shadow-sm border border-slate-200/80 ring-1 ring-rose-500/20"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <ShoppingBagIcon className="size-3.5 shrink-0 text-rose-600" />
-                <span className="truncate">Gel-Al / Paket</span>
+                <span className="truncate">Gel-Al</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setServiceType("DINE_IN");
+                  setIsReservation(false);
                   if (!selectedTableId) {
                     setActiveMainTab("TABLES");
                     setIsCatalogOpen(true);
                   }
                 }}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
-                  serviceType === "DINE_IN"
+                  "flex items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
+                  !isReservation && serviceType === "DINE_IN"
                     ? "bg-white text-rose-700 shadow-sm border border-slate-200/80 ring-1 ring-rose-500/20"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <ArmchairIcon className="size-3.5 shrink-0 text-rose-600" />
-                <span className="truncate">Masada Servis</span>
+                <span className="truncate">Salon</span>
               </button>
 
               <button
@@ -2229,19 +2363,146 @@ export function CashierSalesTerminal({
                 onClick={() => {
                   setServiceType("DELIVERY");
                   setSelectedTableId(null);
+                  setIsReservation(false);
                 }}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
-                  serviceType === "DELIVERY"
+                  "flex items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
+                  !isReservation && serviceType === "DELIVERY"
                     ? "bg-white text-rose-700 shadow-sm border border-slate-200/80 ring-1 ring-rose-500/20"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
                 <BikeIcon className="size-3.5 shrink-0 text-rose-600" />
-                <span className="truncate">Paket Servis</span>
+                <span className="truncate">Paket</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReservation(true);
+                  setServiceType("DINE_IN");
+                  if (!selectedTableId) {
+                    setActiveMainTab("TABLES");
+                    setIsCatalogOpen(true);
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg text-xs font-black transition-all cursor-pointer select-none",
+                  isReservation
+                    ? "bg-amber-600 text-white shadow-sm border border-amber-700"
+                    : "text-amber-700 hover:text-amber-900 hover:bg-amber-50"
+                )}
+              >
+                <CalendarDaysIcon className="size-3.5 shrink-0 text-amber-500" />
+                <span className="truncate">Rezervasyon</span>
               </button>
             </div>
           </div>
+
+          {/* REZERVASYON MODU DETAY BİLGİ KUTUSU */}
+          {isReservation && (
+            <div className="p-2.5 bg-amber-50/80 border-b border-amber-200/80 space-y-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                  <CalendarDaysIcon className="size-3.5 text-amber-700" />
+                  Masa Rezervasyon Bilgileri
+                </span>
+                <span className="text-[10px] bg-amber-200/90 text-amber-950 font-black px-2 py-0.5 rounded-full">
+                  REZERVASYON MODU
+                </span>
+              </div>
+
+              {/* Masa Seçimi Satırı */}
+              <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-amber-200 text-xs">
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <ArmchairIcon className="size-3.5 text-amber-600" />
+                  {selectedTableId
+                    ? `Masa: ${tables.find((t) => t.id === selectedTableId)?.label || "Seçildi"}`
+                    : "Masa Seçilmedi"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMainTab("TABLES");
+                    setIsCatalogOpen(true);
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 cursor-pointer transition-colors"
+                >
+                  {selectedTableId ? "Masayı Değiştir" : "Masa Seç"}
+                </button>
+              </div>
+
+              {/* Tarih ve Saat Seçimi */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-600 block">
+                    Rezervasyon Tarihi
+                  </span>
+                  <input
+                    type="date"
+                    value={reservationDate || new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setReservationDate(e.target.value)}
+                    className="w-full text-xs font-bold p-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-600 block">
+                    Rezervasyon Saati
+                  </span>
+                  <input
+                    type="time"
+                    value={reservationTime || "19:30"}
+                    onChange={(e) => setReservationTime(e.target.value)}
+                    className="w-full text-xs font-bold p-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {/* Kişi Sayısı & Hızlı Saat Butonları */}
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-slate-600">Kişi:</span>
+                  <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                      className="size-5 rounded flex items-center justify-center font-black text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="font-mono font-black text-xs px-1.5 text-slate-900">{guestCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setGuestCount(guestCount + 1)}
+                      className="size-5 rounded flex items-center justify-center font-black text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Hızlı Saat Butonları */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  {["18:30", "19:00", "19:30", "20:00", "20:30"].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setReservationTime(t)}
+                      className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer",
+                        reservationTime === t
+                          ? "bg-amber-600 text-white shadow-2xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                      )}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TELEFON SİPARİŞİ MÜŞTERİ & ADRES BİLGİ KARTI */}
           <PosCustomerBanner
@@ -2561,12 +2822,18 @@ export function CashierSalesTerminal({
 
           {/* 5. ÖDEME YÖNTEMLERİ (NUMPAD ALTINDA YER ALIR) */}
           <div className="px-3 pb-2 pt-1 bg-white shrink-0 border-t border-slate-100">
+            {isReservation && (
+              <div className="mb-2 p-2 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-[11px] font-bold flex items-center gap-1.5">
+                <AlertTriangleIcon className="size-3.5 text-amber-600 shrink-0" />
+                <span>Rezervasyon modunda tahsilat kapalıdır. Ödeme masaya oturulduğunda alınır.</span>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => handleProcessPayment("CASH")}
-                disabled={remainingBalance <= 0}
-                className="py-2.5 px-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                disabled={isReservation || remainingBalance <= 0}
+                className="py-2.5 px-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
               >
                 <BanknoteIcon className="size-5" />
                 <span>💵 Nakit</span>
@@ -2575,8 +2842,8 @@ export function CashierSalesTerminal({
               <button
                 type="button"
                 onClick={() => handleProcessPayment("CARD")}
-                disabled={remainingBalance <= 0}
-                className="py-2.5 px-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                disabled={isReservation || remainingBalance <= 0}
+                className="py-2.5 px-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
               >
                 <CreditCardIcon className="size-5" />
                 <span>💳 Kredi Kartı</span>
@@ -2585,8 +2852,8 @@ export function CashierSalesTerminal({
               <button
                 type="button"
                 onClick={() => handleProcessPayment("MEAL_VOUCHER")}
-                disabled={remainingBalance <= 0}
-                className="py-2.5 px-2 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                disabled={isReservation || remainingBalance <= 0}
+                className="py-2.5 px-2 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-black text-xs flex flex-col items-center justify-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
               >
                 <WalletIcon className="size-5" />
                 <span>🎫 Yemek Kartı</span>
@@ -2599,27 +2866,48 @@ export function CashierSalesTerminal({
             <button
               type="button"
               onClick={() => {
-                if (cart.length === 0 && !selectedTableId && !currentTicket.existingOrderId) {
+                if (cart.length === 0 && !selectedTableId && !currentTicket.existingOrderId && !isReservation) {
                   toast.error("İptal edilecek bir fiş veya sepet bulunmuyor!");
+                  return;
+                }
+                if (isReservation) {
+                  updateActiveTicket({
+                    isReservation: false,
+                    cart: [],
+                    selectedTableId: null,
+                  });
+                  toast.info("Rezervasyon modu kapatıldı.");
                   return;
                 }
                 setCancelReceiptOpen(true);
               }}
-              className="py-3.5 px-3 sm:px-4 rounded-2xl font-bold text-xs text-rose-700 bg-rose-50 border border-rose-200 flex items-center gap-1.5 shrink-0"
+              className="py-3.5 px-3 sm:px-4 rounded-2xl font-bold text-xs text-rose-700 bg-rose-50 border border-rose-200 flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <XCircleIcon className="size-4" />
-              <span>Fiş İptal</span>
+              <span>{isReservation ? "Vazgeç" : "Fiş İptal"}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleCompleteSale}
-              disabled={cart.length === 0 || submitSale.isPending}
-              className="flex-1 py-3.5 px-4 rounded-2xl font-black text-sm text-white bg-rose-600 hover:bg-rose-700 flex items-center justify-center gap-2"
-            >
-              <CheckCircle2Icon className="size-5" />
-              <span>Siparişi Tamamla</span>
-            </button>
+            {isReservation ? (
+              <button
+                type="button"
+                onClick={handleCreateReservationFromPos}
+                disabled={isCreatingReservation}
+                className="flex-1 py-3.5 px-4 rounded-2xl font-black text-sm text-white bg-amber-600 hover:bg-amber-700 active:scale-95 flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all disabled:opacity-50"
+              >
+                <CalendarDaysIcon className="size-5" />
+                <span>{isCreatingReservation ? "Oluşturuluyor..." : "📅 Rezervasyonu Oluştur"}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCompleteSale}
+                disabled={cart.length === 0 || submitSale.isPending}
+                className="flex-1 py-3.5 px-4 rounded-2xl font-black text-sm text-white bg-rose-600 hover:bg-rose-700 flex items-center justify-center gap-2"
+              >
+                <CheckCircle2Icon className="size-5" />
+                <span>Siparişi Tamamla</span>
+              </button>
+            )}
           </div>
         </section>
       </main>
@@ -3328,6 +3616,25 @@ export function CashierSalesTerminal({
           />
         </>
       )}
+
+      <PosReservationsDialog
+        open={isReservationsDialogOpen}
+        onClose={() => setIsReservationsDialogOpen(false)}
+        onNewReservationClick={() => {
+          setIsReservation(true);
+          setServiceType("DINE_IN");
+          toast.info("📅 Yeni Rezervasyon Modu Açıldı. Masa, tarih ve saat seçebilirsiniz.");
+        }}
+        onOpenTableWithReservation={(tableId, orderId) => {
+          setSelectedTableId(tableId);
+          setIsReservation(false);
+          setServiceType("DINE_IN");
+          if (orderId) {
+            updateActiveTicket({ existingOrderId: orderId });
+          }
+          toast.success("Masa açıldı ve aktif fişe bağlandı!");
+        }}
+      />
     </div>
   );
 }

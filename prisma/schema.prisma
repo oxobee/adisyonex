@@ -276,6 +276,7 @@ model Restaurant {
   telephonyIntegration TelephonyIntegration?
   customerAddresses    CustomerAddress[]
   callSessions         CallSession[]
+  reservations         Reservation[]
 
   salesRepId     String?
   salesRep       SalesRep?      @relation(fields: [salesRepId], references: [id])
@@ -511,6 +512,7 @@ model DiningTable {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   orders     Order[]
   tableSessions TableSession[]
+  reservations  Reservation[]
 
   @@unique([restaurantId, label])
   @@index([restaurantId])
@@ -566,6 +568,7 @@ model Order {
   items        OrderItem[]
   payments     Payment[]
   callSessions CallSession[]
+  reservations Reservation[]
 
   @@unique([restaurantId, orderNumber])
   @@index([restaurantId, status])
@@ -909,6 +912,7 @@ model Customer {
   addresses  CustomerAddress[]
   callSessions CallSession[]
   discounts  CustomerDiscount[]
+  reservations Reservation[]
   birthdayMessageSimulations BirthdayMessageSimulation[]
 
   @@unique([restaurantId, phone])
@@ -1414,6 +1418,53 @@ model CallSession {
   @@index([restaurantId, status])
   @@index([restaurantId, normalizedFromNumber])
   @@index([restaurantId, createdAt])
+  @@index([customerId])
+  @@index([orderId])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
+}
+
+enum ReservationSource {
+  PHONE
+  POS
+  ONLINE
+  WALK_IN
+}
+
+model Reservation {
+  id              String            @id @default(cuid())
+  restaurantId    String
+  tableId         String?
+  customerId      String?
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  guestCount      Int               @default(2)
+  reservationTime DateTime
+  status          ReservationStatus @default(CONFIRMED)
+  source          ReservationSource @default(POS)
+  notes           String?
+  preOrderItems   Json?
+  orderId         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  restaurant Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table      DiningTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  customer   Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  order      Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId, reservationTime])
+  @@index([restaurantId, status])
+  @@index([tableId])
   @@index([customerId])
   @@index([orderId])
 }

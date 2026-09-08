@@ -4,6 +4,7 @@ import {
   BookOpenIcon,
   BoxesIcon,
   CalculatorIcon,
+  CalendarDaysIcon,
   ChefHatIcon,
   FileSpreadsheetIcon,
   GiftIcon,
@@ -68,6 +69,13 @@ export const PERMISSION_MATRIX_GROUPS: PermissionCategoryGroup[] = [
         desc: "Hızlı satış, adisyon kapatma ve tahsilat",
         icon: CalculatorIcon,
         badge: "03",
+      },
+      {
+        id: "/dashboard/reservations",
+        title: "Masa Rezervasyonları",
+        desc: "Masa randevuları, takvim ve ön sipariş yönetimi",
+        icon: CalendarDaysIcon,
+        badge: "04",
       },
     ],
   },
@@ -230,10 +238,10 @@ export function getDefaultRoutesForRoleTitle(roleTitle: string): string[] {
     return ["/dashboard/kitchen"];
   }
   if (lower.includes("kasiyer") || lower.includes("kasa")) {
-    return ["/dashboard/pos", "/dashboard/orders", "/dashboard/z-report"];
+    return ["/dashboard/pos", "/dashboard/orders", "/dashboard/reservations", "/dashboard/z-report"];
   }
   if (lower.includes("garson") || lower.includes("komi")) {
-    return ["/dashboard/orders"];
+    return ["/dashboard/orders", "/dashboard/reservations"];
   }
   if (lower.includes("barista")) {
     return ["/dashboard/orders", "/dashboard/pos"];

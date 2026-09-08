@@ -40,6 +40,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/staff": "Personel Yönetimi",
   "/dashboard/inventory": "Stok & Envanter",
   "/dashboard/customers": "Müşteriler & Sadakat",
+  "/dashboard/reservations": "Masa Rezervasyonları",
   "/dashboard/system": "Sistem Ayarları",
   "/dashboard/settings": "Restoran Ayarları",
   "/dashboard/modules": "Sistem Modülleri",

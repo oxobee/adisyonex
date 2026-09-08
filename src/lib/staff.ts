@@ -48,15 +48,16 @@ export const getStaffDefaultRoutes = (role: StaffRole): readonly string[] => {
     case "KITCHEN":
       return ["/dashboard/kitchen"];
     case "WAITER":
-      return ["/dashboard/orders"];
+      return ["/dashboard/orders", "/dashboard/reservations"];
     case "CASHIER":
-      return ["/dashboard/pos", "/dashboard/orders"];
+      return ["/dashboard/pos", "/dashboard/orders", "/dashboard/reservations"];
     case "MANAGEMENT":
       return [
         "/dashboard",
         "/dashboard/orders",
         "/dashboard/kitchen",
         "/dashboard/pos",
+        "/dashboard/reservations",
         "/dashboard/menu",
         "/dashboard/menu-design",
         "/dashboard/tables",

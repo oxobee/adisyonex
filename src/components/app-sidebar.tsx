@@ -38,6 +38,7 @@ import {
   LogInIcon,
   PaletteIcon,
   HomeIcon,
+  CalendarDaysIcon,
 } from "lucide-react"
 
 import type { LicenseInfoDTO } from "@/services/license.service"
@@ -51,6 +52,7 @@ const navGroups = [
       { title: "Masalar", url: "/dashboard/orders", icon: <ReceiptTextIcon />, isHighlighted: true },
       { title: "Mutfak", url: "/dashboard/kitchen", icon: <ChefHatIcon /> },
       { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
+      { title: "Rezervasyonlar", url: "/dashboard/reservations", icon: <CalendarDaysIcon /> },
     ],
   },
   {

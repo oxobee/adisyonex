@@ -14,6 +14,7 @@ import {
   SparklesIcon,
   CheckIcon,
   BikeIcon,
+  CalendarDaysIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,8 @@ export interface OnStartOrderPayload {
     isDefault: boolean;
     isLastUsed: boolean;
   }>;
-  serviceType: "DELIVERY" | "TAKEAWAY" | "DINE_IN";
+  serviceType: "DELIVERY" | "TAKEAWAY" | "DINE_IN" | "RESERVATION";
+  isReservation?: boolean;
   repeatItems?: Array<{
     name: string;
     quantity: number;
@@ -108,8 +110,13 @@ export function IncomingCallDrawer({
     toast.success("Son sipariş kalemleri yeni adisyona aktarıldı!");
   };
 
-  const handleOpenNewOrder = (serviceType: "DELIVERY" | "TAKEAWAY" | "DINE_IN" = "DELIVERY") => {
-    const chosenAddress = serviceType === "DELIVERY" ? profile.addresses[selectedAddressIndex]?.address : undefined;
+  const handleOpenNewOrder = (
+    serviceType: "DELIVERY" | "TAKEAWAY" | "DINE_IN" | "RESERVATION" = "DELIVERY"
+  ) => {
+    const chosenAddress =
+      serviceType === "DELIVERY"
+        ? profile.addresses[selectedAddressIndex]?.address
+        : undefined;
 
     onStartOrder({
       customerName: profile.name || "Müşteri",
@@ -120,11 +127,19 @@ export function IncomingCallDrawer({
       customerNotes: profile.notes,
       addresses: profile.addresses,
       serviceType,
+      isReservation: serviceType === "RESERVATION",
     });
 
     onDismissCall(call.id, "ANSWERED");
-    const label = serviceType === "TAKEAWAY" ? "Gel-Al" : serviceType === "DINE_IN" ? "Salon" : "Paket Servis";
-    toast.success(`Müşteri bilgileri ile yeni ${label} siparişi açıldı.`);
+    const label =
+      serviceType === "TAKEAWAY"
+        ? "Gel-Al"
+        : serviceType === "DINE_IN"
+          ? "Salon"
+          : serviceType === "RESERVATION"
+            ? "Masa Rezervasyonu"
+            : "Paket Servis";
+    toast.success(`Müşteri bilgileri ile yeni ${label} modu açıldı.`);
   };
 
   const handleQuickRegisterAndOrder = async () => {
@@ -394,6 +409,15 @@ export function IncomingCallDrawer({
                     🍽️ Masa / Salon Aç
                   </Button>
                 </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 font-bold border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 shadow-2xs"
+                  onClick={() => handleOpenNewOrder("RESERVATION")}
+                >
+                  <CalendarDaysIcon className="size-4 text-amber-600" />
+                  📅 Masa Rezervasyonu Yap
+                </Button>
               </div>
             </div>
           ) : (
@@ -482,7 +506,7 @@ export function IncomingCallDrawer({
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
                 <Button
                   className="w-full gap-2 font-semibold"
                   disabled={isRegistering || !newName.trim()}
@@ -490,6 +514,26 @@ export function IncomingCallDrawer({
                 >
                   <SparklesIcon className="size-4" />
                   Müşteriyi Kaydet ve Sipariş Aç
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 font-bold border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 shadow-2xs text-xs"
+                  onClick={() => {
+                    onStartOrder({
+                      customerName: newName.trim() || "Yeni Müşteri",
+                      customerPhone: profile.phone,
+                      customerNotes: newNotes.trim() || null,
+                      serviceType: "RESERVATION",
+                      isReservation: true,
+                      callSessionId: call.id,
+                    });
+                    onDismissCall(call.id, "ANSWERED");
+                    toast.success("Müşteri bilgileriyle Rezervasyon Modu açıldı.");
+                  }}
+                >
+                  <CalendarDaysIcon className="size-4 text-amber-600" />
+                  📅 Masa Rezervasyonu Yap
                 </Button>
               </div>
             </div>
