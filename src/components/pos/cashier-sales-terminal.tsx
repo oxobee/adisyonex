@@ -77,6 +77,8 @@ import { useOrderCart } from "./use-order-cart";
 import { useTelephony } from "@/hooks/use-telephony";
 import { IncomingCallDrawer, type OnStartOrderPayload } from "@/components/telephony/incoming-call-drawer";
 import { MissedCallsDialog } from "@/components/telephony/missed-calls-dialog";
+import { PosCustomerBanner, type CustomerAddressItem } from "./pos-customer-banner";
+import { OrderReceiptPrintDialog } from "@/components/orders/order-receipt-print-dialog";
 
 import type { OrderDTO, OrderType } from "@/types/order";
 
@@ -123,6 +125,10 @@ export interface ParkedTicketState {
   customerName: string;
   customerPhone: string;
   customerAddress?: string;
+  customerId?: string;
+  callSessionId?: string;
+  customerNotes?: string | null;
+  customerAddresses?: CustomerAddressItem[];
   cashTenderedStr: string;
   paymentMethod: PaymentMethodType;
   paidPayments: ProcessedPayment[];
@@ -228,6 +234,17 @@ export function CashierSalesTerminal({
   const setCustomerName = (n: string) => updateActiveTicket({ customerName: n });
   const setCustomerPhone = (p: string) => updateActiveTicket({ customerPhone: p });
   const setCustomerAddress = (a: string) => updateActiveTicket({ customerAddress: a });
+  const setCustomerId = (id?: string) => updateActiveTicket({ customerId: id });
+  const clearCustomerFromTicket = () =>
+    updateActiveTicket({
+      customerName: "",
+      customerPhone: "",
+      customerAddress: "",
+      customerId: undefined,
+      callSessionId: undefined,
+      customerNotes: null,
+      customerAddresses: [],
+    });
 
   // Akıllı Telefon Sipariş Modülü
   const {
@@ -269,7 +286,12 @@ export function CashierSalesTerminal({
       customerName: payload.customerName,
       customerPhone: payload.customerPhone,
       customerAddress: payload.customerAddress,
-      serviceType: payload.serviceType,
+      customerId: payload.customerId,
+      callSessionId: payload.callSessionId,
+      customerNotes: payload.customerNotes ?? null,
+      customerAddresses: payload.addresses,
+      serviceType: payload.serviceType, // Varsayılan DELIVERY (Kurye / Paket)
+      selectedTableId: null, // Masadan bağımsız telefon siparişi
       ...(newCart && newCart.length > 0 ? { cart: newCart } : {}),
     });
   };
@@ -487,11 +509,19 @@ export function CashierSalesTerminal({
     changeAmount: number;
     paymentModeLabel: string;
     serviceTypeLabel?: string;
+    customerName?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    customerNotes?: string | null;
     invoiceUrl: string;
     kotUrl: string;
     categorizedItems?: Record<string, CartLine[]>;
+    itemsList?: CartLine[];
     paymentsList?: ProcessedPayment[];
   } | null>(null);
+
+  // Thermal Receipt Multi-Print Dialog State
+  const [isReceiptPrintModalOpen, setIsReceiptPrintModalOpen] = useState(false);
 
   // POS Card Terminal Modal State
   const [posCardModal, setPosCardModal] = useState<{
@@ -845,6 +875,12 @@ export function CashierSalesTerminal({
       }
 
       const allPaymentsSnapshot = [...paidPayments];
+      const cartSnapshot = [...cart];
+      const custName = customerName;
+      const custPhone = customerPhone;
+      const custAddress = currentTicket.customerAddress;
+      const custNotes = currentTicket.customerNotes;
+
       setCompletedSale({
         orderId: res.orderId,
         orderNumber: res.orderNumber,
@@ -857,9 +893,14 @@ export function CashierSalesTerminal({
             ? `Parçalı (${allPaymentsSnapshot.length} Ödeme)`
             : allPaymentsSnapshot[0]?.label || "Nakit",
         serviceTypeLabel: currentServiceTypeLabel,
+        customerName: custName,
+        customerPhone: custPhone,
+        customerAddress: custAddress,
+        customerNotes: custNotes,
         invoiceUrl: res.invoiceUrl,
         kotUrl: res.kotUrl,
         categorizedItems: categorizedCartItems,
+        itemsList: cartSnapshot,
         paymentsList: allPaymentsSnapshot,
       });
 
@@ -904,6 +945,9 @@ export function CashierSalesTerminal({
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
       customerAddress: currentTicket.customerAddress?.trim() || undefined,
+      customerId: currentTicket.customerId ?? undefined,
+      callSessionId: currentTicket.callSessionId ?? undefined,
+      note: currentTicket.customerNotes ? `[Müşteri Notu: ${currentTicket.customerNotes}]` : undefined,
       discountType: discount.type,
       discountValue: discount.value,
       discountReason: discount.type !== "NONE" ? "Kasa İskontosu" : undefined,
@@ -2017,6 +2061,32 @@ export function CashierSalesTerminal({
             </div>
           </div>
 
+          {/* TELEFON SİPARİŞİ MÜŞTERİ & ADRES BİLGİ KARTI */}
+          <PosCustomerBanner
+            customerName={customerName}
+            customerPhone={customerPhone}
+            customerAddress={currentTicket.customerAddress}
+            customerNotes={currentTicket.customerNotes}
+            addresses={currentTicket.customerAddresses}
+            onSelectAddress={(addr) => updateActiveTicket({ customerAddress: addr })}
+            onClearCustomer={clearCustomerFromTicket}
+            onAddAddress={(newAddr) => {
+              const updatedList = [
+                ...(currentTicket.customerAddresses || []),
+                {
+                  id: `addr-${Date.now()}`,
+                  title: newAddr.title,
+                  address: newAddr.address,
+                  isDefault: false,
+                },
+              ];
+              updateActiveTicket({
+                customerAddresses: updatedList,
+                customerAddress: newAddr.address,
+              });
+            }}
+          />
+
           {/* Sepet Ürün Satırları (SADECE BURASI İÇTEN KAYDIRILIR) */}
           <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-2">
             {cart.length === 0 ? (
@@ -2489,6 +2559,15 @@ export function CashierSalesTerminal({
 
             {/* Fiş Yazdırma ve Yeni Satış Butonları */}
             <div className="flex flex-col gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsReceiptPrintModalOpen(true)}
+                className="w-full py-3 px-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
+              >
+                <PrinterIcon className="size-4" />
+                <span>🖨️ Profesyonel Termal Fiş Yazdır (Paket / Kurye / KOT)</span>
+              </button>
+
               <div className="grid grid-cols-2 gap-2 w-full">
                 <a
                   href={completedSale.invoiceUrl}
@@ -2497,7 +2576,7 @@ export function CashierSalesTerminal({
                   className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
                 >
                   <PrinterIcon className="size-3.5" />
-                  <span>Kasa Fişi Yazdır</span>
+                  <span>Kasa Fişi (Tarayıcı)</span>
                 </a>
 
                 <a
@@ -2507,20 +2586,64 @@ export function CashierSalesTerminal({
                   className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 active:scale-95 transition-all"
                 >
                   <UtensilsCrossedIcon className="size-3.5" />
-                  <span>Mutfak Fişi (KOT)</span>
+                  <span>Mutfak Fişi (Tarayıcı)</span>
                 </a>
               </div>
 
               <button
                 type="button"
                 onClick={() => setCompletedSale(null)}
-                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-sm active:scale-95 transition-all cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs shadow-2xs active:scale-95 transition-all cursor-pointer"
               >
                 + Yeni Satışa Geç (Tamam)
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 5.1 TERMAL FİŞ ÇOKLU YAZDIRMA & ÖNİZLEME MODALI */}
+      {completedSale && (
+        <OrderReceiptPrintDialog
+          open={isReceiptPrintModalOpen}
+          onOpenChange={setIsReceiptPrintModalOpen}
+          metadata={{
+            orderNumber: completedSale.orderNumber,
+            orderType:
+              completedSale.serviceTypeLabel?.includes("Kurye") ||
+              completedSale.serviceTypeLabel?.includes("Paket Servis")
+                ? "DELIVERY"
+                : completedSale.serviceTypeLabel?.includes("Masa")
+                ? "DINE_IN"
+                : "TAKEAWAY",
+            createdAt: new Date().toLocaleTimeString("tr-TR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            customerName: completedSale.customerName,
+            customerPhone: completedSale.customerPhone,
+            customerAddress: completedSale.customerAddress,
+            customerNotes: completedSale.customerNotes,
+            paymentModeLabel: completedSale.paymentModeLabel,
+            subtotal: completedSale.grandTotal,
+            grandTotal: completedSale.grandTotal,
+            restaurantInfo: {
+              name: restaurantName,
+            },
+          }}
+          items={(completedSale.itemsList || []).map((it) => ({
+            id: it.key,
+            name: it.name,
+            variantName: it.variantName,
+            quantity: it.quantity,
+            totalPrice: it.unitPrice * it.quantity,
+            modifiers: it.modifiers.map((m) => ({
+              name: m.name,
+              priceDelta: m.priceDelta,
+            })),
+            lineNote: it.lineNote,
+          }))}
+        />
       )}
       {/* 6. MASAYA EKLEME VE İÇERİĞİ YÜKLEME MODALI */}
       {isTableModalOpen && (

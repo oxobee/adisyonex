@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   PhoneCallIcon,
   CheckCircle2Icon,
@@ -14,6 +14,10 @@ import {
   HelpCircleIcon,
   AlertTriangleIcon,
   SparklesIcon,
+  PrinterIcon,
+  BikeIcon,
+  ReceiptTextIcon,
+  BuildingIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -27,11 +31,60 @@ import {
   triggerCallSimulationAction,
   updateTelephonySettingsAction,
 } from "@/actions/telephony.actions";
+import {
+  formatEscposCustomerBill,
+  formatEscposCourierSlip,
+  formatEscposMerchantCopy,
+  type OrderRoutingMetadata,
+  type RoutedItem,
+} from "@/services/print-routing.service";
+import { PrinterClient } from "@/lib/printer/printer-client";
 import type { TelephonySettingsDTO } from "@/services/telephony.service";
 
 interface TelephonySettingsTabProps {
   readonly initialSettings: TelephonySettingsDTO;
 }
+
+const SAMPLE_ORDER_META: OrderRoutingMetadata = {
+  orderId: "sample-order-001",
+  orderNumber: 1042,
+  orderType: "DELIVERY",
+  customerName: "Ahmet Yılmaz",
+  customerPhone: "0532 555 12 34",
+  customerAddress: "Atatürk Mah. Karanfil Sok. No:14 Daire:8 Kadıköy / İstanbul (Zil: Yılmaz)",
+  customerNotes: "Zil çalmayın lütfen, bebek uyuyor. Kapıya bırakıp mesaj atın.",
+  paymentMode: "KAPIDA KREDİ KARTI",
+  grandTotal: 385.0,
+  createdAt: new Date().toISOString(),
+};
+
+const SAMPLE_ORDER_ITEMS: readonly RoutedItem[] = [
+  {
+    orderLineId: "line-1",
+    name: "Özel Karışık Kebap",
+    quantity: 1,
+    unitPrice: 220,
+    lineTotal: 220,
+    variantName: "Porsiyon",
+    modifiers: ["Acılı", "Bol Yeşillik"],
+  },
+  {
+    orderLineId: "line-2",
+    name: "Fındık Lahmacun",
+    quantity: 2,
+    unitPrice: 60,
+    lineTotal: 120,
+    modifiers: ["Limon & Maydanoz"],
+  },
+  {
+    orderLineId: "line-3",
+    name: "Yayık Ayranı",
+    quantity: 1,
+    unitPrice: 45,
+    lineTotal: 45,
+    modifiers: [],
+  },
+];
 
 export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabProps) {
   const [settings, setSettings] = useState<TelephonySettingsDTO>(initialSettings);
@@ -48,6 +101,22 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
   const [isTesting, setIsTesting] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simScenario, setSimScenario] = useState<"REGISTERED" | "NEW">("REGISTERED");
+
+  // Thermal preview state
+  const [previewPaperWidth, setPreviewPaperWidth] = useState<"58mm" | "80mm">("80mm");
+  const [previewDocType, setPreviewDocType] = useState<"CUSTOMER" | "COURIER" | "MERCHANT">("CUSTOMER");
+  const [isPrintingSample, setIsPrintingSample] = useState(false);
+
+  const previewRaw = useMemo(() => {
+    const widthMm = previewPaperWidth === "58mm" ? 58 : 80;
+    if (previewDocType === "COURIER") {
+      return formatEscposCourierSlip(SAMPLE_ORDER_META, widthMm);
+    }
+    if (previewDocType === "MERCHANT") {
+      return formatEscposMerchantCopy(SAMPLE_ORDER_META, SAMPLE_ORDER_ITEMS, widthMm);
+    }
+    return formatEscposCustomerBill(SAMPLE_ORDER_META, SAMPLE_ORDER_ITEMS, widthMm);
+  }, [previewDocType, previewPaperWidth]);
 
   // Copy webhook URL helper
   const copyWebhookUrl = () => {
@@ -493,6 +562,175 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
               {isTesting ? <Loader2Icon className="size-3.5 animate-spin mr-1.5" /> : null}
               Bağlantıyı Test Et
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Thermal Receipt Simulator Card */}
+      <Card className="border shadow-none">
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <PrinterIcon className="size-4 text-primary" />
+                Termal Fiş Şablonları &amp; Yazıcı Önizleme Simülatörü
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Telefon ve paket siparişlerinde 58mm ve 80mm termal yazıcılara giden çıktıların canlı önizlemesi.
+              </CardDescription>
+            </div>
+            {/* Paper Width Selector */}
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-md border text-xs">
+              <button
+                type="button"
+                onClick={() => setPreviewPaperWidth("58mm")}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                  previewPaperWidth === "58mm"
+                    ? "bg-background text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                58mm (32 Kolon)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewPaperWidth("80mm")}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                  previewPaperWidth === "80mm"
+                    ? "bg-background text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                80mm (48 Kolon)
+              </button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 text-xs">
+          {/* Document Type Selector Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={previewDocType === "CUSTOMER" ? "default" : "outline"}
+              onClick={() => setPreviewDocType("CUSTOMER")}
+              className="h-8 text-xs gap-1.5"
+            >
+              <ReceiptTextIcon className="size-3.5" />
+              Paket Servis / Müşteri Fişi
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={previewDocType === "COURIER" ? "default" : "outline"}
+              onClick={() => setPreviewDocType("COURIER")}
+              className="h-8 text-xs gap-1.5"
+            >
+              <BikeIcon className="size-3.5" />
+              Kurye Teslimat Fişi
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={previewDocType === "MERCHANT" ? "default" : "outline"}
+              onClick={() => setPreviewDocType("MERCHANT")}
+              className="h-8 text-xs gap-1.5"
+            >
+              <BuildingIcon className="size-3.5" />
+              İşletme Sipariş Kopyası
+            </Button>
+          </div>
+
+          {/* Thermal Receipt Simulator Container */}
+          <div className="flex flex-col items-center justify-center p-4 bg-muted/40 rounded-lg border border-dashed">
+            <div
+              className={`w-full bg-[#fbfbf8] text-neutral-900 border border-neutral-300 shadow-md p-4 rounded font-mono text-[11px] leading-relaxed select-all overflow-x-auto transition-all ${
+                previewPaperWidth === "58mm" ? "max-w-[290px]" : "max-w-[440px]"
+              }`}
+            >
+              {/* Receipt Header Visual */}
+              <div className="text-center pb-2 border-b border-dashed border-neutral-400 mb-2">
+                <span className="font-bold text-[12px] tracking-wider block">
+                  TERMAL ÇIKTI SİMÜLASYONU
+                </span>
+                <span className="text-[10px] text-neutral-600 block">
+                  Kağıt Genişliği: {previewPaperWidth} · {previewPaperWidth === "58mm" ? "32 Karakter" : "48 Karakter"}
+                </span>
+              </div>
+
+              {/* Receipt Body */}
+              <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-neutral-800 leading-tight">
+                {previewRaw}
+              </pre>
+
+              {/* Receipt Footer Visual */}
+              <div className="text-center pt-2 border-t border-dashed border-neutral-400 mt-2 text-[10px] text-neutral-500">
+                [ Otomatik Kağıt Kesme: GS V 66 0 ]
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-3 text-xs">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1"
+                onClick={() => {
+                  navigator.clipboard.writeText(previewRaw);
+                  toast.success("Fiş metni panoya kopyalandı.");
+                }}
+              >
+                <CopyIcon className="size-3.5" />
+                Metni Kopyala
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                disabled={isPrintingSample}
+                onClick={async () => {
+                  setIsPrintingSample(true);
+                  try {
+                    const res = await PrinterClient.printRaw(
+                      {
+                        id: "sample-printer",
+                        restaurantId: "default",
+                        name: "Kasa Yazıcısı",
+                        code: "CASHIER",
+                        description: null,
+                        color: null,
+                        printerIp: null,
+                        printerPort: null,
+                        printerModel: null,
+                        printerEnabled: true,
+                        printerPaperWidth: previewPaperWidth === "58mm" ? 58 : 80,
+                        printerConnectionType: "LOCAL_OS",
+                        isDefault: true,
+                        sortOrder: 1,
+                      },
+                      previewRaw,
+                    );
+                    if (res.success) {
+                      toast.success("Örnek fiş yazıcıya gönderildi.");
+                    } else {
+                      toast.info("Yazıcı bağlantısı yok veya QZ Tray çevrimdışı. Tarayıcı önizlemesi açılıyor...");
+                      window.print();
+                    }
+                  } catch {
+                    window.print();
+                  } finally {
+                    setIsPrintingSample(false);
+                  }
+                }}
+              >
+                {isPrintingSample ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <PrinterIcon className="size-3.5" />
+                )}
+                Örnek Fişi Yazdır
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

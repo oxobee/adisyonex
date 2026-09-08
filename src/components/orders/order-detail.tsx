@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { toast } from "sonner";
 
+import { PrinterIcon } from "lucide-react";
+
 import {
   fireOrderAction,
   serveLineAction,
@@ -12,6 +14,7 @@ import {
   voidOrderAction,
 } from "@/actions/order.actions";
 import { AddItemsDialog } from "@/components/orders/add-items-dialog";
+import { OrderReceiptPrintDialog } from "@/components/orders/order-receipt-print-dialog";
 import { ReasonDialog } from "@/components/orders/reason-dialog";
 import { SettleDialog } from "@/components/orders/settle-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +56,7 @@ export function OrderDetail({
   const [settleOpen, setSettleOpen] = useState(false);
   const [voidOrderOpen, setVoidOrderOpen] = useState(false);
   const [voidLineTarget, setVoidLineTarget] = useState<OrderLineDTO | null>(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
   const isOpen = order.status === "OPEN";
   const hasUnsent = order.lines.some((l) => l.state === "UNSENT");
@@ -133,9 +137,22 @@ export function OrderDetail({
             {typeLabels[order.orderType] ?? order.orderType}
             {order.tableLabel ? ` · Masa ${order.tableLabel}` : ""}
             {order.customerName ? ` · ${order.customerName}` : ""}
+            {order.customerPhone ? ` · 📞 ${order.customerPhone}` : ""}
             {" · "}
             {formatDateTime(order.createdAt)}
           </p>
+          {order.customerAddress ? (
+            <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1 max-w-xl">
+              <span className="font-semibold text-foreground shrink-0">📍 Adres:</span>
+              <span>{order.customerAddress}</span>
+            </p>
+          ) : null}
+          {order.note ? (
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 flex items-start gap-1">
+              <span className="font-semibold shrink-0">📝 Sipariş Notu:</span>
+              <span>{order.note}</span>
+            </p>
+          ) : null}
         </div>
         <Badge
           variant={order.status === "OPEN" ? "default" : "secondary"}
@@ -171,6 +188,14 @@ export function OrderDetail({
             </Button>
           </>
         ) : null}
+        <Button
+          variant="outline"
+          className="gap-1.5 border-primary/40 text-primary hover:bg-primary/5 font-medium shadow-xs"
+          onClick={() => setReceiptDialogOpen(true)}
+        >
+          <PrinterIcon className="h-4 w-4" />
+          Termal Fişler (Paket / Kurye / KOT)
+        </Button>
         <Button
           variant="outline"
           onClick={() => openTab(`/dashboard/orders/${order.id}/kot`)}
@@ -324,6 +349,48 @@ export function OrderDetail({
               setVoidLineTarget(null);
             }
           }}
+        />
+      ) : null}
+      {receiptDialogOpen ? (
+        <OrderReceiptPrintDialog
+          open={receiptDialogOpen}
+          onOpenChange={setReceiptDialogOpen}
+          metadata={{
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            orderType: order.orderType,
+            tableLabel: order.tableLabel,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            customerAddress: order.customerAddress,
+            customerNotes: order.note,
+            paymentMode:
+              order.payments?.[0]?.mode === "CASH"
+                ? "KAPIDA NAKİT"
+                : order.payments?.[0]?.mode === "CARD"
+                  ? "KAPIDA KREDİ KARTI"
+                  : order.payments?.[0]?.mode ?? "KAPIDA ÖDEME",
+            grandTotal:
+              order.status === "COMPLETED" ? order.grandTotal : preview.grandTotal,
+            createdAt: order.createdAt,
+          }}
+          items={order.lines
+            .filter((l) => l.state !== "VOID")
+            .map((l) => ({
+              orderLineId: l.id,
+              menuItemId: l.menuItemId,
+              name: l.name,
+              quantity: l.quantity,
+              unitPrice: l.unitPrice,
+              lineTotal: lineTotal(l),
+              variantName: l.variantName,
+              modifiers: l.modifiers.map((m) => m.name),
+              lineNote: l.lineNote,
+              categoryId: menu.items.find((i) => i.id === l.menuItemId)?.categoryId,
+            }))}
+          rawLines={order.lines}
+          categories={menu.categories}
+          menuItems={menu.items}
         />
       ) : null}
     </div>

@@ -66,9 +66,28 @@ export const quickCashierSaleAction = withOperatorValidation(
       tableLabel: data.tableLabel,
       customerName: data.customerName,
       customerPhone: data.customerPhone,
+      customerAddress: data.customerAddress,
+      customerId: data.customerId,
       note: data.note,
       items: data.items,
     });
+
+    // Link and update CallSession if order came from Caller ID / Phone Order
+    if (data.callSessionId) {
+      try {
+        await prisma.callSession.update({
+          where: { id: data.callSessionId },
+          data: {
+            orderId: order.id,
+            status: "ANSWERED",
+            ...(data.customerId ? { customerId: data.customerId } : {}),
+            answeredAt: new Date(),
+          },
+        });
+      } catch (err) {
+        console.error("Failed to link callSession to order:", err);
+      }
+    }
 
     // 2. Immediately settle and close order
     const settled = await settle(orderCtx, {

@@ -4,6 +4,8 @@ import {
   resolveDefaultKitchenZone,
   resolveCashierZone,
   formatEscposKotTicket,
+  formatEscposCustomerBill,
+  formatEscposCourierSlip,
   type RoutedKotTicket,
 } from "./print-routing.service";
 import type { MenuCategoryDTO, MenuItemDTO } from "@/types/menu";
@@ -422,3 +424,69 @@ describe("print-routing.service", () => {
     expect(raw).toContain("Acele lütfen");
   });
 });
+
+  it("formats 58mm and 80mm customer bill correctly without overflow", () => {
+    const metadata = {
+      orderNumber: 1042,
+      orderType: "DELIVERY",
+      createdAt: "08.09.2026 19:42",
+      customerName: "Ahmet Yılmaz",
+      customerPhone: "0532 123 45 67",
+      customerAddress: "Yakuplu Mah. Hürriyet Cad. No:12 Kat:3 Daire:8 Beylikdüzü / İstanbul",
+      customerNotes: "Zile basmayın, telefonla arayın",
+      paymentModeLabel: "Kapıda Kredi Kartı",
+      subtotal: 840,
+      deliveryFee: 40,
+      discountTotal: 50,
+      grandTotal: 830,
+    };
+
+    const items = [
+      {
+        id: "1",
+        name: "Adana Kebap",
+        quantity: 2,
+        totalPrice: 600,
+        modifiers: [{ name: "Acısız", priceDelta: 0 }],
+      },
+      {
+        id: "2",
+        name: "Künefe",
+        quantity: 1,
+        totalPrice: 180,
+        modifiers: [],
+      },
+    ];
+
+    const bill80 = formatEscposCustomerBill(metadata, items, 80);
+    expect(bill80).toContain("PAKET SERVİS / TELEFON SİPARİŞİ");
+    expect(bill80).toContain("Ahmet Yılmaz");
+    expect(bill80).toContain("0532 123 45 67");
+    expect(bill80).toContain("KAPIDA KREDİ KARTI");
+    expect(bill80).toContain("GENEL TOPLAM:");
+
+    const bill58 = formatEscposCustomerBill(metadata, items, 58);
+    expect(bill58).toContain("Ahmet Yılmaz");
+    expect(bill58).toContain("830.00 TL");
+  });
+
+  it("formats courier delivery slip with highlighted payment and address", () => {
+    const metadata = {
+      orderNumber: 1042,
+      orderType: "DELIVERY",
+      createdAt: "19:42",
+      customerName: "Ahmet Yılmaz",
+      customerPhone: "0532 123 45 67",
+      customerAddress: "Yakuplu Mah. Hürriyet Cad. No:12 Kat:3 Daire:8 Beylikdüzü / İstanbul",
+      customerNotes: "Mavi kapı, market yanı",
+      paymentModeLabel: "KAPIDA KART",
+      grandTotal: 830,
+    };
+
+    const courier = formatEscposCourierSlip(metadata, 80);
+    expect(courier).toContain("KURYE TESLİMAT FİŞİ");
+    expect(courier).toContain("Ahmet Yılmaz");
+    expect(courier).toContain("0532 123 45 67");
+    expect(courier).toContain("ÖDEME ŞEKLİ: KAPIDA KART");
+    expect(courier).toContain("TAHSİL EDİLECEK TUTAR: 830.00 TL");
+  });

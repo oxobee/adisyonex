@@ -30,7 +30,7 @@ export interface EscPosBuilderOptions {
 
 export class EscPosBuilder {
   private buffer: string = "";
-  private readonly maxChars: number;
+  public readonly maxChars: number;
 
   constructor(options?: EscPosBuilderOptions) {
     const width = options?.widthMm ?? 80;
@@ -75,6 +75,27 @@ export class EscPosBuilder {
 
   line(str: string = ""): this {
     this.buffer += str + "\n";
+    return this;
+  }
+
+  wrappedLine(str: string = "", indent: string = ""): this {
+    const limit = Math.max(10, this.maxChars - indent.length);
+    const words = str.split(" ");
+    let current = "";
+
+    for (const word of words) {
+      if (current.length === 0) {
+        current = word;
+      } else if (current.length + 1 + word.length <= limit) {
+        current += " " + word;
+      } else {
+        this.line(indent + current);
+        current = word;
+      }
+    }
+    if (current.length > 0) {
+      this.line(indent + current);
+    }
     return this;
   }
 

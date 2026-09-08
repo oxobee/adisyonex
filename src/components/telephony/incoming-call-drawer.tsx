@@ -35,7 +35,17 @@ export interface OnStartOrderPayload {
   customerName: string;
   customerPhone: string;
   customerAddress?: string;
-  serviceType: "DELIVERY" | "TAKEAWAY";
+  customerId?: string;
+  callSessionId?: string;
+  customerNotes?: string | null;
+  addresses?: Array<{
+    id: string;
+    title: string;
+    address: string;
+    isDefault: boolean;
+    isLastUsed: boolean;
+  }>;
+  serviceType: "DELIVERY" | "TAKEAWAY" | "DINE_IN";
   repeatItems?: Array<{
     name: string;
     quantity: number;
@@ -85,7 +95,11 @@ export function IncomingCallDrawer({
       customerName: profile.name || "Müşteri",
       customerPhone: profile.phone,
       customerAddress: chosenAddress,
-      serviceType: "DELIVERY",
+      customerId: profile.customerId,
+      callSessionId: call.id,
+      customerNotes: profile.notes,
+      addresses: profile.addresses,
+      serviceType: "DELIVERY", // Telefon siparişleri varsayılan olarak paket servis
       repeatItems: profile.lastOrder.items,
     });
 
@@ -100,11 +114,15 @@ export function IncomingCallDrawer({
       customerName: profile.name || "Müşteri",
       customerPhone: profile.phone,
       customerAddress: chosenAddress,
-      serviceType: chosenAddress ? "DELIVERY" : "TAKEAWAY",
+      customerId: profile.customerId,
+      callSessionId: call.id,
+      customerNotes: profile.notes,
+      addresses: profile.addresses,
+      serviceType: "DELIVERY", // Varsayılan paket servis
     });
 
     onDismissCall(call.id, "ANSWERED");
-    toast.success("Müşteri bilgileri ile yeni sipariş fişi açıldı.");
+    toast.success("Müşteri bilgileri ile yeni telefon siparişi açıldı.");
   };
 
   const handleQuickRegisterAndOrder = async () => {
@@ -134,7 +152,21 @@ export function IncomingCallDrawer({
         customerName: res.data.name,
         customerPhone: res.data.phone,
         customerAddress: res.data.address,
-        serviceType: res.data.address ? "DELIVERY" : "TAKEAWAY",
+        customerId: res.data.customerId,
+        callSessionId: call.id,
+        customerNotes: newNotes.trim() || null,
+        addresses: res.data.address
+          ? [
+              {
+                id: "quick-addr-1",
+                title: newAddressTitle,
+                address: res.data.address,
+                isDefault: true,
+                isLastUsed: true,
+              },
+            ]
+          : [],
+        serviceType: "DELIVERY",
       });
 
       onDismissCall(call.id, "ANSWERED");
