@@ -399,3 +399,22 @@ export async function cancelReservation(
 
   return true;
 }
+
+export async function assignReservationTable(
+  restaurantId: string,
+  reservationId: string,
+  tableId: string | null
+): Promise<ReservationDTO | null> {
+  const existing = await prisma.reservation.findFirst({
+    where: { id: reservationId, restaurantId, deletedAt: null },
+  });
+  if (!existing) return null;
+
+  const updated = await prisma.reservation.update({
+    where: { id: reservationId },
+    data: { tableId: tableId || null },
+    include: { table: { select: { label: true } } },
+  });
+
+  return mapReservationToDTO(updated);
+}

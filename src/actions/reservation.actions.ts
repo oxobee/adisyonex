@@ -6,6 +6,7 @@ import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
 import { failure, success, type ActionResult } from "@/types";
 import {
+  assignReservationTable,
   cancelReservation,
   createReservation,
   getReservationStats,
@@ -163,5 +164,25 @@ export async function cancelReservationAction(
     return success({ success: true });
   } catch (err) {
     return failure(err instanceof Error ? err.message : "Rezervasyon iptal edilemedi.");
+  }
+}
+
+export async function assignReservationTableAction(
+  reservationId: string,
+  tableId: string | null
+): Promise<ActionResult<ReservationDTO>> {
+  try {
+    const { restaurantId } = await resolveStaffAndRestaurant();
+    if (!restaurantId) return failure("Restoran oturumu bulunamadı.");
+
+    const updated = await assignReservationTable(restaurantId, reservationId, tableId);
+    if (!updated) return failure("Rezervasyon veya masa güncellenemedi.");
+
+    revalidatePath("/dashboard/reservations");
+    revalidatePath("/dashboard/pos");
+    revalidatePath("/dashboard/orders");
+    return success(updated);
+  } catch (err) {
+    return failure(err instanceof Error ? err.message : "Masa ataması yapılamadı.");
   }
 }
