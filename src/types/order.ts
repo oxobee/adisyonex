@@ -55,6 +55,9 @@ export interface OrderDTO {
   readonly customerPhone: string | null;
   readonly customerAddress: string | null;
   readonly customerId: string | null;
+  readonly orderChannel?: string | null;
+  readonly orderChannelProvider?: string | null;
+  readonly customerSource?: string | null;
   readonly note: string | null;
   readonly placedById?: string | null;
   readonly tableSessionId?: string | null;

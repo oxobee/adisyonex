@@ -220,6 +220,12 @@ model Restaurant {
   // Custom note printed at the foot of the invoice/bill (owner-editable).
   invoiceFooterNote String?
 
+  // Thermal Receipt Preferences (Owner/Branch-configurable)
+  receiptKitchenActive  Boolean @default(true)
+  receiptCourierActive  Boolean @default(true)
+  receiptCustomerActive Boolean @default(true)
+  receiptMerchantActive Boolean @default(true)
+
   // Birthday campaign automation. Message delivery is intentionally simulated
   // until an SMS provider is enabled for the restaurant.
   birthdayAutomationEnabled Boolean @default(false)
@@ -548,6 +554,9 @@ model Order {
   updatedAt       DateTime     @updatedAt
   deletedAt       DateTime?
 
+  orderChannel         String?      @default("pos")
+  orderChannelProvider String?
+
   customerId   String?
   customer     Customer?    @relation(fields: [customerId], references: [id])
 
@@ -560,6 +569,7 @@ model Order {
 
   @@unique([restaurantId, orderNumber])
   @@index([restaurantId, status])
+  @@index([restaurantId, orderChannel])
   @@index([tableId])
   @@index([tableSessionId])
   @@index([customerId])
@@ -881,9 +891,12 @@ model Customer {
   birthDay     Int?
   birthMonth   Int?
   birthYear    Int?
-  notes        String?
-  source       String?   @default("QR_MENU")
-  orderCount   Int       @default(0)
+  notes                  String?
+  source                 String?   @default("QR_MENU")
+  customerSource         String?   @default("pos")
+  customerSourceProvider String?
+  firstOrderChannel      String?
+  orderCount             Int       @default(0)
   totalSpent   Decimal   @default(0) @db.Decimal(10, 2)
   kvkkConsent  Boolean   @default(true)
   kvkkAcceptedAt DateTime? @default(now())

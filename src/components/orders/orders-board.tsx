@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 
 import { deliverTableOrdersAction, voidOrderAction } from "@/actions/order.actions";
+import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
 import { PackagedDeliveryDialog } from "@/components/waiter/packaged-delivery-dialog";
 import { TableActionMenu } from "@/components/orders/table-action-menu";
 import { MaterialTableCard } from "@/components/orders/material-table-card";
@@ -61,8 +62,8 @@ import {
   newOrderPhrase,
   selfOrderAlertPhrase,
 } from "@/lib/announce";
-import { dismissWaiterCallAction } from "@/actions/guest-order.actions";
 import { formatCurrency, formatTime } from "@/lib/format";
+import { getOrderChannelMeta } from "@/lib/order-channels";
 import { cn } from "@/lib/utils";
 import type { MenuDTO } from "@/types/menu";
 import type { OrderDTO, TodaySalesDTO } from "@/types/order";
@@ -1244,6 +1245,20 @@ function OrderCard({
                 </Badge>
               ) : null}
               {isGuest ? <SelfOrderBadge /> : null}
+              {(() => {
+                const ch = getOrderChannelMeta(order.orderChannel, order.orderChannelProvider);
+                return (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                      ch.badgeClass
+                    )}
+                  >
+                    <span>{ch.icon}</span>
+                    <span>{ch.label}</span>
+                  </span>
+                );
+              })()}
             </div>
             <p className="text-muted-foreground text-xs mt-1">
               {formatTime(order.createdAt)} · {lineCount} ürün

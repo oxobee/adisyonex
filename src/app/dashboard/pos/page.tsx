@@ -38,7 +38,14 @@ export default async function PosPage() {
     getServiceOptions(restaurantId),
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { name: true, showItemImages: true },
+      select: {
+        name: true,
+        showItemImages: true,
+        receiptKitchenActive: true,
+        receiptCourierActive: true,
+        receiptCustomerActive: true,
+        receiptMerchantActive: true,
+      },
     }),
     prisma.telephonyIntegration.findUnique({
       where: { restaurantId },
@@ -64,6 +71,12 @@ export default async function PosPage() {
       restaurantName={restaurant?.name || "Oxonom POS"}
       showItemImages={restaurant?.showItemImages ?? true}
       telephonyEnabled={telephony?.enabled ?? false}
+      receiptSettings={{
+        receiptKitchenActive: restaurant?.receiptKitchenActive ?? true,
+        receiptCourierActive: restaurant?.receiptCourierActive ?? true,
+        receiptCustomerActive: restaurant?.receiptCustomerActive ?? true,
+        receiptMerchantActive: restaurant?.receiptMerchantActive ?? true,
+      }}
     />
   );
 }

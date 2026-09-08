@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getOrderChannelMeta } from "@/lib/order-channels";
 import type {
   AuditItemDTO,
   CategorySalesItem,
@@ -168,10 +169,13 @@ export async function getZReportData(
   let taxTotal = 0;
   let totalCollections = 0;
   let soldItemCount = 0;
+  let voidCount = 0;
+  let voidTotal = 0;
+  let completedCount = 0;
 
   const orderAmounts: number[] = [];
   const taxMap = new Map<number, { matrah: number; taxAmount: number }>();
-  const channelMap = new Map<string, { count: number; sales: number }>();
+  const channelMap = new Map<string, { count: number; sales: number; channel: string; provider: string | null }>();
   const paymentMap = new Map<string, { count: number; amount: number; sub: Map<string, { count: number; amount: number }> }>();
   const itemMap = new Map<string, { name: string; categoryName: string; quantity: number; sales: number }>();
   const categoryMap = new Map<string, { categoryName: string; count: number; gross: number; net: number }>();
@@ -186,29 +190,47 @@ export async function getZReportData(
   }
 
   // 1. TAMAMLANMIŞ SİPARİŞLERİ İŞLE
-  for (const o of completedOrders) {
-    const orderNet = num(o.grandTotal);
-    const orderTax = num(o.taxTotal);
-    const orderDisc = num(o.discountTotal);
-    const orderComp = num(o.compTotal);
+  for (const o of orders) {
+    if (o.status === "VOID") {
+      voidCount += 1;
+      const orderVoidTotal = o.items.reduce((s, it) => s + num(it.unitPrice) * it.quantity, 0);
+      voidTotal += orderVoidTotal;
+      audits.push({
+        id: o.id,
+        time: new Date((o.updatedAt || o.createdAt).getTime() + TURKEY_OFFSET_MS).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
+        orderNumber: o.orderNumber,
+        tableLabel: o.tableLabel || "İptal",
+        itemName: "Tüm Adisyon İptali",
+        type: "VOID",
+        quantity: 1,
+        amount: orderVoidTotal,
+        staffName: "Personel",
+        reason: o.voidReason || "İptal",
+      });
+      continue;
+    }
 
+    const orderNet = num(o.grandTotal);
+    completedCount += 1;
     netSales += orderNet;
-    taxTotal += orderTax;
-    discountTotal += orderDisc;
-    compTotal += orderComp;
+    taxTotal += num(o.taxTotal);
+    discountTotal += num(o.discountTotal);
+    compTotal += num(o.compTotal);
     orderAmounts.push(orderNet);
 
     // Saatlik
-    const orderHour = new Date(o.createdAt.getTime() + TURKEY_OFFSET_MS).getUTCHours();
-    const hourKey = `${pad(orderHour)}:00`;
+    const orderTurkeyDate = new Date(o.createdAt.getTime() + TURKEY_OFFSET_MS);
+    const hourKey = `${pad(orderTurkeyDate.getUTCHours())}:00`;
     const hEntry = hourlyMap.get(hourKey) || { orders: 0, sales: 0 };
     hEntry.orders += 1;
     hEntry.sales += orderNet;
     hourlyMap.set(hourKey, hEntry);
 
-    // Satış Kanalı
-    const chKey = o.orderType;
-    const chEntry = channelMap.get(chKey) || { count: 0, sales: 0 };
+    // Satış Kanalı (Dinamik kanal ve pazaryeri sağlayıcısı)
+    const chChannel = o.orderChannel || (o.orderType === "DINE_IN" ? "qr_table" : o.orderType === "DELIVERY" ? "phone" : "pos");
+    const chProvider = o.orderChannelProvider || null;
+    const chKey = chProvider ? `${chChannel}:${chProvider}` : chChannel;
+    const chEntry = channelMap.get(chKey) || { count: 0, sales: 0, channel: chChannel, provider: chProvider };
     chEntry.count += 1;
     chEntry.sales += orderNet;
     channelMap.set(chKey, chEntry);
@@ -229,8 +251,8 @@ export async function getZReportData(
     };
     sEntry.count += 1;
     sEntry.sales += orderNet;
-    sEntry.discount += orderDisc;
-    sEntry.compTotal += orderComp;
+    sEntry.discount += num(o.discountTotal);
+    sEntry.compTotal += num(o.compTotal);
     staffPerfMap.set(staffId, sEntry);
 
     // Sipariş Kalemleri
@@ -330,7 +352,6 @@ export async function getZReportData(
   }
 
   // 2. İPTAL EDİLMİŞ SİPARİŞLER (VOID ORDERS)
-  let voidTotal = 0;
   for (const vo of voidOrders) {
     const vAmt = num(vo.grandTotal) || num(vo.subtotal);
     voidTotal += vAmt;
@@ -436,18 +457,16 @@ export async function getZReportData(
   });
 
   // 7. SATIŞ KANALLARI
-  const channelLabels: Record<string, string> = {
-    DINE_IN: "Masa Siparişi",
-    TAKEAWAY: "Gel-Al",
-    DELIVERY: "Paket Servis",
-  };
-  const channels: ChannelSalesItem[] = Array.from(channelMap.entries()).map(([ch, val]) => ({
-    channel: ch,
-    label: channelLabels[ch] || ch,
-    orderCount: val.count,
-    netSales: round2(val.sales),
-    percentage: netSales > 0 ? round2((val.sales / netSales) * 100) : 0,
-  }));
+  const channels: ChannelSalesItem[] = Array.from(channelMap.values()).map((val) => {
+    const meta = getOrderChannelMeta(val.channel, val.provider);
+    return {
+      channel: val.channel,
+      label: meta.label,
+      orderCount: val.count,
+      netSales: round2(val.sales),
+      percentage: netSales > 0 ? round2((val.sales / netSales) * 100) : 0,
+    };
+  });
 
   // 8. EN ÇOK SATAN 10 ÜRÜN
   const topItems: TopItemSalesItem[] = Array.from(itemMap.values())

@@ -62,6 +62,9 @@ export interface OrderRoutingMetadata {
   deliveryFee?: number;
   taxTotal?: number;
   grandTotal?: number;
+  channel?: string | null;
+  orderChannel?: string | null;
+  orderChannelProvider?: string | null;
   isSimulation?: boolean;
   restaurantInfo?: {
     name?: string;

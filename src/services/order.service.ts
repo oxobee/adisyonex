@@ -98,6 +98,9 @@ export const mapOrder = (o: OrderWithRelations): OrderDTO => {
     customerPhone: o.customerPhone,
     customerAddress: o.customerAddress,
     customerId: o.customerId,
+    orderChannel: o.orderChannel ?? "pos",
+    orderChannelProvider: o.orderChannelProvider ?? null,
+    customerSource: o.customer?.customerSource ?? null,
     note: o.note,
     placedById: o.placedById,
     tableSessionId: o.tableSessionId ?? null,
@@ -247,6 +250,8 @@ export const createOrder = async (
         placedById: ctx.userId,
         placedByStaffId: ctx.staffId ?? null,
         customerId: input.customerId ?? null,
+        orderChannel: input.orderChannel ?? "pos",
+        orderChannelProvider: input.orderChannelProvider ?? null,
         items,
       });
       break;

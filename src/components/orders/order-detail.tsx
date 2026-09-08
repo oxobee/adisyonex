@@ -21,6 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency, formatDateTime } from "@/lib/format";
+import {
+  getCustomerSourceMeta,
+  getOrderChannelMeta,
+} from "@/lib/order-channels";
 import { cn } from "@/lib/utils";
 import { computeBill } from "@/services/billing";
 import type { MenuDTO } from "@/types/menu";
@@ -153,6 +157,41 @@ export function OrderDetail({
               <span>{order.note}</span>
             </p>
           ) : null}
+
+          {/* Sipariş Kanalı & Müşteri Kaynağı Yan Yana */}
+          <div className="flex flex-wrap items-center gap-2 mt-2.5">
+            {(() => {
+              const ch = getOrderChannelMeta(order.orderChannel, order.orderChannelProvider);
+              return (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-2xs",
+                    ch.badgeClass
+                  )}
+                >
+                  <span>{ch.icon}</span>
+                  <span>Sipariş Kanalı: {ch.label}</span>
+                </span>
+              );
+            })()}
+
+            {order.customerSource ? (
+              (() => {
+                const src = getCustomerSourceMeta(order.customerSource);
+                return (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-2xs",
+                      src.badgeClass
+                    )}
+                  >
+                    <span>{src.icon}</span>
+                    <span>Müşteri Kaynağı: {src.label}</span>
+                  </span>
+                );
+              })()
+            ) : null}
+          </div>
         </div>
         <Badge
           variant={order.status === "OPEN" ? "default" : "secondary"}
@@ -372,6 +411,7 @@ export function OrderDetail({
                   : order.payments?.[0]?.mode ?? "KAPIDA ÖDEME",
             grandTotal:
               order.status === "COMPLETED" ? order.grandTotal : preview.grandTotal,
+            channel: getOrderChannelMeta(order.orderChannel, order.orderChannelProvider).label,
             createdAt: order.createdAt,
           }}
           items={order.lines

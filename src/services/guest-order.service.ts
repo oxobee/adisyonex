@@ -123,6 +123,7 @@ export const placeGuestOrder = async (
     idempotencyKey: input.idempotencyKey,
     customerPhone: actor.phone,
     customerId: input.customerId ?? undefined,
+    orderChannel: "qr_table",
     note: input.note,
     items: input.items,
   });

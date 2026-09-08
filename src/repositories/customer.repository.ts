@@ -8,6 +8,9 @@ export interface CustomerWriteData {
   birthDate?: Date | null;
   notes?: string | null;
   source?: string;
+  customerSource?: string;
+  customerSourceProvider?: string | null;
+  firstOrderChannel?: string | null;
   kvkkConsent?: boolean;
 }
 
@@ -39,6 +42,9 @@ export const upsertCustomer = async (data: CustomerWriteData): Promise<Customer>
       birthYear,
       notes: data.notes ?? null,
       source: data.source ?? "QR_MENU",
+      customerSource: data.customerSource || (data.source === "QR_MENU" ? "qr_table" : (data.source || "pos")),
+      customerSourceProvider: data.customerSourceProvider ?? null,
+      firstOrderChannel: data.firstOrderChannel ?? null,
       kvkkConsent: data.kvkkConsent ?? true,
       kvkkAcceptedAt: data.kvkkConsent ? new Date() : null,
     },
@@ -215,6 +221,7 @@ export const findCustomersPaginated = async (
   params: {
     search?: string;
     birthMonth?: number;
+    customerSource?: string;
     page: number;
     pageSize: number;
   },
@@ -223,6 +230,9 @@ export const findCustomersPaginated = async (
     restaurantId,
     deletedAt: null,
     ...(params.birthMonth ? { birthMonth: params.birthMonth } : {}),
+    ...(params.customerSource && params.customerSource !== "ALL"
+      ? { customerSource: params.customerSource }
+      : {}),
     ...(params.search
       ? {
           OR: [
@@ -244,6 +254,21 @@ export const findCustomersPaginated = async (
   ]);
 
   return { items, total };
+};
+
+export const getCustomerSourcesReport = async (
+  restaurantId: string
+): Promise<{ source: string; provider: string | null; count: number }[]> => {
+  const rows = await prisma.customer.groupBy({
+    by: ["customerSource", "customerSourceProvider"],
+    where: { restaurantId, deletedAt: null },
+    _count: { _all: true },
+  });
+  return rows.map((r) => ({
+    source: r.customerSource || "other",
+    provider: r.customerSourceProvider || null,
+    count: r._count._all,
+  }));
 };
 
 export const getSettledCustomerStats = async (

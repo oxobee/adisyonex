@@ -56,6 +56,8 @@ export interface CreateOrderData {
   placedById: string | null;
   placedByStaffId: string | null;
   customerId?: string | null;
+  orderChannel?: string | null;
+  orderChannelProvider?: string | null;
   items: OrderLineWriteData[];
 }
 
@@ -105,6 +107,8 @@ export const createOrder = (
       customerName: data.customerName,
       customerPhone: data.customerPhone,
       customerAddress: data.customerAddress,
+      orderChannel: data.orderChannel ?? "pos",
+      orderChannelProvider: data.orderChannelProvider ?? null,
       note: data.note,
       placedById: data.placedById,
       placedByStaffId: data.placedByStaffId,

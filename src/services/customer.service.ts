@@ -5,6 +5,7 @@ import {
   createCustomerDiscount,
   findCustomerDiscounts,
   getSettledCustomerStats,
+  getCustomerSourcesReport,
   setCustomerDiscountActive,
   upsertCustomer,
 } from "@/repositories/customer.repository";
@@ -12,6 +13,8 @@ import { findRestaurantByUsername } from "@/repositories/restaurant.repository";
 import { findRestaurantById, updateRestaurant } from "@/repositories/restaurant.repository";
 import { simulateBirthdayMessages } from "@/repositories/customer.repository";
 import { isRestaurantModuleActive } from "@/services/module.service";
+import { getCustomerSourceMeta, getOrderChannelMeta } from "@/lib/order-channels";
+import { normalizePhoneNumber } from "@/lib/phone";
 import type { CustomerListQuery, RegisterCustomerInput } from "@/lib/validators/customer";
 import type { Paginated } from "@/types";
 
@@ -26,6 +29,9 @@ export interface CustomerDTO {
   orderCount: number;
   totalSpent: number;
   source: string | null;
+  customerSource: string;
+  customerSourceProvider?: string | null;
+  firstOrderChannel?: string | null;
   kvkkConsent: boolean;
   kvkkAcceptedAt: string | null;
   createdAt: string;
@@ -66,6 +72,8 @@ export interface CustomerOrderDTO {
   tableLabel: string | null;
   status: string;
   orderType: string;
+  orderChannel?: string | null;
+  orderChannelProvider?: string | null;
   grandTotal: number;
   createdAt: string;
   lines: CustomerOrderLineDTO[];
@@ -73,6 +81,14 @@ export interface CustomerOrderDTO {
 
 export interface CustomerFavoriteItem {
   name: string;
+  count: number;
+  totalSpent: number;
+}
+
+export interface CustomerChannelStat {
+  channel: string;
+  channelLabel: string;
+  badgeClass: string;
   count: number;
   totalSpent: number;
 }
@@ -85,6 +101,9 @@ export interface CustomerProfileDTO {
     averageOrderValue: number;
     firstOrderDate: string | null;
     lastOrderDate: string | null;
+    firstOrderChannel: string | null;
+    lastOrderChannel: string | null;
+    channelBreakdown: CustomerChannelStat[];
   };
   favoriteItems: CustomerFavoriteItem[];
   orders: CustomerOrderDTO[];
@@ -142,6 +161,9 @@ export const registerCustomer = async (
     orderCount: saved.orderCount,
     totalSpent: Number(saved.totalSpent),
     source: saved.source,
+    customerSource: saved.customerSource || "qr_table",
+    customerSourceProvider: saved.customerSourceProvider,
+    firstOrderChannel: saved.firstOrderChannel,
     kvkkConsent: saved.kvkkConsent,
     kvkkAcceptedAt: saved.kvkkAcceptedAt ? saved.kvkkAcceptedAt.toISOString() : null,
     createdAt: saved.createdAt.toISOString(),
@@ -230,6 +252,9 @@ export const getCustomerProfile = async (
       orderCount,
       totalSpent,
       source: raw.source,
+      customerSource: raw.customerSource || "qr_table",
+      customerSourceProvider: raw.customerSourceProvider,
+      firstOrderChannel: raw.firstOrderChannel,
       kvkkConsent: raw.kvkkConsent,
       kvkkAcceptedAt: raw.kvkkAcceptedAt ? raw.kvkkAcceptedAt.toISOString() : null,
       createdAt: raw.createdAt.toISOString(),
@@ -240,6 +265,9 @@ export const getCustomerProfile = async (
       averageOrderValue,
       firstOrderDate: orderDtos.length > 0 ? orderDtos[orderDtos.length - 1].createdAt : null,
       lastOrderDate: orderDtos.length > 0 ? orderDtos[0].createdAt : null,
+      firstOrderChannel: null,
+      lastOrderChannel: null,
+      channelBreakdown: [],
     },
     favoriteItems,
     orders: orderDtos,
@@ -284,6 +312,8 @@ export const getCustomerDetailForAdmin = async (
     tableLabel: ord.tableLabel || ord.table?.label || null,
     status: ord.status,
     orderType: ord.orderType,
+    orderChannel: (ord as any).orderChannel ?? "pos",
+    orderChannelProvider: (ord as any).orderChannelProvider ?? null,
     grandTotal: Number(ord.grandTotal),
     createdAt: ord.createdAt.toISOString(),
     lines: ord.items.map((it) => ({
@@ -300,6 +330,33 @@ export const getCustomerDetailForAdmin = async (
   const orderCount = orderDtos.length;
   const averageOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
 
+  // Aggregate channel breakdown
+  const channelMap = new Map<string, { count: number; totalSpent: number }>();
+  for (const ord of raw.orders) {
+    const ch = (ord as any).orderChannel || "pos";
+    const cur = channelMap.get(ch) || { count: 0, totalSpent: 0 };
+    channelMap.set(ch, {
+      count: cur.count + 1,
+      totalSpent: cur.totalSpent + Number(ord.grandTotal),
+    });
+  }
+
+  const channelBreakdown: CustomerChannelStat[] = Array.from(channelMap.entries()).map(
+    ([channel, stat]) => {
+      const meta = getOrderChannelMeta(channel);
+      return {
+        channel,
+        channelLabel: meta.label,
+        badgeClass: meta.badgeClass,
+        count: stat.count,
+        totalSpent: stat.totalSpent,
+      };
+    }
+  );
+
+  const firstOrder = raw.orders.length > 0 ? raw.orders[raw.orders.length - 1] : null;
+  const lastOrder = raw.orders.length > 0 ? raw.orders[0] : null;
+
   return {
     customer: {
       id: raw.id,
@@ -312,6 +369,9 @@ export const getCustomerDetailForAdmin = async (
       orderCount,
       totalSpent,
       source: raw.source,
+      customerSource: raw.customerSource || "pos",
+      customerSourceProvider: raw.customerSourceProvider,
+      firstOrderChannel: raw.firstOrderChannel,
       kvkkConsent: raw.kvkkConsent,
       kvkkAcceptedAt: raw.kvkkAcceptedAt ? raw.kvkkAcceptedAt.toISOString() : null,
       createdAt: raw.createdAt.toISOString(),
@@ -320,8 +380,13 @@ export const getCustomerDetailForAdmin = async (
       orderCount,
       totalSpent,
       averageOrderValue,
-      firstOrderDate: orderDtos.length > 0 ? orderDtos[orderDtos.length - 1].createdAt : null,
-      lastOrderDate: orderDtos.length > 0 ? orderDtos[0].createdAt : null,
+      firstOrderDate: firstOrder ? firstOrder.createdAt.toISOString() : null,
+      lastOrderDate: lastOrder ? lastOrder.createdAt.toISOString() : null,
+      firstOrderChannel: firstOrder
+        ? ((firstOrder as any).orderChannel || "pos")
+        : raw.firstOrderChannel || null,
+      lastOrderChannel: lastOrder ? ((lastOrder as any).orderChannel || "pos") : null,
+      channelBreakdown,
     },
     favoriteItems,
     orders: orderDtos,
@@ -416,6 +481,9 @@ export const listCustomers = async (
       birthMonth: c.birthMonth,
       birthYear: c.birthYear,
       source: c.source,
+      customerSource: c.customerSource || (c.source === "QR_MENU" ? "qr_table" : (c.source || "pos")),
+      customerSourceProvider: c.customerSourceProvider,
+      firstOrderChannel: c.firstOrderChannel,
       kvkkConsent: c.kvkkConsent,
       kvkkAcceptedAt: c.kvkkAcceptedAt ? c.kvkkAcceptedAt.toISOString() : null,
       createdAt: c.createdAt.toISOString(),
@@ -424,6 +492,21 @@ export const listCustomers = async (
     page: query.page,
     pageSize: query.pageSize,
   };
+};
+
+export const getCustomerSourcesReportService = async (restaurantId: string) => {
+  const rows = await getCustomerSourcesReport(restaurantId);
+  return rows.map((r) => {
+    const meta = getCustomerSourceMeta(r.source, r.provider);
+    return {
+      source: r.source,
+      provider: r.provider,
+      label: meta.label,
+      badgeClass: meta.badgeClass,
+      dotColor: meta.dotColor,
+      count: r.count,
+    };
+  });
 };
 
 export const removeCustomer = async (restaurantId: string, id: string) => {

@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { withManagerValidation } from "@/actions/helpers";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
+import { prisma } from "@/lib/prisma";
 import {
   addVideoLinkSchema,
   removeGalleryImageSchema,
@@ -332,3 +334,41 @@ export const updateScreenLockPinAction = async (
   return res;
 };
 
+export const updateReceiptSettingsSchema = z.object({
+  receiptKitchenActive: z.boolean(),
+  receiptCourierActive: z.boolean(),
+  receiptCustomerActive: z.boolean(),
+  receiptMerchantActive: z.boolean(),
+});
+
+export const updateReceiptSettingsAction = withManagerValidation(
+  updateReceiptSettingsSchema,
+  async (data, ctx) => {
+    const updated = await prisma.restaurant.update({
+      where: { id: ctx.restaurantId },
+      data: {
+        receiptKitchenActive: data.receiptKitchenActive,
+        receiptCourierActive: data.receiptCourierActive,
+        receiptCustomerActive: data.receiptCustomerActive,
+        receiptMerchantActive: data.receiptMerchantActive,
+      },
+      select: {
+        receiptKitchenActive: true,
+        receiptCourierActive: true,
+        receiptCustomerActive: true,
+        receiptMerchantActive: true,
+      },
+    });
+
+    await logActivity({
+      restaurantId: ctx.restaurantId,
+      category: "AYARLAR",
+      action: "Fiş & Yazıcı Tercihleri Güncellendi",
+      details: `Mutfak: ${data.receiptKitchenActive ? "Açık" : "Kapalı"}, Kurye: ${data.receiptCourierActive ? "Açık" : "Kapalı"}, Müşteri: ${data.receiptCustomerActive ? "Açık" : "Kapalı"}, İşletme: ${data.receiptMerchantActive ? "Açık" : "Kapalı"}`,
+    });
+
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard/pos");
+    return updated;
+  }
+);

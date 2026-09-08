@@ -53,6 +53,12 @@ import {
 } from "@/components/ui/table";
 import { useServerAction } from "@/hooks/use-server-action";
 import { formatCurrency, formatDate } from "@/lib/format";
+import {
+  CUSTOMER_SOURCES,
+  ORDER_CHANNELS,
+  getCustomerSourceMeta,
+  getOrderChannelMeta,
+} from "@/lib/order-channels";
 import { cn } from "@/lib/utils";
 import type { BirthdayAutomationDTO, CustomerDTO, CustomerProfileDTO } from "@/services/customer.service";
 
@@ -72,16 +78,28 @@ const MONTHS = [
   { value: "12", label: "Aralık" },
 ];
 
+export interface CustomerSourceReportItem {
+  source: string;
+  provider: string | null;
+  label: string;
+  badgeClass: string;
+  dotColor: string;
+  count: number;
+}
+
 export function CustomersTable({
   initialCustomers,
   birthdayAutomation,
+  sourcesReport = [],
 }: {
-  initialCustomers: readonly CustomerDTO[];
-  birthdayAutomation: BirthdayAutomationDTO;
+  readonly initialCustomers: readonly CustomerDTO[];
+  readonly birthdayAutomation: BirthdayAutomationDTO;
+  readonly sourcesReport?: readonly CustomerSourceReportItem[];
 }) {
   const [customers, setCustomers] = useState<CustomerDTO[]>([...initialCustomers]);
   const [search, setSearch] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("ALL");
+  const [selectedSource, setSelectedSource] = useState<string>("ALL");
   const [deleteTarget, setDeleteTarget] = useState<CustomerDTO | null>(null);
 
   // Customer Detail Modal State
@@ -157,9 +175,13 @@ export function CustomersTable({
         selectedMonth === "ALL" ||
         (c.birthMonth != null && String(c.birthMonth) === selectedMonth);
 
-      return matchSearch && matchMonth;
+      const matchSource =
+        selectedSource === "ALL" ||
+        (c.customerSource || "other") === selectedSource;
+
+      return matchSearch && matchMonth && matchSource;
     });
-  }, [customers, search, selectedMonth]);
+  }, [customers, search, selectedMonth, selectedSource]);
 
   const thisMonthCount = useMemo(() => {
     return customers.filter((c) => c.birthMonth === currentMonth).length;
@@ -208,6 +230,65 @@ export function CustomersTable({
             <p className="text-xs font-medium text-muted-foreground">Sadakat & Kampanyalar</p>
             <p className="text-xs font-bold text-foreground">Otomatik İndirim Aktif</p>
           </div>
+        </div>
+      </div>
+
+      {/* MÜŞTERİ KAYNAKLARI RAPORU & HIZLI FİLTRE */}
+      <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+              <span>🎯 Müşteri Kaynakları Dağılımı</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Müşterilerin sisteme ilk kayıt olduğu edinim kanalları. Filtrelemek için bir kaynağa tıklayın.
+            </p>
+          </div>
+          {selectedSource !== "ALL" && (
+            <Button
+              size="xs"
+              variant="outline"
+              className="text-xs font-bold"
+              onClick={() => setSelectedSource("ALL")}
+            >
+              Filtreyi Temizle (Tümü)
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 pt-1">
+          {CUSTOMER_SOURCES.map((src) => {
+            const reportItem = sourcesReport.find((r) => r.source === src.id);
+            const count = reportItem?.count ?? customers.filter((c) => (c.customerSource || "other") === src.id).length;
+            const isSelected = selectedSource === src.id;
+
+            return (
+              <button
+                key={src.id}
+                type="button"
+                onClick={() => setSelectedSource(isSelected ? "ALL" : src.id)}
+                className={cn(
+                  "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5",
+                  isSelected
+                    ? "border-primary bg-primary/10 shadow-xs ring-2 ring-primary/20"
+                    : "border-border/70 bg-muted/20 hover:bg-muted/50 hover:border-border"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">{src.icon}</span>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] font-black h-5 px-1.5 tabular-nums"
+                  >
+                    {count}
+                  </Badge>
+                </div>
+                <span className="text-xs font-bold text-foreground truncate block">
+                  {src.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -293,7 +374,21 @@ export function CustomersTable({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={selectedSource} onValueChange={(v) => v && setSelectedSource(v)}>
+            <SelectTrigger className="h-10 w-44 rounded-xl">
+              <span>{CUSTOMER_SOURCES.find((s) => s.id === selectedSource)?.label || "Tüm Kaynaklar"}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tüm Kaynaklar</SelectItem>
+              {CUSTOMER_SOURCES.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={selectedMonth} onValueChange={(v) => v && setSelectedMonth(v)}>
             <SelectTrigger className="h-10 w-44 rounded-xl">
               <span>{MONTHS.find((m) => m.value === selectedMonth)?.label}</span>
@@ -316,6 +411,7 @@ export function CustomersTable({
             <TableRow className="bg-muted/40 hover:bg-muted/40">
               <TableHead className="font-bold">Müşteri</TableHead>
               <TableHead className="font-bold">Telefon</TableHead>
+              <TableHead className="font-bold">Kaynak</TableHead>
               <TableHead className="font-bold">Doğum Tarihi</TableHead>
               <TableHead className="font-bold">Sipariş Sayısı</TableHead>
               <TableHead className="font-bold">Toplam Harcama</TableHead>
@@ -326,7 +422,7 @@ export function CustomersTable({
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                   Kayıtlı müşteri bulunamadı.
                 </TableCell>
               </TableRow>
@@ -353,6 +449,22 @@ export function CustomersTable({
                       <span className="text-xs font-mono text-muted-foreground">
                         {c.phone}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const meta = getCustomerSourceMeta(c.customerSource, c.customerSourceProvider);
+                        return (
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border",
+                              meta.badgeClass
+                            )}
+                          >
+                            <span>{meta.icon}</span>
+                            <span>{meta.label}</span>
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       {c.birthDate ? (
@@ -457,9 +569,23 @@ export function CustomersTable({
                         {formatDate(detailProfile.customer.birthDate)}
                       </span>
                     )}
-                    <Badge variant="outline" className="text-[10px]">
-                      Kaynak: {detailProfile?.customer.source || "QR Menü"}
-                    </Badge>
+                    {(() => {
+                      const meta = getCustomerSourceMeta(
+                        detailProfile?.customer.customerSource,
+                        detailProfile?.customer.customerSourceProvider
+                      );
+                      return (
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold border",
+                            meta.badgeClass
+                          )}
+                        >
+                          <span>{meta.icon}</span>
+                          <span>Müşteri Kaynağı: {meta.label}</span>
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -511,6 +637,84 @@ export function CustomersTable({
                     </span>
                   </div>
                 </div>
+
+                {/* SİPARİŞ KANALLARI BİLGİ KARTLARI */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-muted-foreground block">İlk Sipariş Kanalı</span>
+                      <span className="text-xs font-black text-foreground mt-0.5 flex items-center gap-1.5">
+                        {(() => {
+                          const chMeta = getOrderChannelMeta(detailProfile.stats.firstOrderChannel);
+                          return (
+                            <>
+                              <span>{chMeta.icon}</span>
+                              <span>{chMeta.label}</span>
+                            </>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">İlk Sipariş</Badge>
+                  </div>
+
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-muted-foreground block">Son Sipariş Kanalı</span>
+                      <span className="text-xs font-black text-foreground mt-0.5 flex items-center gap-1.5">
+                        {(() => {
+                          const chMeta = getOrderChannelMeta(detailProfile.stats.lastOrderChannel);
+                          return (
+                            <>
+                              <span>{chMeta.icon}</span>
+                              <span>{chMeta.label}</span>
+                            </>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">Son Sipariş</Badge>
+                  </div>
+                </div>
+
+                {/* SİPARİŞ KANALLARI DAĞILIMI */}
+                {detailProfile.stats.channelBreakdown && detailProfile.stats.channelBreakdown.length > 0 && (
+                  <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <span>📊 Sipariş Kanalları Dağılımı</span>
+                      </h4>
+                      <span className="text-xs text-muted-foreground font-bold">
+                        {detailProfile.stats.channelBreakdown.reduce((s, c) => s + c.count, 0)} Toplam Sipariş
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {detailProfile.stats.channelBreakdown.map((ch) => {
+                        const meta = getOrderChannelMeta(ch.channel);
+                        return (
+                          <div
+                            key={ch.channel}
+                            className="p-3 rounded-xl border bg-muted/20 space-y-1"
+                          >
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                              <span>{meta.icon}</span>
+                              <span className="truncate">{meta.label}</span>
+                            </div>
+                            <div className="flex items-baseline justify-between gap-1 pt-1">
+                              <span className="text-sm font-black text-primary tabular-nums">
+                                {ch.count} sipariş
+                              </span>
+                              <span className="text-[11px] text-muted-foreground font-semibold tabular-nums">
+                                {formatCurrency(ch.totalSpent)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="rounded-lg border border-border/80 bg-muted/20 p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -605,6 +809,20 @@ export function CustomersTable({
                                   Masa: {ord.tableLabel}
                                 </Badge>
                               )}
+                              {(() => {
+                                const chMeta = getOrderChannelMeta(ord.orderChannel, ord.orderChannelProvider);
+                                return (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border",
+                                      chMeta.badgeClass
+                                    )}
+                                  >
+                                    <span>{chMeta.icon}</span>
+                                    <span>{chMeta.label}</span>
+                                  </span>
+                                );
+                              })()}
                             </div>
 
                             <div className="flex items-center gap-2">

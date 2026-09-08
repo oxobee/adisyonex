@@ -91,6 +91,12 @@ export interface CashierSalesTerminalProps {
   readonly restaurantName?: string;
   readonly showItemImages?: boolean;
   readonly telephonyEnabled?: boolean;
+  readonly receiptSettings?: {
+    receiptKitchenActive?: boolean;
+    receiptCourierActive?: boolean;
+    receiptCustomerActive?: boolean;
+    receiptMerchantActive?: boolean;
+  };
 }
 
 export type PaymentMethodType = "CASH" | "CARD" | "MEAL_VOUCHER" | "QR" | "SPLIT";
@@ -162,6 +168,7 @@ export function CashierSalesTerminal({
   restaurantName = "Oxonom POS",
   showItemImages = true,
   telephonyEnabled = false,
+  receiptSettings,
 }: CashierSalesTerminalProps) {
   // Çoklu Fiş Sistemi (Fiş 01 - Fiş 05)
   const [tickets, setTickets] = useState<ParkedTicketState[]>(DEFAULT_TICKETS);
@@ -2643,6 +2650,7 @@ export function CashierSalesTerminal({
             })),
             lineNote: it.lineNote,
           }))}
+          receiptSettings={receiptSettings}
         />
       )}
       {/* 6. MASAYA EKLEME VE İÇERİĞİ YÜKLEME MODALI */}

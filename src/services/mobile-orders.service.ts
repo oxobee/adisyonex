@@ -374,6 +374,8 @@ export const createMobileOrder = async (
     note: input.note ?? null,
     placedById: auth.kind === "manager" ? auth.subjectId : null,
     placedByStaffId: auth.kind === "staff" ? auth.subjectId : null,
+    orderChannel: input.channel === "aggregator" ? "marketplace" : "pos",
+    orderChannelProvider: null,
     items: input.items.map(buildLine),
   });
 

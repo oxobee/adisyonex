@@ -37,6 +37,7 @@ export type CustomerProfileQuery = z.infer<typeof customerProfileQuerySchema>;
 export const customerListQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
   birthMonth: z.coerce.number().int().min(1).max(12).optional(),
+  customerSource: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()

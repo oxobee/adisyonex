@@ -5,8 +5,10 @@ import {
   HeadphonesIcon,
   ImagesIcon,
   KeyRoundIcon,
+  LayersIcon,
   MapPinIcon,
   PhoneCallIcon,
+  PrinterIcon,
   QrCodeIcon,
   ReceiptIcon,
   ShieldCheckIcon,
@@ -27,6 +29,8 @@ import { TaxSettingsForm } from "@/components/settings/tax-settings-form"
 import { UsernameCard } from "@/components/settings/username-card"
 import { VideosManager } from "@/components/settings/videos-manager"
 import { TelephonySettingsTab } from "@/components/settings/telephony-settings-tab"
+import { PrinterSettingsTab } from "@/components/settings/printer-settings-tab"
+import { ChannelsSettingsTab } from "@/components/settings/channels-settings-tab"
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
 import {
@@ -58,6 +62,8 @@ import { prisma } from "@/lib/prisma"
 
 const TABS = [
   { value: "profile", label: "İşletme Profili", icon: StoreIcon },
+  { value: "printers", label: "Fiş & Yazıcı Ayarları", icon: PrinterIcon },
+  { value: "channels", label: "Sipariş Kanalları", icon: LayersIcon },
   { value: "telephony", label: "Akıllı Telefon Sipariş", icon: PhoneCallIcon },
   { value: "license", label: "Lisans & Satış Temsilcisi", icon: HeadphonesIcon },
   { value: "location", label: "Konum & Harita", icon: MapPinIcon },
@@ -119,12 +125,22 @@ export default async function SettingsPage() {
     );
   }
 
-  const [profile, taxProfile, licenseInfo, adminCtx, telephonySettings] = await Promise.all([
+  const [profile, taxProfile, licenseInfo, adminCtx, telephonySettings, restaurantSettings] = await Promise.all([
     getRestaurantProfile(restaurantId),
     getTaxProfile(restaurantId),
     getRestaurantLicenseInfo(restaurantId).catch(() => null),
     getAdminContextOrNull().catch(() => null),
     getTelephonySettings(restaurantId),
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: {
+        name: true,
+        receiptKitchenActive: true,
+        receiptCourierActive: true,
+        receiptCustomerActive: true,
+        receiptMerchantActive: true,
+      },
+    }),
   ])
   const isSuperAdminUser = Boolean(adminCtx && adminCtx.isSuperAdmin)
   const pinStatus = ctx?.userId
@@ -222,6 +238,22 @@ export default async function SettingsPage() {
         <div className="min-w-0 flex-1">
           <TabsContent value="profile" keepMounted>
             <RestaurantProfileForm profile={profile} />
+          </TabsContent>
+
+          <TabsContent value="printers" keepMounted>
+            <PrinterSettingsTab
+              restaurantName={restaurantSettings?.name || profile.name}
+              initialSettings={{
+                receiptKitchenActive: restaurantSettings?.receiptKitchenActive ?? true,
+                receiptCourierActive: restaurantSettings?.receiptCourierActive ?? true,
+                receiptCustomerActive: restaurantSettings?.receiptCustomerActive ?? true,
+                receiptMerchantActive: restaurantSettings?.receiptMerchantActive ?? true,
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="channels" keepMounted>
+            <ChannelsSettingsTab />
           </TabsContent>
 
           <TabsContent value="telephony" keepMounted>

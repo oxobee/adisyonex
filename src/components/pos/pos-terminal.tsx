@@ -19,6 +19,7 @@ export function PosTerminal({
   restaurantName = "Oxonom POS",
   showItemImages = true,
   telephonyEnabled = false,
+  receiptSettings,
 }: {
   readonly menu: MenuDTO;
   readonly tables: readonly TableDTO[];
@@ -29,6 +30,12 @@ export function PosTerminal({
   readonly restaurantName?: string;
   readonly showItemImages?: boolean;
   readonly telephonyEnabled?: boolean;
+  readonly receiptSettings?: {
+    receiptKitchenActive?: boolean;
+    receiptCourierActive?: boolean;
+    receiptCustomerActive?: boolean;
+    receiptMerchantActive?: boolean;
+  };
 }) {
   // Automatically snapshot menu and tables to local device storage for offline capability
   useEffect(() => {
@@ -46,6 +53,7 @@ export function PosTerminal({
       restaurantName={restaurantName}
       showItemImages={showItemImages}
       telephonyEnabled={telephonyEnabled}
+      receiptSettings={receiptSettings}
     />
   );
 }

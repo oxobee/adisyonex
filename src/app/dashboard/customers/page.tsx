@@ -3,7 +3,11 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getManagerContextOrNull } from "@/lib/manager-auth";
 import { getStaffContextOrNull } from "@/lib/staff-auth";
-import { getBirthdayAutomation, listCustomers } from "@/services/customer.service";
+import {
+  getBirthdayAutomation,
+  getCustomerSourcesReportService,
+  listCustomers,
+} from "@/services/customer.service";
 
 export default async function CustomersPage() {
   const [ctx, staffCtx] = await Promise.all([
@@ -27,21 +31,26 @@ export default async function CustomersPage() {
     );
   }
 
-  const [{ items }, birthdayAutomation] = await Promise.all([
+  const [{ items }, birthdayAutomation, sourcesReport] = await Promise.all([
     listCustomers(restaurantId, {
       page: 1,
       pageSize: 100,
     }),
     getBirthdayAutomation(restaurantId),
+    getCustomerSourcesReportService(restaurantId).catch(() => []),
   ]);
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <PageHeader
         title="Kayıtlı Müşteriler"
-        description="QR menüden doğum günü ve özel kampanyalara kaydolan müşterilerin listesi."
+        description="Müşteri edinim kaynakları, doğum günleri ve geçmiş sipariş analizi."
       />
-      <CustomersTable initialCustomers={items} birthdayAutomation={birthdayAutomation} />
+      <CustomersTable
+        initialCustomers={items}
+        birthdayAutomation={birthdayAutomation}
+        sourcesReport={sourcesReport}
+      />
     </div>
   );
 }
