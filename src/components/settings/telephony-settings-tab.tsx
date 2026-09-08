@@ -18,6 +18,7 @@ import {
   BikeIcon,
   ReceiptTextIcon,
   BuildingIcon,
+  UtensilsCrossedIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -32,61 +33,210 @@ import {
   updateTelephonySettingsAction,
 } from "@/actions/telephony.actions";
 import {
-  formatEscposCustomerBill,
-  formatEscposCourierSlip,
-  formatEscposMerchantCopy,
-  type OrderRoutingMetadata,
-  type RoutedItem,
-} from "@/services/print-routing.service";
+  renderCustomerBill,
+  renderCourierSlip,
+  renderMerchantCopy,
+  renderKitchenTicket,
+  type ReceiptOrderMetadata,
+  type ReceiptItemData,
+} from "@/lib/printer/receipt-engine";
+import { broadcastTelephonyEvent } from "@/lib/telephony-broadcast";
 import { PrinterClient } from "@/lib/printer/printer-client";
-import type { TelephonySettingsDTO } from "@/services/telephony.service";
+import type { SimulationScenario, TelephonySettingsDTO } from "@/services/telephony.service";
 
 interface TelephonySettingsTabProps {
   readonly initialSettings: TelephonySettingsDTO;
+  readonly restaurantName?: string;
 }
 
-const SAMPLE_ORDER_META: OrderRoutingMetadata = {
-  orderId: "sample-order-001",
-  orderNumber: 1042,
-  orderType: "DELIVERY",
-  customerName: "Ahmet Yılmaz",
-  customerPhone: "0532 555 12 34",
-  customerAddress: "Atatürk Mah. Karanfil Sok. No:14 Daire:8 Kadıköy / İstanbul (Zil: Yılmaz)",
-  customerNotes: "Zil çalmayın lütfen, bebek uyuyor. Kapıya bırakıp mesaj atın.",
-  paymentMode: "KAPIDA KREDİ KARTI",
-  grandTotal: 385.0,
-  createdAt: new Date().toISOString(),
-};
+export interface ReceiptCombination {
+  id: string;
+  name: string;
+  description: string;
+  meta: ReceiptOrderMetadata;
+  items: ReceiptItemData[];
+}
 
-const SAMPLE_ORDER_ITEMS: readonly RoutedItem[] = [
+const SAMPLE_COMBINATIONS: ReceiptCombination[] = [
   {
-    orderLineId: "line-1",
-    name: "Özel Karışık Kebap",
-    quantity: 1,
-    unitPrice: 220,
-    lineTotal: 220,
-    variantName: "Porsiyon",
-    modifiers: ["Acılı", "Bol Yeşillik"],
+    id: "DELIVERY_CARD",
+    name: "🛵 Paket Servis (Kapıda Kredi Kartı)",
+    description: "Kuryeli teslimat, pos cihazı yönlendirmeli ve açık adresli fiş.",
+    meta: {
+      orderNumber: 1042,
+      orderType: "DELIVERY",
+      customerName: "Ahmet Yılmaz",
+      customerPhone: "0532 555 12 34",
+      customerAddress: "Atatürk Mah. Karanfil Sok. No:14 Daire:8 Kadıköy / İstanbul (Zil: Yılmaz)",
+      customerNotes: "Zil çalmayın lütfen, bebek uyuyor. Kapıya bırakıp arayın.",
+      paymentMode: "KAPIDA KREDİ KARTI",
+      subtotal: 385.0,
+      grandTotal: 385.0,
+      createdAt: new Date(),
+      channel: "Telefon / Caller ID",
+    },
+    items: [
+      {
+        name: "Özel Karışık Kebap",
+        quantity: 1,
+        unitPrice: 220,
+        totalPrice: 220,
+        variantName: "Porsiyon",
+        modifiers: ["Acılı", "Bol Yeşillik"],
+      },
+      {
+        name: "Fındık Lahmacun",
+        quantity: 2,
+        unitPrice: 60,
+        totalPrice: 120,
+        modifiers: ["Limon & Maydanoz"],
+      },
+      {
+        name: "Yayık Ayranı",
+        quantity: 1,
+        unitPrice: 45,
+        totalPrice: 45,
+      },
+    ],
   },
   {
-    orderLineId: "line-2",
-    name: "Fındık Lahmacun",
-    quantity: 2,
-    unitPrice: 60,
-    lineTotal: 120,
-    modifiers: ["Limon & Maydanoz"],
+    id: "DELIVERY_CASH",
+    name: "💵 Paket Servis (Kapıda Nakit Tahsilat)",
+    description: "Kuryenin kapıda nakit tahsil edeceği tutar vurgulu fiş.",
+    meta: {
+      orderNumber: 1043,
+      orderType: "DELIVERY",
+      customerName: "Mehmet Demir",
+      customerPhone: "0533 111 22 33",
+      customerAddress: "Caferağa Mah. Moda Cad. No:45 Kat:2 Moda / Kadıköy",
+      customerNotes: "200 TL üzeri para üstü getirilsin.",
+      paymentMode: "KAPIDA NAKİT",
+      subtotal: 260.0,
+      grandTotal: 260.0,
+      createdAt: new Date(),
+      channel: "Telefon / Caller ID",
+    },
+    items: [
+      {
+        name: "Adana Dürüm",
+        quantity: 2,
+        unitPrice: 110,
+        totalPrice: 220,
+        modifiers: ["Acılı"],
+      },
+      {
+        name: "Şalgam Suyu",
+        quantity: 2,
+        unitPrice: 20,
+        totalPrice: 40,
+      },
+    ],
   },
   {
-    orderLineId: "line-3",
-    name: "Yayık Ayranı",
-    quantity: 1,
-    unitPrice: 45,
-    lineTotal: 45,
-    modifiers: [],
+    id: "TAKEAWAY_CASH",
+    name: "🥡 Gel-Al / Takeaway Sipariş",
+    description: "Müşterinin restorana gelip kendisinin alacağı sipariş fişi.",
+    meta: {
+      orderNumber: 1044,
+      orderType: "TAKEAWAY",
+      customerName: "Zeynep Kaya",
+      customerPhone: "0533 987 65 43",
+      paymentMode: "NAKİT",
+      subtotal: 310.0,
+      grandTotal: 310.0,
+      createdAt: new Date(),
+      channel: "Gel-Al / Telefon",
+      note: "15 dakika sonra gelip alacak.",
+    },
+    items: [
+      {
+        name: "Tavuk Şiş Porsiyon",
+        quantity: 2,
+        unitPrice: 130,
+        totalPrice: 260,
+      },
+      {
+        name: "Kutu Kola",
+        quantity: 2,
+        unitPrice: 25,
+        totalPrice: 50,
+      },
+    ],
+  },
+  {
+    id: "DINE_IN_TABLE",
+    name: "🍽️ Salon / Masa Adisyonu (Masa 4)",
+    description: "Masa hesabı, garson ve KDV dökümlü restoran adisyonu.",
+    meta: {
+      orderNumber: 1045,
+      orderType: "DINE_IN",
+      tableLabel: "Masa 4",
+      customerName: "Caner Erkin",
+      paymentMode: "KREDİ KARTI",
+      subtotal: 580.0,
+      grandTotal: 580.0,
+      createdAt: new Date(),
+      channel: "Salon / Garson",
+      staffName: "Garson Murat",
+    },
+    items: [
+      {
+        name: "Beyti Sarma",
+        quantity: 2,
+        unitPrice: 240,
+        totalPrice: 480,
+      },
+      {
+        name: "Künefe",
+        quantity: 1,
+        unitPrice: 100,
+        totalPrice: 100,
+      },
+    ],
+  },
+  {
+    id: "MARKETPLACE_ONLINE",
+    name: "🛍️ Yemeksepeti / Online Ödenmiş Fiş",
+    description: "Pazaryeri maskeli sipariş, tahsilat yapılmaz uyarılı çıktı.",
+    meta: {
+      orderNumber: 1046,
+      orderType: "DELIVERY",
+      customerName: "Ayşe Çelik (Yemeksepeti)",
+      customerPhone: "0850 222 00 00",
+      customerAddress: "Fenerbahçe Mah. Lale Sk. No: 12 Kadıköy / İstanbul",
+      customerNotes: "Temassız teslimat, kapıya asın ve zili çalın.",
+      paymentMode: "ONLINE ÖDENDİ (YEMEKSEPETİ)",
+      isPaid: true,
+      subtotal: 440.0,
+      grandTotal: 440.0,
+      createdAt: new Date(),
+      channel: "Yemeksepeti",
+    },
+    items: [
+      {
+        name: "Büyük Boy Pizza Karışık",
+        quantity: 1,
+        unitPrice: 320,
+        totalPrice: 320,
+        modifiers: ["Mısırsız"],
+      },
+      {
+        name: "Patates Kızartması",
+        quantity: 1,
+        unitPrice: 80,
+        totalPrice: 80,
+      },
+      {
+        name: "Kutu Fanta",
+        quantity: 1,
+        unitPrice: 40,
+        totalPrice: 40,
+      },
+    ],
   },
 ];
 
-export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabProps) {
+export function TelephonySettingsTab({ initialSettings, restaurantName = "Oxonom Restaurant" }: TelephonySettingsTabProps) {
   const [settings, setSettings] = useState<TelephonySettingsDTO>(initialSettings);
   const [enabled, setEnabled] = useState(initialSettings.enabled);
   const [mode, setMode] = useState<"SIMULATION" | "LIVE">(initialSettings.mode);
@@ -100,23 +250,45 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [simScenario, setSimScenario] = useState<"REGISTERED" | "NEW">("REGISTERED");
+  const [simScenario, setSimScenario] = useState<SimulationScenario>("REGISTERED_DELIVERY");
 
   // Thermal preview state
   const [previewPaperWidth, setPreviewPaperWidth] = useState<"58mm" | "80mm">("80mm");
-  const [previewDocType, setPreviewDocType] = useState<"CUSTOMER" | "COURIER" | "MERCHANT">("CUSTOMER");
+  const [previewDocType, setPreviewDocType] = useState<"CUSTOMER" | "COURIER" | "MERCHANT" | "KITCHEN">("CUSTOMER");
+  const [selectedCombinationId, setSelectedCombinationId] = useState<string>("DELIVERY_CARD");
   const [isPrintingSample, setIsPrintingSample] = useState(false);
 
-  const previewRaw = useMemo(() => {
+  const selectedCombination = useMemo(() => {
+    return (
+      SAMPLE_COMBINATIONS.find((c) => c.id === selectedCombinationId) ||
+      SAMPLE_COMBINATIONS[0]
+    );
+  }, [selectedCombinationId]);
+
+  const previewRenderResult = useMemo(() => {
     const widthMm = previewPaperWidth === "58mm" ? 58 : 80;
+    const metaWithRest: ReceiptOrderMetadata = {
+      ...selectedCombination.meta,
+      restaurantInfo: {
+        name: restaurantName,
+        phone: incomingNumber || "0850 300 00 00",
+        address: "Kadıköy / İstanbul",
+      },
+    };
+
     if (previewDocType === "COURIER") {
-      return formatEscposCourierSlip(SAMPLE_ORDER_META, widthMm);
+      return renderCourierSlip(metaWithRest, selectedCombination.items, { widthMm });
+    }
+    if (previewDocType === "KITCHEN") {
+      return renderKitchenTicket(metaWithRest, selectedCombination.items, { widthMm, stationName: "ANA MUTFAK" });
     }
     if (previewDocType === "MERCHANT") {
-      return formatEscposMerchantCopy(SAMPLE_ORDER_META, SAMPLE_ORDER_ITEMS, widthMm);
+      return renderMerchantCopy(metaWithRest, selectedCombination.items, { widthMm });
     }
-    return formatEscposCustomerBill(SAMPLE_ORDER_META, SAMPLE_ORDER_ITEMS, widthMm);
-  }, [previewDocType, previewPaperWidth]);
+    return renderCustomerBill(metaWithRest, selectedCombination.items, { widthMm });
+  }, [previewDocType, previewPaperWidth, selectedCombination, restaurantName, incomingNumber]);
+
+  const previewRaw = previewRenderResult.plainText;
 
   // Copy webhook URL helper
   const copyWebhookUrl = () => {
@@ -204,13 +376,24 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
         return;
       }
 
-      toast.success(
-        `✓ ${simScenario === "REGISTERED" ? "Kayıtlı Müşteri" : "Yeni Müşteri"} test araması başlatıldı!`
-      );
+      // Broadcast to current tab and all other open tabs (POS terminal, etc.)
+      broadcastTelephonyEvent({
+        type: "INCOMING_CALL",
+        call: res.data,
+      });
 
-      // Dispatch global browser event for instantaneous reaction on POS screen
-      window.dispatchEvent(
-        new CustomEvent("telephony-simulated-call", { detail: res.data })
+      const scenarioLabels: Record<SimulationScenario, string> = {
+        REGISTERED_DELIVERY: "Kayıtlı Müşteri (Paket - Kapıda Kart)",
+        REGISTERED_TAKEAWAY: "Kayıtlı Müşteri (Gel-Al - Zeynep Kaya)",
+        REGISTERED_DINE_IN: "Kayıtlı Müşteri (Salon - Caner Erkin)",
+        NEW_CUSTOMER: "Yeni Müşteri (Kayıtsız Numara)",
+        MARKETPLACE_YEMEKSEPETI: "Pazaryeri Siparişi (Yemeksepeti)",
+        REGISTERED: "Kayıtlı Müşteri",
+        NEW: "Yeni Müşteri",
+      };
+
+      toast.success(
+        `✓ ${scenarioLabels[simScenario] || "Test"} araması başlatıldı! POS ekranında çağrı açıldı.`
       );
     } finally {
       setIsSimulating(false);
@@ -421,44 +604,140 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
             Tek tıkla gerçek bir Netgsm çağrısı gelmiş gibi POS ekranında çağrı panelini açın ve akışı deneyimleyin.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3.5">
-          <div className="flex items-center gap-4 text-xs">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="scenario"
-                checked={simScenario === "REGISTERED"}
-                onChange={() => setSimScenario("REGISTERED")}
-                className="accent-primary"
-              />
-              <span className="font-medium text-foreground">Kayıtlı Müşteri (Ahmet Yılmaz - 0532 123 45 67)</span>
-            </label>
+        <CardContent className="space-y-4">
+          <div>
+            <span className="text-xs font-semibold text-foreground block mb-2">
+              Arama Senaryosu Seçin:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSimScenario("REGISTERED_DELIVERY")}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  simScenario === "REGISTERED_DELIVERY" || simScenario === "REGISTERED"
+                    ? "bg-amber-500/15 border-amber-500/60 ring-1 ring-amber-500/50"
+                    : "bg-background/80 hover:bg-muted border-border"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    🛵 Kayıtlı - Paket Servis
+                  </span>
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    Kapıda Kart
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Ahmet Yılmaz (0532 123 45 67) • Geçmiş siparişli ve 2 kayıtlı adresli müşteri.
+                </p>
+              </button>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="scenario"
-                checked={simScenario === "NEW"}
-                onChange={() => setSimScenario("NEW")}
-                className="accent-primary"
-              />
-              <span className="font-medium text-foreground">Yeni Müşteri (Sistemde Kayıtsız Numara)</span>
-            </label>
+              <button
+                type="button"
+                onClick={() => setSimScenario("REGISTERED_TAKEAWAY")}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  simScenario === "REGISTERED_TAKEAWAY"
+                    ? "bg-amber-500/15 border-amber-500/60 ring-1 ring-amber-500/50"
+                    : "bg-background/80 hover:bg-muted border-border"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    🥡 Kayıtlı - Gel-Al (Takeaway)
+                  </span>
+                  <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                    Nakit
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Zeynep Kaya (0533 987 65 43) • Restorandan teslim alacak müşteri.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSimScenario("REGISTERED_DINE_IN")}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  simScenario === "REGISTERED_DINE_IN"
+                    ? "bg-amber-500/15 border-amber-500/60 ring-1 ring-amber-500/50"
+                    : "bg-background/80 hover:bg-muted border-border"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    🍽️ Kayıtlı - Salon / Masa
+                  </span>
+                  <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-700 dark:text-purple-300">
+                    VIP / Masa
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Caner Erkin (0542 333 44 55) • Masa rezervasyonu & restoran müdavimi.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSimScenario("NEW_CUSTOMER")}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  simScenario === "NEW_CUSTOMER" || simScenario === "NEW"
+                    ? "bg-amber-500/15 border-amber-500/60 ring-1 ring-amber-500/50"
+                    : "bg-background/80 hover:bg-muted border-border"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    👤 Yeni Müşteri (Kayıtsız)
+                  </span>
+                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                    Hızlı Kayıt
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Sistemde kaydı olmayan rastgele numara • Hızlı kayıt formu tetikler.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSimScenario("MARKETPLACE_YEMEKSEPETI")}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer sm:col-span-2 ${
+                  simScenario === "MARKETPLACE_YEMEKSEPETI"
+                    ? "bg-amber-500/15 border-amber-500/60 ring-1 ring-amber-500/50"
+                    : "bg-background/80 hover:bg-muted border-border"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    🛍️ Pazaryeri Hattı (Yemeksepeti)
+                  </span>
+                  <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-700 dark:text-rose-300">
+                    Online Ödendi
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Yemeksepeti santral hattı (0850 222 00 00) • Online ödenmiş sipariş akışı.
+                </p>
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button
               onClick={handleTriggerSimulation}
               disabled={isSimulating}
-              className="gap-2 text-xs font-semibold"
+              className="gap-2 text-xs font-bold"
             >
               {isSimulating ? (
                 <Loader2Icon className="size-3.5 animate-spin" />
               ) : (
                 <PlayIcon className="size-3.5 fill-current" />
               )}
-              Test Araması Başlat
+              Test Araması Başlat (POS Ekranına Gönder)
             </Button>
+            <span className="text-[11px] text-muted-foreground">
+              * Başlat butonuna basıldığında tüm açık POS sekmelerinde zil çalar ve arama çekmecesi açılır.
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -607,24 +886,52 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
           </div>
         </CardHeader>
         <CardContent className="space-y-4 text-xs">
+          {/* Combination Selector Bar */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-semibold text-xs text-foreground">
+                Örnek Sipariş Senaryosu:
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {selectedCombination.description}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {SAMPLE_COMBINATIONS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedCombinationId(c.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    selectedCombinationId === c.id
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-background text-muted-foreground hover:bg-muted border-border"
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Document Type Selector Buttons */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-1 border-t">
             <Button
               type="button"
               size="sm"
               variant={previewDocType === "CUSTOMER" ? "default" : "outline"}
               onClick={() => setPreviewDocType("CUSTOMER")}
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 font-bold"
             >
               <ReceiptTextIcon className="size-3.5" />
-              Paket Servis / Müşteri Fişi
+              Müşteri &amp; Paket Fişi
             </Button>
             <Button
               type="button"
               size="sm"
               variant={previewDocType === "COURIER" ? "default" : "outline"}
               onClick={() => setPreviewDocType("COURIER")}
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 font-bold"
             >
               <BikeIcon className="size-3.5" />
               Kurye Teslimat Fişi
@@ -632,41 +939,36 @@ export function TelephonySettingsTab({ initialSettings }: TelephonySettingsTabPr
             <Button
               type="button"
               size="sm"
+              variant={previewDocType === "KITCHEN" ? "default" : "outline"}
+              onClick={() => setPreviewDocType("KITCHEN")}
+              className="h-8 text-xs gap-1.5 font-bold"
+            >
+              <UtensilsCrossedIcon className="size-3.5" />
+              Mutfak Sipariş Fişi (KOT)
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               variant={previewDocType === "MERCHANT" ? "default" : "outline"}
               onClick={() => setPreviewDocType("MERCHANT")}
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 font-bold"
             >
               <BuildingIcon className="size-3.5" />
-              İşletme Sipariş Kopyası
+              İşletme Kopyası
             </Button>
           </div>
 
           {/* Thermal Receipt Simulator Container */}
           <div className="flex flex-col items-center justify-center p-4 bg-muted/40 rounded-lg border border-dashed">
             <div
-              className={`w-full bg-[#fbfbf8] text-neutral-900 border border-neutral-300 shadow-md p-4 rounded font-mono text-[11px] leading-relaxed select-all overflow-x-auto transition-all ${
+              className={`w-full bg-white text-neutral-900 border border-neutral-300 shadow-md p-4 rounded font-mono text-[11px] leading-relaxed select-all overflow-x-auto transition-all ${
                 previewPaperWidth === "58mm" ? "max-w-[290px]" : "max-w-[440px]"
               }`}
             >
-              {/* Receipt Header Visual */}
-              <div className="text-center pb-2 border-b border-dashed border-neutral-400 mb-2">
-                <span className="font-bold text-[12px] tracking-wider block">
-                  TERMAL ÇIKTI SİMÜLASYONU
-                </span>
-                <span className="text-[10px] text-neutral-600 block">
-                  Kağıt Genişliği: {previewPaperWidth} · {previewPaperWidth === "58mm" ? "32 Karakter" : "48 Karakter"}
-                </span>
-              </div>
-
-              {/* Receipt Body */}
+              {/* Receipt Body - 100% Clean Clean Text */}
               <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-neutral-800 leading-tight">
                 {previewRaw}
               </pre>
-
-              {/* Receipt Footer Visual */}
-              <div className="text-center pt-2 border-t border-dashed border-neutral-400 mt-2 text-[10px] text-neutral-500">
-                [ Otomatik Kağıt Kesme: GS V 66 0 ]
-              </div>
             </div>
 
             <div className="flex items-center gap-2 mt-3 text-xs">

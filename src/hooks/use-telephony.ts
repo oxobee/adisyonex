@@ -6,6 +6,10 @@ import {
   getActiveRingingCallAction,
   getRecentMissedCallsAction,
 } from "@/actions/telephony.actions";
+import {
+  broadcastTelephonyEvent,
+  subscribeTelephonyBroadcast,
+} from "@/lib/telephony-broadcast";
 import type { ActiveCallDTO, MissedCallDTO } from "@/services/telephony.service";
 
 /**
@@ -58,22 +62,27 @@ export function useTelephony({ enabled = true }: { enabled?: boolean } = {}) {
 
   const dismissCall = useCallback(
     async (callId: string, status: "ANSWERED" | "ENDED" | "MISSED" = "ENDED") => {
+      broadcastTelephonyEvent({ type: "DISMISS_CALL", callId });
       try {
         await dismissCallSessionAction(callId, status);
       } catch {
         // ignore
       }
-    setActiveCall(null);
-    setIsDrawerOpen(false);
-    if (ringIntervalRef.current) {
-      clearInterval(ringIntervalRef.current);
-      ringIntervalRef.current = null;
-    }
-    // Refresh missed calls
-    getRecentMissedCallsAction().then((res) => {
-      if (res.success && res.data) setMissedCalls(res.data);
-    });
-  }, []);
+      setActiveCall(null);
+      setIsDrawerOpen(false);
+      if (ringIntervalRef.current) {
+        clearInterval(ringIntervalRef.current);
+        ringIntervalRef.current = null;
+      }
+      try {
+        const res = await getRecentMissedCallsAction();
+        if (res.success && res.data) setMissedCalls(res.data);
+      } catch {
+        // ignore
+      }
+    },
+    []
+  );
 
   // Handle new incoming call (simulation or real)
   const handleIncomingCall = useCallback((call: ActiveCallDTO) => {
@@ -88,19 +97,24 @@ export function useTelephony({ enabled = true }: { enabled?: boolean } = {}) {
     }, 3500);
   }, []);
 
-  // Listen for instant custom event (dispatched by simulation button)
+  // Listen for broadcast events across tabs and local events
   useEffect(() => {
-    const onSimulatedCall = (e: Event) => {
-      const custom = e as CustomEvent<ActiveCallDTO>;
-      if (custom.detail) {
-        lastSeenCallIdRef.current = custom.detail.id;
-        handleIncomingCall(custom.detail);
+    const unsubscribe = subscribeTelephonyBroadcast((msg) => {
+      if (msg.type === "INCOMING_CALL") {
+        lastSeenCallIdRef.current = msg.call.id;
+        handleIncomingCall(msg.call);
+      } else if (msg.type === "DISMISS_CALL") {
+        setActiveCall(null);
+        setIsDrawerOpen(false);
+        if (ringIntervalRef.current) {
+          clearInterval(ringIntervalRef.current);
+          ringIntervalRef.current = null;
+        }
       }
-    };
+    });
 
-    window.addEventListener("telephony-simulated-call", onSimulatedCall);
     return () => {
-      window.removeEventListener("telephony-simulated-call", onSimulatedCall);
+      unsubscribe();
     };
   }, [handleIncomingCall]);
 

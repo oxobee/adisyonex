@@ -84,55 +84,214 @@ export function PrinterSettingsTab({
     });
   };
 
-  // Sample order for live simulator
-  const sampleMeta: ReceiptOrderMetadata = {
-    orderNumber: 104,
-    orderType: "DELIVERY",
-    createdAt: new Date(),
-    customerName: "Ahmet Yılmaz",
-    customerPhone: "0532 555 12 34",
-    customerAddress: "Atatürk Mah. Karanfil Sok. No: 14 D: 3 Kadıköy / İstanbul",
-    customerNotes: "Kapı zili çalışmıyor, lütfen varınca arayın.",
-    paymentMode: "KAPIDA KREDİ KARTI / POS CİHAZI",
-    subtotal: 420.0,
-    deliveryFee: 30.0,
-    grandTotal: 450.0,
-    channel: "Telefon / Caller ID",
-    restaurantInfo: {
-      name: restaurantName || "Oxonom Restaurant",
-      phone: "0216 123 45 67",
-      address: "Bağdat Cad. No: 88 Kadıköy / İstanbul",
+  const [selectedScenarioKey, setSelectedScenarioKey] = useState<
+    "DELIVERY_CARD" | "DELIVERY_CASH" | "TAKEAWAY_CASH" | "DINE_IN" | "MARKETPLACE"
+  >("DELIVERY_CARD");
+
+  // Sample combinations for live simulator
+  const SCENARIOS: Record<
+    string,
+    { name: string; meta: ReceiptOrderMetadata; items: ReceiptItemData[] }
+  > = {
+    DELIVERY_CARD: {
+      name: "🛵 Paket (Kapıda Kart)",
+      meta: {
+        orderNumber: 104,
+        orderType: "DELIVERY",
+        createdAt: new Date(),
+        customerName: "Ahmet Yılmaz",
+        customerPhone: "0532 555 12 34",
+        customerAddress: "Atatürk Mah. Karanfil Sok. No: 14 D: 3 Kadıköy / İstanbul",
+        customerNotes: "Kapı zili çalışmıyor, lütfen varınca arayın.",
+        paymentMode: "KAPIDA KREDİ KARTI / POS CİHAZI",
+        subtotal: 420.0,
+        deliveryFee: 30.0,
+        grandTotal: 450.0,
+        channel: "Telefon / Caller ID",
+        restaurantInfo: {
+          name: restaurantName || "Oxonom Restaurant",
+          phone: "0216 123 45 67",
+          address: "Bağdat Cad. No: 88 Kadıköy / İstanbul",
+        },
+      },
+      items: [
+        {
+          name: "Adana Kebap Porsiyon",
+          quantity: 2,
+          unitPrice: 180.0,
+          totalPrice: 360.0,
+          modifiers: ["Acılı", "Lavaş Fazla Olsun"],
+        },
+        {
+          name: "Kutu Ayran 330ml",
+          quantity: 2,
+          unitPrice: 30.0,
+          totalPrice: 60.0,
+        },
+      ],
+    },
+    DELIVERY_CASH: {
+      name: "💵 Paket (Kapıda Nakit)",
+      meta: {
+        orderNumber: 105,
+        orderType: "DELIVERY",
+        createdAt: new Date(),
+        customerName: "Mehmet Demir",
+        customerPhone: "0533 111 22 33",
+        customerAddress: "Caferağa Mah. Moda Cad. No: 45 Kat: 2 Moda / Kadıköy",
+        customerNotes: "200 TL üzeri para üstü getirilsin.",
+        paymentMode: "KAPIDA NAKİT",
+        subtotal: 260.0,
+        grandTotal: 260.0,
+        channel: "Telefon / Caller ID",
+        restaurantInfo: {
+          name: restaurantName || "Oxonom Restaurant",
+          phone: "0216 123 45 67",
+          address: "Bağdat Cad. No: 88 Kadıköy / İstanbul",
+        },
+      },
+      items: [
+        {
+          name: "Urfa Dürüm",
+          quantity: 2,
+          unitPrice: 110.0,
+          totalPrice: 220.0,
+        },
+        {
+          name: "Şalgam Suyu",
+          quantity: 2,
+          unitPrice: 20.0,
+          totalPrice: 40.0,
+        },
+      ],
+    },
+    TAKEAWAY_CASH: {
+      name: "🥡 Gel-Al (Takeaway)",
+      meta: {
+        orderNumber: 106,
+        orderType: "TAKEAWAY",
+        createdAt: new Date(),
+        customerName: "Zeynep Kaya",
+        customerPhone: "0533 987 65 43",
+        paymentMode: "NAKİT",
+        subtotal: 310.0,
+        grandTotal: 310.0,
+        channel: "Gel-Al / Telefon",
+        note: "15 dakika sonra gelip teslim alacak.",
+        restaurantInfo: {
+          name: restaurantName || "Oxonom Restaurant",
+          phone: "0216 123 45 67",
+          address: "Bağdat Cad. No: 88 Kadıköy / İstanbul",
+        },
+      },
+      items: [
+        {
+          name: "Tavuk Şiş Dürüm",
+          quantity: 2,
+          unitPrice: 130.0,
+          totalPrice: 260.0,
+        },
+        {
+          name: "Kutu Kola",
+          quantity: 2,
+          unitPrice: 25.0,
+          totalPrice: 50.0,
+        },
+      ],
+    },
+    DINE_IN: {
+      name: "🍽️ Masa / Salon (Masa 4)",
+      meta: {
+        orderNumber: 107,
+        orderType: "DINE_IN",
+        tableLabel: "Masa 4",
+        createdAt: new Date(),
+        customerName: "Caner Erkin",
+        paymentMode: "KREDİ KARTI",
+        subtotal: 580.0,
+        grandTotal: 580.0,
+        channel: "Salon / Garson",
+        staffName: "Garson Murat",
+        restaurantInfo: {
+          name: restaurantName || "Oxonom Restaurant",
+          phone: "0216 123 45 67",
+          address: "Bağdat Cad. No: 88 Kadıköy / İstanbul",
+        },
+      },
+      items: [
+        {
+          name: "Beyti Sarma",
+          quantity: 2,
+          unitPrice: 240.0,
+          totalPrice: 480.0,
+        },
+        {
+          name: "Künefe",
+          quantity: 1,
+          unitPrice: 100.0,
+          totalPrice: 100.0,
+        },
+      ],
+    },
+    MARKETPLACE: {
+      name: "🛍️ Yemeksepeti Online",
+      meta: {
+        orderNumber: 108,
+        orderType: "DELIVERY",
+        createdAt: new Date(),
+        customerName: "Ayşe Çelik (Yemeksepeti)",
+        customerPhone: "0850 222 00 00",
+        customerAddress: "Fenerbahçe Mah. Lale Sk. No: 12 Kadıköy / İstanbul",
+        customerNotes: "Temassız teslimat, kapıya asın ve zili çalın.",
+        paymentMode: "ONLINE ÖDENDİ (YEMEKSEPETİ)",
+        isPaid: true,
+        subtotal: 440.0,
+        grandTotal: 440.0,
+        channel: "Yemeksepeti",
+        restaurantInfo: {
+          name: restaurantName || "Oxonom Restaurant",
+          phone: "0216 123 45 67",
+          address: "Bağdat Cad. No: 88 Kadıköy / İstanbul",
+        },
+      },
+      items: [
+        {
+          name: "Büyük Boy Karışık Pizza",
+          quantity: 1,
+          unitPrice: 320.0,
+          totalPrice: 320.0,
+          modifiers: ["Mısırsız"],
+        },
+        {
+          name: "Patates Kızartması",
+          quantity: 1,
+          unitPrice: 80.0,
+          totalPrice: 80.0,
+        },
+        {
+          name: "Kutu Fanta",
+          quantity: 1,
+          unitPrice: 40.0,
+          totalPrice: 40.0,
+        },
+      ],
     },
   };
 
-  const sampleItems: ReceiptItemData[] = [
-    {
-      name: "Adana Kebap Porsiyon",
-      quantity: 2,
-      unitPrice: 180.0,
-      totalPrice: 360.0,
-      modifiers: ["Acılı", "Lavaş Fazla Olsun"],
-    },
-    {
-      name: "Kutu Ayran 330ml",
-      quantity: 2,
-      unitPrice: 30.0,
-      totalPrice: 60.0,
-    },
-  ];
+  const activeScenario = SCENARIOS[selectedScenarioKey] || SCENARIOS.DELIVERY_CARD;
 
   const getSimulatorPreview = (): string => {
     if (activePreviewType === "CUSTOMER") {
-      return renderCustomerBill(sampleMeta, sampleItems, { widthMm: previewWidth }).plainText;
+      return renderCustomerBill(activeScenario.meta, activeScenario.items, { widthMm: previewWidth }).plainText;
     }
     if (activePreviewType === "COURIER") {
-      return renderCourierSlip(sampleMeta, sampleItems, { widthMm: previewWidth }).plainText;
+      return renderCourierSlip(activeScenario.meta, activeScenario.items, { widthMm: previewWidth }).plainText;
     }
     if (activePreviewType === "KITCHEN") {
-      return renderKitchenTicket(sampleMeta, sampleItems, { widthMm: previewWidth, stationName: "SICAK MUTFAK" }).plainText;
+      return renderKitchenTicket(activeScenario.meta, activeScenario.items, { widthMm: previewWidth, stationName: "SICAK MUTFAK" }).plainText;
     }
     if (activePreviewType === "MERCHANT") {
-      return renderMerchantCopy(sampleMeta, sampleItems, { widthMm: previewWidth }).plainText;
+      return renderMerchantCopy(activeScenario.meta, activeScenario.items, { widthMm: previewWidth }).plainText;
     }
     return "";
   };
@@ -350,7 +509,25 @@ export function PrinterSettingsTab({
               </div>
             </div>
 
-            <div className="pt-3">
+            <div className="pt-3 space-y-2.5">
+              {/* Scenario Selector Pills */}
+              <div className="flex flex-wrap gap-1.5 pb-2 border-b">
+                {Object.entries(SCENARIOS).map(([key, item]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelectedScenarioKey(key as any)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                      selectedScenarioKey === key
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                        : "bg-background/80 hover:bg-muted text-muted-foreground border-border"
+                    }`}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+
               <Tabs
                 value={activePreviewType}
                 onValueChange={(v) => setActivePreviewType(v as any)}

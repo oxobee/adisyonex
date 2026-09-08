@@ -297,14 +297,16 @@ export async function getCustomerCallSummary(
 }
 
 export async function getActiveRingingCall(restaurantId: string): Promise<ActiveCallDTO | null> {
-  // Check if telephony is enabled first
-  const integration = await getTelephonyIntegration(restaurantId);
-  if (!integration || !integration.enabled) {
-    return null;
-  }
-
   const activeCall = await findActiveRingingCall(restaurantId);
   if (!activeCall) return null;
+
+  // Check if telephony integration allows calls (or if it's a simulated call, allow it always)
+  const integration = await getTelephonyIntegration(restaurantId);
+  if (!activeCall.isSimulation) {
+    if (!integration || !integration.enabled) {
+      return null;
+    }
+  }
 
   const profile = await getCustomerCallSummary(restaurantId, activeCall.normalizedFromNumber);
 
@@ -378,13 +380,22 @@ export async function quickRegisterCustomerFromCall(
   };
 }
 
+export type SimulationScenario =
+  | "REGISTERED_DELIVERY"
+  | "REGISTERED_TAKEAWAY"
+  | "REGISTERED_DINE_IN"
+  | "NEW_CUSTOMER"
+  | "MARKETPLACE_YEMEKSEPETI"
+  | "REGISTERED" // Backwards compatibility
+  | "NEW"; // Backwards compatibility
+
 /**
  * Triggers a real simulation call that follows the exact backend pipeline.
  */
 export async function triggerSimulationCall(
   restaurantId: string,
   options: {
-    scenario: "REGISTERED" | "NEW";
+    scenario: SimulationScenario;
     customPhone?: string;
     customName?: string;
   }
@@ -394,11 +405,105 @@ export async function triggerSimulationCall(
     throw new Error("TELEPHONY_NOT_INITIALIZED");
   }
 
-  let callerPhone = options.customPhone?.trim() || "05321234567";
-  let callerName = options.customName?.trim() || "Ahmet Yılmaz";
+  const scenario = options.scenario;
+  let callerPhone = options.customPhone?.trim();
+  let callerName = options.customName?.trim();
 
-  if (options.scenario === "REGISTERED") {
-    // Look for an existing customer in this restaurant
+  if (scenario === "NEW" || scenario === "NEW_CUSTOMER") {
+    // NEW customer: unique non-existent phone number
+    if (!callerPhone) {
+      callerPhone = `0555${Math.floor(1000000 + Math.random() * 9000000)}`;
+    }
+  } else if (scenario === "MARKETPLACE_YEMEKSEPETI") {
+    // Yemeksepeti / Pazaryeri maskeli çağrı
+    callerPhone = callerPhone || "08502220000";
+    callerName = callerName || "Yemeksepeti (Sipariş Destek)";
+
+    let marketplaceCustomer = await prisma.customer.findFirst({
+      where: { restaurantId, phone: callerPhone, deletedAt: null },
+    });
+    if (!marketplaceCustomer) {
+      marketplaceCustomer = await prisma.customer.create({
+        data: {
+          restaurantId,
+          name: "Yemeksepeti Entegrasyon",
+          phone: callerPhone,
+          notes: "Pazaryeri otomatik sipariş bildirim hattı. Ödeme online alınmıştır.",
+          source: "YEMEKSEPETI",
+          customerSource: "YEMEKSEPETI",
+        },
+      });
+    }
+  } else if (scenario === "REGISTERED_TAKEAWAY") {
+    callerPhone = callerPhone || "05339876543";
+    callerName = callerName || "Zeynep Kaya";
+
+    let takeawayCust = await prisma.customer.findFirst({
+      where: { restaurantId, phone: callerPhone, deletedAt: null },
+    });
+    if (!takeawayCust) {
+      takeawayCust = await prisma.customer.create({
+        data: {
+          restaurantId,
+          name: callerName,
+          phone: callerPhone,
+          notes: "Müşteri gelip kendisi teslim alacak. 15 dk sonra hazır olsun.",
+          source: "PHONE_ORDER",
+          customerSource: "PHONE",
+          orderCount: 4,
+          totalSpent: 1250,
+        },
+      });
+      // Add previous takeaway order
+      await prisma.order.create({
+        data: {
+          restaurantId,
+          orderNumber: Math.floor(1000 + Math.random() * 9000),
+          idempotencyKey: `sim_order_takeaway_${Date.now()}`,
+          orderType: "TAKEAWAY",
+          orderChannel: "PHONE",
+          status: "COMPLETED",
+          customerId: takeawayCust.id,
+          customerName: takeawayCust.name,
+          customerPhone: takeawayCust.phone,
+          subtotal: 310,
+          grandTotal: 310,
+          items: {
+            create: [
+              { name: "Tavuk Şiş Dürüm", quantity: 2, unitPrice: 130, itemType: "SERVED" },
+              { name: "Kutu Kola", quantity: 2, unitPrice: 25, itemType: "SERVED" },
+            ],
+          },
+        },
+      });
+    }
+  } else if (scenario === "REGISTERED_DINE_IN") {
+    callerPhone = callerPhone || "05423334455";
+    callerName = callerName || "Caner Erkin";
+
+    let dineInCust = await prisma.customer.findFirst({
+      where: { restaurantId, phone: callerPhone, deletedAt: null },
+    });
+    if (!dineInCust) {
+      dineInCust = await prisma.customer.create({
+        data: {
+          restaurantId,
+          name: callerName,
+          phone: callerPhone,
+          notes: "Masa rezervasyonu veya salonda sipariş veren VIP müşteri.",
+          source: "PHONE_ORDER",
+          customerSource: "PHONE",
+          orderCount: 8,
+          totalSpent: 4200,
+        },
+      });
+    }
+  } else {
+    // REGISTERED or REGISTERED_DELIVERY
+    callerPhone = callerPhone || "05321234567";
+    callerName = callerName || "Ahmet Yılmaz";
+
+    // Look for existing customer
     const existing = await prisma.customer.findFirst({
       where: { restaurantId, deletedAt: null },
       include: { addresses: true },
@@ -408,7 +513,6 @@ export async function triggerSimulationCall(
       callerPhone = existing.phone;
       callerName = existing.name;
 
-      // Ensure they have at least one test address for demonstration
       if (existing.addresses.length === 0) {
         await prisma.customerAddress.create({
           data: {
@@ -422,7 +526,6 @@ export async function triggerSimulationCall(
         });
       }
     } else {
-      // Create a realistic sample customer
       const created = await createCustomerWithAddress({
         restaurantId,
         name: callerName,
@@ -432,7 +535,6 @@ export async function triggerSimulationCall(
         addressTitle: "Ev",
       });
 
-      // Add a secondary work address
       await prisma.customerAddress.create({
         data: {
           customerId: created.customer.id,
@@ -444,12 +546,10 @@ export async function triggerSimulationCall(
         },
       });
 
-      // Add a mock completed past order for realistic simulation
-      const orderNumber = Math.floor(1000 + Math.random() * 9000);
       await prisma.order.create({
         data: {
           restaurantId,
-          orderNumber,
+          orderNumber: Math.floor(1000 + Math.random() * 9000),
           idempotencyKey: `sim_order_${Date.now()}_${Math.random()}`,
           orderType: "DELIVERY",
           status: "COMPLETED",
@@ -483,9 +583,6 @@ export async function triggerSimulationCall(
         data: { orderCount: 14, totalSpent: 8450 },
       });
     }
-  } else {
-    // NEW customer: unique non-existent phone number
-    callerPhone = `0555${Math.floor(1000000 + Math.random() * 9000000)}`;
   }
 
   const normalizedPhone = normalizePhoneNumber(callerPhone) || callerPhone;

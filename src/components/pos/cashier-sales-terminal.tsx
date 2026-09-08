@@ -79,6 +79,17 @@ import { IncomingCallDrawer, type OnStartOrderPayload } from "@/components/telep
 import { MissedCallsDialog } from "@/components/telephony/missed-calls-dialog";
 import { PosCustomerBanner, type CustomerAddressItem } from "./pos-customer-banner";
 import { OrderReceiptPrintDialog } from "@/components/orders/order-receipt-print-dialog";
+import { triggerCallSimulationAction } from "@/actions/telephony.actions";
+import { broadcastTelephonyEvent } from "@/lib/telephony-broadcast";
+import type { SimulationScenario } from "@/services/telephony.service";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import type { OrderDTO, OrderType } from "@/types/order";
 
@@ -263,6 +274,29 @@ export function CashierSalesTerminal({
     setIsMissedListOpen,
     dismissCall,
   } = useTelephony({ enabled: telephonyEnabled });
+
+  const [isSimulatingCall, setIsSimulatingCall] = useState(false);
+
+  const handleTriggerSimFromPos = async (scenario: SimulationScenario) => {
+    setIsSimulatingCall(true);
+    try {
+      const res = await triggerCallSimulationAction({ scenario });
+      if (!res.success || !res.data) {
+        toast.error(res.error || "Simülasyon araması başlatılamadı.");
+        return;
+      }
+      broadcastTelephonyEvent({
+        type: "INCOMING_CALL",
+        call: res.data,
+      });
+      setIsDrawerOpen(true);
+      toast.success("✓ Simülasyon çağrısı başlatıldı ve ekrana getirildi!");
+    } catch {
+      toast.error("Simülasyon araması tetiklenirken hata oluştu.");
+    } finally {
+      setIsSimulatingCall(false);
+    }
+  };
 
   const handleStartOrderFromTelephony = (payload: OnStartOrderPayload) => {
     let newCart: CartLine[] | undefined = undefined;
@@ -1292,7 +1326,8 @@ export function CashierSalesTerminal({
 
         {/* Sağ: Panele Dön & Kasiyer / Restoran Profili */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {telephonyEnabled && (
+          {/* Telefon Sipariş ve Simülasyon Butonları */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => {
@@ -1301,14 +1336,14 @@ export function CashierSalesTerminal({
                 } else if (missedCalls.length > 0) {
                   setIsMissedListOpen(true);
                 } else {
-                  toast.info("Aktif bir gelen arama bulunmuyor.");
+                  toast.info("Aktif bir gelen arama bulunmuyor. Yanındaki 'Test Araması' menüsünden simülasyon başlatabilirsiniz.");
                 }
               }}
               title="Akıllı Telefon Siparişleri & Cevapsız Aramalar"
               className={cn(
                 "h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs relative",
                 activeCall
-                  ? "bg-rose-50 border-rose-300 text-rose-700 animate-pulse"
+                  ? "bg-rose-50 border-rose-300 text-rose-700 animate-pulse ring-2 ring-rose-500/30"
                   : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
               )}
             >
@@ -1325,7 +1360,119 @@ export function CashierSalesTerminal({
                 </span>
               )}
             </button>
-          )}
+
+            {/* Hızlı Simülasyon Arama Menüsü */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  "h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs",
+                  isSimulatingCall
+                    ? "bg-amber-100 border-amber-300 text-amber-800"
+                    : "border-amber-200/80 bg-amber-50/70 hover:bg-amber-100/80 text-amber-800"
+                )}
+                title="Tüm kombinasyonlarla test çağrısı simülasyonu başlat"
+              >
+                <SparklesIcon className="size-3.5 text-amber-600" />
+                <span className="hidden 2xl:inline">Test Araması</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72 p-1.5 z-50">
+                <DropdownMenuLabel className="text-xs font-bold text-slate-800 px-2 py-1">
+                  ⚡ Simülasyon Arama Senaryoları
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-1" />
+
+                <DropdownMenuItem
+                  onClick={() => handleTriggerSimFromPos("REGISTERED_DELIVERY")}
+                  disabled={isSimulatingCall}
+                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      🛵 Kayıtlı (Paket - Kapıda Kart)
+                    </span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 rounded">
+                      Ahmet Y.
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Kayıtlı 2 adres, geçmiş sipariş & kapıda kart
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleTriggerSimFromPos("REGISTERED_TAKEAWAY")}
+                  disabled={isSimulatingCall}
+                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      🥡 Kayıtlı (Gel-Al - Zeynep K.)
+                    </span>
+                    <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-1.5 rounded">
+                      Nakit
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Restorandan teslim alacak müşteri akışı
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleTriggerSimFromPos("REGISTERED_DINE_IN")}
+                  disabled={isSimulatingCall}
+                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      🍽️ Kayıtlı (Salon / Masa - Caner E.)
+                    </span>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 rounded">
+                      Masa
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Masa rezervasyonu & salonda sipariş
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleTriggerSimFromPos("NEW_CUSTOMER")}
+                  disabled={isSimulatingCall}
+                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      👤 Yeni Müşteri (Kayıtsız Numara)
+                    </span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 rounded">
+                      Hızlı Kayıt
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Rastgele numara, hızlı isim ve adres kaydı
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleTriggerSimFromPos("MARKETPLACE_YEMEKSEPETI")}
+                  disabled={isSimulatingCall}
+                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      🛍️ Pazaryeri (Yemeksepeti)
+                    </span>
+                    <span className="text-[10px] bg-rose-100 text-rose-800 font-semibold px-1.5 rounded">
+                      Online Ödendi
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Pazaryeri maskeli çağrı & tahsilatsız fiş
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <button
             type="button"

@@ -257,7 +257,10 @@ export default async function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="telephony" keepMounted>
-            <TelephonySettingsTab initialSettings={telephonySettings} />
+            <TelephonySettingsTab
+              initialSettings={telephonySettings}
+              restaurantName={restaurantSettings?.name || profile.name}
+            />
           </TabsContent>
 
           <TabsContent value="license" keepMounted className="flex flex-col gap-6">

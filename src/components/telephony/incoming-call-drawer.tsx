@@ -13,6 +13,7 @@ import {
   ClockIcon,
   SparklesIcon,
   CheckIcon,
+  BikeIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -107,8 +108,8 @@ export function IncomingCallDrawer({
     toast.success("Son sipariş kalemleri yeni adisyona aktarıldı!");
   };
 
-  const handleOpenNewOrder = () => {
-    const chosenAddress = profile.addresses[selectedAddressIndex]?.address;
+  const handleOpenNewOrder = (serviceType: "DELIVERY" | "TAKEAWAY" | "DINE_IN" = "DELIVERY") => {
+    const chosenAddress = serviceType === "DELIVERY" ? profile.addresses[selectedAddressIndex]?.address : undefined;
 
     onStartOrder({
       customerName: profile.name || "Müşteri",
@@ -118,11 +119,12 @@ export function IncomingCallDrawer({
       callSessionId: call.id,
       customerNotes: profile.notes,
       addresses: profile.addresses,
-      serviceType: "DELIVERY", // Varsayılan paket servis
+      serviceType,
     });
 
     onDismissCall(call.id, "ANSWERED");
-    toast.success("Müşteri bilgileri ile yeni telefon siparişi açıldı.");
+    const label = serviceType === "TAKEAWAY" ? "Gel-Al" : serviceType === "DINE_IN" ? "Salon" : "Paket Servis";
+    toast.success(`Müşteri bilgileri ile yeni ${label} siparişi açıldı.`);
   };
 
   const handleQuickRegisterAndOrder = async () => {
@@ -359,15 +361,34 @@ export function IncomingCallDrawer({
               )}
 
               {/* Quick Action Buttons */}
-              <div className="pt-1">
+              <div className="space-y-2 pt-1">
                 <Button
-                  variant={profile.lastOrder ? "outline" : "default"}
-                  className="w-full gap-2 font-semibold"
-                  onClick={handleOpenNewOrder}
+                  variant="default"
+                  className="w-full gap-2 font-bold bg-rose-600 hover:bg-rose-700 text-white"
+                  onClick={() => handleOpenNewOrder("DELIVERY")}
                 >
-                  <PlusCircleIcon className="size-4" />
-                  Yeni Sipariş Aç
+                  <BikeIcon className="size-4" />
+                  🛵 Paket Servis Siparişi Aç
                 </Button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-1.5 font-semibold text-xs"
+                    onClick={() => handleOpenNewOrder("TAKEAWAY")}
+                  >
+                    <ShoppingBagIcon className="size-3.5" />
+                    🥡 Gel-Al Aç
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-1.5 font-semibold text-xs"
+                    onClick={() => handleOpenNewOrder("DINE_IN")}
+                  >
+                    <PlusCircleIcon className="size-3.5" />
+                    🍽️ Masa / Salon Aç
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (

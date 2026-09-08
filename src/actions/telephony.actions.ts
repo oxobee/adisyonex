@@ -79,7 +79,15 @@ export async function testTelephonyConnectionAction(): Promise<ActionResult<{ me
 }
 
 const triggerSimulationSchema = z.object({
-  scenario: z.enum(["REGISTERED", "NEW"]),
+  scenario: z.enum([
+    "REGISTERED_DELIVERY",
+    "REGISTERED_TAKEAWAY",
+    "REGISTERED_DINE_IN",
+    "NEW_CUSTOMER",
+    "MARKETPLACE_YEMEKSEPETI",
+    "REGISTERED",
+    "NEW",
+  ]),
   customPhone: z.string().optional(),
   customName: z.string().optional(),
 });
