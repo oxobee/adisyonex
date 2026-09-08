@@ -70,7 +70,7 @@ export default async function PosPage() {
       cashierName={staffCtx?.name || "Kasa Yetkilisi"}
       restaurantName={restaurant?.name || "Oxonom POS"}
       showItemImages={restaurant?.showItemImages ?? true}
-      telephonyEnabled={telephony?.enabled ?? false}
+      telephonyEnabled={telephony ? telephony.enabled : true}
       receiptSettings={{
         receiptKitchenActive: restaurant?.receiptKitchenActive ?? true,
         receiptCourierActive: restaurant?.receiptCourierActive ?? true,

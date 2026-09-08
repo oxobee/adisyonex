@@ -12,6 +12,7 @@ import {
   CheckIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
+  ChevronDownIcon,
   CreditCardIcon,
   DeleteIcon,
   MinusIcon,
@@ -82,14 +83,6 @@ import { OrderReceiptPrintDialog } from "@/components/orders/order-receipt-print
 import { triggerCallSimulationAction } from "@/actions/telephony.actions";
 import { broadcastTelephonyEvent } from "@/lib/telephony-broadcast";
 import type { SimulationScenario } from "@/services/telephony.service";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import type { OrderDTO, OrderType } from "@/types/order";
 
@@ -276,8 +269,22 @@ export function CashierSalesTerminal({
   } = useTelephony({ enabled: telephonyEnabled });
 
   const [isSimulatingCall, setIsSimulatingCall] = useState(false);
+  const [isSimMenuOpen, setIsSimMenuOpen] = useState(false);
+  const simMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isSimMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (simMenuRef.current && !simMenuRef.current.contains(e.target as Node)) {
+        setIsSimMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSimMenuOpen]);
 
   const handleTriggerSimFromPos = async (scenario: SimulationScenario) => {
+    setIsSimMenuOpen(false);
     setIsSimulatingCall(true);
     try {
       const res = await triggerCallSimulationAction({ scenario });
@@ -1362,11 +1369,13 @@ export function CashierSalesTerminal({
             </button>
 
             {/* Hızlı Simülasyon Arama Menüsü */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
+            <div className="relative" ref={simMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsSimMenuOpen((prev) => !prev)}
                 className={cn(
                   "h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs",
-                  isSimulatingCall
+                  isSimMenuOpen || isSimulatingCall
                     ? "bg-amber-100 border-amber-300 text-amber-800"
                     : "border-amber-200/80 bg-amber-50/70 hover:bg-amber-100/80 text-amber-800"
                 )}
@@ -1374,104 +1383,123 @@ export function CashierSalesTerminal({
               >
                 <SparklesIcon className="size-3.5 text-amber-600" />
                 <span className="hidden 2xl:inline">Test Araması</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 p-1.5 z-50">
-                <DropdownMenuLabel className="text-xs font-bold text-slate-800 px-2 py-1">
-                  ⚡ Simülasyon Arama Senaryoları
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="my-1" />
+                <ChevronDownIcon
+                  className={cn(
+                    "size-3 text-amber-700 transition-transform",
+                    isSimMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
 
-                <DropdownMenuItem
-                  onClick={() => handleTriggerSimFromPos("REGISTERED_DELIVERY")}
-                  disabled={isSimulatingCall}
-                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      🛵 Kayıtlı (Paket - Kapıda Kart)
-                    </span>
-                    <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 rounded">
-                      Ahmet Y.
-                    </span>
+              {isSimMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-slate-200 bg-white shadow-xl p-1.5 z-50 animate-in fade-in-0 zoom-in-95">
+                  <div className="text-xs font-bold text-slate-800 px-2 py-1 flex items-center justify-between">
+                    <span>⚡ Simülasyon Arama Senaryoları</span>
+                    {isSimulatingCall && (
+                      <span className="text-[10px] text-amber-600 font-normal animate-pulse">
+                        Aranıyor...
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[11px] text-slate-500">
-                    Kayıtlı 2 adres, geçmiş sipariş & kapıda kart
-                  </span>
-                </DropdownMenuItem>
+                  <div className="h-px bg-slate-100 my-1" />
 
-                <DropdownMenuItem
-                  onClick={() => handleTriggerSimFromPos("REGISTERED_TAKEAWAY")}
-                  disabled={isSimulatingCall}
-                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      🥡 Kayıtlı (Gel-Al - Zeynep K.)
+                  <button
+                    type="button"
+                    disabled={isSimulatingCall}
+                    onClick={() => handleTriggerSimFromPos("REGISTERED_DELIVERY")}
+                    className="w-full text-left p-2 rounded-lg cursor-pointer hover:bg-slate-50 active:bg-slate-100 flex flex-col items-start gap-0.5 transition-colors"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        🛵 Kayıtlı (Paket - Kapıda Kart)
+                      </span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 rounded">
+                        Ahmet Y.
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Kayıtlı 2 adres, geçmiş sipariş & kapıda kart
                     </span>
-                    <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-1.5 rounded">
-                      Nakit
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-500">
-                    Restorandan teslim alacak müşteri akışı
-                  </span>
-                </DropdownMenuItem>
+                  </button>
 
-                <DropdownMenuItem
-                  onClick={() => handleTriggerSimFromPos("REGISTERED_DINE_IN")}
-                  disabled={isSimulatingCall}
-                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      🍽️ Kayıtlı (Salon / Masa - Caner E.)
+                  <button
+                    type="button"
+                    disabled={isSimulatingCall}
+                    onClick={() => handleTriggerSimFromPos("REGISTERED_TAKEAWAY")}
+                    className="w-full text-left p-2 rounded-lg cursor-pointer hover:bg-slate-50 active:bg-slate-100 flex flex-col items-start gap-0.5 transition-colors"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        🥡 Kayıtlı (Gel-Al - Zeynep K.)
+                      </span>
+                      <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-1.5 rounded">
+                        Nakit
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Restorandan teslim alacak müşteri akışı
                     </span>
-                    <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 rounded">
-                      Masa
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-500">
-                    Masa rezervasyonu & salonda sipariş
-                  </span>
-                </DropdownMenuItem>
+                  </button>
 
-                <DropdownMenuItem
-                  onClick={() => handleTriggerSimFromPos("NEW_CUSTOMER")}
-                  disabled={isSimulatingCall}
-                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      👤 Yeni Müşteri (Kayıtsız Numara)
+                  <button
+                    type="button"
+                    disabled={isSimulatingCall}
+                    onClick={() => handleTriggerSimFromPos("REGISTERED_DINE_IN")}
+                    className="w-full text-left p-2 rounded-lg cursor-pointer hover:bg-slate-50 active:bg-slate-100 flex flex-col items-start gap-0.5 transition-colors"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        🍽️ Kayıtlı (Salon / Masa - Caner E.)
+                      </span>
+                      <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 rounded">
+                        Masa
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Masa rezervasyonu & salonda sipariş
                     </span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 rounded">
-                      Hızlı Kayıt
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-500">
-                    Rastgele numara, hızlı isim ve adres kaydı
-                  </span>
-                </DropdownMenuItem>
+                  </button>
 
-                <DropdownMenuItem
-                  onClick={() => handleTriggerSimFromPos("MARKETPLACE_YEMEKSEPETI")}
-                  disabled={isSimulatingCall}
-                  className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 flex flex-col items-start gap-0.5"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      🛍️ Pazaryeri (Yemeksepeti)
+                  <button
+                    type="button"
+                    disabled={isSimulatingCall}
+                    onClick={() => handleTriggerSimFromPos("NEW_CUSTOMER")}
+                    className="w-full text-left p-2 rounded-lg cursor-pointer hover:bg-slate-50 active:bg-slate-100 flex flex-col items-start gap-0.5 transition-colors"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        👤 Yeni Müşteri (Kayıtsız Numara)
+                      </span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 rounded">
+                        Hızlı Kayıt
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Rastgele numara, hızlı isim ve adres kaydı
                     </span>
-                    <span className="text-[10px] bg-rose-100 text-rose-800 font-semibold px-1.5 rounded">
-                      Online Ödendi
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSimulatingCall}
+                    onClick={() => handleTriggerSimFromPos("MARKETPLACE_YEMEKSEPETI")}
+                    className="w-full text-left p-2 rounded-lg cursor-pointer hover:bg-slate-50 active:bg-slate-100 flex flex-col items-start gap-0.5 transition-colors"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        🛍️ Pazaryeri (Yemeksepeti)
+                      </span>
+                      <span className="text-[10px] bg-rose-100 text-rose-800 font-semibold px-1.5 rounded">
+                        Online Ödendi
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Pazaryeri maskeli çağrı & tahsilatsız fiş
                     </span>
-                  </div>
-                  <span className="text-[11px] text-slate-500">
-                    Pazaryeri maskeli çağrı & tahsilatsız fiş
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
@@ -3283,7 +3311,7 @@ export function CashierSalesTerminal({
         </div>
       )}
 
-      {telephonyEnabled && (
+      {(telephonyEnabled || Boolean(activeCall) || isDrawerOpen || isMissedListOpen) && (
         <>
           <IncomingCallDrawer
             call={activeCall}

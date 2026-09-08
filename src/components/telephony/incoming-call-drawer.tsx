@@ -183,6 +183,11 @@ export function IncomingCallDrawer({
         side="right"
         className="w-full sm:max-w-md md:max-w-lg overflow-y-auto p-0 flex flex-col gap-0 border-l"
       >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Gelen Çağrı: {call.formattedFromNumber}</SheetTitle>
+          <SheetDescription>Gelen arama ve sipariş yönetim paneli</SheetDescription>
+        </SheetHeader>
+
         {/* Call Banner */}
         <div className="bg-primary/10 border-b p-5 relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-3">

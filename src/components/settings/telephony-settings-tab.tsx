@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   PhoneCallIcon,
   CheckCircle2Icon,
@@ -42,7 +43,8 @@ import {
 } from "@/lib/printer/receipt-engine";
 import { broadcastTelephonyEvent } from "@/lib/telephony-broadcast";
 import { PrinterClient } from "@/lib/printer/printer-client";
-import type { SimulationScenario, TelephonySettingsDTO } from "@/services/telephony.service";
+import { IncomingCallDrawer } from "@/components/telephony/incoming-call-drawer";
+import type { ActiveCallDTO, SimulationScenario, TelephonySettingsDTO } from "@/services/telephony.service";
 
 interface TelephonySettingsTabProps {
   readonly initialSettings: TelephonySettingsDTO;
@@ -246,11 +248,13 @@ export function TelephonySettingsTab({ initialSettings, restaurantName = "Oxonom
   const [apiPassword, setApiPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Loading states
+  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simScenario, setSimScenario] = useState<SimulationScenario>("REGISTERED_DELIVERY");
+  const [simulatedCall, setSimulatedCall] = useState<ActiveCallDTO | null>(null);
+  const [isSimDrawerOpen, setIsSimDrawerOpen] = useState(false);
 
   // Thermal preview state
   const [previewPaperWidth, setPreviewPaperWidth] = useState<"58mm" | "80mm">("80mm");
@@ -382,6 +386,10 @@ export function TelephonySettingsTab({ initialSettings, restaurantName = "Oxonom
         call: res.data,
       });
 
+      // Also display call drawer immediately in the current settings view!
+      setSimulatedCall(res.data);
+      setIsSimDrawerOpen(true);
+
       const scenarioLabels: Record<SimulationScenario, string> = {
         REGISTERED_DELIVERY: "Kayıtlı Müşteri (Paket - Kapıda Kart)",
         REGISTERED_TAKEAWAY: "Kayıtlı Müşteri (Gel-Al - Zeynep Kaya)",
@@ -393,7 +401,7 @@ export function TelephonySettingsTab({ initialSettings, restaurantName = "Oxonom
       };
 
       toast.success(
-        `✓ ${scenarioLabels[simScenario] || "Test"} araması başlatıldı! POS ekranında çağrı açıldı.`
+        `✓ ${scenarioLabels[simScenario] || "Test"} araması başlatıldı! Çağrı ekranı açıldı.`
       );
     } finally {
       setIsSimulating(false);
@@ -1113,6 +1121,21 @@ export function TelephonySettingsTab({ initialSettings, restaurantName = "Oxonom
           </div>
         </CardContent>
       </Card>
+
+      <IncomingCallDrawer
+        call={simulatedCall}
+        open={isSimDrawerOpen}
+        onClose={() => setIsSimDrawerOpen(false)}
+        onDismissCall={() => {
+          setIsSimDrawerOpen(false);
+          setSimulatedCall(null);
+        }}
+        onStartOrder={() => {
+          setIsSimDrawerOpen(false);
+          toast.success("Sipariş başlatıldı! POS ekranına yönlendiriliyorsunuz...");
+          router.push("/dashboard/pos");
+        }}
+      />
     </div>
   );
 }

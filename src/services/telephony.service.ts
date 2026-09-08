@@ -400,9 +400,14 @@ export async function triggerSimulationCall(
     customName?: string;
   }
 ): Promise<ActiveCallDTO> {
-  const integration = await getTelephonyIntegration(restaurantId);
+  let integration = await getTelephonyIntegration(restaurantId);
   if (!integration) {
-    throw new Error("TELEPHONY_NOT_INITIALIZED");
+    integration = await upsertTelephonyIntegration(restaurantId, {
+      provider: "NETGSM",
+      enabled: true,
+      mode: "SIMULATION",
+      status: "ACTIVE",
+    });
   }
 
   const scenario = options.scenario;
