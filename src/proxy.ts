@@ -15,6 +15,7 @@ const PUBLIC_ROUTES = [
   "/personel-giris",
   "/boss",
   "/appstore",
+  "/store",
 ];
 
 /** Auth pages a signed-in user should be redirected away from. */
@@ -41,6 +42,7 @@ const RESERVED_SLUGS = new Set([
   "menu",
   "boss",
   "appstore",
+  "store",
   "settings",
   "inventory",
   "customers",

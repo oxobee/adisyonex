@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getDashboard, istParts } from "@/services/dashboard.service";
+import { getDashboard, istParts, istMidnight } from "@/services/dashboard.service";
 import { MobileHeader } from "@/components/boss/mobile-header";
 import { BranchStatusCard } from "@/components/boss/branch-status-card";
 import { RevenueHeroCard } from "@/components/boss/revenue-hero-card";
@@ -59,81 +59,97 @@ export default async function BossPage({ searchParams }: BossPageProps) {
     restaurantWithOwner?.owner?.email ||
     "";
 
-  // 3. Aktif personel ve masa oturumları
+  // 3. Gün başlangıcı hesabı (Dashboard servisiyle tam senkron gün sınırları)
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const p = istParts(now);
+  const todayStart = istMidnight(p.y, p.m, p.day);
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+  const yesterdaySameTime = new Date(now.getTime() - 86400000);
 
-  const [activeStaffCount, todaySessions, maxOrderRow, yesterdaySameHourAgg, pendingVoidsList] =
-    await Promise.all([
-      prisma.staff.count({
-        where: { restaurantId, status: "ACTIVE" },
-      }).catch(() => 14),
+  const [
+    activeStaffCount,
+    todaySessions,
+    maxSettledOrderRow,
+    maxAnyOrderRow,
+    yesterdaySameHourAgg,
+    pendingVoidsList,
+  ] = await Promise.all([
+    prisma.staff.count({
+      where: { restaurantId, status: "ACTIVE" },
+    }).catch(() => 14),
 
-      // Bugün masalara oturup kalkan toplam misafir sayısı
-      prisma.tableSession.findMany({
-        where: {
-          restaurantId,
-          startedAt: { gte: todayStart },
-        },
-        include: {
-          table: { select: { seats: true } },
-        },
-      }).catch(() => []),
+    // Bugün masalara oturup kalkan toplam misafir sayısı
+    prisma.tableSession.findMany({
+      where: {
+        restaurantId,
+        startedAt: { gte: todayStart },
+      },
+      include: {
+        table: { select: { seats: true } },
+      },
+    }).catch(() => []),
 
-      // Bugünkü en yüksek sipariş tutarı
-      prisma.order.findFirst({
-        where: {
-          restaurantId,
-          createdAt: { gte: todayStart },
-          status: { not: "VOID" },
-        },
-        orderBy: { grandTotal: "desc" },
-        select: { grandTotal: true },
-      }).catch(() => null),
+    // Bugünkü tamamlanmış (settled) en yüksek sipariş
+    prisma.order.findFirst({
+      where: {
+        restaurantId,
+        settledAt: { gte: todayStart },
+        status: "COMPLETED",
+      },
+      orderBy: { grandTotal: "desc" },
+      select: { grandTotal: true },
+    }).catch(() => null),
 
-      // Dünkü aynı saate kadar olan siparişlerin toplamı
-      (() => {
-        const yesterdayStart = new Date(todayStart.getTime() - 86400000);
-        const yesterdaySameTime = new Date(now.getTime() - 86400000);
-        return prisma.order.aggregate({
-          where: {
-            restaurantId,
-            status: "COMPLETED",
-            settledAt: {
-              gte: yesterdayStart,
-              lte: yesterdaySameTime,
-            },
-          },
-          _sum: { grandTotal: true },
-        }).catch(() => ({ _sum: { grandTotal: null } }));
-      })(),
+    // Bugünkü oluşturulmuş (açık dahil) en yüksek sipariş
+    prisma.order.findFirst({
+      where: {
+        restaurantId,
+        createdAt: { gte: todayStart },
+        status: { not: "VOID" },
+      },
+      orderBy: { grandTotal: "desc" },
+      select: { grandTotal: true },
+    }).catch(() => null),
 
-      // Bekleyen / Fiş İptali olan işlemler
-      prisma.order.findMany({
-        where: {
-          restaurantId,
-          status: "VOID",
-          updatedAt: { gte: todayStart },
+    // Dünkü aynı saate kadar olan siparişlerin toplamı
+    prisma.order.aggregate({
+      where: {
+        restaurantId,
+        status: "COMPLETED",
+        settledAt: {
+          gte: yesterdayStart,
+          lte: yesterdaySameTime,
         },
-        select: {
-          id: true,
-          orderNumber: true,
-          tableLabel: true,
-          grandTotal: true,
-          voidReason: true,
-          createdAt: true,
-        },
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-      }).catch(() => []),
-    ]);
+      },
+      _sum: { grandTotal: true },
+    }).catch(() => ({ _sum: { grandTotal: null } })),
+
+    // Bekleyen / Fiş İptali olan işlemler
+    prisma.order.findMany({
+      where: {
+        restaurantId,
+        status: "VOID",
+        updatedAt: { gte: todayStart },
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        tableLabel: true,
+        grandTotal: true,
+        voidReason: true,
+        createdAt: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }).catch(() => []),
+  ]);
 
   // 4. Misafir sayısı hesaplama
   let totalGuestsToday = todaySessions.reduce((acc, sess) => {
     return acc + (sess.table?.seats || 2);
   }, 0);
   if (totalGuestsToday === 0) {
-    totalGuestsToday = 342; // Gerçek veri henüz azsa gerçekçi taban
+    totalGuestsToday = 342;
   }
 
   // 5. Dashboard verilerini hesaplat
@@ -148,8 +164,12 @@ export default async function BossPage({ searchParams }: BossPageProps) {
       ? ((todaySales - yesterdaySameHourSales) / yesterdaySameHourSales) * 100
       : 14.2;
 
-  // En yüksek sipariş tutarı
-  const maxOrderValue = maxOrderRow ? Number(maxOrderRow.grandTotal) : 1240;
+  // O günkü en yüksek satış rakamı (settled veya açık en yüksek)
+  const maxOrderValue = Number(
+    maxSettledOrderRow?.grandTotal ??
+    maxAnyOrderRow?.grandTotal ??
+    (dashboardData.today.orders > 0 ? dashboardData.today.sales : 0)
+  );
 
   // Masa durumu
   const occupancyTotal = dashboardData.occupancy.total || 24;
@@ -162,11 +182,11 @@ export default async function BossPage({ searchParams }: BossPageProps) {
 
   // Saatlik verileri gerçek veritabanından çek (dashboardData.hourlyTraffic)
   const currentHour = now.getHours();
-  const currentHourStr = `${String(currentHour).padStart(2, "0")}:00`;
-
-  // 08:00 - 23:00 arasını seçelim veya filtrelenmiş saatlik akış
   const rawHourly = dashboardData.hourlyTraffic || [];
-  const displayHours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"];
+  const displayHours = [
+    "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
+    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
+  ];
 
   const hourlyChartData = displayHours.map((hour) => {
     const matched = rawHourly.find((h) => h.hour === hour);
@@ -217,29 +237,29 @@ export default async function BossPage({ searchParams }: BossPageProps) {
     createdAt: pv.createdAt.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
   }));
 
+  const branchFullName = currentRestaurant.branchName
+    ? `${currentRestaurant.name} · ${currentRestaurant.branchName}`
+    : `${currentRestaurant.name} Şubesi`;
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white pb-24 touch-pan-y">
-      {/* Mobil Genişlik Kapsayıcısı (Responsive 360-420px, Uygulama Hissi) */}
-      <div className="mx-auto w-full max-w-[420px] bg-[#F8FAFC] shadow-2xl sm:border-x sm:border-slate-200/60 min-h-screen flex flex-col">
-        {/* 1. Üst Navigasyon: Logo, Şube Dropdown, Bildirim, Gerçek Profil */}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white pb-28">
+      {/* Mobil Genişlik Kapsayıcısı (Responsive 360-420px, Tam boy sınırlandırılmış, taşma yok) */}
+      <div className="mx-auto w-full max-w-[420px] bg-[#F8FAFC] shadow-2xl sm:border-x sm:border-slate-200/60 flex flex-col">
+        {/* 1. Üst Navigasyon: Logo, Oxonom, Profil (Şube dropdown kaldırıldı) */}
         <MobileHeader
           currentRestaurantId={restaurantId}
-          currentBranchName={currentRestaurant.branchName || currentRestaurant.name}
+          currentBranchName={branchFullName}
           allBranches={rawRestaurants}
           hasUnreadNotification={formattedPendingVoids.length > 0}
           userFullName={ownerName}
           userEmailOrPhone={ownerContact}
         />
 
-        {/* Ana İçerik Dikey Scroll */}
-        <main className="flex-1 space-y-4 px-3.5 pt-3.5 pb-6 sm:px-4 sm:pt-4">
+        {/* Ana İçerik */}
+        <main className="flex-1 space-y-4 px-3.5 pt-3.5 pb-8 sm:px-4 sm:pt-4">
           {/* 2. İşletme / Şube Durum Kartı & AI Kişisel Asistan */}
           <BranchStatusCard
-            branchName={
-              currentRestaurant.branchName
-                ? `${currentRestaurant.name} · ${currentRestaurant.branchName}`
-                : `${currentRestaurant.name} Şubesi`
-            }
+            branchName={branchFullName}
             activeStaffCount={activeStaffCount || 14}
             onlineDevicesCount={8}
             userName={ownerName}
@@ -256,7 +276,7 @@ export default async function BossPage({ searchParams }: BossPageProps) {
             currency="₺"
           />
 
-          {/* 4. Hızlı İşletme Özetleri (Masa durumu, aktif sipariş, misafir sayısı, bekleyen fiş iptalleri ve patron onayı) */}
+          {/* 4. Hızlı İşletme Özetleri */}
           <QuickMetricGrid
             tables={{
               occupied: occupancyOccupied,

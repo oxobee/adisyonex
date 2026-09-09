@@ -107,8 +107,8 @@ export default async function AppStorePage({ searchParams }: AppStorePageProps) 
             </Link>
             <div>
               <h1 className="text-base font-black text-slate-900">Uygulama Mağazası</h1>
-              <p className="text-[11px] font-medium text-slate-400">
-                {currentRestaurant?.name || "Oxonom App Store"}
+              <p className="text-[11px] font-semibold text-slate-500">
+                - {currentRestaurant?.branchName || currentRestaurant?.name || "Karaköy"} Şubesi
               </p>
             </div>
           </div>

@@ -28,13 +28,13 @@ export function BottomNavigation({
       id: "apps" as const,
       label: "Uygulamalar",
       icon: AppsIcon,
-      href: "/dashboard/modules",
+      href: "/appstore",
     },
     {
       id: "store" as const,
       label: "Mağaza",
       icon: StorefrontIcon,
-      href: "/dashboard/ai-studio",
+      href: "/store",
     },
     {
       id: "profile" as const,
@@ -45,10 +45,10 @@ export function BottomNavigation({
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-safe pointer-events-none">
       <nav
         aria-label="Mobil Alt Navigasyon"
-        className="w-full max-w-md border-t border-slate-200/80 bg-white/95 px-6 py-2 backdrop-blur-xl shadow-lg"
+        className="pointer-events-auto w-full max-w-[420px] border-t border-slate-200/80 bg-white/95 px-6 py-2 backdrop-blur-xl shadow-lg"
       >
         <div className="flex items-center justify-between">
           {tabs.map((tab) => {
