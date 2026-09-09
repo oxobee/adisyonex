@@ -39,7 +39,7 @@ export function LoginForm({
   systemName = "Oxonom POS",
   logoUrl = null,
   systemTagline = "Gelişmiş Restoran & QR Menü Yönetim Sistemi",
-  redirectTo = "/dashboard/home",
+  redirectTo = "/home",
   ...props
 }: React.ComponentProps<"div"> & {
   readonly systemName?: string;

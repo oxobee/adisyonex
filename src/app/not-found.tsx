@@ -37,7 +37,7 @@ export default function NotFound() {
         </Link>
 
         <Link
-          href="/dashboard/home"
+          href="/home"
           className="inline-flex items-center gap-2 rounded-xl border border-input bg-card px-5 py-2.5 text-sm font-semibold text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground active:scale-95"
         >
           <Home className="h-4 w-4" />

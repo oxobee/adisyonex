@@ -89,9 +89,9 @@ export function SiteHeader({
               </span>
             </div>
 
-            {pathname !== "/dashboard/home" && (
+            {pathname !== "/home" && pathname !== "/dashboard/home" && (
               <Link
-                href="/dashboard/home"
+                href="/home"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/90 hover:bg-muted text-foreground font-black text-xs shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 ml-1"
                 title="Ana Ekrana Dön"
               >

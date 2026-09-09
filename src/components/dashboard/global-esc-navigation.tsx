@@ -33,10 +33,10 @@ export function GlobalEscNavigation() {
         return;
       }
 
-      // 3. Navigate back to /dashboard/home if not already there
-      if (pathname && pathname !== "/dashboard/home" && pathname !== "/dashboard") {
+      // 3. Navigate back to /home if not already there
+      if (pathname && pathname !== "/home" && pathname !== "/dashboard/home" && pathname !== "/dashboard") {
         e.preventDefault();
-        router.push("/dashboard/home");
+        router.push("/home");
       }
     };
 

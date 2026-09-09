@@ -29,6 +29,7 @@ import type { LicenseInfoDTO } from "@/services/license.service";
 import type { SystemSettingsDTO } from "@/services/system-setting.service";
 
 const ROUTE_TITLES: Record<string, string> = {
+  "/home": "Ana Ekran",
   "/dashboard/home": "Ana Ekran",
   "/dashboard/orders": "Masalar",
   "/dashboard/kitchen": "Mutfak",
@@ -62,8 +63,8 @@ export function DashboardHeaderNav({
     readonly role?: string;
     readonly isSuperAdmin?: boolean;
   };
-  readonly license?: LicenseInfoDTO | null;
-  readonly systemSettings?: Partial<SystemSettingsDTO> | null;
+  readonly license: LicenseInfoDTO | null;
+  readonly systemSettings: SystemSettingsDTO | null;
   readonly restaurantUsername?: string | null;
 }) {
   const pathname = usePathname();
@@ -75,7 +76,7 @@ export function DashboardHeaderNav({
 
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const isMainScreen = pathname === "/dashboard/home";
+  const isMainScreen = pathname === "/home" || pathname === "/dashboard/home";
   const isAdmin =
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
@@ -157,7 +158,7 @@ export function DashboardHeaderNav({
           {/* SOL BÖLÜM */}
           <div className="flex items-center gap-3 shrink-0 min-w-0">
             <Link
-              href="/dashboard/home"
+              href="/home"
               prefetch={true}
               className="flex items-center select-none cursor-pointer group shrink-0"
               title="Ana Ekran"
@@ -428,10 +429,10 @@ export function DashboardHeaderNav({
               <button
                 type="button"
                 onClick={() => {
-                  router.push("/dashboard/home");
+                  router.push("/home");
                   setTimeout(() => {
-                    if (window.location.pathname !== "/dashboard/home") {
-                      window.location.href = "/dashboard/home";
+                    if (window.location.pathname !== "/home") {
+                      window.location.href = "/home";
                     }
                   }, 120);
                 }}

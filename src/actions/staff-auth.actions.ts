@@ -26,7 +26,7 @@ export const staffLoginAction = withValidation(
     );
     await createStaffSession({ staffId, restaurantId: restaurant.id, role });
     
-    return { role, redirectUrl: "/dashboard/home" };
+    return { role, redirectUrl: "/home" };
   },
 );
 

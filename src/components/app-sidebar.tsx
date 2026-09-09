@@ -48,7 +48,7 @@ const navGroups = [
   {
     label: "Operasyon",
     items: [
-      { title: "Ana Ekran", url: "/dashboard/home", icon: <HomeIcon /> },
+      { title: "Ana Ekran", url: "/home", icon: <HomeIcon /> },
       { title: "Masalar", url: "/dashboard/orders", icon: <ReceiptTextIcon />, isHighlighted: true },
       { title: "Mutfak", url: "/dashboard/kitchen", icon: <ChefHatIcon /> },
       { title: "POS / Kasa", url: "/dashboard/pos", icon: <CalculatorIcon /> },
