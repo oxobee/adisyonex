@@ -2,22 +2,22 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  HistoryIcon,
-  XIcon,
-  SearchIcon,
-  RefreshCwIcon,
-  FilterIcon,
-  UserIcon,
-  ClockIcon,
-  ShieldCheckIcon,
-  UtensilsIcon,
-  ArmchairIcon,
-  SettingsIcon,
-  UsersIcon,
-  CreditCardIcon,
-  CheckCircle2Icon,
-  ChevronDownIcon,
-} from "lucide-react";
+  ClockCounterClockwise as HistoryIcon,
+  X as XIcon,
+  MagnifyingGlass as SearchIcon,
+  ArrowsClockwise as RefreshCwIcon,
+  Funnel as FilterIcon,
+  User as UserIcon,
+  Clock as ClockIcon,
+  ShieldCheck as ShieldCheckIcon,
+  ForkKnife as UtensilsIcon,
+  Armchair as ArmchairIcon,
+  Gear as SettingsIcon,
+  Users as UsersIcon,
+  CreditCard as CreditCardIcon,
+  CheckCircle as CheckCircle2Icon,
+  CaretDown as ChevronDownIcon,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {

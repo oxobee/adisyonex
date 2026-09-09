@@ -5,16 +5,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  ArrowRightIcon,
-  CircleUserRoundIcon,
-  CrownIcon,
-  HeadphonesIcon,
-  InfinityIcon,
-  LogOutIcon,
-  SparklesIcon,
-  UtensilsCrossedIcon,
-  XIcon,
-} from "lucide-react";
+  ArrowRight as ArrowRightIcon,
+  UserCircle as CircleUserRoundIcon,
+  Crown as CrownIcon,
+  Headphones as HeadphonesIcon,
+  Infinity as InfinityIcon,
+  SignOut as LogOutIcon,
+  Sparkle as SparklesIcon,
+  ForkKnife as UtensilsCrossedIcon,
+  X as XIcon,
+} from "@phosphor-icons/react";
 
 import { logoutAction } from "@/actions/auth.actions";
 import { SalesRepCard } from "@/components/license/sales-rep-card";

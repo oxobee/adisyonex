@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowLeftIcon, ExternalLinkIcon, LockIcon, LogOutIcon } from "lucide-react";
+import {
+  ArrowLeft as ArrowLeftIcon,
+  ArrowUpRight as ExternalLinkIcon,
+  Lock as LockIcon,
+  SignOut as LogOutIcon,
+} from "@phosphor-icons/react";
 
 import { ConnectionStatus } from "@/components/shared/connection-status";
 import { StaffLockModal } from "@/components/staff/staff-lock-modal";
@@ -62,13 +67,13 @@ export function SiteHeader({
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="size-9 shrink-0 overflow-hidden rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-center font-bold text-xs text-primary shadow-xs">
               {staffContext.photoUrl ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={staffContext.photoUrl}
                   alt={staffContext.name}
                   width={36}
                   height={36}
                   className="size-full object-cover"
-                  unoptimized
                 />
               ) : (
                 initials
