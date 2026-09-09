@@ -12,6 +12,7 @@ import {
   FileTextIcon,
   SearchIcon,
 } from "@/components/ui/icons";
+import { getSession } from "@/lib/session";
 import { BottomNavigation } from "@/components/boss/bottom-navigation";
 
 export const dynamic = "force-dynamic";
@@ -23,16 +24,30 @@ interface StorePageProps {
 }
 
 export default async function StorePage({ searchParams }: StorePageProps) {
+  const session = await getSession();
   const resolvedSearchParams = await searchParams;
 
-  const restaurants = await prisma.restaurant.findMany({
-    where: { isActive: true },
+  let restaurants = await prisma.restaurant.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      ...(session?.userId ? { ownerId: session.userId } : {}),
+    },
     select: { id: true, name: true, branchName: true },
     orderBy: { name: "asc" },
   });
 
+  if (!restaurants.length) {
+    restaurants = await prisma.restaurant.findMany({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true, name: true, branchName: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
   const currentRestaurant =
-    restaurants.find((r) => r.id === resolvedSearchParams.restaurantId) ||
+    (resolvedSearchParams.restaurantId &&
+      restaurants.find((r) => r.id === resolvedSearchParams.restaurantId)) ||
     restaurants[0];
 
   const branchDisplay = currentRestaurant?.branchName

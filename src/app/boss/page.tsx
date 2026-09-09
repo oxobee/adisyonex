@@ -28,43 +28,50 @@ export default async function BossPage({ searchParams }: BossPageProps) {
 
   const resolvedSearchParams = await searchParams;
 
-  // 1. Tüm şubeleri ve aktif şubeyi çek
-  const rawRestaurants = await prisma.restaurant.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true, branchName: true },
+  // 1. Giriş yapan kullanıcıyı çek
+  const loggedInUser = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, name: true, phone: true, email: true, role: true },
+  });
+
+  // 2. Kullanıcının sahip olduğu / yetkili olduğu restoranları çek
+  // Eğer SUPER_ADMIN ise tüm restoranları görebilir, değilse yalnızca kendi sahip olduğu restoranları görür.
+  const isSuper = loggedInUser?.role === "SUPER_ADMIN" || loggedInUser?.role === "ADMIN";
+  
+  let rawRestaurants = await prisma.restaurant.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      ...(isSuper ? {} : { ownerId: session.userId }),
+    },
+    select: { id: true, name: true, branchName: true, ownerId: true },
     orderBy: { name: "asc" },
   });
+
+  // Kullanıcıya özel restoran bulunamadıysa fallback olarak tüm aktif restoranları getir
+  if (!rawRestaurants.length) {
+    rawRestaurants = await prisma.restaurant.findMany({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true, name: true, branchName: true, ownerId: true },
+      orderBy: { name: "asc" },
+    });
+  }
 
   if (!rawRestaurants.length) {
     return notFound();
   }
 
+  // URL'de seçili restaurantId varsa ve kullanıcının erişebildiği listedeyse onu, yoksa ilkini seç
   const currentRestaurant =
-    rawRestaurants.find((r) => r.id === resolvedSearchParams.restaurantId) ||
+    (resolvedSearchParams.restaurantId &&
+      rawRestaurants.find((r) => r.id === resolvedSearchParams.restaurantId)) ||
     rawRestaurants[0];
 
   const restaurantId = currentRestaurant.id;
 
-  // 2. Mevcut kullanıcıyı / işletme sahibini çek
-  const restaurantWithOwner = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
-    include: {
-      owner: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-        },
-      },
-    },
-  });
-
-  const ownerName = restaurantWithOwner?.owner?.name || "Emre Bilgin";
-  const ownerContact =
-    restaurantWithOwner?.owner?.phone ||
-    restaurantWithOwner?.owner?.email ||
-    "";
+  // 3. Mevcut kullanıcı / işletme sahibi bilgileri
+  const ownerName = loggedInUser?.name || "İşletme Sahibi";
+  const ownerContact = loggedInUser?.phone || loggedInUser?.email || "";
 
   // 3. Gün başlangıcı hesabı
   const now = new Date();

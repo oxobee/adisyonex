@@ -36,42 +36,46 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
   const resolvedSearchParams = await searchParams;
 
-  // Restoranları çek
-  const restaurants = await prisma.restaurant.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true, branchName: true },
+  // 1. Giriş yapan kullanıcıyı çek
+  const loggedInUser = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, name: true, phone: true, email: true, role: true },
+  });
+
+  const isSuper = loggedInUser?.role === "SUPER_ADMIN" || loggedInUser?.role === "ADMIN";
+
+  // 2. Kullanıcının sahip olduğu restoranları çek
+  let restaurants = await prisma.restaurant.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      ...(isSuper ? {} : { ownerId: session.userId }),
+    },
+    select: { id: true, name: true, branchName: true, ownerId: true },
     orderBy: { name: "asc" },
   });
 
+  if (!restaurants.length) {
+    restaurants = await prisma.restaurant.findMany({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true, name: true, branchName: true, ownerId: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
   const currentRestaurant =
-    restaurants.find((r) => r.id === resolvedSearchParams.restaurantId) ||
+    (resolvedSearchParams.restaurantId &&
+      restaurants.find((r) => r.id === resolvedSearchParams.restaurantId)) ||
     restaurants[0];
 
   const restaurantId = currentRestaurant?.id;
 
-  // Yetkili kullanıcı bilgilerini çek
-  const restaurantWithOwner = restaurantId
-    ? await prisma.restaurant.findUnique({
-        where: { id: restaurantId },
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              email: true,
-            },
-          },
-        },
-      })
-    : null;
-
-  const ownerName = restaurantWithOwner?.owner?.name || "Emre Bilgin";
-  const ownerEmail = restaurantWithOwner?.owner?.email || "emre@bilginrestoran.com";
-  const ownerPhone = restaurantWithOwner?.owner?.phone || "+90 (532) 741 89 20";
+  const ownerName = loggedInUser?.name || "İşletme Sahibi";
+  const ownerEmail = loggedInUser?.email || "yonetici@oxonom.com";
+  const ownerPhone = loggedInUser?.phone || "";
   const branchName = currentRestaurant?.branchName
     ? `${currentRestaurant.name} - ${currentRestaurant.branchName} Şubesi`
-    : `${currentRestaurant?.name || "Oxonom"} - Karaköy Rıhtım Şubesi`;
+    : `${currentRestaurant?.name || "Oxonom"} Şubesi`;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white pb-32">
