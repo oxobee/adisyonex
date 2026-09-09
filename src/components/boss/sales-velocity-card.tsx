@@ -1,158 +1,95 @@
 "use client";
 
-import {
-  ClockIcon,
-  CreditCardIcon,
-  PackageIcon,
-  ReceiptIcon,
-} from "@/components/ui/icons";
+import { ClockIcon } from "@/components/ui/icons";
 
-interface HourlyPoint {
+export interface HourlySalesPoint {
   hour: string;
-  amount: number;
+  orders: number;
+  sales: number;
   isCurrent?: boolean;
 }
 
-interface ActivityItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  timeAgo: string;
-  type: "payment" | "delivery" | "order";
-}
-
 interface SalesVelocityCardProps {
-  peakHours: string;
-  peakAmount: number;
-  hourlyData: HourlyPoint[];
-  activities: ActivityItem[];
+  hourlyData: HourlySalesPoint[];
   currency?: string;
 }
 
 export function SalesVelocityCard({
-  peakHours = "12:00 – 14:00",
-  peakAmount = 18400,
   hourlyData,
-  activities,
   currency = "₺",
 }: SalesVelocityCardProps) {
-  const formatMoney = (val: number) =>
-    new Intl.NumberFormat("tr-TR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(val);
+  // Satışlara göre pik saati bul
+  const sorted = [...hourlyData].sort((a, b) => b.sales - a.sales);
+  const peak = sorted[0];
+  const peakHours = peak && peak.sales > 0 ? `${peak.hour}` : "12:00 – 14:00";
+  const peakAmount = peak ? peak.sales : 0;
 
-  const maxAmount = Math.max(...hourlyData.map((h) => h.amount), 1);
+  const maxAmount = Math.max(...hourlyData.map((h) => h.sales), 1);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-sm">
-      {/* Üst Kısım: Günlük Satış Hızı */}
-      <div className="p-4 sm:p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-              <ClockIcon size={16} weight="duotone" />
-            </div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Günlük Satış Hızı
-            </h3>
+    <section className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm">
+      {/* Üst Kısım: Günlük Satış Hızı Başlığı & Pik Bilgisi */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <ClockIcon size={16} weight="duotone" />
           </div>
-
-          <span className="text-[11px] font-semibold text-slate-500">
-            Pik: {peakHours} (<span className="text-indigo-600 font-bold">{currency}{Math.round(peakAmount / 1000)}k</span>)
-          </span>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            Günlük Satış Hızı
+          </h3>
         </div>
 
-        {/* Mini Bar Chart */}
-        <div className="mt-6 flex h-28 items-end justify-between gap-1.5 pt-2">
-          {hourlyData.map((h, i) => {
-            const heightPercent = Math.max((h.amount / maxAmount) * 100, 8);
-            const isNow = h.isCurrent;
-
-            return (
-              <div
-                key={h.hour}
-                className="group relative flex flex-1 flex-col items-center justify-end h-full"
-              >
-                {/* Tooltip */}
-                <div className="pointer-events-none absolute -top-8 z-10 hidden whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-bold text-white shadow-md group-hover:block">
-                  {currency}{h.amount.toLocaleString("tr-TR")}
-                </div>
-
-                {/* Sütun Çubuğu */}
-                <div
-                  style={{ height: `${heightPercent}%` }}
-                  className={`w-full rounded-t-md transition-all duration-300 ${
-                    isNow
-                      ? "bg-indigo-600 ring-2 ring-indigo-300 ring-offset-1"
-                      : "bg-slate-200 group-hover:bg-indigo-400"
-                  }`}
-                />
-
-                {/* Saat Etiketi */}
-                <div className="mt-2 flex flex-col items-center">
-                  <span
-                    className={`text-[9px] font-bold ${
-                      isNow ? "text-indigo-600 font-extrabold" : "text-slate-400"
-                    }`}
-                  >
-                    {h.hour}
-                  </span>
-                  {isNow && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <span className="text-[11px] font-semibold text-slate-500">
+          Pik: {peakHours} {peakAmount > 0 ? `(${currency}${Math.round(peakAmount).toLocaleString("tr-TR")})` : ""}
+        </span>
       </div>
 
-      {/* İnce Ayırıcı */}
-      <div className="border-t border-slate-100" />
+      {/* Güncel Saatlik Bar Chart */}
+      <div className="mt-6 flex h-32 items-end justify-between gap-1 sm:gap-1.5 pt-2">
+        {hourlyData.map((h) => {
+          const heightPercent = Math.max((h.sales / maxAmount) * 100, 6);
+          const isNow = h.isCurrent;
 
-      {/* Alt Kısım: Son Hareketler */}
-      <div className="p-4 sm:p-5">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-          SON HAREKETLER
-        </div>
-
-        <div className="mt-3 divide-y divide-slate-100">
-          {activities.map((act) => (
+          return (
             <div
-              key={act.id}
-              className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
+              key={h.hour}
+              className="group relative flex flex-1 flex-col items-center justify-end h-full"
             >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                    act.type === "payment"
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-blue-50 text-blue-600"
-                  }`}
-                >
-                  {act.type === "payment" ? (
-                    <CreditCardIcon size={18} weight="duotone" />
-                  ) : (
-                    <PackageIcon size={18} weight="duotone" />
-                  )}
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">
-                    {act.title}
-                  </div>
-                  <div className="text-[11px] font-medium text-slate-500">
-                    {act.subtitle}
-                  </div>
-                </div>
+              {/* Tooltip */}
+              <div className="pointer-events-none absolute -top-10 z-10 hidden whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-bold text-white shadow-md group-hover:block">
+                {currency}{h.sales.toLocaleString("tr-TR")} ({h.orders} Sipariş)
               </div>
 
-              <span className="text-[11px] font-medium text-slate-400 shrink-0">
-                {act.timeAgo}
-              </span>
+              {/* Sütun Çubuğu */}
+              <div
+                style={{ height: `${heightPercent}%` }}
+                className={`w-full rounded-t-md transition-all duration-300 ${
+                  isNow
+                    ? "bg-indigo-600 ring-2 ring-indigo-300 ring-offset-1"
+                    : h.sales > 0
+                    ? "bg-indigo-400 group-hover:bg-indigo-500"
+                    : "bg-slate-200 group-hover:bg-slate-300"
+                }`}
+              />
+
+              {/* Saat Etiketi */}
+              <div className="mt-2 flex flex-col items-center">
+                <span
+                  className={`text-[9px] ${
+                    isNow
+                      ? "text-indigo-600 font-black"
+                      : "text-slate-400 font-semibold"
+                  }`}
+                >
+                  {h.hour.split(":")[0]}
+                </span>
+                {isNow && (
+                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                )}
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </section>
   );

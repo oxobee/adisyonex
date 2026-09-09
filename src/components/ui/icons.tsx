@@ -67,4 +67,10 @@ export {
   Warning as WarningIcon,
   Plus as PlusIcon,
   CaretRight as CaretRightIcon,
+  CaretLeft as CaretLeftIcon,
+  Broadcast as BroadcastIcon,
+  Terminal as TerminalIcon,
+  Check as CheckIcon,
+  ToggleLeft as ToggleLeftIcon,
+  ToggleRight as ToggleRightIcon,
 } from "@phosphor-icons/react";

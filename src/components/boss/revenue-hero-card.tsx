@@ -1,18 +1,13 @@
 "use client";
 
-import {
-  CoinsIcon,
-  TrendUpIcon,
-  ReceiptIcon,
-  SparkleIcon,
-} from "@/components/ui/icons";
+import { CoinsIcon } from "@/components/ui/icons";
 
 interface RevenueHeroCardProps {
   todayNetSales: number;
   growthPercent: number;
-  diffFromYesterdaySameHour: number;
+  yesterdaySameHourSales: number;
   totalOrders: number;
-  averageOrderValue: number;
+  maxOrderValue: number;
   currency?: string;
   sparkline?: number[];
 }
@@ -20,9 +15,9 @@ interface RevenueHeroCardProps {
 export function RevenueHeroCard({
   todayNetSales,
   growthPercent,
-  diffFromYesterdaySameHour,
+  yesterdaySameHourSales,
   totalOrders,
-  averageOrderValue,
+  maxOrderValue,
   currency = "₺",
   sparkline = [20, 32, 28, 45, 42, 60, 55, 78, 85, 95],
 }: RevenueHeroCardProps) {
@@ -45,6 +40,8 @@ export function RevenueHeroCard({
     })
     .join(" ");
 
+  const isPositiveGrowth = growthPercent >= 0;
+
   return (
     <section className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 p-5 text-white shadow-lg shadow-indigo-600/20 sm:p-6">
       {/* Arka plan parlama halkası */}
@@ -63,9 +60,15 @@ export function RevenueHeroCard({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-bold text-emerald-300 backdrop-blur-sm border border-emerald-400/20">
-            <span>↑</span>
-            <span>+{growthPercent.toFixed(1)}%</span>
+          <div
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold backdrop-blur-sm border ${
+              isPositiveGrowth
+                ? "bg-emerald-400/15 text-emerald-300 border-emerald-400/20"
+                : "bg-rose-400/15 text-rose-300 border-rose-400/20"
+            }`}
+          >
+            <span>{isPositiveGrowth ? "↑" : "↓"}</span>
+            <span>{isPositiveGrowth ? "+" : ""}{growthPercent.toFixed(1)}%</span>
           </div>
         </div>
 
@@ -76,9 +79,9 @@ export function RevenueHeroCard({
               {currency}{formatCurrency(todayNetSales)}
             </div>
             <p className="mt-1.5 text-xs font-medium text-indigo-200/90">
-              Dünkü aynı saate göre{" "}
-              <span className="font-bold text-emerald-300">
-                +{currency}{formatCurrency(diffFromYesterdaySameHour)}
+              Dünkü aynı saate göre:{" "}
+              <span className="font-bold text-white">
+                {currency}{formatCurrency(yesterdaySameHourSales)}
               </span>
             </p>
           </div>
@@ -91,12 +94,6 @@ export function RevenueHeroCard({
               className="overflow-visible"
               viewBox={`0 0 ${width} ${height}`}
             >
-              <defs>
-                <linearGradient id="sparklineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#818cf8" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
-                </linearGradient>
-              </defs>
               <polyline
                 fill="none"
                 stroke="#38bdf8"
@@ -112,17 +109,18 @@ export function RevenueHeroCard({
         {/* İnce Ayırıcı Çizgi */}
         <div className="my-4 h-px w-full bg-white/10" />
 
-        {/* Alt Satır: 184 Sipariş · Ort. Sepet */}
+        {/* Alt Satır: Bugünkü Toplam Sipariş · En Yüksek Sipariş */}
         <div className="flex items-center justify-between text-xs text-indigo-100">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="font-black text-white">{totalOrders}</span>
-            <span className="text-indigo-200">Sipariş</span>
+            <span className="text-indigo-200">Toplam Sipariş</span>
+            <span className="text-[10px] text-indigo-300">(Masa + Paket)</span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-indigo-200">Ort. Sepet:</span>
+            <span className="text-indigo-200">En Yüksek Sipariş:</span>
             <span className="font-bold text-white">
-              {currency}{formatCurrency(averageOrderValue)}
+              {currency}{formatCurrency(maxOrderValue)}
             </span>
           </div>
         </div>
