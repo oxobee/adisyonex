@@ -61,4 +61,10 @@ export {
   Storefront as StorefrontIcon,
   DeviceMobile as DeviceMobileIcon,
   ShieldCheck as ShieldCheckIcon,
+  ClipboardText as ClipboardTextIcon,
+  ArrowsLeftRight as ArrowsLeftRightIcon,
+  Lightning as LightningIcon,
+  Warning as WarningIcon,
+  Plus as PlusIcon,
+  CaretRight as CaretRightIcon,
 } from "@phosphor-icons/react";
