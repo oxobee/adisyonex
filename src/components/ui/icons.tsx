@@ -73,4 +73,5 @@ export {
   Check as CheckIcon,
   ToggleLeft as ToggleLeftIcon,
   ToggleRight as ToggleRightIcon,
+  DownloadSimple as DownloadIcon,
 } from "@phosphor-icons/react";

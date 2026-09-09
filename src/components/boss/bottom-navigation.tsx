@@ -40,7 +40,7 @@ export function BottomNavigation({
       id: "profile" as const,
       label: "Hesabım",
       icon: UserCircleIcon,
-      href: "/dashboard/settings",
+      href: "/account",
     },
   ];
 

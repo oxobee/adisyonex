@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
 import { getDashboard, istParts, istMidnight } from "@/services/dashboard.service";
 import { MobileHeader } from "@/components/boss/mobile-header";
 import { BranchStatusCard } from "@/components/boss/branch-status-card";
@@ -19,6 +20,12 @@ interface BossPageProps {
 }
 
 export default async function BossPage({ searchParams }: BossPageProps) {
+  // Cihaz ilk kez giriş yapıyorsa (oturum çerezi yoksa) login ekranına yönlendir
+  const session = await getSession();
+  if (!session?.userId) {
+    redirect("/login?callbackUrl=/boss");
+  }
+
   const resolvedSearchParams = await searchParams;
 
   // 1. Tüm şubeleri ve aktif şubeyi çek
@@ -53,24 +60,25 @@ export default async function BossPage({ searchParams }: BossPageProps) {
     },
   });
 
-  const ownerName = restaurantWithOwner?.owner?.name || "Emre Bey";
+  const ownerName = restaurantWithOwner?.owner?.name || "Emre Bilgin";
   const ownerContact =
     restaurantWithOwner?.owner?.phone ||
     restaurantWithOwner?.owner?.email ||
     "";
 
-  // 3. Gün başlangıcı hesabı (Dashboard servisiyle tam senkron gün sınırları)
+  // 3. Gün başlangıcı hesabı
   const now = new Date();
   const p = istParts(now);
   const todayStart = istMidnight(p.y, p.m, p.day);
   const yesterdayStart = new Date(todayStart.getTime() - 86400000);
   const yesterdaySameTime = new Date(now.getTime() - 86400000);
 
+  // Günün başlangıcından itibaren kaydedilmiş siparişleri çek (en yüksek sipariş için)
   const [
     activeStaffCount,
     todaySessions,
-    maxSettledOrderRow,
-    maxAnyOrderRow,
+    allTodayOrders,
+    anyTodayOrderMax,
     yesterdaySameHourAgg,
     pendingVoidsList,
   ] = await Promise.all([
@@ -89,22 +97,25 @@ export default async function BossPage({ searchParams }: BossPageProps) {
       },
     }).catch(() => []),
 
-    // Bugünkü tamamlanmış (settled) en yüksek sipariş
-    prisma.order.findFirst({
+    // Bugünkü siparişler
+    prisma.order.findMany({
       where: {
         restaurantId,
-        settledAt: { gte: todayStart },
-        status: "COMPLETED",
+        OR: [
+          { settledAt: { gte: todayStart } },
+          { createdAt: { gte: todayStart } },
+        ],
+        status: { not: "VOID" },
       },
-      orderBy: { grandTotal: "desc" },
       select: { grandTotal: true },
-    }).catch(() => null),
+      orderBy: { grandTotal: "desc" },
+      take: 1,
+    }).catch(() => []),
 
-    // Bugünkü oluşturulmuş (açık dahil) en yüksek sipariş
+    // Genel fallback en yüksek sipariş
     prisma.order.findFirst({
       where: {
         restaurantId,
-        createdAt: { gte: todayStart },
         status: { not: "VOID" },
       },
       orderBy: { grandTotal: "desc" },
@@ -164,12 +175,11 @@ export default async function BossPage({ searchParams }: BossPageProps) {
       ? ((todaySales - yesterdaySameHourSales) / yesterdaySameHourSales) * 100
       : 14.2;
 
-  // O günkü en yüksek satış rakamı (settled veya açık en yüksek)
-  const maxOrderValue = Number(
-    maxSettledOrderRow?.grandTotal ??
-    maxAnyOrderRow?.grandTotal ??
-    (dashboardData.today.orders > 0 ? dashboardData.today.sales : 0)
-  );
+  // O günkü en yüksek satış rakamı
+  const highestFromToday = allTodayOrders[0] ? Number(allTodayOrders[0].grandTotal) : 0;
+  const maxOrderValue = highestFromToday > 0 
+    ? highestFromToday 
+    : (anyTodayOrderMax ? Number(anyTodayOrderMax.grandTotal) : 1240);
 
   // Masa durumu
   const occupancyTotal = dashboardData.occupancy.total || 24;
@@ -242,10 +252,10 @@ export default async function BossPage({ searchParams }: BossPageProps) {
     : `${currentRestaurant.name} Şubesi`;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white pb-28">
-      {/* Mobil Genişlik Kapsayıcısı (Responsive 360-420px, Tam boy sınırlandırılmış, taşma yok) */}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white pb-32">
+      {/* Mobil Genişlik Kapsayıcısı (Responsive 360-420px, scroll taşması kilitli) */}
       <div className="mx-auto w-full max-w-[420px] bg-[#F8FAFC] shadow-2xl sm:border-x sm:border-slate-200/60 flex flex-col">
-        {/* 1. Üst Navigasyon: Logo, Oxonom, Profil (Şube dropdown kaldırıldı) */}
+        {/* 1. Üst Navigasyon: Logo, Oxonom, Profil (Şube dropdown yok) */}
         <MobileHeader
           currentRestaurantId={restaurantId}
           currentBranchName={branchFullName}
@@ -256,7 +266,7 @@ export default async function BossPage({ searchParams }: BossPageProps) {
         />
 
         {/* Ana İçerik */}
-        <main className="flex-1 space-y-4 px-3.5 pt-3.5 pb-8 sm:px-4 sm:pt-4">
+        <main className="flex-1 space-y-4 px-3.5 pt-3.5 pb-6 sm:px-4 sm:pt-4">
           {/* 2. İşletme / Şube Durum Kartı & AI Kişisel Asistan */}
           <BranchStatusCard
             branchName={branchFullName}
