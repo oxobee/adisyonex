@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = [
   "/order",
   "/personelgiris",
   "/personel-giris",
+  "/boss",
 ];
 
 /** Auth pages a signed-in user should be redirected away from. */

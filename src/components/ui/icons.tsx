@@ -55,4 +55,10 @@ export {
   CloudLightning as CloudLightningIcon,
   CloudFog as CloudFogIcon,
   Snowflake as SnowflakeIcon,
+  ArrowDownRight as ArrowDownRightIcon,
+  Coins as CoinsIcon,
+  Buildings as BuildingsIcon,
+  Storefront as StorefrontIcon,
+  DeviceMobile as DeviceMobileIcon,
+  ShieldCheck as ShieldCheckIcon,
 } from "@phosphor-icons/react";
