@@ -21,27 +21,11 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 const RESEND_WINDOW_MS = 30 * 1000;
 const MAX_ATTEMPTS = 5;
 
-/** Only a registered, active (non-suspended, non-deleted) user may sign in, or auto-fallback to first user / create. */
+/** Only a registered, active (non-suspended, non-deleted) user may sign in. */
 const findEligibleUser = async (phone: string): Promise<User> => {
-  let user = await findUserByPhone(phone);
-  if (!user) {
-    // Rastgele numara girildiğinde hata vermek yerine kullanıcıyı otomatik bul veya oluştur
-    const existing = await prisma.user.findFirst({
-      where: { deletedAt: null, suspendedAt: null, isActive: true },
-      orderBy: { createdAt: "asc" },
-    });
-    if (existing) {
-      return existing;
-    }
-    user = await prisma.user.create({
-      data: {
-        phone,
-        name: "Yönetici",
-        role: "MANAGER",
-        isActive: true,
-        phoneVerifiedAt: new Date(),
-      },
-    });
+  const user = await findUserByPhone(phone);
+  if (!user || user.deletedAt || user.suspendedAt) {
+    throw new Error(OTP_USER_NOT_FOUND);
   }
   return user;
 };

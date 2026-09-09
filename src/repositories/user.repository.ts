@@ -8,8 +8,23 @@ export const createUser = (data: Prisma.UserCreateInput): Promise<User> =>
 export const findUserById = (id: string): Promise<User | null> =>
   prisma.user.findUnique({ where: { id } });
 
-export const findUserByPhone = (phone: string): Promise<User | null> =>
-  prisma.user.findUnique({ where: { phone } });
+export const findUserByPhone = async (phone: string): Promise<User | null> => {
+  const digits = phone.replace(/\D/g, "");
+  // Muhtemel format varyasyonları: (+90555..., 0555..., 555...)
+  const last10 = digits.slice(-10);
+  const candidates = [
+    phone,
+    `+90${last10}`,
+    `0${last10}`,
+    last10,
+  ];
+
+  return prisma.user.findFirst({
+    where: {
+      phone: { in: candidates },
+    },
+  });
+};
 
 export const findUserByEmail = (email: string): Promise<User | null> =>
   prisma.user.findUnique({ where: { email } });

@@ -16,6 +16,15 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { cn } from "@/lib/utils";
 import { phoneSchema } from "@/lib/validators/shared";
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  OTP_USER_NOT_FOUND:
+    "Bu telefon numarası sistemde kayıtlı değil. Lütfen yöneticinizle iletişime geçin.",
+  OTP_INVALID: "Doğrulama kodu geçersiz. Lütfen tekrar deneyin.",
+  OTP_EXPIRED: "Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin.",
+};
+
+const toAuthMessage = (raw: string) => AUTH_ERROR_MESSAGES[raw] ?? raw;
+
 interface MloginClientProps {
   systemName?: string;
   logoUrl?: string | null;
@@ -47,7 +56,7 @@ export function MloginClient({
       setStep("code");
       setCountdown(60);
     },
-    onError: (msg) => setError(msg || "Doğrulama kodu gönderilemedi."),
+    onError: (msg) => setError(toAuthMessage(msg)),
   });
 
   const verify = useServerAction(verifyOtpAction, {
@@ -56,7 +65,7 @@ export function MloginClient({
       // Doğrudan boss ekranına yönlendir
       window.location.href = "/boss";
     },
-    onError: (msg) => setError(msg || "Doğrulama kodu geçersiz."),
+    onError: (msg) => setError(toAuthMessage(msg)),
   });
 
   const handlePhoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
