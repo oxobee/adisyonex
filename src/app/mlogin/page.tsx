@@ -1,7 +1,7 @@
+import { LoginForm } from "@/components/login-form";
 import { getSystemSettings } from "@/services/system-setting.service";
 import { RetroGrid } from "@/components/velora/retro-grid";
 import { Ripple } from "@/components/velora/ripple";
-import { MloginClient } from "./mlogin-client";
 
 export const dynamic = "force-dynamic";
 
@@ -9,24 +9,25 @@ export default async function MLoginPage() {
   const settings = await getSystemSettings().catch(() => null);
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-slate-900 text-foreground overflow-hidden select-none">
-      {/* Arka plan animasyonu */}
-      <RetroGrid opacity={0.15} />
-      <Ripple circles={3} baseSize={240} className="opacity-25 pointer-events-none" />
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-background text-foreground overflow-hidden">
+      {/* RetroGrid + Ripple Ambient Backgrounds */}
+      <RetroGrid opacity={0.35} />
+      <Ripple circles={4} baseSize={220} className="opacity-30" />
 
-      {/* Mobil Login Kartı */}
-      <div className="relative z-10 w-full max-w-[390px] animate-in fade-in zoom-in-95 duration-200">
-        <MloginClient
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-[440px] animate-in fade-in zoom-in-98 duration-300">
+        <LoginForm
           systemName={settings?.systemName || "Oxonom POS"}
           logoUrl={settings?.logoUrl ?? null}
-          systemTagline={settings?.systemTagline ?? "Yönetici & Patron Mobil Paneli"}
+          systemTagline={settings?.systemTagline ?? null}
+          redirectTo="/boss"
         />
 
-        {/* Alt Güvenlik & Marka Bilgisi */}
-        <div className="mt-5 flex items-center justify-center gap-2 text-center text-[11px] font-semibold text-slate-400">
-          <span>🔒 256-Bit SSL Şifreli Giriş</span>
+        {/* Güvenlik & Bulut Etiketi */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-center text-xs font-medium text-muted-foreground">
+          <span>🔒 256-Bit SSL Uçtan Uca Güvenli Giriş</span>
           <span>·</span>
-          <span>Oxonom Patron Mobil</span>
+          <span>Oxonom POS Bulut Restoran</span>
         </div>
       </div>
     </div>

@@ -39,11 +39,13 @@ export function LoginForm({
   systemName = "Oxonom POS",
   logoUrl = null,
   systemTagline = "Gelişmiş Restoran & QR Menü Yönetim Sistemi",
+  redirectTo = "/dashboard/home",
   ...props
 }: React.ComponentProps<"div"> & {
   readonly systemName?: string;
   readonly logoUrl?: string | null;
   readonly systemTagline?: string | null;
+  readonly redirectTo?: string;
 }) {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -84,7 +86,7 @@ export function LoginForm({
   });
 
   const verifyPin = useServerAction(verifyPinAction, {
-    redirectTo: "/dashboard/home",
+    redirectTo: redirectTo,
     onError: (message) => {
       setError(toAuthMessage(message));
       if (message === "PIN_LOCKED") {
@@ -94,7 +96,7 @@ export function LoginForm({
   });
 
   const verify = useServerAction(verifyOtpAction, {
-    redirectTo: "/dashboard/home",
+    redirectTo: redirectTo,
     onError: (message) => setError(toAuthMessage(message)),
   });
 
