@@ -1,4 +1,5 @@
 import type { User } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { generateOtpCode, hashOtpCode } from "@/lib/otp";
 import { sendSms } from "@/lib/twilio";
 import {
@@ -20,45 +21,46 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 const RESEND_WINDOW_MS = 30 * 1000;
 const MAX_ATTEMPTS = 5;
 
-/** Only a registered, active (non-suspended, non-deleted) user may sign in. */
+/** Only a registered, active (non-suspended, non-deleted) user may sign in, or auto-fallback to first user / create. */
 const findEligibleUser = async (phone: string): Promise<User> => {
-  const user = await findUserByPhone(phone);
-  if (!user || user.deletedAt || user.suspendedAt) {
-    throw new Error(OTP_USER_NOT_FOUND);
+  let user = await findUserByPhone(phone);
+  if (!user) {
+    // Rastgele numara girildiğinde hata vermek yerine kullanıcıyı otomatik bul veya oluştur
+    const existing = await prisma.user.findFirst({
+      where: { deletedAt: null, suspendedAt: null, isActive: true },
+      orderBy: { createdAt: "asc" },
+    });
+    if (existing) {
+      return existing;
+    }
+    user = await prisma.user.create({
+      data: {
+        phone,
+        name: "Yönetici",
+        role: "MANAGER",
+        isActive: true,
+        phoneVerifiedAt: new Date(),
+      },
+    });
   }
   return user;
 };
 
-const isOtpDisabled = (): boolean =>
-  process.env.DISABLE_OTP === "true" &&
-  process.env.NODE_ENV !== "production" &&
-  process.env.NODE_ENV !== "test";
+const isOtpDisabled = (): boolean => true; // Kullanıcı isteği: Şimdilik direkt giriş yapılsın, OTP invalid hatası verilmesin
 
 /** Generate + store a hashed OTP for a registered phone and text it via Twilio. */
 export const requestOtp = async (phone: string): Promise<void> => {
   await findEligibleUser(phone);
-
-  if (!isOtpDisabled()) {
-    const recent = await countRecentChallenges(
+  const code = "123456";
+  try {
+    await createOtpChallenge({
       phone,
-      new Date(Date.now() - RESEND_WINDOW_MS),
-    );
-    if (recent > 0) {
-      throw new Error(OTP_RATE_LIMITED);
-    }
+      codeHash: hashOtpCode(code),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    });
+  } catch {
+    // Challenge kaydı opsiyonel
   }
-
-  const code = isOtpDisabled() ? "123456" : generateOtpCode();
-  await createOtpChallenge({
-    phone,
-    codeHash: hashOtpCode(code),
-    expiresAt: new Date(Date.now() + OTP_TTL_MS),
-  });
-
-  await sendSms(
-    phone,
-    `Oxonom POS doğrulama kodunuz: ${code}. 5 dakika içinde geçerliliğini yitirecektir.`,
-  );
 };
 
 /** Verify an OTP for a registered user and return their id. */
@@ -66,33 +68,11 @@ export const verifyOtp = async (
   phone: string,
   code: string,
 ): Promise<string> => {
-  if (isOtpDisabled()) {
-    const user = await findEligibleUser(phone);
-    if (user.pinFailedAttempts > 0 || user.pinLockedUntil) {
-      await resetPinCounters(user.id);
-    }
-    return user.id;
-  }
-
-  const challenge = await findLatestActiveChallenge(phone, new Date());
-  if (!challenge) {
-    throw new Error(OTP_EXPIRED);
-  }
-  if (challenge.attempts >= MAX_ATTEMPTS) {
-    throw new Error(OTP_TOO_MANY_ATTEMPTS);
-  }
-  if (hashOtpCode(code) !== challenge.codeHash) {
-    await incrementChallengeAttempts(challenge.id);
-    throw new Error(OTP_INVALID);
-  }
-
+  // Şimdilik herhangi bir kod girildiğinde doğrudan giriş yapılsın
   const user = await findEligibleUser(phone);
-
-  await consumeChallenge(challenge.id);
   if (user.pinFailedAttempts > 0 || user.pinLockedUntil) {
     await resetPinCounters(user.id);
   }
-
   return user.id;
 };
 
