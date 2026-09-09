@@ -9,6 +9,7 @@ import {
 /** Routes reachable without an authenticated session (login + admin preview + public guest ordering + staff login). */
 const PUBLIC_ROUTES = [
   "/login",
+  "/mlogin",
   "/admin",
   "/order",
   "/personelgiris",
@@ -20,7 +21,7 @@ const PUBLIC_ROUTES = [
 ];
 
 /** Auth pages a signed-in user should be redirected away from. */
-const AUTH_ROUTES = ["/login"];
+const AUTH_ROUTES = ["/login", "/mlogin"];
 
 /** Reserved root-level paths that are not restaurant slugs. */
 const RESERVED_SLUGS = new Set([
@@ -28,6 +29,7 @@ const RESERVED_SLUGS = new Set([
   "admin",
   "api",
   "login",
+  "mlogin",
   "order",
   "u",
   "personelgiris",

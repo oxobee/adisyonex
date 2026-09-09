@@ -20,10 +20,10 @@ interface BossPageProps {
 }
 
 export default async function BossPage({ searchParams }: BossPageProps) {
-  // Cihaz ilk kez giriş yapıyorsa (oturum çerezi yoksa) login ekranına yönlendir
+  // Cihaz ilk kez giriş yapıyorsa (oturum çerezi yoksa) mobil login (mlogin) ekranına yönlendir
   const session = await getSession();
   if (!session?.userId) {
-    redirect("/login?callbackUrl=/boss");
+    redirect("/mlogin");
   }
 
   const resolvedSearchParams = await searchParams;

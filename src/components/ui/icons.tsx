@@ -74,4 +74,5 @@ export {
   ToggleLeft as ToggleLeftIcon,
   ToggleRight as ToggleRightIcon,
   DownloadSimple as DownloadIcon,
+  Phone as PhoneIcon,
 } from "@phosphor-icons/react";

@@ -128,7 +128,7 @@ export function MobileHeader({
                     Hesap & Şube Ayarları
                   </a>
                   <a
-                    href="/api/mobile/auth/logout"
+                    href="/api/auth/logout"
                     className="block rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
                   >
                     Çıkış Yap

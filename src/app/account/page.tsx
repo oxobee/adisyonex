@@ -16,6 +16,8 @@ import {
   LogoutIcon,
 } from "@/components/ui/icons";
 import { BottomNavigation } from "@/components/boss/bottom-navigation";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import { AccountClientSections } from "./account-client";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +29,11 @@ interface AccountPageProps {
 }
 
 export default async function AccountPage({ searchParams }: AccountPageProps) {
+  const session = await getSession();
+  if (!session?.userId) {
+    redirect("/mlogin");
+  }
+
   const resolvedSearchParams = await searchParams;
 
   // Restoranları çek

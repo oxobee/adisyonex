@@ -21,10 +21,10 @@ export function AccountClientSections() {
   const handleLogoutConfirm = async () => {
     try {
       // Çerez oturumunu sonlandır
-      await fetch("/api/mobile/auth/logout", { method: "POST" }).catch(() => null);
+      await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     } finally {
-      // Oturumu kapatıp login sayfasına yönlendir
-      window.location.href = "/login";
+      // Oturumu kapatıp mlogin sayfasına yönlendir
+      window.location.href = "/mlogin";
     }
   };
 
